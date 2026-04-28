@@ -1160,18 +1160,20 @@ various_locations:
         detail: "Window-type pendent sprinklers on ceiling or sidewall sprinklers on walls to cover interior glazing (draft-curtain effect)."
   - id: var_stairs
     flag: has_stairs
+    requires_sprinkler_system: true
     systems:
       - name: "Stair Shaft Sprinklers (top + first landing above bottom)"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.D"
         page_ref: "p.749"
-        detail: "Sprinkler at top of shaft and at first accessible landing above the bottom of the shaft per Section 3.5."
+        detail: "Sprinkler at top of shaft and at first accessible landing above the bottom of the shaft per Section 3.5. Suppressed automatically when the building's matched FP branch does not require an automatic sprinkler system."
   - id: var_elevator_shaft
     flag: has_elevator
+    requires_sprinkler_system: true
     systems:
       - name: "Elevator Pit Sidewall Spray Sprinklers"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.E"
         page_ref: "p.749"
-        detail: "Sidewall spray sprinklers at the bottom of each elevator hoistway, not more than 600 mm above the pit floor per Section 3.5."
+        detail: "Sidewall spray sprinklers at the bottom of each elevator hoistway, not more than 600 mm above the pit floor per Section 3.5. Suppressed automatically when the building's matched FP branch does not require an automatic sprinkler system."
   - id: var_bathroom_heaters
     flag: has_bathrooms_with_heaters
     systems:

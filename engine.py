@@ -202,7 +202,21 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     if branch_items:
         blocks.append(SectionBlock(title="FP - Branch Requirements (Ch 9)", items=_dedupe(branch_items)))
 
-    var_items = _dedupe(_collect_flag(rules.get("various_locations", []), b))
+    # Determine if matched FP branch + general REQUIRES (status=required) any sprinkler system.
+    # Various-locations items annotated with `requires_sprinkler_system: true` are suppressed
+    # when the building's branch does not mandate sprinklers (e.g. small villas where
+    # sprinklers are only "recommended").
+    _all_items = list(gen) + list(branch_items)
+    sprinkler_required = any(
+        ("sprinkler" in (it.system or "").lower())
+        and it.status == "required"
+        for it in _all_items
+    )
+    var_rules_filtered = [
+        rule for rule in (rules.get("various_locations") or [])
+        if (not rule.get("requires_sprinkler_system")) or sprinkler_required
+    ]
+    var_items = _dedupe(_collect_flag(var_rules_filtered, b))
     if var_items:
         blocks.append(SectionBlock(title="FP - Various Locations & Extensions (Table 9.29)", items=var_items))
 
