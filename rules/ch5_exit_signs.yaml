@@ -1,0 +1,402 @@
+# UAE FLSC 2018 - Chapter 5: Exit Signs
+meta:
+  code: "UAE FLSC 2018 (CDGH-OP-25, September 2018)"
+  chapter: 5
+  chapter_title: "Exit Signs"
+
+# ---------- UNIVERSAL items (Table 5.3 items 1-5) -----------------------
+# Skipped for villas and ground-floor-only fuel stations.
+general:
+  # ----- Universal sign specifications (Tables 5.1.1 + 5.1.2 + 5.1.3 + 5.1.7) -----
+  - id: es_g_sign_dimensions_bilingual
+    when:
+      occupancy_not: [villa_private]
+    systems:
+      - name: "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)"
+        code_ref: "Ch 5, #2 / Table 5.1.1"
+        page_ref: "p.397"
+        spec: "Letters >= 150 mm tall; principal stroke >= 19 mm wide; letter width >= 51 mm. Running-man pictogram >= 150 mm tall. 'EXIT' in English AND Arabic."
+        detail: "Per Table 5.1.1: Exit signs shall read EXIT in English and Arabic in plainly legible letters. Letters not less than 150 mm (6 inch) in height; principal strokes >= 19 mm (3/4 inch) wide; letter width >= 51 mm proportionally. Running-man pictogram (ISO 7010 / NFPA 170) towards exit door, image height >= 150 mm. Pictograms per ISO 3864 / NFPA 170."
+
+  - id: es_g_illumination
+    when:
+      occupancy_not: [villa_private]
+    systems:
+      - name: "Sign Illumination - External vs Internal"
+        code_ref: "Ch 5, #2 / Table 5.1.4"
+        page_ref: "p.398"
+        spec: "External: >= 54 lux (5 ft-cd) at illuminated surface, contrast ratio >= 0.5. Internal: Civil Defence approved + listed; viewing distance ~ 30 m (formula 150 x H where H = sign-board height)."
+        detail: "Externally illuminated signs: not less than 54 lux at the illuminated surface, contrast ratio not less than 0.5. Internally illuminated signs: shall be Civil Defence approved and registered for the purpose; viewing distance approximately 30 m (visible from 150 x H meters where H is sign-board height)."
+
+  - id: es_g_photoluminescent
+    when:
+      occupancy_not: [villa_private]
+    systems:
+      - name: "Photoluminescent Sign Specifications (UL 1994)"
+        code_ref: "Ch 5, #2 / Table 5.1.5"
+        page_ref: "p.398"
+        spec: "Listed per UL 1994; face shall be CONTINUALLY illuminated by minimum 54 lux during normal AND emergency conditions; sign within 3 m of illumination source"
+        detail: "Photoluminescent signs and strips shall be continually illuminated while the building is occupied. Minimum 54 lux (5 ft-candle) artificial light on photoluminescent surface during normal AND emergency conditions. Sign / strip shall be within 3 m of illumination source. Photoluminescent signs SHALL NOT be installed where continuous illumination is not available - photoluminescent material requires charging to function in emergency mode. Listing per UL 1994 (Standard for Luminous Egress Path Marking Systems)."
+
+  - id: es_g_tactile
+    when:
+      occupancy_not: [villa_private]
+    systems:
+      - name: "Tactile Sign at Every Exit (Braille + Raised Characters)"
+        code_ref: "Ch 5, #2 / Table 5.1.3"
+        page_ref: "p.398"
+        spec: "Per ICC/ANSI A117.1 - Braille + raised characters at every exit location where Exit Signs are required by Table 5.2"
+        detail: "Tactile signage shall comply with ICC/ANSI A117.1 (American National Standard for Accessible and Usable Buildings and Facilities). Provided at EVERY exit location where exit signs are required by Table 5.2 - NOT optional. Mounted at side of door per ICC/ANSI A117.1 mounting heights. Required for sight + hearing-impaired wayfinding."
+
+  - id: es_g_directional_placement
+    when:
+      occupancy_not: [villa_private]
+    systems:
+      - name: "Directional Exit Sign Placement Rules"
+        code_ref: "Ch 5, #2 / Table 5.1.4 + 5.1.6"
+        page_ref: "p.399"
+        spec: "Installed at EVERY change of direction, PERPENDICULAR to the direction of egress; max line-of-sight distance OR 30 m (whichever is less) from nearest sign"
+        detail: "Directional Exit Signs shall be installed at every change of direction along egress path. Sign orientation shall be perpendicular to the direction of egress. Maximum spacing: line-of-sight viewing distance OR 30 m, whichever is less, from the nearest Exit Sign / Directional Sign / Floor Proximity Sign."
+
+  - id: es_g_floor_proximity_mounting
+    when:
+      occupancy_not: [villa_private]
+    systems:
+      - name: "Floor Proximity Sign Mounting (150-455 mm above floor)"
+        code_ref: "Ch 5, #2 / Table 5.1.7"
+        page_ref: "p.399"
+        spec: "Bottom of sign 150-455 mm above finished floor; door-side signs within 100 mm from door frame"
+        detail: "Floor proximity Exit Signs and Directional Signs: bottom of sign shall be NOT LESS than 150 mm AND NOT MORE than 455 mm above the finished floor. Where required at exit doors: mounted adjacent to door, within 100 mm from door frame. Floor proximity signs are required where smoke layer can obscure ceiling-level signs (theatres, cinemas, dance halls, mall play / cinema / food-court zones, robotic parking, HH storage zones - see addons)."
+
+  - id: es_g_exit_door_signs
+    when:
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    systems:
+      - name: "Exit Signs at Exit Doors"
+        code_ref: "Ch 5, #3 / Table 5.3 item 1"
+        page_ref: "p.397"
+        spec: "Internally illuminated, per Table 5.1.1"
+        detail: "Exit doors at exit corridors that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1 (size of letters, running-man pictogram, colours and illumination)."
+
+  - id: es_g_horizontal_exit_signs
+    when:
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+      has_horizontal_exits_is: true
+    systems:
+      - name: "Exit Signs at Horizontal Exit Doors"
+        code_ref: "Ch 5, #3 / Table 5.3 item 1.ii"
+        page_ref: "p.397"
+        detail: "Doors in horizontal exits shall be provided with Exit Signs complying with Table 5.1.1."
+
+  - id: es_g_exit_stair_signs
+    when:
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    systems:
+      - name: "Exit Signs at Exit Stairs"
+        code_ref: "Ch 5, #3 / Table 5.3 item 2"
+        page_ref: "p.397"
+        spec: "Internally illuminated, per Table 5.1.1"
+        detail: "Exit stairs that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1."
+
+  - id: es_g_corridor_directional
+    when:
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    systems:
+      - name: "Directional Signs at Exit Access Corridors"
+        code_ref: "Ch 5, #3 / Table 5.3 item 3"
+        page_ref: "p.397"
+        spec: "Per Table 5.1.2 - directional arrow + running-man pictogram"
+        detail: "Directional Signs shall be provided in compliance with Table 5.1.2 along the exit access corridor. Maximum viewing distance 30 m for internally illuminated signs (Table 5.2)."
+
+  - id: es_g_dead_end_no_exit
+    when:
+      has_dead_end_paths_is: true
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    systems:
+      - name: "NO EXIT signs at Dead Ends"
+        code_ref: "Ch 5, #3 / Table 5.3 item 4"
+        page_ref: "p.397"
+        spec: "Per Table 5.1.5"
+        detail: "NO EXIT signs at any door, passage or stair that is neither an exit nor a way of exit access and that is located or arranged so it is likely to be mistaken for an exit."
+
+  - id: es_g_evacuation_elevator_sign
+    when:
+      has_evacuation_elevator_is: true
+    systems:
+      - name: "Evacuation Elevator Signs"
+        code_ref: "Ch 5, #3 / Table 5.3 item 5"
+        page_ref: "p.397"
+        spec: "Per Table 5.1.6"
+        detail: "Any elevator that qualifies as an evacuation elevator (per Ch 3 #3.9) shall carry an Evacuation Elevator Sign indicating whether occupants may use it."
+
+  - id: es_g_evacuation_plan
+    when:
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    systems:
+      - name: "Evacuation Plan"
+        code_ref: "Ch 5, #3 / Table 5.3 (occupancy items)"
+        page_ref: "p.397-399"
+        spec: "Per Table 5.1.8"
+        detail: "Evacuation Plan posted on each floor and at multiple locations. Hotels also require a plan inside each guest room. Plans shall contain BOTH English and Arabic (mandatory bilingual content - same as exit signs)."
+
+# ---------- OCCUPANCY-SPECIFIC additions (Table 5.3 items 6-20) ---------
+branches:
+  - id: es_assembly
+    match: {occupancy_in: [assembly_a, assembly_b, assembly_c]}
+    section: "Ch 5, #3 / Table 5.3 item 6"
+    page: "p.397"
+    systems:
+      - name: "Tactile Signs at Every Exit"
+        spec: "Per Table 5.1.3 (ICC/ANSI A117.1)"
+        detail: "Raised-character + Braille tactile signs at every exit location."
+      - name: "Floor Proximity Signs"
+        spec: "Per Table 5.1.7"
+        detail: "All assembly occupancies shall be provided with Floor Proximity Signs (low-mounted Exit / Directional signs visible through smoke layer)."
+      - name: "Washroom Directional Signs"
+        spec: "Per Table 5.1.2"
+        detail: "Washrooms in assembly occupancies shall be provided with Directional Signs."
+
+  - id: es_business
+    match: {occupancy: business}
+    section: "Ch 5, #3 / Table 5.3 item 7"
+    page: "p.398"
+    systems:
+      - name: "Open-Plan Tenant Exemption"
+        required: not_required
+        detail: "Evacuation plans are not required inside individual tenant spaces that are open-plan offices where the main exit is visible."
+
+  - id: es_education
+    match: {occupancy_in: [education_a, education_b, education_c]}
+    section: "Ch 5, #3 / Table 5.3 item 8"
+    page: "p.398"
+    systems:
+      - name: "Educational Occupancy Compliance Note"
+        detail: "Universal Exit/Directional Signs and Evacuation Plan apply. Nurseries and auditoriums also require Photoluminescent Exit Marking strips per Table 5.1.4 (see add-ons)."
+
+  - id: es_healthcare
+    match: {occupancy: healthcare_a}
+    section: "Ch 5, #3 / Table 5.3 item 9"
+    page: "p.398"
+    systems:
+      - name: "Tactile Signs at Every Exit"
+        spec: "Per Table 5.1.3"
+        detail: "Raised-character + Braille tactile signs at every exit location."
+      - name: "Patient Room Exemption"
+        required: not_required
+        detail: "Patient rooms are not required to be provided with Exit Signs."
+
+  - id: es_residential
+    match: {occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel]}
+    section: "Ch 5, #3 / Table 5.3 item 10"
+    page: "p.398"
+    systems:
+      - name: "Residential Apartment / Dwelling Unit Exemption"
+        required: not_required
+        detail: "Apartments and dwelling units inside the building are not required to be provided with Exit Signs. Universal Exit Signs apply only at exit passageways and corridors."
+
+  - id: es_hotel
+    match: {occupancy_in: [hotel_a, hotel_b, hotel_c]}
+    section: "Ch 5, #3 / Table 5.3 item 11"
+    page: "p.398"
+    systems:
+      - name: "Tactile Signs at Every Exit"
+        spec: "Per Table 5.1.3"
+      - name: "Floor Proximity Signs"
+        spec: "Per Table 5.1.7"
+        detail: "All hotel occupancies shall be provided with Floor Proximity Signs."
+      - name: "Guest Room Exemption"
+        required: not_required
+        detail: "Guest rooms are not required to be provided with Exit Signs."
+      - name: "Per-Guest-Room Evacuation Plan"
+        spec: "Per Table 5.1.8"
+        detail: "Evacuation Plan shall be provided in each guest room (in addition to per-floor and multi-location plans)."
+
+  - id: es_daycare
+    match: {occupancy_in: [daycare_a, daycare_b, daycare_c]}
+    section: "Ch 5, #3 / Table 5.3 item 12"
+    page: "p.398"
+    systems:
+      - name: "Daycare Compliance Note"
+        detail: "Universal Exit/Directional Signs and Evacuation Plan apply. No additional special signage required by Table 5.3 item 12."
+
+  - id: es_detention
+    match: {occupancy_in: [detention_a, detention_b, detention_c]}
+    section: "Ch 5, #3 / Table 5.3 item 13"
+    page: "p.398"
+    systems:
+      - name: "Dwelling Cell Area Exemption"
+        required: not_required
+        detail: "Exit Signs shall not be required in dwelling-cell areas."
+      - name: "Tactile Signs at Every Exit (public areas)"
+        spec: "Per Table 5.1.3"
+        detail: "General public areas, offices and areas accessible to general public shall be provided with universal Exit/Directional Signs and Tactile Signs at every exit."
+
+  - id: es_mercantile
+    match: {occupancy_in: [mercantile_a, mercantile_b]}
+    section: "Ch 5, #3 / Table 5.3 item 14"
+    page: "p.398"
+    systems:
+      - name: "Aisle / Rack Directional Signs"
+        spec: "Per Table 5.1.2"
+        detail: "Directional Signs shall be provided for aisles and rack areas where the exit is not directly visible."
+
+  - id: es_storage_industrial
+    match: {occupancy: storage_industrial}
+    section: "Ch 5, #3 / Table 5.3 item 15"
+    page: "p.399"
+    systems:
+      - name: "Storage / Industrial Compliance Note"
+        detail: "Universal Exit/Directional Signs and Evacuation Plan apply. High-hazard zones, robotic / cold storage, basements and cable-spread areas require Photoluminescent Exit Marking strips - see add-ons."
+
+  - id: es_mall
+    match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
+    section: "Ch 5, #3 / Table 5.3 item 16"
+    page: "p.399"
+    systems:
+      - name: "Tactile Signs at Every Exit"
+        spec: "Per Table 5.1.3"
+      - name: "Tenant-level Evacuation Plan Exemption"
+        required: not_required
+        detail: "Evacuation plans are not required at individual tenant spaces (mall-level plans suffice)."
+
+  - id: es_parking
+    match: {occupancy_in: [parking_enclosed, parking_open]}
+    section: "Ch 5, #3 / Table 5.3 item 17"
+    page: "p.399"
+    systems:
+      - name: "Distinguishable Vehicle-Exit Route Signs"
+        detail: "The vehicle exit-route signs shall be clearly distinguishable in size, colour and format from Exit Signs and Directional Signs required by this chapter (so occupants do not confuse vehicular routes with pedestrian egress routes)."
+
+  - id: es_villa_private
+    match: {occupancy: villa_private}
+    section: "Ch 5, #3 / Table 5.3 item 18"
+    page: "p.399"
+    systems:
+      - name: "Exit Signs Not Required"
+        required: not_required
+        detail: "Exit Signs are not required in private villas, unless usage has changed and the building has been converted into another occupancy."
+
+  - id: es_villa_private_converted
+    match: {occupancy: villa_private, villa_converted_use_is: true}
+    section: "Ch 5, #3 / Table 5.3 item 18 (override)"
+    page: "p.399"
+    systems:
+      - name: "Exit Signs at Exit Doors / Stairs (converted villa)"
+        detail: "Once a private villa is converted to another occupancy, full Exit / Directional / supplementary signage per the new occupancy applies (Section 3 universal items + the relevant Table 5.3 occupancy row)."
+
+  - id: es_villa_commercial
+    match: {occupancy: villa_commercial}
+    section: "Ch 5, #3 / Table 5.3 item 19"
+    page: "p.399"
+    systems:
+      - name: "Exit Signs Not Required"
+        required: not_required
+        detail: "Exit Signs are not required in commercial villas, unless usage has changed and the building has been converted into another occupancy."
+
+  - id: es_villa_commercial_converted
+    match: {occupancy: villa_commercial, villa_converted_use_is: true}
+    section: "Ch 5, #3 / Table 5.3 item 19 (override)"
+    page: "p.399"
+    systems:
+      - name: "Exit Signs at Exit Doors / Stairs (converted villa)"
+        detail: "Once a commercial villa is converted to a different occupancy class, full Exit / Directional signage per the new occupancy applies."
+
+  - id: es_motor_fuel_gf
+    match: {occupancy: motor_fuel_dispensing}
+    section: "Ch 5, #3 / Table 5.3 item 20"
+    page: "p.399"
+    systems:
+      - name: "Exit Signs Not Required (ground-floor-only stations)"
+        required: not_required
+        detail: "Exit Signs are not required for ground-floor-only fuel dispensing facilities."
+
+  - id: es_motor_fuel_multistorey
+    match: {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: true}
+    section: "Ch 5, #3 / Table 5.3 item 20 (override)"
+    page: "p.399"
+    systems:
+      - name: "Exit Signs at Exit Doors / Stairs (multi-storey fuel dispensing)"
+        detail: "Multi-storey fuel-dispensing buildings shall be provided with full Exit / Directional Signs per Section 3."
+
+# ---------- ADD-ONS (flag-driven, layered on top of branches) ------------
+addons:
+  - id: es_amusement_confounding_directional
+    flag: has_amusement_confounding
+    systems:
+      - name: "Concealed-Path Directional Marking (becomes apparent in emergency)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 6.v"
+        page_ref: "p.397"
+        spec: "Per Table 5.1.2 (becomes apparent in emergency)"
+        detail: "Special amusement buildings using mazes, mirrors or other designs that confound the egress path shall provide Directional Exit Marking that becomes apparent only in an emergency."
+
+  - id: es_nightclub_disco_photoluminescent
+    flag: has_nightclub_disco
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Night Clubs / Discos)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 6.vii"
+        page_ref: "p.397"
+        spec: "Per Table 5.1.4 (UL 1994 listed)"
+        detail: "Continuous low-mounted photoluminescent strips along the egress path. Face of strip shall be continually illuminated to charge the photoluminescent material per Table 5.1.4."
+
+  - id: es_theater_cinema_photoluminescent
+    flag: has_theater_cinema
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Theatres / Cinemas)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 6.viii"
+        page_ref: "p.397"
+        spec: "Per Table 5.1.4"
+        detail: "Photoluminescent strips along the egress path in theatres and cinemas."
+
+  - id: es_amusement_park_photoluminescent
+    flag: has_amusement_confounding
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Amusement / Indoor Rides / Theme Parks / Play Areas)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 6.vi"
+        page_ref: "p.397"
+        spec: "Per Table 5.1.4"
+        detail: "All amusement parks, indoor rides, theme parks and play areas shall be provided with Photoluminescent Exit Marking strips."
+
+  - id: es_nursery_photoluminescent
+    flag: has_nursery_within
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Nurseries)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 8.ii"
+        page_ref: "p.398"
+        spec: "Per Table 5.1.4"
+        detail: "Nurseries within educational occupancies shall be provided with Photoluminescent Exit Marking strips."
+
+  - id: es_auditorium_photoluminescent
+    flag: has_auditorium_within
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Auditoriums)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 8.iii"
+        page_ref: "p.398"
+        spec: "Per Table 5.1.4"
+        detail: "Auditoriums within educational occupancies shall be provided with Photoluminescent Exit Marking strips."
+
+  - id: es_hh_storage_photoluminescent
+    flag: has_hh_storage_zones
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (HH / Robotic / Cold / Cable Spread / Industrial Basements)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 15.ii"
+        page_ref: "p.399"
+        spec: "Per Table 5.1.4"
+        detail: "High-hazard areas (Group A-1, A-2), robotic storage, cold storage, industrial basements and cable spread areas shall be provided with Photoluminescent Exit Marking strips."
+
+  - id: es_mall_play_food_cinema_photoluminescent
+    flag: has_mall_play_food_cinema
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Mall Play / Food Court / Cinema zones)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 16.iii"
+        page_ref: "p.399"
+        spec: "Per Table 5.1.4"
+        detail: "Play areas, food courts and cinema areas within malls shall be provided with Photoluminescent Exit Marking strips."
+
+  - id: es_robotic_parking_photoluminescent
+    flag: has_robotic_parking
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Robotic / Mechanical Parking)"
+        code_ref: "Ch 5, #3 / Table 5.3 item 17.iii"
+        page_ref: "p.399"
+        spec: "Per Table 5.1.4"
+        detail: "Robotic / mechanical parking shall be provided with Photoluminescent Exit Marking strips on access walkways."

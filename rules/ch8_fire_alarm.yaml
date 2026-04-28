@@ -1,0 +1,562 @@
+# UAE FLSC 2018 - Chapter 8: Fire Detection and Alarm System
+meta:
+  code: "UAE FLSC 2018 (CDGH-OP-25, September 2018)"
+  chapter: 8
+  chapter_title: "Fire Detection and Alarm Systems"
+
+# ---------- BRANCHES: Table 8.13 - by occupancy / height tier --------------
+# ----- General requirements (apply to all FA designs - Section 4 of Ch 8) -----
+general:
+  - id: fa_general_visible_notification
+    when: {}
+    systems:
+      - name: "Visible (Strobe) Notification Device Spacing - Table 8.1.a"
+        code_ref: "Ch 8, #4 / Table 8.1.a"
+        page_ref: "p.484"
+        spec: "Per Table 8.1.a - light output (cd) per maximum room size"
+        detail: "Wall-mounted strobe placed at half-wall distance. Per Table 8.1.a (3 m ceiling: 6.1x6.1=15 cd, 9.1x9.1=30 cd, 12.2x12.2=60 cd, 13.4x13.4=75 cd, 15.2x15.2=95 cd; 6.1 m ceiling: 9.1x9.1=45 cd, 13.4x13.4=75 cd, 15.2x15.2=95 cd, 16.2x16.2=110 cd, 18x18=135 cd, 20.7x20.7=177 cd; 9.1 m ceiling: 6.1x6.1=55 cd). Consult Table 8.1.a for full matrix."
+  - id: fa_general_audible
+    when: {}
+    systems:
+      - name: "Audible Notification - listed sounders / bells per UL 464 / EN 54-3 / FM 3150"
+        code_ref: "Ch 8, #4 / Section 7"
+        page_ref: "p.484"
+        detail: "Sounders / bells / audio-visual alarm devices shall be listed and approved by Civil Defence. English + Arabic announcements where voice evac is provided (see EVC Ch 7)."
+  - id: fa_general_facp_addressable
+    when: {}
+    systems:
+      - name: "Addressable Fire Detection & Alarm Control Panel (FACP)"
+        code_ref: "Ch 8, #3 / Section 1"
+        page_ref: "p.467"
+        spec: "Only listed and approved ADDRESSABLE Fire Detection & Alarm System permitted in new constructions. Conventional type NOT acceptable except for existing buildings."
+        detail: "All system components shall be Civil Defence approved and listed (Section 7). FACP installation by Civil Defence licensed FA contractors only - general contractors / MEP / electrical / BMS / home-automation contractors NOT permitted to install FA systems."
+  - id: fa_general_civil_defence_interface
+    when: {}
+    systems:
+      - name: "FACP Interface to Civil Defence Receiving Station"
+        code_ref: "Ch 8, #3 / Section 6"
+        page_ref: "p.490"
+        detail: "FACP shall transmit alarm + supervisory + trouble signals to Civil Defence approved central monitoring station (DCD link). Interface with Public Address / Voice Evacuation system per Ch 7 EVC. Minimum 2 communication paths required (primary + secondary)."
+
+branches:
+  - id: fa_super_highrise
+    match: {height_m_gt: 90}
+    section: "Ch 8, #5.1 / Table 8.13 item 1"
+    page: "p.502"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+        detail: "Throughout super-highrise (>90 m). All addressable detectors monitored by main FACP."
+      - name: "Sub-FACPs / Annunciators every 45 m"
+        spec: "Networked to main FACP"
+        detail: "Additional Sub-FACPs or annunciators with full functional features at the elevator lobby of the floor or the mechanical floor at every 45 m of building height, networked to main FACP."
+      - name: "5-Floor Phased Evacuation Alarm"
+        spec: "Fire floor + 3 floors above + 1 floor below"
+        detail: "Activation triggers evacuation alarm only on fire floor + 3 above + 1 below. General alarm shall NOT trigger entire-building evacuation. Voice / PA system used for occupant communication."
+      - name: "Positive Alarm Sequence (PAS)"
+        spec: "15 s acknowledge / 180 s zone / 240 s building"
+        detail: "Per Table 8.1.14.2 - if not silenced or reset within 15 s, fire-floor evacuation triggers. If multiple alarms within 180 s, fire floor + above + below evacuation triggers. If not silenced within 240 s, full-building evacuation triggers."
+      - name: "Main FACP at Continuously Attended Location"
+        detail: "Emergency Command Centre / Reception / Security guard house per building fire strategy."
+      - name: "System Interfaces"
+        detail: "Fire pump, all suppression systems, Fire Water Level, LP Gas detection, CO Monitoring, door release, Elevator recall, Smoke Control - all interfaced with FACP per Section 4.1."
+
+  - id: fa_highrise
+    match: {height_m_gt: 23, height_m_lte: 90}
+    section: "Ch 8, #5.1 / Table 8.13 item 2"
+    page: "p.502"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+      - name: "Sub-FACPs / Annunciators every 45 m"
+        spec: "Networked to main FACP"
+        detail: "At elevator lobby or mechanical floor every 45 m, networked to main FACP."
+      - name: "5-Floor Phased Evacuation Alarm"
+        spec: "Fire floor + 3 above + 1 below"
+      - name: "Positive Alarm Sequence (PAS) - 15/180/240 s"
+        spec: "Per Table 8.1.14.2"
+      - name: "Main FACP at Continuously Attended Location"
+      - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
+
+  - id: fa_midrise_lowrise
+    match:
+      height_m_lte: 23
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
+                      mall_covered, mall_open, mall_mixed,
+                      parking_enclosed, parking_open,
+                      storage_industrial,
+                      detention_a, detention_b, detention_c,
+                      healthcare_a, education_a, education_b, education_c,
+                      hotel_a, hotel_b, hotel_c]
+    section: "Ch 8, #5.1 / Table 8.13 items 3-4 + 9-13"
+    page: "p.502-503"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+        detail: "Throughout midrise / lowrise. Detectors at all rooms, halls, storage areas, basements (unless sprinklered), attics, lofts, enclosed usable spaces."
+      - name: "Single Main FACP"
+        detail: "At Emergency Command Centre / Reception / Security guard house per fire strategy."
+      - name: "Positive Alarm Sequence (PAS) - 180 s"
+        detail: "If not silenced or reset within 180 s, building-wide evacuation alarm triggers."
+      - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
+
+  - id: fa_mall
+    match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
+    section: "Ch 8, #5.1 / Table 8.13 item 24"
+    page: "p.506"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire mall)"
+        spec: "Addressable, per Section 4.3"
+      - name: "Networked Sub-FACPs (per fire-evacuation zone)"
+        detail: "Sub-FACPs distributed strategically throughout the mall to coincide with fire-evacuation zoning per mall fire strategy. Individual tenant spaces NOT required to have own FACPs."
+      - name: "Annunciator Panels at Mall Information Desks"
+      - name: "Positive Alarm Sequence (PAS) - 180 s per tenant"
+        detail: "Single-tenant alarm triggers evacuation only in that tenant. If not silenced/reset within 180 s, entire fire zone evacuation triggers."
+      - name: "Visual Display Notification + Voice Speakers + PA"
+
+  - id: fa_education
+    match: {occupancy_in: [education_a, education_b, education_c]}
+    section: "Ch 8, #5.1 / Table 8.13 item 15"
+    page: "p.504"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+      - name: "Heat Detection - Auditoriums / Gymnasiums / Cafeteria / Laboratories / Indoor Pools"
+        spec: "Per Section 4.6"
+        detail: "These spaces have ambient conditions (steam, dust, humidity) that defeat smoke detection - heat detection used instead."
+      - name: "Annunciator at Principal's Office"
+      - name: "Total Evacuation Alarm Initiating Switch (Principal's office)"
+        detail: "In addition to emergency-evacuation PA system."
+      - name: "Distinct Student Recall Signal"
+        detail: "Distinct from fire alarm or any other signal."
+      - name: "Lockable Manual Call Points (permitted)"
+        detail: "May be enclosed with listed cover box."
+      - name: "Positive Alarm Sequence (PAS)"
+      - name: "Main FACP at Continuously Attended Location"
+
+  - id: fa_healthcare
+    match: {occupancy: healthcare_a}
+    section: "Ch 8, #5.1 / Table 8.13 item 16"
+    page: "p.504"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+      - name: "Annunciators at Nurse Stations (strategic locations)"
+      - name: "Nurse-Station Evacuation Push Buttons"
+        spec: "Within 61 m of every nurse station"
+        detail: "Activation triggers evacuation alarm + interconnected systems (elevator recall, HVAC shutdown, door release) per fire strategy."
+      - name: "Visual Notification Devices in Critical Care (in lieu of audible)"
+        detail: "In operation theatres, ICUs, etc. - visual only permitted to avoid disturbing patients."
+      - name: "General Fire Alarm Does NOT Trigger Evacuation"
+        detail: "Default healthcare protocol: alarm investigated by staff first; evacuation only on staff push-button or PAS expiry."
+      - name: "Fire Alarm Zoning Coincides with Smoke Compartments"
+      - name: "Positive Alarm Sequence (PAS)"
+      - name: "Main FACP at Continuously Attended Location"
+
+  - id: fa_detention
+    match: {occupancy_in: [detention_a, detention_b, detention_c]}
+    section: "Ch 8, #5.1 / Table 8.13 item 17"
+    page: "p.505"
+    systems:
+      - name: "Aspiration Type Air Sampling (Inmate Cells / Sleeping Areas)"
+        spec: "Per Section 4.5"
+        detail: "Aspiration system in cells / sleeping areas - vandal-resistant. Detectors permitted in exhaust ducts and behind grills of cells."
+      - name: "Smoke Detection (Office / Maintenance / Day Rooms / Activity Rooms)"
+        spec: "Per Section 4.3 - staff-monitored areas only"
+      - name: "Heat Detection - Auditoriums / Gymnasiums / Cafeteria / Indoor Pools"
+        spec: "Per Section 4.6"
+      - name: "Lockable Manual Call Points (permitted)"
+        detail: "Manual call points may be locked, provided staff present in the area when occupied and staff has keys readily available."
+      - name: "Supervisor / Staff Evacuation Push Buttons"
+      - name: "Positive Alarm Sequence (PAS)"
+      - name: "Main FACP at Continuously Attended Location (Supervisor / Security)"
+
+  - id: fa_hotel
+    match: {occupancy_in: [hotel_a, hotel_b, hotel_c]}
+    section: "Ch 8, #5.1 / Table 8.13 item 18"
+    page: "p.505"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+      - name: "Annunciator at Reception Desk"
+      - name: "Total Evacuation Alarm Initiating Switch (Reception Desk)"
+      - name: "General Fire Alarm Does NOT Trigger Evacuation"
+        detail: "Default hotel protocol: investigate first."
+      - name: "Positive Alarm Sequence (PAS) - 120 s"
+        detail: "If not silenced or reset within 120 s, evacuation alarm triggers throughout the hotel."
+      - name: "Main FACP at Continuously Attended Location"
+      - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
+
+  - id: fa_storage_industrial
+    match: {occupancy: storage_industrial}
+    section: "Ch 8, #5.1 / Table 8.13 items 19-20"
+    page: "p.506"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+      - name: "External Audio-Visual Notification Devices"
+        spec: "Visible from common entrance"
+        detail: "Each warehouse provided with audio-visual notification devices outside, visible from common entrance."
+      - name: "General Fire Alarm = Evacuation Alarm"
+        detail: "No PAS delay - immediate evacuation alarm on detection."
+      - name: "Single FACP for Multi-Tenant Warehouse"
+        detail: "In multi-tenant warehouses, a single main FACP at security guard house / facility management office monitors all warehouses; individual FACPs not required."
+
+  - id: fa_parking_enclosed
+    match: {occupancy: parking_enclosed}
+    section: "Ch 8, #5.1 / Table 8.13 item 22"
+    page: "p.506"
+    systems:
+      - name: "Conditional FA System (per sprinkler presence)"
+        detail: "If enclosed parking is fully sprinklered: Manual Fire Detection and Alarm System only (per Section 4.10) - no automatic detectors required. If NOT sprinklered: Heat Detection and Alarm System (per Section 4.7) throughout."
+      - name: "Audio-Visual Notification (throughout parking areas)"
+      - name: "Positive Alarm Sequence (PAS) - 120 s"
+        detail: "If not silenced/reset within 120 s, evacuation alarm triggers throughout the parking."
+
+  - id: fa_parking_open
+    match: {occupancy: parking_open}
+    section: "Ch 8, #5.1 / Table 8.13 item 22"
+    page: "p.506"
+    systems:
+      - name: "Manual Fire Detection and Alarm System"
+        spec: "Per Section 4.10"
+        detail: "Manual call points only; automatic detection not required for open parking."
+      - name: "Audio-Visual Notification (throughout parking areas)"
+
+  - id: fa_villa_private
+    match: {occupancy: villa_private}
+    section: "Ch 8, #5.1 / Table 8.13 item 26"
+    page: "p.507"
+    systems:
+      - name: "Smoke Detection and Alarm System (each villa)"
+        spec: "Addressable, per Section 4.3"
+        detail: "OR Wireless / Low-powered radio-frequency based Fire Detection and Alarm System per Section 4.11."
+      - name: "External Audio-Visual Notification Devices"
+        spec: "Visible from common approach road"
+      - name: "FACP / Cluster Radio HUB at Continuously Attended Location"
+
+  - id: fa_villa_commercial
+    match: {occupancy: villa_commercial}
+    section: "Ch 8, #5.1 / Table 8.13 items 14, 25"
+    page: "p.503, 507"
+    systems:
+      - name: "Smoke Detection and Alarm System (each villa)"
+        spec: "Addressable, per Section 4.3"
+        detail: "OR Wireless / Low-powered radio-frequency based Fire Detection and Alarm System per Section 4.11. Applies to existing G+1 villas converted to nurseries / daycare / restaurants / showrooms / boutiques."
+      - name: "External Audio-Visual Notification Devices"
+        spec: "Visible from common approach road"
+      - name: "FACP / Cluster Radio HUB at Continuously Attended Location"
+
+  - id: fa_motor_fuel
+    match: {occupancy: motor_fuel_dispensing}
+    section: "Ch 8, #5.1 / Table 8.13 item 27"
+    page: "p.508"
+    systems:
+      - name: "Smoke Detection and Alarm System (Mini Mart / Restaurant / Service Station)"
+        spec: "Addressable, per Section 4.3"
+      - name: "External Audio-Visual Notification Devices (per tenant)"
+      - name: "Single Main FACP for Complex"
+        detail: "Covers entire petrol/gas station complex - individual tenant FACPs not required."
+      - name: "Positive Alarm Sequence (PAS) - 180 s"
+        detail: "Per-tenant alarm; complex-wide evacuation if not silenced within 180 s."
+
+# ---------- AUXILIARY ROOMS: Table 8.14 -------------------------------------
+auxiliary_rooms:
+  - id: fa_aux_atrium
+    flag: has_atrium
+    systems:
+      - name: "Beam Smoke Detection (Atrium)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 1"
+        page_ref: "p.509"
+        spec: "Per Section 4.4 - OR Aspiration Air Sampling per Section 4.5"
+        detail: "Projected-beam smoke detection across atrium void; aspirating system acceptable alternative for high-volume spaces."
+
+  - id: fa_aux_anesthetizing
+    flag: has_anesthetizing_room
+    systems:
+      - name: "Smoke Detection (Anesthetizing Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 2"
+        page_ref: "p.509"
+        spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+
+  - id: fa_aux_operation_theater
+    flag: has_operation_theater
+    systems:
+      - name: "Aspiration Air Sampling (Operation Theatre)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 3"
+        page_ref: "p.509"
+        spec: "Per Section 4.5"
+        detail: "Aspiration mandatory in OT - very early warning required given critical nature of procedures."
+
+  - id: fa_aux_battery_charger
+    flag: has_battery_charger_room
+    systems:
+      - name: "Heat Detection (Battery Charger Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 4"
+        page_ref: "p.509"
+        spec: "Per Section 4.7"
+
+  - id: fa_aux_battery
+    flag: has_battery_room
+    systems:
+      - name: "Heat + Flame + Hydrogen Detection (Battery Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 5"
+        page_ref: "p.509"
+        spec: "Heat (Section 4.7) AND Flame (Section 4.9) AND listed Hydrogen detector"
+        detail: "Battery room - vented batteries can release hydrogen; combined detection covers thermal runaway, electrolyte fire and hydrogen accumulation."
+
+  - id: fa_aux_bms
+    flag: has_bms_room
+    systems:
+      - name: "Smoke Detection (BMS Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 6"
+        page_ref: "p.509"
+        spec: "Per Section 4.4"
+
+  - id: fa_aux_computer
+    flag: has_computer_room
+    systems:
+      - name: "Smoke Detection (Computer Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 7"
+        page_ref: "p.509"
+        spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+
+  - id: fa_aux_diesel_gen
+    flag: has_diesel_generator_room
+    systems:
+      - name: "Heat Detection (Diesel Generator Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 8"
+        page_ref: "p.509"
+        spec: "Per Section 4.7"
+        detail: "Heat detection (NOT smoke) - diesel exhaust would defeat smoke detection."
+
+  - id: fa_aux_main_electrical
+    flag: has_main_electrical_room
+    systems:
+      - name: "Smoke Detection (Main Electrical Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 9"
+        page_ref: "p.509"
+        spec: "Per Section 4.4"
+
+  - id: fa_aux_ahu
+    flag: has_ahu_room
+    systems:
+      - name: "Multi-sensor Detection (AHU Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 10"
+        page_ref: "p.509"
+        spec: "Per Table 8.12.1 - combined smoke + heat in one unit"
+
+  - id: fa_aux_lv_mv
+    flag: has_lv_mv_room
+    systems:
+      - name: "Smoke Detection (LV / MV Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 11"
+        page_ref: "p.509"
+        spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+
+  - id: fa_aux_lift_machine
+    flag: has_lift_machine_room
+    systems:
+      - name: "Multi-sensor Detection (Lift Machine Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 12"
+        page_ref: "p.509"
+        spec: "Per Table 8.12.1"
+
+  - id: fa_aux_server
+    flag: has_main_server_room
+    systems:
+      - name: "Smoke Detection / Aspiration (Server Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 13"
+        page_ref: "p.510"
+        spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+        detail: "Aspiration preferred for very-early warning in critical IT spaces."
+
+  - id: fa_aux_high_ceiling_beam
+    flag: has_high_ceiling
+    systems:
+      - name: "Beam Smoke Detection (High-Ceiling Spaces 10-20 m)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 18"
+        page_ref: "p.510"
+        spec: "Per Section 4.4"
+        detail: "Enclosed spaces with height > 10 m and < 20 m from finished floor level shall use projected-beam smoke detection. For ceilings >= 20 m switch to aspiration (see ceiling height input)."
+
+  - id: fa_aux_garbage_chute
+    flag: has_garbage_chute
+    systems:
+      - name: "Heat Detection (Garbage Chute / Garbage Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 25"
+        page_ref: "p.511"
+        spec: "Per Section 4.7"
+
+  - id: fa_aux_pantries
+    flag: has_pantries
+    systems:
+      - name: "Heat Detection (Pantry)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 23"
+        page_ref: "p.511"
+        spec: "Per Section 4.7"
+        detail: "Heat detection in pantries (cooking activity defeats smoke detection)."
+
+  - id: fa_aux_laundry_storage
+    flag: has_laundry_storage_rooms
+    systems:
+      - name: "Smoke Detection (Laundry / Storage Rooms)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 items 21-22"
+        page_ref: "p.511"
+        spec: "Per Section 4.3"
+
+  - id: fa_aux_pump_room
+    flag: has_fire_pump_room
+    systems:
+      - name: "Heat Detection (Fire Pump Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 24"
+        page_ref: "p.511"
+        spec: "Per Section 4.7"
+
+  - id: fa_aux_roof_restaurant
+    flag: has_roof_lpg_or_restaurant
+    systems:
+      - name: "Manual FA System (Roof Restaurant / Sheesha / Assembly)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 36"
+        page_ref: "p.511"
+        spec: "Per Section 4.10"
+        detail: "Manual call points on roof areas used for restaurant seating, assembly or sheesha bars."
+
+# ---------- EQUIPMENT: Table 8.15 -------------------------------------------
+equipment:
+  - id: fa_eq_kitchen_hood
+    flag: has_commercial_kitchen
+    systems:
+      - name: "Fusible-Link Heat Detection (Kitchen Hood)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 1"
+        page_ref: "p.512"
+        spec: "Per Section 4.6 - pre-engineered systems acceptable"
+        detail: "Fusible-link heat detection on the cooking line and inside the duct, interlocked with the wet-chemical suppression system actuator."
+
+  - id: fa_eq_lpg_tanks
+    flag: has_lpg_tanks
+    systems:
+      - name: "LP Gas Detection + Alarm System"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 2; Ch 11"
+        page_ref: "p.512"
+        detail: "LP Gas Detection (per Ch 11) interfaced with FACP. Deluge water spray for LP Gas tank triggered by: (a) gas detection at tank, (b) fire detection from roof + floor below, (c) cross-zoned fire detection elsewhere, (d) manual actuation from gas-detection panel."
+
+  - id: fa_eq_flammable_liquid_tanks
+    flag: has_flammable_liquid_tanks
+    systems:
+      - name: "Intrinsically Safe Flame + Linear Heat (Flammable Liquid Tanks)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 3"
+        page_ref: "p.512"
+        spec: "IS Flame (Section 4.9) + IS Linear Heat (Section 4.8) on tank roof"
+        detail: "Both required. Risk-assessment-based design stamped by CD-approved House of Expertise."
+
+  - id: fa_eq_cable_spread
+    flag: has_cable_spread_areas
+    systems:
+      - name: "Aspiration Smoke + Linear Heat (Cable Spread Area)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 4"
+        page_ref: "p.512"
+        spec: "Aspiration (Section 4.5) at room ceiling AND Linear Heat (Section 4.8) on cable trays"
+
+  - id: fa_eq_diesel_gen_area
+    flag: has_diesel_generator_room
+    systems:
+      - name: "Heat Detection (Diesel Generator Area)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 5"
+        page_ref: "p.512"
+        spec: "Per Section 4.7"
+
+  - id: fa_eq_boilers
+    flag: has_boilers
+    systems:
+      - name: "Heat Detection (Boilers Area)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 6"
+        page_ref: "p.512"
+        spec: "Per Section 4.7"
+
+  - id: fa_eq_cooling_towers
+    flag: has_cooling_towers
+    systems:
+      - name: "Linear Heat Detection (Cooling Towers)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 7"
+        page_ref: "p.512"
+        spec: "Per Section 4.8"
+
+  - id: fa_eq_oil_filled_transformers
+    flag: has_oil_filled_transformers
+    systems:
+      - name: "Linear Heat Detection (Oil-filled Transformers)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 8"
+        page_ref: "p.512"
+        spec: "Per Section 4.8"
+
+  - id: fa_eq_bulk_oil_storage
+    flag: has_bulk_oil_storage
+    systems:
+      - name: "IS Flame + IS Linear Heat (Bulk Oil Storage)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 9"
+        page_ref: "p.512"
+        detail: "Risk-assessment-based design stamped by CD-approved House of Expertise."
+
+  - id: fa_eq_bulk_flammable_liquid
+    flag: has_bulk_flammable_liquid_storage
+    systems:
+      - name: "IS Flame + IS Linear Heat (Bulk Flammable Liquid Storage)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 items 10-11"
+        page_ref: "p.513"
+        spec: "Intrinsically Safe Flame (Section 4.9) AND Intrinsically Safe Linear Heat (Section 4.8) on tank roof"
+        detail: "MANDATORY: Design shall be by Risk Assessment proposed and stamped by Civil Defence approved House of Expertise (Ch 17 / Ch 18 Table 18.6). Drawings shall be submitted to Civil Defence through main consultant only - HoE cannot submit directly."
+
+  - id: fa_eq_bulk_flammable_gas
+    flag: has_bulk_flammable_gas_storage
+    systems:
+      - name: "IS Flame + Gas Detection (Bulk Flammable Gas Storage)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 12"
+        page_ref: "p.513"
+        spec: "Intrinsically Safe Flame (Section 4.9) AND continuous Gas Detection / LP-Gas Detection per Ch 11"
+        detail: "MANDATORY: Design shall be by Risk Assessment proposed and stamped by Civil Defence approved House of Expertise (Ch 17 / Ch 18 Table 18.6). Gas-detection control panel shall interface with FACP. Cross-zoned fire detection from rest of the building shall actuate releasing devices."
+
+  - id: fa_eq_bulk_flammable_solid
+    flag: has_bulk_flammable_solid_storage
+    systems:
+      - name: "Risk-Assessment-Based FA (Bulk Flammable Solid Storage)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 13"
+        page_ref: "p.513"
+        spec: "Detection technology selected per Risk Assessment - typically aspirating smoke detection + linear heat for combustible solid storage"
+        detail: "MANDATORY: Design shall be by Risk Assessment proposed and stamped by Civil Defence approved House of Expertise (Ch 17 / Ch 18 Table 18.6). Detection technology shall match the specific solid commodity (combustible dust, sulphur, paper, fabric etc.) per MSDS."
+
+  - id: fa_eq_high_hazard_logistics
+    flag: has_high_hazard_logistics
+    systems:
+      - name: "Risk-Assessment-Based FA (High-Hazard Logistics)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 14"
+        page_ref: "p.513"
+        spec: "Detection technology selected per Risk Assessment - typically aspirating smoke detection + flame detection for high-rack / robotic / cold-storage logistics"
+        detail: "MANDATORY: Design shall be by Risk Assessment proposed and stamped by Civil Defence approved House of Expertise (Ch 17 / Ch 18 Table 18.6). Coordinate with FP Ch 9 #4.11 (Tables 9.27 specialty groups - high hazard, in-rack sprinklers per Table 9.7.KK)."
+
+  - id: fa_eq_chemical_warehouse
+    flag: has_chemical_warehouse
+    systems:
+      - name: "Risk-Assessment-Based FA (Chemical Warehouse)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 15"
+        page_ref: "p.513"
+        spec: "Detection per Risk Assessment - typically aspirating smoke + IS flame + gas detection where reactive chemicals present"
+        detail: "MANDATORY: Design shall be by Risk Assessment proposed and stamped by Civil Defence approved House of Expertise (Ch 17 / Ch 18 Table 18.6). Designer shall consult MSDS for every stored chemical class to determine detection technology and segregation."
+
+  - id: fa_eq_explosives
+    flag: has_explosives
+    systems:
+      - name: "Risk-Assessment-Based FA (Arms / Ammunition / Explosives)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 16"
+        page_ref: "p.513"
+        spec: "Detection per Risk Assessment - intrinsically safe flame detection + linear heat at minimum"
+        detail: "MANDATORY: Design shall be by Risk Assessment proposed and stamped by Civil Defence approved House of Expertise (Ch 17 / Ch 18 Table 18.6). Civil Defence permit required for storage. Quantity-distance separation must be verified against approved magazine standards."
+
+  - id: fa_eq_processing
+    flag: has_processing_plant
+    systems:
+      - name: "Risk-Assessment-Based FA (Processing / Generating Plants)"
+        code_ref: "Ch 8, #5.3 / Table 8.15 item 17"
+        page_ref: "p.513"
+        spec: "Detection per Risk Assessment - typically IS flame + linear heat for hot-process areas, gas detection for combustion sources"
+        detail: "MANDATORY: Design shall be by Risk Assessment proposed and stamped by Civil Defence approved House of Expertise (Ch 17 / Ch 18 Table 18.6). Coordinate with Ch 12 (Industrial / process hazards) and Ch 13 (Flammable liquids)."

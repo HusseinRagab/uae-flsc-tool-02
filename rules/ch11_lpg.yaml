@@ -1,0 +1,225 @@
+# UAE FLSC 2018 - Chapter 11: Liquefied Petroleum Gas (LPG) Code of Practice
+meta:
+  code: "UAE FLSC 2018 (CDGH-OP-25, September 2018)"
+  chapter: 11
+  chapter_title: "Liquefied Petroleum Gas (LPG)"
+
+# ---------- BRANCHES: by gas-system type --------------------------------
+# ----- Universal LPG Code requirements (apply when ANY gas system present) -----
+general:
+  - id: lpg_general_civil_defence_listing
+    when: {}
+    systems:
+      - name: "Civil Defence Listing + Approved Contractor (Universal)"
+        code_ref: "Ch 11, #6 / Material Test Standards"
+        page_ref: "p.910"
+        spec: "All LPG components (tanks, cylinders, regulators, valves, detectors, piping, ESVs) Civil Defence approved and listed"
+        detail: "Installation only by Civil Defence approved and licensed LPG contractor. General contractors / MEP / electrical / plumbing contractors NOT permitted to install LPG systems. Composite cylinders preferred for food trucks. ASME-listed tanks for above-ground / mounded. Cathodic protection mandatory for underground steel tanks."
+
+  - id: lpg_general_gas_detection_universal
+    when: {}
+    systems:
+      - name: "Gas-Leak Detection + Interfaced ESV (Universal)"
+        code_ref: "Ch 11, #2.1.5 + 2.2.5 / Tables 11.1, 11.2, 11.4"
+        page_ref: "p.890"
+        spec: "Approved listed LPG leak detector mounted not more than 30 cm above finished floor and within 5 m of LPG source"
+        detail: "LPG detector control panel interfaced with main fire alarm panel via local alarm relay. On detection: automatic emergency shut-off valve (ESV) at meter / cylinder bank closes; remote ESV accessible at building exit / outside enclosure. For LARGE installations Stage 1 (central detection) AND Stage 2 (per-kitchen / per-apartment detection) required. Detectors approved per Civil Defence."
+
+  - id: lpg_general_ignition_clearance
+    when: {}
+    systems:
+      - name: "Ignition-Source Clearance + Electrical Hazard Class"
+        code_ref: "Ch 11, #2.1.7 / Tables 11.1, 11.2"
+        page_ref: "p.891"
+        spec: "Outdoor cylinders: NO ignition source within 3 m. Indoor cylinders: NO ignition source within 1.5 m. Fixed electrical equipment within 1.5 m: explosion-proof / hazard-class rated."
+        detail: "All electrical connections and appliances within 1.5 m of LPG installation shall be NFPA 70 Class I Division 1 or 2 rated as appropriate. Cooking appliances NOT to be used with CNG fuel unless certified for it. Cylinder enclosures locked against tampering. Steel barricades where near vehicle paths (parking lots / ramps / roads)."
+
+  - id: lpg_general_inspection_maintenance
+    when: {}
+    systems:
+      - name: "Inspection + Maintenance Checklist (Table 11.14)"
+        code_ref: "Ch 11, #5 / Table 11.14"
+        page_ref: "p.910"
+        spec: "Quarterly inspection mandatory; shut-off valves + gauges replaced every 10 years"
+        detail: "Quarterly visual inspection of: tank / cylinder, shut-off valves, gauges, pressure regulator, filling point, piping + joints, gas-detection panel + sensors, ventilation. Shut-off valves and gauges shall be REPLACED every 10 years (or sooner if damage evident). Pressure regulators locked against unauthorized adjustment. First-stage regulator located as close as practicable to the storage vessel. LPG detector LED blinking verified. Control panel power continuity verified. Records retained at facility."
+
+branches:
+  # ----- Aboveground LPG Tank (has_lpg_tanks flag) -----
+  - id: lpg_aboveground_tank
+    match: {has_lpg_tanks_is: true}
+    section: "Ch 11, #2.5.3 / Table 11.5 + Tables 11.6.a-d"
+    page: "p.905-907"
+    systems:
+      - name: "Aboveground LPG Tank Installation"
+        spec: "Per Table 11.5 - on ground, outdoor, open to sky at grade. Not within 3 m of flammable-liquid dike walls. Roof / podium tanks treated as Roof-Mounted Tanks per Section 2.5.4."
+        detail: "Concrete / masonry foundations capable of withstanding loaded weight, wind and seismic loads. Saddle supports allow expansion. Bottom of tank ≤ 300 mm above foundation. Tank secured to building structure. Coated/protected to minimize corrosion. Stacking NOT permitted."
+      - name: "Maximum Quantity (72,000 Gal per location)"
+        spec: "Per Table 11.5 item 3"
+        detail: "Maximum aggregate quantity 72,000 Gal in one location. Larger inventories must be subdivided into 72,000-Gal-or-less groups separated by 15 m. Quantities exceeding require special CD approval."
+      - name: "Tank Separation Distances"
+        spec: "Per Tables 11.6.a (general), 11.6.b (industrial), 11.6.c (flammable liquid), 11.6.d (liquid oxygen)"
+        detail: "Industrial tanks may use 1-hr fire-rated fire walls (min 2 m height) constructed around LPG tanks to reduce required clearances. Default separation otherwise per the relevant tables."
+      - name: "Gas-Leak Detection System"
+        spec: "Per Section 2.6 - Civil Defence approved gas-leak detector"
+        detail: "Approved gas-leak detection in tank area, interfaced with FACP and emergency shut-off valves."
+      - name: "Two-Stage Pressure Regulation"
+        spec: "First stage 5 psi (0.35 bar) commercial / 75 mbar residential; second stage 0.5 psi (0.035 bar)"
+        detail: "Both regulators required. Vent piping to atmosphere. Excess flow / pressure-relief valves on tank."
+      - name: "Tank Fire Protection (cross-reference Ch 9 #4.15 Table 9.31.B)"
+        detail: "Aboveground LPG tanks per Ch 9 require automatic Water Deluge Spray (Section 3.8) where building is sprinklered, or Dry Deluge Spray with breeching inlet otherwise. Exempt only if tank is > 6 m from any structure."
+
+  # ----- Central LPG Infrastructure (has_gas_infra_connection flag) -----
+  - id: lpg_central_distribution
+    match: {has_gas_infra_connection_is: true}
+    section: "Ch 11, #2.5.2 / Table 11.4"
+    page: "p.900-901"
+    systems:
+      - name: "LPG Piping Distribution"
+        spec: "Per Table 11.4 - vapour-phase only inside building; liquid-phase permitted only up to compound walls"
+        detail: "No liquid-phase LPG inside the building. Two-stage pressure regulators required (first to 5 psi or 75 mbar, second to 0.5 psi). LPG piping shall NOT pass through: exit routes / stairs / corridors / lobbies, public seating, firefighting lobbies, fire command centre, fire pump room, control rooms, lift shafts, sprinkler valve rooms, garbage chutes, cavity walls, HVAC ducts, building/equipment foundations, electrical switchgear ducts, transformers, generator rooms, garbage / refrigeration chambers, cold rooms, or any pipes/vessels containing flammable / oxidizing / corrosive / hazardous materials."
+      - name: "Dedicated Fire-Rated LPG Shafts"
+        spec: "1-hr fire resistance rating for non-highrise; 2-hr rating for highrise"
+        detail: "Masonry / steel / concrete / approved fire-rated particle board. All penetrations firestopped. Naturally ventilated to open air."
+      - name: "Pipe-in-Pipe Containment Arrangement"
+        spec: "Where LPG piping passes through basements / studio apartments / show kitchens or where containment required"
+        detail: "Outer containment pipe vented to atmosphere; leak in inner pipe is captured and routed to safe location."
+      - name: "Emergency Shut-off Valves (ESV)"
+        spec: "At every floor / risk-zone boundary"
+        detail: "Solenoid / motorized ESVs interfaced with gas-leak detection system, fire alarm system, and manual emergency shut-off pushbuttons at exits."
+      - name: "Manual Master Shut-off Valve at Building Entry"
+        spec: "Per Section 2.5"
+        detail: "Accessible to fire department at building perimeter."
+
+  # ----- Villa / Domestic Gas Cylinders (has_gas_cylinders_villa flag) -----
+  - id: lpg_cylinders_villa
+    match: {has_gas_cylinders_villa_is: true}
+    section: "Ch 11, #2.4.1 / Table 11.1 (outdoor) + Table 11.2 (indoor)"
+    page: "p.893-895"
+    systems:
+      - name: "Outdoor LPG Cylinder Installation Location"
+        spec: "Per Table 11.1 item 1 - above ground, outdoors, well-ventilated, on firm/clean/dry/level base"
+        detail: "Cylinders NOT permitted on roof, terrace or basements. Sited at ground level. Not close to passageways or exits. Not against glass walls or glazing."
+      - name: "Outdoor Cylinder Separation Distances"
+        spec: "Per Table 11.1 item 2"
+        detail: "3 m clearance to: any fire exit route, exit doors, exit stairs, windows, public roads, AC intake/return units, balanced flue outlets, parking, drains/shaft openings/pits, basement openings. 10 m clearance to fire hydrants."
+      - name: "Cylinder Quantity Limits"
+        spec: "Per Table 11.1 item 3"
+        detail: "Domestic residential: max 2 cylinders × 24 kg per group (1 main + 1 reserve, common manifold with isolation valves). Commercial: max 4 cylinders × 44 kg per group (2 main + 2 reserve). Larger quantities require special CD approval."
+      - name: "Louvered Steel Enclosure"
+        spec: "Per Table 11.1 item 4 + item 5"
+        detail: "Locked against tampering / accidental damage. Steel barricades where near parking / vehicle ramps / roads. Total free-area of louvers ≥ 50% of front-side area for ventilation."
+      - name: "Gas-Leak Detection in Cylinder Enclosure"
+        spec: "Per Section 2.6"
+        detail: "Approved gas-leak detection in the cylinder area / compartment, interfaced with shut-off valves."
+      - name: "Two-Stage Pressure Regulation"
+        spec: "First stage 75 mbar residential; second stage 0.5 psi (0.035 bar)"
+        detail: "Both regulators between cylinder and appliance. Flexible connector permitted only at appliance end."
+      - name: "Indoor Cylinder Restrictions (where applicable)"
+        spec: "Per Table 11.2"
+        detail: "Indoor LPG cylinders (where outdoor installation not feasible) restricted to designated rooms with mechanical ventilation, gas-leak detection, ESVs, and 1-hr fire-rated separation. Stricter quantity limits apply per Table 11.2."
+
+  # ----- NO GAS SYSTEM (none of the flags ticked) -----
+  - id: lpg_no_gas_system
+    match:
+      has_lpg_tanks_is: false
+      has_gas_infra_connection_is: false
+      has_gas_cylinders_villa_is: false
+      has_lpg_cylinders_food_truck_is: false
+    section: "Ch 11"
+    page: "p.878-940"
+    systems:
+      - name: "No Gas System Present"
+        required: not_required
+        detail: "Building has no LPG tanks, no gas-infrastructure connection, no LPG cylinders, and no food-truck LPG. Chapter 11 LPG Code of Practice does NOT apply to this building. If a gas system is added later, Ch 11 design and installation requirements must be implemented and re-submitted to Civil Defence."
+
+# ---------- ADD-ON VARIANTS: layer additional requirements per tank/cylinder type
+addons:
+  - id: lpg_addon_roof_mounted_tank
+    flag: has_lpg_tank_roof_mounted
+    systems:
+      - name: "Roof-Mounted LPG Tank Installation (Table 11.7)"
+        code_ref: "Ch 11, #2.5.4 / Table 11.7"
+        page_ref: "p.911"
+        spec: "Roof installation - dedicated tank pad, ventilation, drainage, structural load assessment"
+        detail: "Roof-mounted LPG tanks must be installed on dedicated pads with structural verification. Tanks at elevated podiums also fall under this category. Where tanks are aesthetic-covered, enclosure must be fully ventilated or perforated."
+      - name: "Roof-Mounted LPG Tank Maximum Quantity"
+        code_ref: "Ch 11, #2.5.4 / Table 11.7.2.i"
+        page_ref: "p.911"
+        spec: "Maximum 2,000 Gal aggregate (or 1,000 Gal if construction does not comply with Table 11.7.2.i)"
+        detail: "STRICT QUANTITY LIMIT - dramatically lower than aboveground (which allows 72,000 Gal). Quantities exceeding require special CD approval."
+      - name: "Roof-Mounted LPG Tank Separation Distances (Table 11.8)"
+        code_ref: "Ch 11, #2.5.4 / Table 11.8"
+        page_ref: "p.912"
+        detail: "Separation measured from tank surface to: any structure, building, parapet wall, compound wall, other equipment, exit stairs, fire access way, assembly points, parking, drains, shaft openings, pits, basement openings. Separations stricter than aboveground-at-grade because of vertical fire spread risk."
+      - name: "Tank Fire Protection (cross-reference Ch 9, #4.15)"
+        detail: "Roof-mounted tanks: automatic Water Deluge Spray cooling per Section 3.8 if building is sprinklered; dry-type deluge with breeching inlet otherwise."
+
+  - id: lpg_addon_underground_mounded
+    flag: has_lpg_tank_underground_mounded
+    systems:
+      - name: "Underground / Mounded LPG Tank Installation (Table 11.9)"
+        code_ref: "Ch 11, #2.5.5 / Table 11.9"
+        page_ref: "p.913-914"
+        spec: "ASME-listed pressure vessel, cathodic protection, vent risers to atmosphere, monitoring access shaft"
+        detail: "Underground (buried) or mounded (covered with earth) tanks. Cathodic protection mandatory to prevent corrosion. Monitoring shaft for inspection. Vent piping vertical to atmosphere; high-point relief."
+      - name: "Underground / Mounded LPG Tank Separation Distances (Table 11.10.a)"
+        code_ref: "Ch 11, #2.5.5 / Table 11.10.a"
+        page_ref: "p.915"
+        detail: "Separation measured from PRESSURE-RELIEF VALVE and FILLING CONNECTIONS (not tank surface) to: any point of structure, building, compound wall, public road, equipment, exit roads, fire-truck accessway, assembly points, parking, drains, shaft openings, basement openings. Different reference point reflects the practical fire risk at relief / fill points."
+      - name: "ASME Container Reduction Allowance (Table 11.10.b)"
+        code_ref: "Ch 11, #2.5.5 / Table 11.10.b"
+        page_ref: "p.915"
+        spec: "Up to 50% reduction in separation distance permitted for ASME-listed pressure vessels meeting specific construction criteria"
+        detail: "ASME-listed containers complying with Table 11.10.b construction and venting requirements may use reduced separation distances - significant cost / land savings for compliant designs."
+      - name: "Cathodic Protection + Corrosion Monitoring"
+        spec: "Mandatory for underground installations"
+        detail: "Sacrificial anode or impressed-current cathodic protection. Annual potential measurement and corrosion-rate monitoring."
+
+  - id: lpg_addon_cylinders_indoor
+    flag: has_lpg_cylinders_indoor
+    systems:
+      - name: "Indoor LPG Cylinder Installation (Table 11.2)"
+        code_ref: "Ch 11, #2.4.2 / Table 11.2"
+        page_ref: "p.896-897"
+        spec: "Dedicated cylinder room with mechanical ventilation, gas-leak detection, ESVs, 1-hr fire-rated separation"
+        detail: "Indoor cylinder room is permitted ONLY where outdoor installation is not feasible. Stricter than outdoor: dedicated room with continuous mechanical ventilation, low-level + high-level gas-leak detectors, emergency shut-off valves with manual pushbutton at the room exit, 1-hour fire-rated separation from rest of building, fire damper / smoke seal in any duct penetrations."
+      - name: "Indoor Cylinder Quantity Limits (stricter than outdoor)"
+        code_ref: "Ch 11, #2.4.2 / Table 11.2.3"
+        page_ref: "p.897"
+        spec: "Stricter quantity limits than outdoor cylinder enclosures - per Table 11.2 item 3"
+        detail: "Indoor cylinder room quantity limits are tighter than outdoor enclosures because of the higher consequence of leaks indoors. Larger quantities require central tank with outdoor location."
+      - name: "Mechanical Ventilation (Indoor Cylinder Room)"
+        spec: "Continuous, low-level extraction (LPG is heavier than air)"
+        detail: "Extraction grilles at floor level (within 150 mm of floor) since LPG vapour is heavier than air and accumulates low. Ventilation rate per Section 2.6 / Ch 10. Interlocked with gas-leak detection."
+
+  - id: lpg_addon_food_truck
+    flag: has_lpg_cylinders_food_truck
+    systems:
+      - name: "Food Truck LPG Cylinder Installation (Table 11.3)"
+        code_ref: "Ch 11, #2.4.3 / Table 11.3"
+        page_ref: "p.898-899"
+        spec: "Mounted in dedicated ventilated compartment outside the cooking area; secured against vehicle motion"
+        detail: "Food truck cylinder mounting per Table 11.3: cylinder compartment ventilated to outside, separated from cooking area, secured to vehicle frame to prevent shifting during transit. Quantity limits per Table 11.3 item 2 (typically 2 cylinders × specified weight)."
+      - name: "Food Truck Safety Provisions (Table 11.3.3)"
+        code_ref: "Ch 11, #2.4.3 / Table 11.3 item 3"
+        page_ref: "p.899"
+        detail: "Approved gas-leak detector in cylinder compartment + cooking area. Manual emergency shut-off accessible from outside the truck. Fire-suppression system over cooking surface (Wet Chemical per Ch 9 #4.15.A). Annual Civil-Defence inspection certificate required for operation."
+
+  - id: lpg_addon_prdp_tapping
+    flag: has_gas_infra_connection
+    systems:
+      - name: "PRDP (Pressure Reducing & Delivery Point) Tapping (Table 11.11)"
+        code_ref: "Ch 11, #2.5.6 / Table 11.11"
+        page_ref: "p.916"
+        spec: "Per Table 11.11 - tapping point design, isolation valves, pressure regulation stages, leak monitoring"
+        detail: "Wherever a building taps from a central / municipal LPG distribution network, the PRDP is the demarcation between utility and consumer. Requirements: dedicated tapping vault or above-ground enclosure, double-block-and-bleed isolation, two-stage pressure regulation (utility side and consumer side), pressure-relief venting to safe location, leak detection at the PRDP. Mandatory for all LPG installations downstream of a central network."
+
+  - id: lpg_addon_flame_effect
+    flag: has_lpg_flame_effect
+    systems:
+      - name: "Flame Effect LPG Installation (Table 11.12)"
+        code_ref: "Ch 11, #4 / Table 11.12"
+        page_ref: "p.906"
+        spec: "6 m clearance to exits/doors/stairs/windows; 3 m to ignition sources; manual shut-off valve in accessible location; 2x portable B:C dry-chemical extinguishers (9 kg each); fixed FP per risk assessment + Civil Defence evaluation"
+        detail: "Flame-effect shows in front of audience (indoor or outdoor entertainment): LPG supply ONLY available during operation. Manual shut-off valve in accessible location closes all LPG supply to flame-effect control system. Low-pressure interlock prevents flame-out re-ignition. Wiring MICC or 2-hour fire rated 2x1.5 mm. Permanent installations require fixed fire-protection per risk assessment + Civil Defence approval. Cylinders shall NOT be connected/disconnected during the show. Hazard-free area declared by operation supervisor before triggering effects."
+

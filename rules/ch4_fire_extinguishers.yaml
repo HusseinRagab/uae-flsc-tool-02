@@ -1,0 +1,253 @@
+# UAE FLSC 2018 - Chapter 4: Fire Extinguishers
+meta:
+  code: "UAE FLSC 2018 (CDGH-OP-25, September 2018)"
+  chapter: 4
+  chapter_title: "Fire Extinguishers"
+
+# ---------- UNIVERSAL: Class A (Table 4.3 row 1) -----------------------------
+# Class A fires (ordinary combustibles - paper, wood, fabric, plastics) apply
+# to virtually every occupancy (assembly, business, education, healthcare,
+# residential, hotel, daycare, detention, mercantile, mall, storage,
+# industrial, animal housing, fuel dispensing).
+general:
+  # ----- Universal FE Specifications (Tables 4.4 + Material Standards section) -----
+  - id: fe_g_civil_defence_approval
+    when: {}
+    systems:
+      - name: "Civil Defence Approval + Licensed Contractor"
+        code_ref: "Ch 4, #6 / Material Test Standards"
+        page_ref: "p.388"
+        spec: "All extinguishers Listed, Approved, Registered by Civil Defence Material Approval Department"
+        detail: "Listing per ANSI/NFPA 10, EN 3-7 / EN 3-8 / EN 3-9, ANSI/UL 8 (Foam), UL 2129 (Halocarbon), CAN/ULC-S507-92 (Water 9 L), CAN/ULC-S508-M90 (Class D media). Installation only by Civil Defence approved and licensed contractors. Civil Defence registration mark on each extinguisher body."
+
+  - id: fe_g_mounting_signage
+    when: {}
+    systems:
+      - name: "Mounting Heights + Cabinet + Signage"
+        code_ref: "Ch 4, #5 / Table 4.4 (Installation)"
+        page_ref: "p.385"
+        spec: "Top of extinguisher <= 1.5 m above floor (units <= 18 kg). Top <= 1.07 m above floor (units > 18 kg). Bottom > 100 mm above floor."
+        detail: "Mount on bracket or hook, OR house in Fire Hose Cabinet (FHC) with clear external signage / pictogram. Extinguishers shall NEVER be placed on floor directly. Path to extinguisher unobstructed. ID label at eye level for FHCs. Signage in red background with white pictogram visible from approach direction."
+
+  - id: fe_g_inspection_intervals
+    when: {}
+    systems:
+      - name: "Inspection + Testing Intervals"
+        code_ref: "Ch 4, #7 / Table 4.5 (Inspection + Maintenance)"
+        page_ref: "p.387"
+        spec: "Monthly visual / Annual professional / 6-year teardown / 12-year hydrostatic test"
+        detail: "MONTHLY: visual inspection by occupant (gauge in green, seal/tamper indicator intact, location accessible, instruction label legible). ANNUAL: professional service by Civil Defence licensed contractor (weighing, gauge calibration, recharging if discharged). 6-YEAR: stored-pressure extinguishers shall be torn down and internally inspected. 12-YEAR: hydrostatic pressure test of cylinder. Service tag shall be attached after each service. Records retained at facility for inspection."
+
+  - id: fe_g_class_a
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "Class A Fire Extinguisher (Multi-purpose Dry Powder OR Clean Agent) + CO2"
+        spec: "Multi-purpose Dry Powder 4 kg, rating 2-A:20-B:C (or Clean Agent 4 kg) AND CO2 5 kg per location"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1"
+        page_ref: "p.373-374"
+        detail: "Class A coverage applies to seating areas, corridors, waiting areas, exit routes, office areas, shops, reception, dining, guest rooms, etc. Each extinguisher serves approximately 280 m² of area; maximum travel distance 30 m. Place along corridors, waiting areas, shops, supermarkets, service corridors, staff and reception areas. Extinguishers commonly housed in Fire Hose Cabinets (FHC) with clear external signage."
+
+  - id: fe_g_class_a_villa
+    when:
+      occupancy_in: [villa_private, villa_commercial]
+    systems:
+      - name: "Class A Fire Extinguisher (recommended for villas)"
+        required: recommended
+        spec: "Multi-purpose Dry Powder 2.5 kg or 4 kg per villa floor"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1"
+        page_ref: "p.373"
+        detail: "Class A extinguisher recommended at each villa floor (kitchen, living areas). Not strictly mandatory for private villas but standard practice."
+
+  # Class K - Residential/Hotel kitchens (homes)
+  - id: fe_g_class_k_residential
+    when:
+      occupancy_in: [residential, villa_private, villa_commercial, hotel_a, hotel_b, hotel_c, labour_accommodation, staff_accommodation, hostel]
+    systems:
+      - name: "Class K Fire Extinguisher (Residential Kitchen)"
+        spec: "Multi-purpose Dry Powder 2.5 kg, rating 3-A:20-B:C"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 6 item 1"
+        page_ref: "p.377"
+        detail: "Inside residential / home / guest-room kitchens, placed next to the kitchen exit door."
+
+# ---------- BRANCHES: Class B 'wheeled' branches by occupancy ----------------
+branches:
+  - id: fe_fuel_dispensing
+    match: {occupancy: motor_fuel_dispensing}
+    section: "Ch 4, #2.5.1 / Table 4.3 row 3 (Class B wheeled)"
+    page: "p.376"
+    systems:
+      - name: "Class B Wheeled Foam Extinguisher"
+        spec: "Wheeled Foam 50 L (13 Gal) + Multi-purpose Dry Powder 4 kg (2-A:20-B:C)"
+        detail: "Petrol filling station. Maximum travel distance to wheeled extinguisher: 15 m. Place near the hazard in protected environment per manufacturer's guidelines."
+
+  - id: fe_parking
+    match: {occupancy_in: [parking_enclosed, parking_open]}
+    section: "Ch 4, #2.5.1 / Table 4.3 row 3 (Class B wheeled - Parking)"
+    page: "p.376"
+    systems:
+      - name: "Class B Wheeled Foam Extinguisher (Parking Areas)"
+        spec: "Wheeled Foam 50 L + Multi-purpose Dry Powder 4 kg"
+        detail: "Parking areas - wheeled foam at 15 m max travel. Place at protected locations (typically near ramps and exits)."
+
+# ---------- ADD-ONS: flag-driven Class B / Class C / Class D / Class K ------
+addons:
+  # ---- Class B Wheeled (Parking Areas - in-building, non-standalone) ----
+  - id: fe_class_b_parking_area
+    flag: has_parking_area
+    systems:
+      - name: "Class B Wheeled Foam Extinguisher (Parking Area)"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 3 item 4"
+        page_ref: "p.376"
+        spec: "Wheeled Foam 50 L + Multi-purpose Dry Powder 4 kg (2-A:20-B:C)"
+        detail: "Parking areas within any building (basement, podium, attached covered parking) require wheeled foam at 15 m max travel. Place at protected locations - typically near ramps, bays, and exits. Applies to in-building parking areas in residential, hotel, mall, office and other occupancies (not just standalone parking buildings)."
+
+  # ---- Class B (non-wheeled) ---------
+  - id: fe_class_b_storage
+    flag: has_class_b_storage_zones
+    systems:
+      - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Storage Zones"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 4 kg (2-A:20-B:C) per location"
+        detail: "Class B coverage applies to: chemical stores, linen stores, waste storage, flammable liquid stores, cleaning solvent stores, laboratories, paint/solvent rooms. Each extinguisher serves ~280 m²; maximum travel 15 m."
+
+  - id: fe_class_b_assembly_bar
+    flag: has_nightclub_disco
+    systems:
+      - name: "Class B Fire Extinguisher - Bars / Pubs / Night Clubs"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 1"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L AND Multi-purpose Dry Powder 4 kg"
+        detail: "Bars, pubs and night clubs within assembly occupancies require Class B coverage at 15 m max travel."
+
+  # ---- Class B (wheeled) - flag-driven additions on top of branches ----
+  - id: fe_class_b_wheeled_diesel_gen
+    flag: has_diesel_generator_room
+    systems:
+      - name: "Class B Wheeled Foam Extinguisher - Diesel Generator Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 3 item 3"
+        page_ref: "p.376"
+        spec: "Wheeled Foam 50 L + Multi-purpose Dry Powder 4 kg"
+        detail: "Wheeled foam extinguisher at the diesel generator room / generator set / shed. Max travel 15 m. Place near the hazard."
+
+  - id: fe_class_b_wheeled_bulk_flammable
+    flag: has_bulk_flammable_liquid_storage
+    systems:
+      - name: "Class B Wheeled Foam Extinguisher - Bulk Flammable Liquid"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 3 item 2"
+        page_ref: "p.376"
+        spec: "Wheeled Foam 50 L + Multi-purpose Dry Powder 4 kg"
+        detail: "Bulk flammable liquid storage and Group A plastic storage require wheeled foam at 15 m max travel."
+
+  # ---- Class C - non-wheeled (electrical rooms) ----
+  - id: fe_class_c_main_electrical
+    flag: has_main_electrical_room
+    systems:
+      - name: "Class C Extinguisher - Main Electrical Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4"
+        page_ref: "p.376"
+        spec: "CO2 5 kg OR Clean Agent 5 kg"
+        detail: "One Class C extinguisher inside the room next to the exit. Max travel 9 m."
+
+  - id: fe_class_c_lv_mv
+    flag: has_lv_mv_room
+    systems:
+      - name: "Class C Extinguisher - LV / MV Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4"
+        page_ref: "p.376"
+        spec: "CO2 5 kg OR Clean Agent 5 kg"
+        detail: "Inside LV/MV room next to exit. Max travel 9 m."
+
+  - id: fe_class_c_telephone
+    flag: has_main_telephone_room
+    systems:
+      - name: "Class C Extinguisher - Main Telephone Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 2"
+        page_ref: "p.376"
+        spec: "CO2 5 kg OR Clean Agent 5 kg"
+        detail: "Inside the room next to the exit. Max travel 9 m."
+
+  - id: fe_class_c_lift_machine
+    flag: has_lift_machine_room
+    systems:
+      - name: "Class C Extinguisher - Lift Machine Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 3"
+        page_ref: "p.376"
+        spec: "CO2 5 kg OR Clean Agent 5 kg"
+        detail: "Inside the lift machine room next to the exit. Max travel 9 m."
+
+  - id: fe_class_c_ahu
+    flag: has_ahu_room
+    systems:
+      - name: "Class C Extinguisher - AHU Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 4"
+        page_ref: "p.376"
+        spec: "CO2 5 kg OR Clean Agent 5 kg"
+        detail: "Inside the AHU / mechanical plant room next to the exit. Max travel 9 m."
+
+  - id: fe_class_c_cable_spread
+    flag: has_cable_spread_areas
+    systems:
+      - name: "Class C Extinguisher - Cable Spreading Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 6"
+        page_ref: "p.376"
+        spec: "CO2 5 kg OR Clean Agent 5 kg"
+        detail: "Inside the cable-spreading room next to the exit. Max travel 9 m."
+
+  - id: fe_class_c_rmu
+    flag: has_rmu_idf_mdf_room
+    systems:
+      - name: "Class C Extinguisher - RMU Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 7"
+        page_ref: "p.376"
+        spec: "CO2 5 kg OR Clean Agent 5 kg"
+        detail: "Inside the RMU / IDF / MDF / CDF / MMR / switchgear room next to the exit. Max travel 9 m."
+
+  # ---- Class C - wheeled (HV / Transformer / Heavy electrical) ----
+  - id: fe_class_c_wheeled_transformer_utility
+    flag: has_transformer_room_utility
+    systems:
+      - name: "Class C Wheeled CO2 - Transformer Room (utility)"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 5 item 10"
+        page_ref: "p.376"
+        spec: "Wheeled CO2 12 kg"
+        detail: "Trolley-mounted CO2 inside the room, next to exit. Max travel 9 m."
+
+  - id: fe_class_c_wheeled_transformer_private
+    flag: has_transformer_room_private
+    systems:
+      - name: "Class C Wheeled CO2 - Transformer Room (private)"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 5 item 10"
+        page_ref: "p.376"
+        spec: "Wheeled CO2 12 kg"
+        detail: "Trolley-mounted CO2 inside the room, next to exit. Max travel 9 m."
+
+  - id: fe_class_c_wheeled_hv
+    flag: has_hv_or_heavy_electrical
+    systems:
+      - name: "Class C Wheeled CO2 - HV Room / Heavy Electrical Machinery"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 5 items 9, 11"
+        page_ref: "p.376"
+        spec: "Wheeled CO2 12 kg"
+        detail: "Trolley-mounted CO2 inside the HV / heavy electrical equipment room, next to exit. Max travel 9 m."
+
+  # ---- Class K - Commercial kitchen ----
+  - id: fe_class_k_commercial
+    flag: has_commercial_kitchen
+    systems:
+      - name: "Class K Fire Extinguisher (Commercial Kitchen)"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 7"
+        page_ref: "p.377"
+        spec: "Wet Chemical Type 9 L (3 Gal) AND CO2 5 kg per kitchen"
+        detail: "Commercial / restaurant / food-court kitchens. Place inside kitchen next to the kitchen exit door. Wet chemical for cooking-oil/grease fires; CO2 for adjacent electrical."
+
+  # ---- Class D - Combustible metals ----
+  - id: fe_class_d_combustible_metals
+    flag: has_combustible_metals
+    systems:
+      - name: "Class D Wheeled Extinguisher (Combustible Metals)"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 8"
+        page_ref: "p.377"
+        spec: "Wheeled D-Type 12 kg"
+        detail: "Activities where combustible metals (magnesium, titanium, zirconium, sodium, lithium, potassium) are stored or handled. Max travel 15 m. D-type dry powder agent specific to metal fires (NOT water - water reactive)."

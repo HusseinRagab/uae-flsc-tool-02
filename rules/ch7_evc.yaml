@@ -1,0 +1,282 @@
+# UAE FLSC 2018 - Chapter 7: Emergency Voice Evacuation (EVC) + Two-way Telephone
+meta:
+  code: "UAE FLSC 2018 (CDGH-OP-25, September 2018)"
+  chapter: 7
+  chapter_title: "Emergency Voice Evacuation Systems"
+
+# ---------- BRANCHES: Table 7.3 occupancies that require EVC + Two-way ------
+# Each branch fires once - the matched branch's systems list both items.
+# ----- General Requirements (Tables 7.1, 7.2 - apply universally where EVC required) -----
+general:
+  - id: evc_general_control_unit_location
+    when: {}
+    systems:
+      - name: "EVC Control Unit Location"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 1"
+        page_ref: "p.444"
+        spec: "Next to FACP, continuously monitored location"
+        detail: "EVC control unit shall be installed adjacent to FACP at a continuously monitored location attended by facility management or designated personnel at all times: reception, security guard house, central command centre, facility monitoring room, nurse station (hospitals). See FACP location, Ch 8 Table 8.1.14.1."
+
+  - id: evc_general_voice_messages
+    when: {}
+    systems:
+      - name: "Voice Message Pattern + Pre-recorded Content"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 2"
+        page_ref: "p.444"
+        spec: "Pre-recorded / synthesized / live messages; speakers listed and approved by Civil Defence"
+        detail: "Evacuation messages shall be PRECEDED and FOLLOWED by a minimum of TWO CYCLES of the emergency evacuation signal. Non-evacuation (relocation) messages shall use a continuous alert tone of 3-10 seconds, followed by message, sequence repeated at least 3 times. Voice messages developed for each scenario in the emergency response plan. Speakers listed and approved by Civil Defence."
+
+  - id: evc_general_positive_alarm_sequence
+    when: {}
+    systems:
+      - name: "Positive Alarm Sequence (Delayed Alarm)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 3"
+        page_ref: "p.444"
+        spec: "Per Ch 8 Table 8.1.14.2 - 15 s acknowledge / 180 s multi-zone / 240 s building-wide"
+        detail: "PAS permitted (not mandatory). EVC integrates with FA Stage-1/2/3 timings: Stage 1 at 15 s acknowledgment, Stage 2 expansion at 180 s, Stage 3 building-wide at 240 s. Hotel override 120 s."
+
+  - id: evc_general_message_priority
+    when: {}
+    systems:
+      - name: "Message Priority Hierarchy"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 7"
+        page_ref: "p.444"
+        spec: "Life safety > property protection > trouble > all other"
+        detail: "Voice evacuation messages override prior signals, music, communication signals to the selected notification zone. Live voice (microphone) overrides recorded; on microphone release, recorded messages do NOT auto-resume - must be re-triggered manually or per emergency response plan. Manual zone selection or all-call from control unit."
+
+  - id: evc_general_circuits_wiring
+    when: {}
+    systems:
+      - name: "Circuits + Wiring (Class A, addressable, 2-hr fire rated)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 9"
+        page_ref: "p.445"
+        spec: "All EVC speaker circuits: Class A, addressable, redundant pathways"
+        detail: "Single-open-fault tolerance with trouble annunciation; ground-fault annunciation; ALL EVC cables and wiring shall be 2-HOUR FIRE RATED. Ancillary functions (music, paging) permitted only with safeguards against tampering/misadjustment and continued integrity monitoring."
+
+  - id: evc_general_two_way_phone_jacks
+    when: {}
+    systems:
+      - name: "Two-way Telephone Jack Locations (Fireman's Phone)"
+        code_ref: "Ch 7, #2.5 / Table 7.2 item 2"
+        page_ref: "p.446"
+        spec: "Common talk / party-line; jacks at every required location"
+        detail: "Telephone station OR jack at: (a) every stair landing, every floor; (b) every fire lift lobby; (c) inside every elevator car; (d) fire / emergency command centre; (e) fire pump room; (f) every area of refuge. AT LEAST 2 HANDSETS at each control centre for emergency responders. Each station/jack permanently labelled to allow caller to identify location by voice."
+
+  - id: evc_general_two_way_phone_features
+    when: {}
+    systems:
+      - name: "Two-way Telephone System Features"
+        code_ref: "Ch 7, #2.5 / Table 7.2 item 3"
+        page_ref: "p.446"
+        spec: "Listed; integrity-monitored; simultaneous 5-station common-talk capability"
+        detail: "Equipment listed and approved for two-way telephone service. Integrity monitoring of all circuits. Simultaneous operation of any 5 telephone stations in common-talk mode. Distinctive off-hook indication at control unit (visible per circuit if selective talk)."
+
+branches:
+  - id: evc_super_highrise
+    match:
+      height_m_gt: 90
+    section: "Ch 7, #3.1 / Table 7.3 item 1"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1 - control unit beside FACP at continuously monitored location, dedicated speakers, Class A circuits"
+        detail: "EVC required for super-highrise buildings (height > 90 m). Provides intelligible voice instructions during evacuation, with all-call and zone-by-zone capability."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2 - jacks at every stair landing, lift lobby, fire command centre"
+        detail: "Two-way telephone system required for super-highrise. Allows firefighters to communicate between floors and the command centre during operations."
+
+  - id: evc_highrise
+    match:
+      height_m_gt: 23
+      height_m_lte: 90
+    section: "Ch 7, #3.1 / Table 7.3 item 2"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1"
+        detail: "EVC required for highrise buildings (23 m < height <= 90 m). Phased / staged evacuation messaging by floor."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+        detail: "Two-way telephone jacks at stair landings, lift lobbies and fire command centre for firefighter communication."
+
+  - id: evc_mall
+    match:
+      occupancy_in: [mall_covered, mall_open, mall_mixed]
+    section: "Ch 7, #3.1 / Table 7.3 item 3"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1 - 60-75 dBA public-mode audibility"
+        detail: "EVC required for malls (covered / open / mixed). Multi-zone messaging with all-call override; ambient design level 40 dBA mercantile, 55 dBA assembly zones."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+        detail: "Two-way telephone jacks at every fire-command interface and major mall circulation node."
+
+  - id: evc_assembly
+    match:
+      occupancy_in: [assembly_a, assembly_b, assembly_c]
+    section: "Ch 7, #3.1 / Table 7.3 item 4"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1 - 55 dBA assembly ambient design level"
+        detail: "EVC required for assembly occupancies (concert halls, cinemas, theatres, auditoriums, banquet halls, mosques, restaurants, nightclubs)."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+
+  - id: evc_amusement
+    match:
+      occupancy_in: [assembly_a, assembly_b, assembly_c]
+      has_amusement_confounding_is: true
+    section: "Ch 7, #3.1 / Table 7.3 item 5"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (Amusement / Theme Parks)"
+        detail: "Amusement and theme parks require EVC + Two-way telephone irrespective of occupant load. (Already covered by the assembly branch above; this branch confirms applicability for amusement-classified buildings.)"
+
+  - id: evc_education
+    match:
+      occupancy_in: [education_a, education_b, education_c]
+    section: "Ch 7, #3.1 / Table 7.3 item 6"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1 - 45 dBA educational ambient design level"
+        detail: "EVC required for educational occupancies (universities, schools, kindergartens). Class A circuits; survivable speakers."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+
+  - id: evc_hotel
+    match:
+      occupancy_in: [hotel_a, hotel_b, hotel_c]
+    section: "Ch 7, #3.1 / Table 7.3 item 7"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1 - sleeping-area audibility 75 dBA at pillow"
+        detail: "EVC required for hotel occupancies. Per Table 7.1.4 sleeping-area audibility, alarm signal shall be 75 dBA measured at the pillow with door closed - dedicated guest-room speakers."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+        detail: "Two-way telephone jacks at stair landings, lift lobbies, fire command centre."
+
+  - id: evc_detention
+    match:
+      occupancy_in: [detention_a, detention_b, detention_c]
+    section: "Ch 7, #3.1 / Table 7.3 item 8"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1 - supervised relocation messaging"
+        detail: "EVC required for detention / correctional occupancies. Messaging coordinated with relocation procedures."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+
+  - id: evc_storage_industrial_large
+    match:
+      occupancy: storage_industrial
+      gross_floor_area_m2_gt: 5000
+    section: "Ch 7, #3.1 / Table 7.3 item 9"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
+        spec: "Per Section 2.4 + Table 7.1 - 30 dBA storage / 80 dBA industrial / 85 dBA mechanical-room ambient design levels"
+        detail: "EVC required for storage and industrial occupancies with built-up area > 5,000 m². Speaker placement to overcome high industrial ambient noise."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+
+  # ---- Explicit 'not required' branches for clarity -----------------------
+  - id: evc_residential_not_required
+    match:
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel]
+      height_m_lte: 23
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - residential occupancies up to highrise threshold"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for residential / labour / staff accommodation / hostel buildings up to 23 m. Buildings exceeding 23 m fall under the highrise branch above and require EVC + Two-way."
+
+  - id: evc_business_not_required
+    match:
+      occupancy: business
+      height_m_lte: 23
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - business under highrise"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for business (office) occupancies under highrise threshold. Once height > 23 m the highrise branch applies and EVC + Two-way are required."
+
+  - id: evc_healthcare_not_required
+    match:
+      occupancy: healthcare_a
+      height_m_lte: 23
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - healthcare under highrise"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for healthcare occupancies under highrise threshold. Hospitals taller than 23 m fall under the highrise branch and require EVC."
+
+  - id: evc_mercantile_not_required
+    match:
+      occupancy_in: [mercantile_a, mercantile_b]
+      height_m_lte: 23
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - mercantile under highrise"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for stand-alone mercantile occupancies under highrise threshold. Note: any retail forming part of a mall is captured by the mall branch above."
+
+  - id: evc_daycare_not_required
+    match:
+      occupancy_in: [daycare_a, daycare_b, daycare_c]
+      height_m_lte: 23
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - daycare under highrise"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for daycare occupancies."
+
+  - id: evc_villa_not_required
+    match:
+      occupancy_in: [villa_private, villa_commercial]
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - villas"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for private or commercial villas."
+
+  - id: evc_parking_not_required
+    match:
+      occupancy_in: [parking_enclosed, parking_open]
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - standalone parking"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for stand-alone parking buildings. Parking attached to a highrise / mall inherits that occupancy's EVC requirement via the parent branch."
+
+  - id: evc_fuel_not_required
+    match:
+      occupancy: motor_fuel_dispensing
+    section: "Ch 7, #3.1 / Table 7.3 (not listed)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - motor fuel dispensing"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for motor-fuel-dispensing facilities."
+
+  - id: evc_storage_industrial_small
+    match:
+      occupancy: storage_industrial
+      gross_floor_area_m2_lte: 5000
+    section: "Ch 7, #3.1 / Table 7.3 item 9 (BUA threshold)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - small storage/industrial"
+        required: not_required
+        detail: "EVC and two-way telephone are NOT mandatory for storage and industrial occupancies with built-up area <= 5,000 m². Once BUA exceeds 5,000 m² the requirement triggers."

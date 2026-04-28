@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+.DS_Store
+Thumbs.db
+.idea/
+_audit_ch*.txt
+_audit_ch*.md
+_ch9_tables_*.md
+*.docx

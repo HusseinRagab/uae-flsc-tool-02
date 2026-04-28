@@ -1,0 +1,264 @@
+# UAE FLSC 2018 - Chapter 6: Emergency Lighting
+meta:
+  code: "UAE FLSC 2018 (CDGH-OP-25, September 2018)"
+  chapter: 6
+  chapter_title: "Emergency Lighting"
+
+# ---------- GENERAL: Table 6.1 lux/duration + Table 6.6 coverage locations ---
+general:
+  - id: el_g_general_specs
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "Emergency Lighting - General Performance Specs (Table 6.1)"
+        spec: "Initial >= 1.1 lux at any point + average >= 10.8 lux on egress centerline; decline to >= 0.65 lux at any point at end of 3 hours; max:min ratio <= 40:1; open spaces decline to 0.5 lux"
+        code_ref: "Ch 6, #2 / Table 6.1"
+        page_ref: "p.404-407"
+        detail: "Per Table 6.1 - Lux requirements (egress path on floor / 1 m width of centerline): INITIAL >= 1.1 lux at any point AND average >= 10.8 lux. After 3 hours discharge: decline permitted to NOT LESS THAN 0.65 lux at any point (NOT 0.6 - exact code value 0.65). Maximum-to-minimum illumination ratio shall NOT exceed 40:1 (prevents dark zones). Open areas not on exit route: decline to 0.5 lux at any point at end of 3 hours permitted. HIGH-RISK AREAS where operations need shut-down: initial average >= 12 lux with NO point below 1.8 lux. COMPARTMENT REDUNDANCY: every compartment > 280 m2 SHALL have minimum two luminaires (single-failure protection). Duration 3 hours (180 min) immediately after power failure."
+
+  - id: el_g_coverage_mandatory
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "Mandatory EL Coverage Locations (Table 6.6 items 1-27)"
+        code_ref: "Ch 6, #4.4 / Table 6.6"
+        page_ref: "p.420"
+        detail: "EL luminaires shall be installed at: fire pump room / EPS room / plant rooms; emergency command centre (inside + outside); stairways (inside + outside) - EVERY landing of each stair; outside exit stair at discharge level; lift lobby; firefighter lift lobby; exit corridors / exit access corridors / exit passageways; EVERY change in direction of exit corridor or walking path; tunnels; all enclosed basements + ramps; service corridors; outside exit discharge; reception; FACP location; smoke control panel; LPG tank location; indoor loading/unloading areas; LV room; transformer room; washrooms; toilets; elevators; car parks; escalators."
+      - name: "EL Proximity Rule (within 2m)"
+        spec: "Every FHC / first-aid box / externally-illuminated exit sign shall be within 2 m of an EL luminaire"
+        code_ref: "Ch 6, #4.1 / Table 6.5 item 1"
+        page_ref: "p.418"
+        detail: "Pre-design rule: every Fire Hose Cabinet (FHC) in the corridor shall be within 2 m of emergency luminaire; every First Aid Box shall be within 2 m of emergency luminaire; every Exit Sign intended to be externally illuminated requires emergency luminaire within 2 m."
+
+  - id: el_g_cable_fire_rating
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "EL Cable Fire Rating"
+        spec: "EN 50200 (930 deg C flame + water spray) OR BS 6387 OR BS 8434-2 - typically 120 minutes"
+        code_ref: "Ch 6, #6 / Material Test Standards"
+        page_ref: "p.426"
+        detail: "EL wiring used for life-safety circuits shall be tested per EN 50200 (Method of test for resistance to fire of unprotected small cables for use in emergency circuits), BS 6387 (resistance to fire under fire conditions), or BS 8434-2 (BS EN 50200 with 930 deg C flame + water spray). Typical specification: 120 minutes circuit integrity. Civil Defence approval / listing required."
+
+  - id: el_g_acceptance_test
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "EL Acceptance Tests + Periodic Inspection"
+        code_ref: "Ch 6, #5 / Table 6.7"
+        page_ref: "p.424"
+        detail: "Acceptance test on commissioning: full 3-hour discharge test demonstrating all luminaires meet 1.1 lux initial / 0.65 lux at end. Periodic functional tests: monthly self-test (battery + lamp), 6-monthly partial discharge, ANNUAL full duration discharge test. Self-contained luminaires shall be SELF-MONITORING (LED indicator visible at luminaire) per Table 6.4 - manual or automatic. Centralized systems: control unit shall display health of every luminaire."
+
+  - id: el_g_coverage_exempt
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "EL Exempted Locations (Table 6.6 items 28-35)"
+        required: not_required
+        code_ref: "Ch 6, #4.4 / Table 6.6"
+        page_ref: "p.420"
+        detail: "Not mandatory at: school classrooms; patient sleeping rooms; prison cells; school open corridors; offices < 60 m²; garbage rooms; typical-floor electrical rooms; typical-floor telephone rooms."
+
+  - id: el_g_hotel_guest_room
+    when:
+      occupancy_in: [hotel_a, hotel_b, hotel_c]
+    systems:
+      - name: "EL inside Hotel Guest Rooms"
+        code_ref: "Ch 6, #4.4 / Table 6.6 item 20"
+        page_ref: "p.420"
+        detail: "Each hotel guest room shall be provided with an emergency lighting luminaire (in addition to the room's normal lighting)."
+
+  - id: el_g_assembly_seating
+    when:
+      occupancy_in: [assembly_a, assembly_b, assembly_c]
+    systems:
+      - name: "EL at Assembly Seating Areas"
+        code_ref: "Ch 6, #4.4 / Table 6.6 item 21"
+        page_ref: "p.420"
+        detail: "Assembly seating areas (auditoria, theatres, arenas, banquet halls) shall be provided with emergency lighting."
+
+  - id: el_g_commercial_kitchen
+    when:
+      has_commercial_kitchen_is: true
+    systems:
+      - name: "EL inside Commercial Kitchen + Delivery Areas"
+        code_ref: "Ch 6, #4.4 / Table 6.6 items 22-23"
+        page_ref: "p.420"
+        detail: "Commercial kitchens and adjacent delivery areas shall be provided with emergency lighting."
+
+  - id: el_g_lpg_tank
+    when:
+      has_lpg_tanks_is: true
+    systems:
+      - name: "EL at LPG Tank Location"
+        code_ref: "Ch 6, #4.4 / Table 6.6 item 19"
+        page_ref: "p.420"
+        detail: "LPG tank locations (aboveground / roof / podium tanks) shall be provided with emergency lighting."
+
+  - id: el_g_lv_transformer
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "EL inside LV / Transformer Rooms"
+        code_ref: "Ch 6, #4.4 / Table 6.6 items 25-26"
+        page_ref: "p.420"
+        detail: "LV rooms and transformer rooms shall be provided with emergency lighting (per Table 6.6 items 25-26)."
+
+  - id: el_g_tunnel
+    when:
+      has_tunnel_is: true
+    systems:
+      - name: "EL inside Tunnels"
+        code_ref: "Ch 6, #4.4 / Table 6.6 item 9"
+        page_ref: "p.420"
+        detail: "Tunnels within the building (basement/podium/inter-building tunnels) shall be provided with emergency lighting throughout."
+
+# ---------- BRANCHES: Table 6.5 system-type selection -----------------------
+branches:
+  - id: el_super_highrise
+    match:
+      height_m_gt: 90
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    section: "Ch 6, #4.3 / Table 6.5 item 1"
+    page: "p.419"
+    systems:
+      - name: "Central Battery Emergency Lighting (Section 3.2)"
+        spec: "Type per Table 6.2 - dedicated control + computer interface; 2-hour fire-rated wiring; cross-zoned circuits"
+        detail: "Centralized EL system covering the entire facility under one facility-management. Vented or VRLA central battery (NiCd or flat-plate lead-acid) sized for 3-hour duration. Battery room protected with automatic clean-agent system."
+      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
+        required: recommended
+        spec: "Per Table 6.3 - centralised monitoring + computer interface; UPS/battery in each luminaire"
+        detail: "Acceptable alternative to central battery system. Monitored self-contained luminaires reporting to a central monitoring unit; no cross-zoning required."
+
+  - id: el_highrise
+    match:
+      height_m_gt: 23
+      height_m_lt: 90
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    section: "Ch 6, #4.3 / Table 6.5 item 2"
+    page: "p.419"
+    systems:
+      - name: "Central Battery Emergency Lighting (Section 3.2)"
+        spec: "Per Table 6.2 - 3-hour duration"
+      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
+        required: recommended
+        spec: "Per Table 6.3 - centralised monitoring + computer interface"
+
+  - id: el_mall
+    match:
+      occupancy_in: [mall_covered, mall_open, mall_mixed]
+    section: "Ch 6, #4.3 / Table 6.5 item 3"
+    page: "p.419"
+    systems:
+      - name: "Central Battery Emergency Lighting (Section 3.2)"
+        spec: "Per Table 6.2 - facility-wide, single facility management"
+      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
+        required: recommended
+
+  - id: el_assembly_amusement
+    match:
+      occupancy_in: [assembly_a, assembly_b, assembly_c]
+      has_amusement_confounding_is: true
+    section: "Ch 6, #4.3 / Table 6.5 item 4"
+    page: "p.419"
+    systems:
+      - name: "Central Battery Emergency Lighting (Section 3.2)"
+        detail: "Amusement buildings (mazes / mirrors / theme rides) require central battery EL or monitored self-contained EL irrespective of height."
+      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
+        required: recommended
+
+  - id: el_midrise_general
+    match:
+      height_m_gt: 15
+      height_m_lt: 23
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, mercantile_a]
+    section: "Ch 6, #4.3 / Table 6.5 item 5"
+    page: "p.419"
+    systems:
+      - name: "Monitored Self-Contained EL (Section 3.3)"
+        spec: "Per Table 6.3 - dedicated monitoring + computer interface"
+        detail: "Each luminaire is self-contained (own battery + lamp + transfer switch) and reports status to a central monitoring unit."
+
+  - id: el_lowrise_general
+    match:
+      height_m_lte: 15
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, mercantile_a, business, storage_industrial]
+    section: "Ch 6, #4.3 / Table 6.5 item 6"
+    page: "p.419"
+    systems:
+      - name: "Monitored Self-Contained EL (Section 3.3)"
+        spec: "Per Table 6.3"
+        detail: "Self-contained luminaires reporting to a central monitoring unit."
+
+  - id: el_storage_industrial
+    match:
+      occupancy: storage_industrial
+    section: "Ch 6, #4.3 / Table 6.5 items 7-8"
+    page: "p.419"
+    systems:
+      - name: "Monitored Self-Contained EL (Section 3.3)"
+        spec: "Per Table 6.3"
+        detail: "Warehouses and factories - self-contained luminaires with central monitoring."
+
+  - id: el_business_lowrise
+    match:
+      occupancy: business
+      height_m_lte: 15
+    section: "Ch 6, #4.3 / Table 6.5 item 11 (Business Group C)"
+    page: "p.419"
+    systems:
+      - name: "Stand-alone Self-Contained EL (Section 3.4)"
+        spec: "Per Table 6.4 - integral battery + lamp + transfer switch in each luminaire"
+        detail: "Each luminaire is fully self-contained with internal battery and self-test. No central monitoring required at this scale."
+
+  - id: el_business_midrise_highrise
+    match:
+      occupancy: business
+      height_m_gt: 15
+    section: "Ch 6, #4.3 / Table 6.5 item 5/2 (Business above lowrise)"
+    page: "p.419"
+    systems:
+      - name: "Monitored Self-Contained EL (Section 3.3)"
+        spec: "Per Table 6.3"
+        detail: "Business occupancies above lowrise upgrade to monitored self-contained EL."
+
+  - id: el_mercantile_small
+    match:
+      occupancy: mercantile_a
+    section: "Ch 6, #4.3 / Table 6.5 item 12 (Mercantile Group C)"
+    page: "p.419"
+    systems:
+      - name: "Stand-alone Self-Contained EL (Section 3.4)"
+        spec: "Per Table 6.4"
+        detail: "Mercantile Group A (small retail up to 2 storeys, < 2,800 m²) uses stand-alone self-contained luminaires."
+
+  - id: el_fuel_dispensing
+    match:
+      occupancy: motor_fuel_dispensing
+    section: "Ch 6, #4.3 / Table 6.5 item 13"
+    page: "p.419"
+    systems:
+      - name: "Stand-alone Self-Contained EL (Section 3.4)"
+        spec: "Per Table 6.4"
+        detail: "Fuel-dispensing facilities (petrol stations, mini-marts, restaurants, service stations attached to fuel station) - stand-alone self-contained EL."
+
+  - id: el_villa_above_grade
+    match:
+      occupancy_in: [villa_private, villa_commercial]
+    section: "Ch 6, #4.3 / Table 6.5 items 9-10"
+    page: "p.419"
+    systems:
+      - name: "Emergency Lighting (above-grade levels)"
+        required: not_required
+        detail: "Emergency lighting is NOT mandatory for villa floors above grade (private or commercial). Where the villa has a basement, see Table 6.5 item 14 below."
+
+  - id: el_villa_basement
+    match:
+      occupancy_in: [villa_private, villa_commercial]
+      basement_bua_m2_gt: 0
+    section: "Ch 6, #4.3 / Table 6.5 item 14"
+    page: "p.419"
+    systems:
+      - name: "Stand-alone Self-Contained EL (basement only)"
+        spec: "Per Table 6.4"
+        detail: "Villa basement levels shall be provided with stand-alone self-contained emergency lighting."

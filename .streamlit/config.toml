@@ -1,0 +1,8 @@
+# Streamlit config — suppress auto-opening the default browser so run.py
+# can open Chrome explicitly.
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
