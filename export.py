@@ -4,7 +4,7 @@ from __future__ import annotations
 from io import BytesIO
 from typing import List
 
-from schema import ComplianceReport, Requirement, OCCUPANCY_DEFS, SectionBlock, DISCLAIMER
+from flsc_schema import ComplianceReport, Requirement, OCCUPANCY_DEFS, SectionBlock, DISCLAIMER
 
 
 def report_to_docx_bytes(r: ComplianceReport) -> bytes:

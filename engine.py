@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Callable
 
 import yaml
 
-from schema import (
+from flsc_schema import (
     Building, ChapterReport, ComplianceReport, HighCeilingSpec,
     Requirement, SectionBlock, occupancy_group,
 )
@@ -736,7 +736,7 @@ def report_to_markdown(r: ComplianceReport) -> str:
         L.append("")
 
     # Mandatory disclaimer footer
-    from schema import DISCLAIMER as _DISCLAIMER
+    from flsc_schema import DISCLAIMER as _DISCLAIMER
     L.append("---")
     L.append("")
     L.append(f"_{_DISCLAIMER}_")

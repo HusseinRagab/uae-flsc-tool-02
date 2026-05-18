@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
+from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes
 
