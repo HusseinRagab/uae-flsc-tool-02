@@ -30,6 +30,59 @@ def _cached_rule_lookup():
     return build_rule_lookup()
 
 
+# Glossary used by the sidebar "📖 Glossary" expander (Tier 2 UI #6).
+# Acronyms / terms that appear in chapter outputs, ordered alphabetically.
+GLOSSARY = [
+    ("AFFL", "Above Finished Floor Level"),
+    ("Aspiration", "Aspirating Smoke Detection — drawn-air analyser; very early warning (e.g. VESDA). Used in cold storage, server rooms, very high ceilings."),
+    ("BUA", "Built-Up Area — the floor area enclosed by a building's exterior walls."),
+    ("CD", "Civil Defence — the UAE federal authority enforcing the Fire & Life Safety Code."),
+    ("CDGH-OP-25", "Operational reference of the UAE FLSC 2018 edition (Civil Defence Guideline Handbook, Operational Procedure 25)."),
+    ("EH1 / EH2", "Extra Hazard Group 1 / 2 — sprinkler hazard classification (NFPA 13). EH1 = significant Class A/B combustibles; EH2 = quantities of flammable/combustible liquids."),
+    ("ESFR", "Early Suppression Fast Response (sprinkler) — high-flow head designed to control + suppress a developing fire, common in rack storage."),
+    ("ESV", "Emergency Shut-off Valve — required on LPG, gas, and some chemical lines, accessible from outside the protected area."),
+    ("EVC", "Emergency Voice Communication / Voice-Evacuation system — programmable PA + tone system (Ch 7)."),
+    ("FACP", "Fire Alarm Control Panel — the master detection/notification controller."),
+    ("FCC", "Fire Command Centre — purpose-built control room with FACP, EVC, sprinkler annunciation, generator status, etc."),
+    ("FFE", "Final Floor Elevation."),
+    ("FHC", "Fire Hose Cabinet — wall-mounted cabinet containing a hose reel and (often) extinguishers."),
+    ("GFA", "Gross Floor Area — total floor area summed across all storeys."),
+    ("HC", "High Challenge (wall / fire wall) — enhanced fire-resistance assembly per code Ch 1."),
+    ("HE", "Horizontal Exit — passage through a fire-rated wall into another fire compartment on the same level."),
+    ("HH", "High Hazard — sprinkler hazard classification with rapidly developing fires (e.g. flammable liquid warehouse)."),
+    ("HoE", "House of Expertise — UAE Civil Defence designation for an approved fire consultancy."),
+    ("Hose Reel", "Manually operated water hose, typically 30 m × 19 mm, fed from a 250 gpm pump per UAE Ch 9."),
+    ("IDF / MDF", "Intermediate / Main Distribution Frame — telecoms cross-connect rooms."),
+    ("IS", "Intrinsically Safe — electrical equipment certified for hazardous (explosive) atmospheres."),
+    ("K-factor", "Sprinkler discharge coefficient (US units): flow Q = K·√P. K11.2 / K25.2 etc."),
+    ("KG", "Kindergarten (educational Group A in UAE FLSC)."),
+    ("LEL", "Lower Explosive Limit — minimum gas concentration in air that will ignite. UAE LPG code sets gas-leak alarm at 15% LEL (low) / 30% LEL (high)."),
+    ("LH", "Light Hazard — sprinkler hazard classification with limited combustibles (offices, residential, schools)."),
+    ("LPG", "Liquefied Petroleum Gas (Ch 11)."),
+    ("LV / MV", "Low Voltage / Medium Voltage electrical rooms."),
+    ("MCP", "Manual Call Point — wall-mounted manual fire-alarm push station, 1.2 m AFFL, every 61 m."),
+    ("MOE", "Means of Egress (Ch 3)."),
+    ("MRI", "Magnetic Resonance Imaging room (healthcare auxiliary, Table 9.30.S)."),
+    ("MRL", "Machine Room-Less elevator — has no separate machine room (uncheck `has_lift_machine_room` if applicable)."),
+    ("NFPA", "National Fire Protection Association (US) — UAE FLSC defers to NFPA 10/13/14/72/96 etc. in many sections."),
+    ("NS / S", "Non-Sprinklered / Sprinklered — Table 3.16 column heads (Means of Egress)."),
+    ("OH1 / OH2", "Ordinary Hazard Group 1 / 2 — sprinkler hazard classifications (NFPA 13)."),
+    ("OL", "Occupant Load — number of occupants used to size egress (Tables 3.13/3.14)."),
+    ("OT", "Operating Theatre (healthcare auxiliary)."),
+    ("Pa", "Pascals — pressure unit used for stair / lobby pressurisation (UAE Ch 10 Table 10.3.a: 12.5–45 Pa)."),
+    ("PAS", "Positive Alarm Sequence — timed alarm delay (typically 15 s / 180 s / 240 s) to let staff investigate before mass notification."),
+    ("PRDP", "Pressure Reducing Distribution Panel — Stage-2 regulator + ESV serving a single kitchen / apartment in central LPG distribution."),
+    ("PRV", "Pressure Relief Valve — required on every LPG container; replace every 10 years per Table 11.14."),
+    ("RMU", "Ring Main Unit — medium-voltage switchgear in a small dedicated room."),
+    ("STI", "Speech Transmission Index — voice-evacuation intelligibility metric."),
+    ("UL / FM", "Underwriters Laboratories / Factory Mutual — US product-listing bodies (FACP, sprinkler heads, fire pumps must be UL/FM listed)."),
+    ("UPS", "Uninterruptible Power Supply room (electrical auxiliary, Table 9.30.U)."),
+    ("VESDA", "Very Early Smoke Detection Apparatus — brand-leading aspiration smoke detector."),
+    ("Wet Riser", "Vertical water-filled pipe with fire-brigade landing valves on each floor; sized 750 gpm (2 standpipes) or 1000 gpm (3+ standpipes) @ 6.9 bar."),
+    ("Yard Hydrant", "External fire-brigade hydrant on a dedicated water network (not shared with irrigation). UAE typically 1000 gpm @ 6.9 bar / 90-min tank for infrastructure."),
+]
+
+
 # ----- Cached evaluate to remove the ~0.4 s lag on every input change -----
 @st.cache_data(show_spinner=False)
 def _cached_evaluate(building_json: str):
@@ -347,6 +400,25 @@ with st.sidebar:
         elif _uploaded is None:
             # Reset marker so a future upload re-applies
             st.session_state["_scenario_loaded_marker"] = False
+
+    with st.expander("📖 Glossary (acronyms & terms)", expanded=False):
+        _gloss_q = st.text_input(
+            "Filter glossary",
+            value="",
+            placeholder="e.g. PAS, ESFR, K-factor, Pa, hazard…",
+            help="Case-insensitive match on term or definition.",
+            key="glossary_filter",
+        )
+        _q = (_gloss_q or "").strip().lower()
+        for term, defn in GLOSSARY:
+            if _q and _q not in term.lower() and _q not in defn.lower():
+                continue
+            st.markdown(f"**{term}** — {defn}")
+        if not _q:
+            st.caption(
+                f"{len(GLOSSARY)} terms. Type to filter. "
+                "Items here are the acronyms most likely to appear in the report."
+            )
 
     with st.expander("📍 Jump to OUTPUT section", expanded=False):
         st.markdown(
@@ -898,6 +970,20 @@ st.markdown(
 )
 st.caption(f"**Occupancy:** `{occupancy}` - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
 
+# ---------- Sanity-check banner (Tier 2 UI #9) -------------------------------
+_errs, _warns, _info = _sanity_check_inputs(building)
+if _errs:
+    for e in _errs:
+        st.error(e)
+if _warns:
+    with st.expander(f"⚠ Sanity checks — {len(_warns)} warning(s)", expanded=True):
+        for w in _warns:
+            st.warning(w)
+if _info:
+    with st.expander(f"ℹ Sanity checks — {len(_info)} info note(s)", expanded=False):
+        for i in _info:
+            st.info(i)
+
 
 _STATUS_BADGE = {
     "required":     ("🔴", "REQUIRED"),
@@ -980,6 +1066,200 @@ def _format_match_yaml(match: dict) -> str:
     return _y.safe_dump(match, sort_keys=False, default_flow_style=False).strip()
 
 
+_OP_SUFFIX_LABEL = {
+    "_gt": ">", "_gte": "≥", "_lt": "<", "_lte": "≤",
+    "_is": "=", "_not": "≠ (not in)", "_in": "∈",
+}
+
+
+def _human_match(match: dict) -> str:
+    """Translate a YAML match/when dict into a plain-English fragment for the
+    branch-rationale caption. Examples:
+      {occupancy: hotel_a, height_m_gt: 23, height_m_lte: 90, plot_area_m2_lte: 3000}
+      -> "Hotel Group A, 23 < height ≤ 90 m (highrise), plot ≤ 3,000 m²"
+    """
+    if not match:
+        return ""
+    parts: list[str] = []
+
+    # Occupancy slot
+    if "occupancy" in match:
+        defn = OCCUPANCY_DEFS.get(match["occupancy"], match["occupancy"])
+        parts.append(defn.split(" - ")[0])
+    elif "occupancy_in" in match:
+        parts.append("any of: " + ", ".join(match["occupancy_in"]))
+    if "occupancy_not" in match:
+        parts.append("not: " + ", ".join(match["occupancy_not"]))
+    if "occupancy_group_is" in match:
+        parts.append(f"occupancy group = {match['occupancy_group_is']}")
+
+    # Height tier
+    h_gt = match.get("height_m_gt")
+    h_gte = match.get("height_m_gte")
+    h_lt = match.get("height_m_lt")
+    h_lte = match.get("height_m_lte")
+    h_lo = h_gt if h_gt is not None else h_gte
+    h_hi = h_lt if h_lt is not None else h_lte
+    if h_lo is not None and h_hi is not None:
+        op_lo = ">" if h_gt is not None else "≥"
+        op_hi = "<" if h_lt is not None else "≤"
+        parts.append(f"{h_lo} {op_lo} height {op_hi} {h_hi} m")
+    elif h_lo is not None:
+        op = ">" if h_gt is not None else "≥"
+        parts.append(f"height {op} {h_lo} m")
+    elif h_hi is not None:
+        op = "<" if h_lt is not None else "≤"
+        parts.append(f"height {op} {h_hi} m")
+
+    # Hazard class
+    if "hazard_class" in match:
+        parts.append(f"hazard class = {match['hazard_class']}")
+    if "hazard_class_is" in match:
+        parts.append(f"hazard class = {match['hazard_class_is']}")
+    if "hazard_class_in" in match:
+        parts.append("hazard class ∈ " + ", ".join(match["hazard_class_in"]))
+
+    # Building category
+    if "building_category_is" in match:
+        parts.append(f"category = {match['building_category_is']}")
+
+    # Anything else (areas, floors, flags) — generic fallback rendering
+    skip_keys = {
+        "occupancy", "occupancy_in", "occupancy_not", "occupancy_group_is",
+        "height_m_gt", "height_m_gte", "height_m_lt", "height_m_lte",
+        "hazard_class", "hazard_class_is", "hazard_class_in",
+        "building_category_is",
+    }
+    for k, v in match.items():
+        if k in skip_keys:
+            continue
+        # Translate suffix → human op
+        for suf, label in _OP_SUFFIX_LABEL.items():
+            if k.endswith(suf):
+                field = k[: -len(suf)]
+                # Pretty number with thousands separator if numeric
+                v_str = f"{v:,}" if isinstance(v, (int, float)) else str(v)
+                parts.append(f"{field} {label} {v_str}")
+                break
+        else:
+            # No suffix → plain equality
+            parts.append(f"{k} = {v}")
+
+    return ", ".join(parts)
+
+
+# ---------- Expanded soft-validation warnings (Tier 2 UI #9) -----------------
+
+def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
+    """Look at the full Building model + session_state flags and return three lists:
+    (errors, warnings, info). Errors are hard rule conflicts (e.g. LPG roof tank
+    on super-highrise); warnings flag unusual combinations a designer should
+    confirm; info is FYI traceability. Filtering / display is the caller's job."""
+    errs: list[str] = []
+    warns: list[str] = []
+    info: list[str] = []
+
+    def gs(k):  # session-state shorthand
+        return bool(st.session_state.get(k, False))
+
+    # --- Hard errors ---
+    if gs("has_lpg_tank_roof_mounted") and b.height_m > 90:
+        errs.append(
+            "🚫 **LPG roof tank on super-highrise (>90 m) is PROHIBITED.** "
+            "UAE Ch 11 §2.5.1.3 (p.900) bans roof LPG installations on buildings "
+            "taller than 90 m. Either lower the building, change to a podium / "
+            "ground tank, or uncheck the roof-mounted flag."
+        )
+
+    # --- Unusual / suspicious combinations ---
+    if b.occupancy == "storage_industrial" and b.hazard_class == "LH":
+        warns.append(
+            "⚠ Storage / industrial occupancy is rarely LH (Light Hazard). "
+            "Most warehouses are OH1/OH2/EH per the commodity (Table 9.27). "
+            "Confirm hazard class is intentional."
+        )
+
+    if b.occupancy == "mall_covered" and not b.has_atrium:
+        warns.append(
+            "⚠ `mall_covered` selected without `has_atrium`. Most covered malls "
+            "have at least one atrium, which triggers additional Ch 9/10 atrium "
+            "requirements. Confirm intentional."
+        )
+
+    if b.occupancy == "healthcare_a" and not (b.has_operation_theater
+                                              or b.has_mri_scanning_room
+                                              or b.has_anesthetizing_room):
+        warns.append(
+            "⚠ Inpatient hospital (`healthcare_a`) without OT / MRI / "
+            "Anesthetizing room ticked. Confirm the project scope — most "
+            "inpatient hospitals have at least one of these."
+        )
+
+    if b.height_m > 23 and not b.has_evacuation_elevator:
+        warns.append(
+            "⚠ Highrise (>23 m) without a designated `evacuation_elevator`. "
+            "Civil Defence often expects at least one designated firefighter / "
+            "evacuation lift on highrise. Confirm with the AHJ if absent."
+        )
+
+    if (b.occupancy.startswith("hotel_")
+            and not b.has_commercial_kitchen
+            and b.height_m > 15):
+        info.append(
+            "ℹ Hotel without `has_commercial_kitchen` ticked. Most hotels have "
+            "a kitchen (triggers Ch 9 wet chemical + Ch 8 fusible-link). "
+            "Confirm intentional."
+        )
+
+    if (b.occupancy in ("assembly_a", "assembly_b", "assembly_c")
+            and b.gross_floor_area_m2 > 2000
+            and b.assembly_area_m2 == 0):
+        info.append(
+            "ℹ Assembly occupancy with GFA > 2,000 m² but no explicit "
+            "`assembly_area_m2` value entered. Ch 10 Table 10.27 items 9-13 "
+            "triggers on the assembly-hall area; set the value in SC settings "
+            "to ensure the right smoke-purge rule fires."
+        )
+
+    if (b.occupancy.startswith("residential")
+            and b.floors_above_grade >= 4
+            and not b.has_garbage_chute):
+        info.append(
+            "ℹ G+4 residential without `has_garbage_chute` ticked. Most UAE "
+            "residential buildings of this size have a chute (Ch 9 Table 9.29). "
+            "Confirm intentional."
+        )
+
+    if b.has_lpg_tanks and b.height_m > 23:
+        info.append(
+            "ℹ LPG tanks declared on a highrise. Per Ch 11 §2.5.1 the tanks "
+            "must be on the roof or podium only (never inside the building). "
+            "Verify location."
+        )
+
+    if b.has_diesel_generator_room and not b.has_main_electrical_room:
+        warns.append(
+            "⚠ Diesel generator room ticked but `main_electrical_room` is not. "
+            "Diesel gen rooms almost always accompany a main electrical room — "
+            "verify the building has neither."
+        )
+
+    if b.has_high_ceiling and b.ceiling_height_m < 10:
+        warns.append(
+            "⚠ `has_high_ceiling` is ticked but ceiling height is < 10 m. "
+            "Ch 9 Table 9.29.A high-ceiling design starts at 10 m. Untick the "
+            "flag or raise the height."
+        )
+
+    if b.depth_below_grade_m > 7 and b.floors_below_grade <= 2:
+        info.append(
+            "ℹ Depth > 7 m with ≤ 2 basements — Ch 10 Table 10.22 deep-"
+            "underground SC still triggers via the depth threshold (intended)."
+        )
+
+    return errs, warns, info
+
+
 # ---------- Status legend (Tier-1 UI #1) -------------------------------------
 st.markdown(
     "**Status legend:** "
@@ -1022,7 +1302,13 @@ with col_left:
         st.markdown(f"<a name='ch-{ch.chapter_code.lower()}'></a>", unsafe_allow_html=True)
         st.markdown(f"## {ch.chapter_code} - {ch.chapter_title}")
         if ch.selected_branch:
-            st.caption(f"Matched branch: `{ch.selected_branch}` · {ch.selected_branch_section}")
+            _human = _human_match(
+                (_RULE_LOOKUP.get(ch.selected_branch) or {}).get("match", {})
+            )
+            st.caption(
+                f"Matched branch: `{ch.selected_branch}` · {ch.selected_branch_section}"
+                + (f"\n\n**Why this branch:** {_human}" if _human else "")
+            )
         for block in ch.blocks:
             render_block(block.title, block.items, _allowed_set, _text_q)
 
@@ -1041,7 +1327,13 @@ with col_left:
                 continue
             st.markdown(f"## P-{ch.chapter_code} - {ch.chapter_title}")
             if ch.selected_branch:
-                st.caption(f"Matched parking branch: `{ch.selected_branch}` - {ch.selected_branch_section}")
+                _human = _human_match(
+                    (_RULE_LOOKUP.get(ch.selected_branch) or {}).get("match", {})
+                )
+                st.caption(
+                    f"Matched parking branch: `{ch.selected_branch}` - {ch.selected_branch_section}"
+                    + (f"\n\n**Why this branch:** {_human}" if _human else "")
+                )
             for block in ch.blocks:
                 render_block(block.title, block.items, _allowed_set, _text_q)
         st.markdown("---")
