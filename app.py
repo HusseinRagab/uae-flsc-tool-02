@@ -1116,6 +1116,118 @@ if _chip_str:
                       expanded=False):
         st.markdown(_chip_str)
 
+# ---------- Expanded soft-validation warnings (Tier 2 UI #9) -----------------
+
+def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
+    """Look at the full Building model + session_state flags and return three lists:
+    (errors, warnings, info). Errors are hard rule conflicts (e.g. LPG roof tank
+    on super-highrise); warnings flag unusual combinations a designer should
+    confirm; info is FYI traceability. Filtering / display is the caller's job."""
+    errs: list[str] = []
+    warns: list[str] = []
+    info: list[str] = []
+
+    def gs(k):  # session-state shorthand
+        return bool(st.session_state.get(k, False))
+
+    # --- Hard errors ---
+    if gs("has_lpg_tank_roof_mounted") and b.height_m > 90:
+        errs.append(
+            "🚫 **LPG roof tank on super-highrise (>90 m) is PROHIBITED.** "
+            "UAE Ch 11 §2.5.1.3 (p.900) bans roof LPG installations on buildings "
+            "taller than 90 m. Either lower the building, change to a podium / "
+            "ground tank, or uncheck the roof-mounted flag."
+        )
+
+    # --- Unusual / suspicious combinations ---
+    if b.occupancy == "storage_industrial" and b.hazard_class == "LH":
+        warns.append(
+            "⚠ Storage / industrial occupancy is rarely LH (Light Hazard). "
+            "Most warehouses are OH1/OH2/EH per the commodity (Table 9.27). "
+            "Confirm hazard class is intentional."
+        )
+
+    if b.occupancy == "mall_covered" and not b.has_atrium:
+        warns.append(
+            "⚠ `mall_covered` selected without `has_atrium`. Most covered malls "
+            "have at least one atrium, which triggers additional Ch 9/10 atrium "
+            "requirements. Confirm intentional."
+        )
+
+    if b.occupancy == "healthcare_a" and not (b.has_operation_theater
+                                              or b.has_mri_scanning_room
+                                              or b.has_anesthetizing_room):
+        warns.append(
+            "⚠ Inpatient hospital (`healthcare_a`) without OT / MRI / "
+            "Anesthetizing room ticked. Confirm the project scope — most "
+            "inpatient hospitals have at least one of these."
+        )
+
+    if b.height_m > 23 and not b.has_evacuation_elevator:
+        warns.append(
+            "⚠ Highrise (>23 m) without a designated `evacuation_elevator`. "
+            "Civil Defence often expects at least one designated firefighter / "
+            "evacuation lift on highrise. Confirm with the AHJ if absent."
+        )
+
+    if (b.occupancy.startswith("hotel_")
+            and not b.has_commercial_kitchen
+            and b.height_m > 15):
+        info.append(
+            "ℹ Hotel without `has_commercial_kitchen` ticked. Most hotels have "
+            "a kitchen (triggers Ch 9 wet chemical + Ch 8 fusible-link). "
+            "Confirm intentional."
+        )
+
+    if (b.occupancy in ("assembly_a", "assembly_b", "assembly_c")
+            and b.gross_floor_area_m2 > 2000
+            and b.assembly_area_m2 == 0):
+        info.append(
+            "ℹ Assembly occupancy with GFA > 2,000 m² but no explicit "
+            "`assembly_area_m2` value entered. Ch 10 Table 10.27 items 9-13 "
+            "triggers on the assembly-hall area; set the value in SC settings "
+            "to ensure the right smoke-purge rule fires."
+        )
+
+    if (b.occupancy.startswith("residential")
+            and b.floors_above_grade >= 4
+            and not b.has_garbage_chute):
+        info.append(
+            "ℹ G+4 residential without `has_garbage_chute` ticked. Most UAE "
+            "residential buildings of this size have a chute (Ch 9 Table 9.29). "
+            "Confirm intentional."
+        )
+
+    if b.has_lpg_tanks and b.height_m > 23:
+        info.append(
+            "ℹ LPG tanks declared on a highrise. Per Ch 11 §2.5.1 the tanks "
+            "must be on the roof or podium only (never inside the building). "
+            "Verify location."
+        )
+
+    if b.has_diesel_generator_room and not b.has_main_electrical_room:
+        warns.append(
+            "⚠ Diesel generator room ticked but `main_electrical_room` is not. "
+            "Diesel gen rooms almost always accompany a main electrical room — "
+            "verify the building has neither."
+        )
+
+    if b.has_high_ceiling and b.ceiling_height_m < 10:
+        warns.append(
+            "⚠ `has_high_ceiling` is ticked but ceiling height is < 10 m. "
+            "Ch 9 Table 9.29.A high-ceiling design starts at 10 m. Untick the "
+            "flag or raise the height."
+        )
+
+    if b.depth_below_grade_m > 7 and b.floors_below_grade <= 2:
+        info.append(
+            "ℹ Depth > 7 m with ≤ 2 basements — Ch 10 Table 10.22 deep-"
+            "underground SC still triggers via the depth threshold (intended)."
+        )
+
+    return errs, warns, info
+
+
 # ---------- Sanity-check banner (Tier 2 UI #9) -------------------------------
 _errs, _warns, _info = _sanity_check_inputs(building)
 if _errs:
@@ -1402,118 +1514,6 @@ def _human_match(match: dict) -> str:
             parts.append(f"{k} = {v}")
 
     return ", ".join(parts)
-
-
-# ---------- Expanded soft-validation warnings (Tier 2 UI #9) -----------------
-
-def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
-    """Look at the full Building model + session_state flags and return three lists:
-    (errors, warnings, info). Errors are hard rule conflicts (e.g. LPG roof tank
-    on super-highrise); warnings flag unusual combinations a designer should
-    confirm; info is FYI traceability. Filtering / display is the caller's job."""
-    errs: list[str] = []
-    warns: list[str] = []
-    info: list[str] = []
-
-    def gs(k):  # session-state shorthand
-        return bool(st.session_state.get(k, False))
-
-    # --- Hard errors ---
-    if gs("has_lpg_tank_roof_mounted") and b.height_m > 90:
-        errs.append(
-            "🚫 **LPG roof tank on super-highrise (>90 m) is PROHIBITED.** "
-            "UAE Ch 11 §2.5.1.3 (p.900) bans roof LPG installations on buildings "
-            "taller than 90 m. Either lower the building, change to a podium / "
-            "ground tank, or uncheck the roof-mounted flag."
-        )
-
-    # --- Unusual / suspicious combinations ---
-    if b.occupancy == "storage_industrial" and b.hazard_class == "LH":
-        warns.append(
-            "⚠ Storage / industrial occupancy is rarely LH (Light Hazard). "
-            "Most warehouses are OH1/OH2/EH per the commodity (Table 9.27). "
-            "Confirm hazard class is intentional."
-        )
-
-    if b.occupancy == "mall_covered" and not b.has_atrium:
-        warns.append(
-            "⚠ `mall_covered` selected without `has_atrium`. Most covered malls "
-            "have at least one atrium, which triggers additional Ch 9/10 atrium "
-            "requirements. Confirm intentional."
-        )
-
-    if b.occupancy == "healthcare_a" and not (b.has_operation_theater
-                                              or b.has_mri_scanning_room
-                                              or b.has_anesthetizing_room):
-        warns.append(
-            "⚠ Inpatient hospital (`healthcare_a`) without OT / MRI / "
-            "Anesthetizing room ticked. Confirm the project scope — most "
-            "inpatient hospitals have at least one of these."
-        )
-
-    if b.height_m > 23 and not b.has_evacuation_elevator:
-        warns.append(
-            "⚠ Highrise (>23 m) without a designated `evacuation_elevator`. "
-            "Civil Defence often expects at least one designated firefighter / "
-            "evacuation lift on highrise. Confirm with the AHJ if absent."
-        )
-
-    if (b.occupancy.startswith("hotel_")
-            and not b.has_commercial_kitchen
-            and b.height_m > 15):
-        info.append(
-            "ℹ Hotel without `has_commercial_kitchen` ticked. Most hotels have "
-            "a kitchen (triggers Ch 9 wet chemical + Ch 8 fusible-link). "
-            "Confirm intentional."
-        )
-
-    if (b.occupancy in ("assembly_a", "assembly_b", "assembly_c")
-            and b.gross_floor_area_m2 > 2000
-            and b.assembly_area_m2 == 0):
-        info.append(
-            "ℹ Assembly occupancy with GFA > 2,000 m² but no explicit "
-            "`assembly_area_m2` value entered. Ch 10 Table 10.27 items 9-13 "
-            "triggers on the assembly-hall area; set the value in SC settings "
-            "to ensure the right smoke-purge rule fires."
-        )
-
-    if (b.occupancy.startswith("residential")
-            and b.floors_above_grade >= 4
-            and not b.has_garbage_chute):
-        info.append(
-            "ℹ G+4 residential without `has_garbage_chute` ticked. Most UAE "
-            "residential buildings of this size have a chute (Ch 9 Table 9.29). "
-            "Confirm intentional."
-        )
-
-    if b.has_lpg_tanks and b.height_m > 23:
-        info.append(
-            "ℹ LPG tanks declared on a highrise. Per Ch 11 §2.5.1 the tanks "
-            "must be on the roof or podium only (never inside the building). "
-            "Verify location."
-        )
-
-    if b.has_diesel_generator_room and not b.has_main_electrical_room:
-        warns.append(
-            "⚠ Diesel generator room ticked but `main_electrical_room` is not. "
-            "Diesel gen rooms almost always accompany a main electrical room — "
-            "verify the building has neither."
-        )
-
-    if b.has_high_ceiling and b.ceiling_height_m < 10:
-        warns.append(
-            "⚠ `has_high_ceiling` is ticked but ceiling height is < 10 m. "
-            "Ch 9 Table 9.29.A high-ceiling design starts at 10 m. Untick the "
-            "flag or raise the height."
-        )
-
-    if b.depth_below_grade_m > 7 and b.floors_below_grade <= 2:
-        info.append(
-            "ℹ Depth > 7 m with ≤ 2 basements — Ch 10 Table 10.22 deep-"
-            "underground SC still triggers via the depth threshold (intended)."
-        )
-
-    return errs, warns, info
 
 
 # ---------- Status legend (Tier-1 UI #1) -------------------------------------
