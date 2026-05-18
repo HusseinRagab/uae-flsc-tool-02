@@ -13,28 +13,28 @@ general:
       occupancy_not: [villa_private]
     systems:
       - name: "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)"
-        code_ref: "Ch 5, #2 / Table 5.1.1"
-        page_ref: "p.397"
+        code_ref: "Ch 5, #2 / Table 5.1 item 1"
+        page_ref: "p.388"
         spec: "Letters >= 150 mm tall; principal stroke >= 19 mm wide; letter width >= 51 mm. Running-man pictogram >= 150 mm tall. 'EXIT' in English AND Arabic."
-        detail: "Per Table 5.1.1: Exit signs shall read EXIT in English and Arabic in plainly legible letters. Letters not less than 150 mm (6 inch) in height; principal strokes >= 19 mm (3/4 inch) wide; letter width >= 51 mm proportionally. Running-man pictogram (ISO 7010 / NFPA 170) towards exit door, image height >= 150 mm. Pictograms per ISO 3864 / NFPA 170."
+        detail: "Per Table 5.1 item 1 (p.388): Exit signs shall read EXIT in English and Arabic in plainly legible letters. Letters not less than 150 mm (6 inch) in height; principal strokes >= 19 mm (3/4 inch) wide; letter width >= 51 mm proportionally. Running-man pictogram (ISO 7010 / NFPA 170) towards exit door, image height >= 150 mm. Pictograms per ISO 3864 / NFPA 170."
 
   - id: es_g_illumination
     when:
       occupancy_not: [villa_private]
     systems:
       - name: "Sign Illumination - External vs Internal"
-        code_ref: "Ch 5, #2 / Table 5.1.4"
-        page_ref: "p.398"
-        spec: "External: >= 54 lux (5 ft-cd) at illuminated surface, contrast ratio >= 0.5. Internal: Civil Defence approved + listed; viewing distance ~ 30 m (formula 150 x H where H = sign-board height)."
-        detail: "Externally illuminated signs: not less than 54 lux at the illuminated surface, contrast ratio not less than 0.5. Internally illuminated signs: shall be Civil Defence approved and registered for the purpose; viewing distance approximately 30 m (visible from 150 x H meters where H is sign-board height)."
+        code_ref: "Ch 5, #2 / Table 5.2 item 1"
+        page_ref: "p.395"
+        spec: "Every sign continuously illuminated (may flash on alarm). EXTERNALLY illuminated: >= 54 lux (5 ft-cd) at illuminated surface, contrast ratio >= 0.5, viewing distance ~ 15 m (visible from 100 x H meters where H = sign-board height). INTERNALLY illuminated: Civil Defence approved + listed, viewing distance ~ 30 m (visible from 150 x H meters where H = sign-board height)."
+        detail: "Per Table 5.2 item 1 (p.395). EXTERNALLY ILLUMINATED (§1.2): not less than 54 lux (5 ft-candle) at the illuminated surface, contrast ratio not less than 0.5; visible from 100 x H meters where H is the height of the sign board, i.e. approximately 15 m maximum viewing distance. INTERNALLY ILLUMINATED (§1.3): shall be approved and registered by Civil Defence for the purpose; visible from 150 x H meters, i.e. approximately 30 m maximum viewing distance. NOTE: external signs MUST NOT be spaced further than 15 m apart - spacing externally illuminated signs at 30 m intervals (the internal-sign limit) violates code."
 
   - id: es_g_photoluminescent
     when:
       occupancy_not: [villa_private]
     systems:
       - name: "Photoluminescent Sign Specifications (UL 1994)"
-        code_ref: "Ch 5, #2 / Table 5.1.5"
-        page_ref: "p.398"
+        code_ref: "Ch 5, #2 / Table 5.1 item 4"
+        page_ref: "p.390"
         spec: "Listed per UL 1994; face shall be CONTINUALLY illuminated by minimum 54 lux during normal AND emergency conditions; sign within 3 m of illumination source"
         detail: "Photoluminescent signs and strips shall be continually illuminated while the building is occupied. Minimum 54 lux (5 ft-candle) artificial light on photoluminescent surface during normal AND emergency conditions. Sign / strip shall be within 3 m of illumination source. Photoluminescent signs SHALL NOT be installed where continuous illumination is not available - photoluminescent material requires charging to function in emergency mode. Listing per UL 1994 (Standard for Luminous Egress Path Marking Systems)."
 
@@ -43,8 +43,8 @@ general:
       occupancy_not: [villa_private]
     systems:
       - name: "Tactile Sign at Every Exit (Braille + Raised Characters)"
-        code_ref: "Ch 5, #2 / Table 5.1.3"
-        page_ref: "p.398"
+        code_ref: "Ch 5, #2 / Table 5.1 item 3"
+        page_ref: "p.390"
         spec: "Per ICC/ANSI A117.1 - Braille + raised characters at every exit location where Exit Signs are required by Table 5.2"
         detail: "Tactile signage shall comply with ICC/ANSI A117.1 (American National Standard for Accessible and Usable Buildings and Facilities). Provided at EVERY exit location where exit signs are required by Table 5.2 - NOT optional. Mounted at side of door per ICC/ANSI A117.1 mounting heights. Required for sight + hearing-impaired wayfinding."
 
@@ -53,20 +53,30 @@ general:
       occupancy_not: [villa_private]
     systems:
       - name: "Directional Exit Sign Placement Rules"
-        code_ref: "Ch 5, #2 / Table 5.1.4 + 5.1.6"
-        page_ref: "p.399"
-        spec: "Installed at EVERY change of direction, PERPENDICULAR to the direction of egress; max line-of-sight distance OR 30 m (whichever is less) from nearest sign"
-        detail: "Directional Exit Signs shall be installed at every change of direction along egress path. Sign orientation shall be perpendicular to the direction of egress. Maximum spacing: line-of-sight viewing distance OR 30 m, whichever is less, from the nearest Exit Sign / Directional Sign / Floor Proximity Sign."
+        code_ref: "Ch 5, #2 / Table 5.2 §2 (items iii-iv) + §4"
+        page_ref: "p.395"
+        spec: "Mounted at a HEIGHT BETWEEN 3000 mm AND 4000 mm from the finished floor; installed at EVERY change of direction; PERPENDICULAR to the direction of egress; max line-of-sight distance OR 30 m (whichever is less) from nearest sign."
+        detail: "Per Table 5.2 §2 (p.395). §2.iii: Directional Exit Signs shall be installed at a height BETWEEN 3000 mm and 4000 mm from the finished floor (this mandatory mounting band applies to all overhead directional signs, distinct from floor-proximity signs). §2.iv: installed at every change of direction and perpendicular to the direction of egress. §4: no point in any exit corridor or exit access corridor shall be in excess of the rated viewing distance OR 30 m, whichever is less, from the nearest Exit Sign / Directional Sign / Floor Proximity Sign."
 
   - id: es_g_floor_proximity_mounting
     when:
       occupancy_not: [villa_private]
     systems:
       - name: "Floor Proximity Sign Mounting (150-455 mm above floor)"
-        code_ref: "Ch 5, #2 / Table 5.1.7"
-        page_ref: "p.399"
+        code_ref: "Ch 5, #2 / Table 5.1 item 7 (trigger); also Table 5.2 §2.v-vi (mounting dimensions)"
+        page_ref: "p.395"
         spec: "Bottom of sign 150-455 mm above finished floor; door-side signs within 100 mm from door frame"
-        detail: "Floor proximity Exit Signs and Directional Signs: bottom of sign shall be NOT LESS than 150 mm AND NOT MORE than 455 mm above the finished floor. Where required at exit doors: mounted adjacent to door, within 100 mm from door frame. Floor proximity signs are required where smoke layer can obscure ceiling-level signs (theatres, cinemas, dance halls, mall play / cinema / food-court zones, robotic parking, HH storage zones - see addons)."
+        detail: "Trigger and sign-format compliance from Table 5.1 item 7 (p.391): floor proximity Exit Signs comply with Table 5.1.1 and floor proximity Directional Signs comply with Table 5.1.2. Mounting dimensions from Table 5.2 §2.v-vi (p.395): bottom of sign shall be NOT LESS than 150 mm AND NOT MORE than 455 mm above the finished floor; where required at exit doors, mounted adjacent to door within 100 mm from door frame. Floor proximity signs are required where smoke layer can obscure ceiling-level signs (theatres, cinemas, dance halls, mall play / cinema / food-court zones, robotic parking, HH storage zones - see addons)."
+
+  - id: es_g_exit_sign_mounting_position
+    when:
+      occupancy_not: [villa_private]
+    systems:
+      - name: "Exit Sign Mounting Position Above / Beside Door"
+        code_ref: "Ch 5, #2 / Table 5.2 §2.i-ii"
+        page_ref: "p.395"
+        spec: "Bottom of Exit Sign <= 1000 mm ABOVE top edge of the egress opening; AND <= 1000 mm HORIZONTAL from the nearest edge of the egress opening to the nearest edge of the sign."
+        detail: "Per Table 5.2 §2 (p.395). §2.i (vertical): the bottom of the Exit Sign shall be located at a vertical distance of NOT MORE than 1000 mm above the top edge of the egress opening intended for designation by that marking. §2.ii (horizontal): the Exit Sign shall be located at a horizontal distance of NOT MORE than 1000 mm, measured from the edge of the egress opening to the nearest edge of the marking. These two limits ensure the sign is unambiguously associated with the door it marks (not with an adjacent opening)."
 
   - id: es_g_exit_door_signs
     when:
@@ -75,8 +85,8 @@ general:
       - name: "Exit Signs at Exit Doors"
         code_ref: "Ch 5, #3 / Table 5.3 item 1"
         page_ref: "p.397"
-        spec: "Internally illuminated, per Table 5.1.1"
-        detail: "Exit doors at exit corridors that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1 (size of letters, running-man pictogram, colours and illumination)."
+        spec: "Externally OR internally illuminated, per Table 5.2 §1.1; sign format per Table 5.1.1"
+        detail: "Exit doors at exit corridors that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1 (size of letters, running-man pictogram, colours). Illumination may be EITHER external OR internal per Table 5.2 §1.1 (the code does not mandate internally illuminated) - external signs viewable to ~15 m, internal to ~30 m."
 
   - id: es_g_horizontal_exit_signs
     when:
@@ -95,8 +105,8 @@ general:
       - name: "Exit Signs at Exit Stairs"
         code_ref: "Ch 5, #3 / Table 5.3 item 2"
         page_ref: "p.397"
-        spec: "Internally illuminated, per Table 5.1.1"
-        detail: "Exit stairs that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1."
+        spec: "Externally OR internally illuminated, per Table 5.2 §1.1; sign format per Table 5.1.1"
+        detail: "Exit stairs that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1. Illumination may be EITHER external OR internal per Table 5.2 §1.1 (code does not mandate internally illuminated)."
 
   - id: es_g_corridor_directional
     when:
@@ -106,7 +116,7 @@ general:
         code_ref: "Ch 5, #3 / Table 5.3 item 3"
         page_ref: "p.397"
         spec: "Per Table 5.1.2 - directional arrow + running-man pictogram"
-        detail: "Directional Signs shall be provided in compliance with Table 5.1.2 along the exit access corridor. Maximum viewing distance 30 m for internally illuminated signs (Table 5.2)."
+        detail: "Directional Signs shall be provided in compliance with Table 5.1.2 along the exit access corridor. Per Table 5.2 §4 (p.395): no point in any exit corridor or exit access corridor shall exceed the rated viewing distance OR 30 m, whichever is less, from the nearest Exit / Directional / Floor Proximity Sign. The 30 m cap applies to ALL signs (external as well as internal); externally illuminated signs are further capped at ~15 m (100 x H) per Table 5.2 §1.2."
 
   - id: es_g_dead_end_no_exit
     when:
@@ -119,6 +129,17 @@ general:
         spec: "Per Table 5.1.5"
         detail: "NO EXIT signs at any door, passage or stair that is neither an exit nor a way of exit access and that is located or arranged so it is likely to be mistaken for an exit."
 
+  - id: es_g_no_exit_letter_dimensions
+    when:
+      has_dead_end_paths_is: true
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+    systems:
+      - name: "NO EXIT Sign Letter Dimensions"
+        code_ref: "Ch 5, #2 / Table 5.1 item 5"
+        page_ref: "p.391"
+        spec: "Word 'NO' = 51 mm (2 in) high letters with 9.5 mm (3/8 in) stroke width; word 'EXIT' = 25 mm (1 in) high letters; word 'EXIT' positioned BELOW the word 'NO'."
+        detail: "Per Table 5.1 item 5 (p.391): the NO EXIT sign shall have the word NO in letters 51 mm (2 inch) high with a stroke width of 9.5 mm (3/8 inch), AND the word EXIT in letters 25 mm (1 inch) high, with the word EXIT placed BELOW the word NO. This is the prescribed letter geometry that turns a 'dead end' marker into a code-compliant NO EXIT sign."
+
   - id: es_g_evacuation_elevator_sign
     when:
       has_evacuation_elevator_is: true
@@ -129,15 +150,32 @@ general:
         spec: "Per Table 5.1.6"
         detail: "Any elevator that qualifies as an evacuation elevator (per Ch 3 #3.9) shall carry an Evacuation Elevator Sign indicating whether occupants may use it."
 
+  - id: es_g_evacuation_elevator_sign_dimensions
+    when:
+      has_evacuation_elevator_is: true
+    systems:
+      - name: "Evacuation Elevator Sign - Letter Height + Wording + Posting"
+        code_ref: "Ch 5, #2 / Table 5.1 item 6"
+        page_ref: "p.391"
+        spec: "Minimum letter height >= 16 mm (5/8 in); exact wording 'In the event of Fire, this elevator will be used by Civil Defence for evacuation of people. PROTECTED ELEVATOR USABLE IN EMERGENCIES'; posted in EVERY evacuation-elevator lobby."
+        detail: "Per Table 5.1 item 6 (p.391). Replaces the standard 'DO NOT USE ELEVATOR DURING FIRE' sign ONLY at elevators designed and accepted as an evacuation elevator per Chapter 3, Section 3.9 and incorporated in the building fire strategy. WORDING (verbatim): 'In the event of Fire, this elevator will be used by Civil Defence for evacuation of people. PROTECTED ELEVATOR USABLE IN EMERGENCIES'. LETTER HEIGHT: minimum 16 mm (5/8 inch). LOCATION: posted in every evacuation-elevator lobby. PURPOSE: indicates to both Civil Defence personnel and trained facility-management that this elevator may be used during emergencies."
+
   - id: es_g_evacuation_plan
     when:
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Evacuation Plan"
-        code_ref: "Ch 5, #3 / Table 5.3 (occupancy items)"
-        page_ref: "p.397-399"
-        spec: "Per Table 5.1.8"
-        detail: "Evacuation Plan posted on each floor and at multiple locations. Hotels also require a plan inside each guest room. Plans shall contain BOTH English and Arabic (mandatory bilingual content - same as exit signs)."
+        code_ref: "Ch 5, #2 / Table 5.1 item 8; applied via Table 5.3 (occupancy items)"
+        page_ref: "p.392-393"
+        spec: "Bilingual (English + Arabic); 3D-format floor plan, 350 mm high x 500 mm wide, framed (not sticker); 'YOU ARE HERE' symbol in Red; heading 'EVACUATION PLAN' 20 mm letters, FLOOR NAME/NUMBER 15 mm letters, legend 10 mm letters; mounted vertical wall at eye level; >= 10.8 lux continuous illumination; one plan minimum, plus one between every 2 exits/exit stairs."
+        detail: |
+          Per Table 5.1 item 8 (p.392-393). CONTENT: bilingual English + Arabic; simple floor plan only (floor number, room names, emergency exits, routes, stairs, elevators, refuge area, fire extinguishers, fire hose cabinets); NO structural detail, furniture, tiles or interior fixtures; landmark features (fountains, statues, atriums) permitted; 'YOU ARE HERE' location and symbol clearly shown; primary and secondary exit routes shown; routes must not pass through lockable / store / hazardous rooms or end at dead ends; exit discharge and assembly points only if on that floor; specific to each floor.
+          FORMAT: 3D format showing elevated walls, stairs and rooms in 3D perspective; symbols, letters and arrows in 2D; size 350 mm high x 500 mm wide; framed and hung on vertical walls (NOT stickers stuck on curved surfaces); coloured printouts, laminated or photo-framed with glass; not glossy background; photoluminescent evacuation plans highly recommended.
+          TYPOGRAPHY: heading 'EVACUATION PLAN' = 20 mm high letters, top centre; 'FLOOR NUMBER/NAME' = 15 mm high letters below heading; legend at bottom = 10 mm high letters.
+          COLOURS: heading + floor name + room names + legend = Black; walls = Grey on White background; exit corridors/routes = Green fill with Dark Green directional arrows; exit doors/stairs = Bold EXIT in Green; 'YOU ARE HERE' + extinguisher/hose-cabinet symbols = Red; assembly point = Green.
+          LOCATION: unobstructed, clearly visible, on vertical walls at eye level; continuously illuminated >= 10.8 lux; main circulation areas, lift lobby, main corridor; NOT inside rooms, stairs or hidden pockets.
+          NUMBERS: minimum one plan strategically in the middle of floor circulation showing 2 exits in opposite directions; for buildings with more than 2 exits/exit stairs, plans posted between every 2 exits/exit stairs.
+          Hotels also require a plan inside each guest room (Table 5.3 item 11.v).
 
 # ---------- OCCUPANCY-SPECIFIC additions (Table 5.3 items 6-20) ---------
 branches:

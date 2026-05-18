@@ -12,35 +12,62 @@ general:
     systems:
       - name: "Visible (Strobe) Notification Device Spacing - Table 8.1.a"
         code_ref: "Ch 8, #4 / Table 8.1.a"
-        page_ref: "p.484"
+        page_ref: "p.464"
         spec: "Per Table 8.1.a - light output (cd) per maximum room size"
         detail: "Wall-mounted strobe placed at half-wall distance. Per Table 8.1.a (3 m ceiling: 6.1x6.1=15 cd, 9.1x9.1=30 cd, 12.2x12.2=60 cd, 13.4x13.4=75 cd, 15.2x15.2=95 cd; 6.1 m ceiling: 9.1x9.1=45 cd, 13.4x13.4=75 cd, 15.2x15.2=95 cd, 16.2x16.2=110 cd, 18x18=135 cd, 20.7x20.7=177 cd; 9.1 m ceiling: 6.1x6.1=55 cd). Consult Table 8.1.a for full matrix."
   - id: fa_general_audible
     when: {}
     systems:
       - name: "Audible Notification - listed sounders / bells per UL 464 / EN 54-3 / FM 3150"
-        code_ref: "Ch 8, #4 / Section 7"
-        page_ref: "p.484"
+        code_ref: "Ch 8, #4 / Table 8.1 item 16 + Table 8.1.a"
+        page_ref: "p.463-464"
         detail: "Sounders / bells / audio-visual alarm devices shall be listed and approved by Civil Defence. English + Arabic announcements where voice evac is provided (see EVC Ch 7)."
   - id: fa_general_facp_addressable
     when: {}
     systems:
       - name: "Addressable Fire Detection & Alarm Control Panel (FACP)"
-        code_ref: "Ch 8, #3 / Section 1"
-        page_ref: "p.467"
+        code_ref: "Ch 8, #3 / Section 4.1 / Table 8.1 item 1"
+        page_ref: "p.455"
         spec: "Only listed and approved ADDRESSABLE Fire Detection & Alarm System permitted in new constructions. Conventional type NOT acceptable except for existing buildings."
         detail: "All system components shall be Civil Defence approved and listed (Section 7). FACP installation by Civil Defence licensed FA contractors only - general contractors / MEP / electrical / BMS / home-automation contractors NOT permitted to install FA systems."
   - id: fa_general_civil_defence_interface
     when: {}
     systems:
       - name: "FACP Interface to Civil Defence Receiving Station"
-        code_ref: "Ch 8, #3 / Section 6"
-        page_ref: "p.490"
-        detail: "FACP shall transmit alarm + supervisory + trouble signals to Civil Defence approved central monitoring station (DCD link). Interface with Public Address / Voice Evacuation system per Ch 7 EVC. Minimum 2 communication paths required (primary + secondary)."
+        code_ref: "Ch 8, #3 / Section 4.1 (FACP gateway)"
+        page_ref: "p.459-461"
+        detail: "FACP shall transmit alarm + supervisory + trouble signals to Civil Defence approved central monitoring station (DCD link). Interface with Public Address / Voice Evacuation system per Ch 7 EVC. A listed barrier gateway (integral with or attached to each control unit or group of control units) shall be provided to prevent other systems from interfering with or controlling the fire alarm system (Section 4.1 / Table 8.1 item v, p.459 line 776)."
+  - id: fa_general_mcp_spacing
+    when: {}
+    systems:
+      - name: "Manual Call Point (MCP) Spacing & Mounting"
+        code_ref: "Ch 8, #4 / Table 8.1 item 4 + Section 4.10 / Table 8.10"
+        page_ref: "p.456 (Table 8.1 item 4); p.498 (Section 4.10 / Table 8.10)"
+        spec: "Travel distance to nearest MCP not more than 61 m; MCP within 1.5 m from exit door opening; mounting height 1.2 m AFFL"
+        detail: "MCPs shall be installed on all escape routes and be conspicuous, unobstructed and accessible. Distribution shall ensure travel distance to the nearest MCP does not exceed 61 m. MCPs shall be installed within 1.5 m from each exit door opening and generally at a height of 1.2 m above finished floor level (AFFL). All MCPs within an occupancy shall be of similar design."
+  - id: fa_general_gateway_interface
+    when: {}
+    systems:
+      - name: "Listed Barrier Gateway between FACP and Other Systems (BMS / HVAC / Security)"
+        code_ref: "Ch 8, #3 / Section 4.1 / Table 8.1 item v"
+        page_ref: "p.459-461"
+        spec: "Listed barrier gateway required at each FACP / group of control units"
+        detail: "A listed barrier gateway, integral with or attached to each control unit or group of control units, shall be provided between the FACP and other systems (BMS, HVAC, security, building automation) to prevent the other systems from interfering with or controlling the fire alarm system. All non-fire-alarm components interfaced via the gateway shall be listed for fire alarm use or for fire conditions."
 
 branches:
   - id: fa_super_highrise
-    match: {height_m_gt: 90}
+    # Super-highrise (> 90 m) per Ch 3 Definitions. Specific-occupancy branches
+    # excluded (mall, education, healthcare, detention, parking, villa,
+    # storage_industrial, motor_fuel_dispensing); hotel_a/b/c not excluded so a
+    # tall hotel still picks the super-highrise overlay.
+    match:
+      height_m_gt: 90
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
+                      mall_covered, mall_open, mall_mixed,
+                      parking_enclosed, parking_open,
+                      storage_industrial,
+                      detention_a, detention_b, detention_c,
+                      healthcare_a, education_a, education_b, education_c]
     section: "Ch 8, #5.1 / Table 8.13 item 1"
     page: "p.502"
     systems:
@@ -62,12 +89,27 @@ branches:
         detail: "Fire pump, all suppression systems, Fire Water Level, LP Gas detection, CO Monitoring, door release, Elevator recall, Smoke Control - all interfaced with FACP per Section 4.1."
 
   - id: fa_highrise
-    match: {height_m_gt: 23, height_m_lte: 90}
+    # Highrise threshold = > 15 m per UAE FLSC Ch 3 (line 1014: "Mid rise, having
+    # height more than 15 m, High rise buildings and superhighrise buildings...").
+    # Specific-occupancy branches (mall, education, healthcare, detention, parking,
+    # villa, storage_industrial, motor_fuel_dispensing) are excluded so they pick
+    # their dedicated Table 8.13 row; hotel_a/b/c intentionally NOT excluded so a
+    # tall hotel still picks up the highrise overlay (per Table 8.13 item 2).
+    match:
+      height_m_gt: 15
+      height_m_lte: 90
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
+                      mall_covered, mall_open, mall_mixed,
+                      parking_enclosed, parking_open,
+                      storage_industrial,
+                      detention_a, detention_b, detention_c,
+                      healthcare_a, education_a, education_b, education_c]
     section: "Ch 8, #5.1 / Table 8.13 item 2"
     page: "p.502"
     systems:
       - name: "Smoke Detection and Alarm System (entire building)"
         spec: "Addressable, per Section 4.3"
+        detail: "Highrise threshold (> 15 m) per Ch 3 Definitions (p.259 line 1014). Code uses 'more than 15 m' for High-rise / Mid-rise above 15 m; the 23 m figures inside Ch 8 itself refer to smoke-detector spacing in stair / elevator shafts, NOT to the highrise threshold."
       - name: "Sub-FACPs / Annunciators every 45 m"
         spec: "Networked to main FACP"
         detail: "At elevator lobby or mechanical floor every 45 m, networked to main FACP."
@@ -79,8 +121,11 @@ branches:
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
 
   - id: fa_midrise_lowrise
+    # Midrise / Lowrise threshold = <= 15 m per UAE FLSC Ch 3 line 1010-1014
+    # ("Low rise buildings having height up to 15 m"). Buildings up to 15 m fall
+    # under this generic branch; > 15 m branches up to fa_highrise.
     match:
-      height_m_lte: 23
+      height_m_lte: 15
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
                       mall_covered, mall_open, mall_mixed,
                       parking_enclosed, parking_open,
@@ -93,7 +138,7 @@ branches:
     systems:
       - name: "Smoke Detection and Alarm System (entire building)"
         spec: "Addressable, per Section 4.3"
-        detail: "Throughout midrise / lowrise. Detectors at all rooms, halls, storage areas, basements (unless sprinklered), attics, lofts, enclosed usable spaces."
+        detail: "Throughout midrise / lowrise (height <= 15 m per Ch 3 Definitions, p.259 line 1010). Detectors at all rooms, halls, storage areas, basements (unless sprinklered), attics, lofts, enclosed usable spaces."
       - name: "Single Main FACP"
         detail: "At Emergency Command Centre / Reception / Security guard house per fire strategy."
       - name: "Positive Alarm Sequence (PAS) - 180 s"
@@ -103,7 +148,7 @@ branches:
   - id: fa_mall
     match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
     section: "Ch 8, #5.1 / Table 8.13 item 24"
-    page: "p.506"
+    page: "p.507"
     systems:
       - name: "Smoke Detection and Alarm System (entire mall)"
         spec: "Addressable, per Section 4.3"
@@ -187,6 +232,49 @@ branches:
       - name: "Main FACP at Continuously Attended Location"
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
 
+  - id: fa_nursery_plants
+    # Plant / vegetation nursery exemption (Table 8.13 item 28, p.508).
+    # Must precede fa_storage_industrial so it wins the first-match branch.
+    match: {occupancy: storage_industrial, is_plant_nursery_is: true}
+    section: "Ch 8, #5.1 / Table 8.13 item 28"
+    page: "p.508"
+    systems:
+      - name: "Fire Detection and Alarm System NOT REQUIRED (Plant / Vegetation Nursery)"
+        required: not_required
+        detail: "Per Table 8.13 item 28 (p.508): 'Fire Detection and Alarm System shall not be required' for plant and vegetation nurseries. Note: Auxiliary rooms and equipment within the nursery complex (offices, stores, pump rooms, LPG tanks if any) may still require detection under Tables 8.14 / 8.15."
+
+  - id: fa_cold_storage
+    # Cold-storage warehouse (Table 8.13 item 21, p.506).
+    # Must precede fa_storage_industrial so it wins the first-match branch.
+    match: {occupancy: storage_industrial, is_cold_storage_is: true}
+    section: "Ch 8, #5.1 / Table 8.13 item 21"
+    page: "p.506"
+    systems:
+      - name: "Aspiration Air Sampling (Freezer / Cold Room)"
+        spec: "Per Section 4.5"
+        detail: "Aspiration Type Air Sampling Smoke Detection System shall be provided inside freezer and cold room areas - conventional smoke detectors do not reliably operate at sub-zero temperatures."
+      - name: "Smoke Detection (Office / Maintenance / Store Rooms)"
+        spec: "Addressable, per Section 4.3"
+        detail: "Smoke Detection and Alarm System throughout office, maintenance and store room areas of the cold-storage building."
+      - name: "External Audio-Visual Notification Devices"
+        spec: "Visible from common entrance"
+      - name: "General Fire Alarm = Evacuation Alarm"
+        detail: "No PAS delay - immediate evacuation alarm on detection (per Table 8.13 storage rows)."
+
+  - id: fa_robotic_parking
+    # Robotic / Mechanical Parking or Robotic Logistics (Table 8.13 item 23, p.506).
+    # Must precede fa_parking_enclosed and fa_storage_industrial.
+    match: {has_robotic_parking_is: true}
+    section: "Ch 8, #5.1 / Table 8.13 item 23"
+    page: "p.506"
+    systems:
+      - name: "Aspiration Air Sampling (Vehicle Stacking / Storing Areas)"
+        spec: "Per Section 4.5"
+        detail: "Aspiration Type Air Sampling Smoke Detection System throughout vehicle stacking and storing areas of robotic / mechanical parking or robotic logistics facility."
+      - name: "Smoke Detection (Office / Maintenance / Reception / Store Rooms)"
+        spec: "Addressable, per Section 4.3"
+      - name: "Main FACP at Continuously Attended Location"
+
   - id: fa_storage_industrial
     match: {occupancy: storage_industrial}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20"
@@ -226,7 +314,7 @@ branches:
   - id: fa_villa_private
     match: {occupancy: villa_private}
     section: "Ch 8, #5.1 / Table 8.13 item 26"
-    page: "p.507"
+    page: "p.508"
     systems:
       - name: "Smoke Detection and Alarm System (each villa)"
         spec: "Addressable, per Section 4.3"
@@ -278,6 +366,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 2"
         page_ref: "p.509"
         spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+        detail: "Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
 
   - id: fa_aux_operation_theater
     flag: has_operation_theater
@@ -312,6 +401,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 6"
         page_ref: "p.509"
         spec: "Per Section 4.4"
+        detail: "Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
 
   - id: fa_aux_computer
     flag: has_computer_room
@@ -320,6 +410,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 7"
         page_ref: "p.509"
         spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+        detail: "Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
 
   - id: fa_aux_diesel_gen
     flag: has_diesel_generator_room
@@ -337,6 +428,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 9"
         page_ref: "p.509"
         spec: "Per Section 4.4"
+        detail: "Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
 
   - id: fa_aux_ahu
     flag: has_ahu_room
@@ -353,6 +445,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 11"
         page_ref: "p.509"
         spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+        detail: "Code Table 8.14 item 11 references 'LV ROOM' only; MV is treated the same as an engineering-safe interpretation. Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
 
   - id: fa_aux_lift_machine
     flag: has_lift_machine_room
@@ -369,16 +462,27 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 13"
         page_ref: "p.510"
         spec: "Per Section 4.4 OR Aspiration per Section 4.5"
-        detail: "Aspiration preferred for very-early warning in critical IT spaces."
+        detail: "Aspiration preferred for very-early warning in critical IT spaces. Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
 
   - id: fa_aux_high_ceiling_beam
     flag: has_high_ceiling
+    when: {ceiling_height_m_gt: 10, ceiling_height_m_lt: 20}
     systems:
       - name: "Beam Smoke Detection (High-Ceiling Spaces 10-20 m)"
         code_ref: "Ch 8, #5.2 / Table 8.14 item 18"
         page_ref: "p.510"
         spec: "Per Section 4.4"
-        detail: "Enclosed spaces with height > 10 m and < 20 m from finished floor level shall use projected-beam smoke detection. For ceilings >= 20 m switch to aspiration (see ceiling height input)."
+        detail: "Enclosed spaces with height > 10 m and < 20 m from finished floor level shall use projected-beam smoke detection."
+
+  - id: fa_aux_high_ceiling_aspiration
+    flag: has_high_ceiling
+    when: {ceiling_height_m_gte: 20}
+    systems:
+      - name: "Aspiration Air Sampling (High-Ceiling Spaces >= 20 m)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 19"
+        page_ref: "p.510"
+        spec: "Per Section 4.5"
+        detail: "Enclosed spaces with height more than 20 m from finished floor level shall use Aspiration Type Air Sampling Detection System (Table 8.14 item 19, lines 3086-3091)."
 
   - id: fa_aux_garbage_chute
     flag: has_garbage_chute
@@ -421,6 +525,157 @@ auxiliary_rooms:
         page_ref: "p.511"
         spec: "Per Section 4.10"
         detail: "Manual call points on roof areas used for restaurant seating, assembly or sheesha bars."
+
+  # ----- Table 8.14 items 14-37 (added) ------------------------------------
+  # Item 14: Stair shaft. Smoke detector at top + (highrise) every 23 m intermediate landings.
+  - id: fa_aux_stair
+    flag: has_stairs
+    systems:
+      - name: "Smoke Detection at Top of Stair Shaft (+ every 23 m for Highrise)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 14"
+        page_ref: "p.510"
+        spec: "Per Section 4.3"
+        detail: "At least one smoke detector at the top of the stair shaft (non-highrise). In Highrise and Super-Highrise buildings, additional smoke detectors at intermediate landings every 23 m of vertical shaft height."
+
+  # Item 15: Elevator shaft. Smoke detector at top + (highrise) every 23 m intermediate levels.
+  - id: fa_aux_elevator_shaft
+    flag: has_elevator
+    systems:
+      - name: "Smoke Detection at Top of Elevator Shaft (+ every 23 m for Highrise)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 15"
+        page_ref: "p.510"
+        spec: "Per Section 4.3"
+        detail: "At least one smoke detector at the top of the elevator shaft (non-highrise). In Highrise and Super-Highrise buildings, additional smoke detectors at intermediate levels every 23 m vertically in the shaft."
+
+  # Item 16: Above false ceiling - conditional on void > 80 cm. No dedicated schema flag;
+  # emitted as an always-on conditional reminder so designers verify the void height.
+  - id: fa_aux_above_false_ceiling
+    always_on: true
+    systems:
+      - name: "Smoke Detection in Above-False-Ceiling Voids > 80 cm (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 16"
+        page_ref: "p.510"
+        spec: "Per Section 4.3 (with remote response indicators)"
+        required: conditional
+        detail: "CONDITIONAL: Where above-false-ceiling voids exceed 80 cm height, smoke detectors shall be provided in the void (Section 4.3). Remote response indicators shall be provided to identify alarm status of concealed detectors. Exception: detectors are not required where voids are inaccessible. Designer to confirm void heights in coordination drawings."
+
+  # Item 17: Below raised floor - conditional on void > 30 cm OR cable/duct runs. Same treatment.
+  - id: fa_aux_below_raised_floor
+    always_on: true
+    systems:
+      - name: "Smoke Detection in Below-Raised-Floor Voids > 30 cm or with Cable/Duct Runs (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 17"
+        page_ref: "p.510"
+        spec: "Per Section 4.3 (with remote response indicators)"
+        required: conditional
+        detail: "CONDITIONAL: Where below-raised-floor voids exceed 30 cm height OR where cable runs and ducting are installed, smoke detectors shall be provided in the void (Section 4.3). Remote response indicators required to identify alarm status of concealed detectors. Designer to confirm void heights / cable routing."
+
+  # Item 20: Public bathroom > 5 m². Conditional reminder; no dedicated schema flag.
+  - id: fa_aux_public_bathroom_large
+    always_on: true
+    systems:
+      - name: "Heat Detection in Public Bathrooms > 5 m² (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 20"
+        page_ref: "p.510"
+        spec: "Per Section 4.7"
+        required: conditional
+        detail: "CONDITIONAL: Public bathrooms having area more than 5 m² shall be provided with Heat Detection and Alarm System (Section 4.7). Designer to verify bathroom areas on architectural layout."
+
+  # Item 26: Bedroom (sounder-based smoke detector) - conditional general reminder.
+  - id: fa_aux_bedroom
+    always_on: true
+    systems:
+      - name: "Sounder-based Smoke Detector in Bedrooms (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 26"
+        page_ref: "p.511"
+        spec: "Per Section 4.3"
+        required: conditional
+        detail: "CONDITIONAL: Where bedrooms are part of the occupancy (residential, hotel guest rooms, hostels, labour accommodation, staff accommodation, healthcare patient rooms, etc.), a sounder-based smoke detector shall be provided in each bedroom (Section 4.3)."
+
+  # Item 27: Living room - conditional general reminder.
+  - id: fa_aux_living_room
+    always_on: true
+    systems:
+      - name: "Smoke Detector in Living Rooms (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 27"
+        page_ref: "p.511"
+        spec: "Per Section 4.3"
+        required: conditional
+        detail: "CONDITIONAL: Where the occupancy includes living rooms (residential dwellings, villas, apartments, hotel suites, staff accommodation, etc.), a smoke detector shall be provided in each living room (Section 4.3)."
+
+  # Item 28: Open kitchen - tied to has_commercial_kitchen as the closest proxy;
+  # also fires conditionally for residential open kitchens (see detail note).
+  - id: fa_aux_kitchen_open
+    flag: has_commercial_kitchen
+    systems:
+      - name: "Listed Kitchen Detector OR Heat-in-Kitchen + Smoke-in-Living (Open Kitchen)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 28"
+        page_ref: "p.511"
+        spec: "Per Section 4.7 / 4.3 / Table 8.12.1 - one of three options"
+        detail: "OPEN KITCHEN options: (a) detectors specifically listed for kitchen use installed per their listing; OR (b) heat detector in the kitchen (Section 4.7) AND a smoke detector 3 m away from the kitchen counter, in the living room (Section 4.3); OR (c) multisensors specifically listed for kitchen per Table 8.12.1. Note: this rule is keyed off has_commercial_kitchen; it also applies to residential open kitchens (apartments, villas, hotel suites) - designer to extend coverage as a conditional general reminder."
+
+  # Item 29: Closed kitchen - same flag.
+  - id: fa_aux_kitchen_closed
+    flag: has_commercial_kitchen
+    systems:
+      - name: "Listed Kitchen Detector OR Heat Detector (Closed Kitchen)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 29"
+        page_ref: "p.511"
+        spec: "Per Section 4.7 - or detectors specifically listed for kitchen"
+        detail: "CLOSED KITCHEN options: (a) detectors specifically listed for kitchen use installed per their listing; OR (b) heat detector in the kitchen (Section 4.7). Note: this rule is keyed off has_commercial_kitchen; it also applies to residential closed kitchens - designer to extend coverage as a conditional general reminder."
+
+  # Item 30: Corridor - conditional general reminder.
+  - id: fa_aux_corridor
+    always_on: true
+    systems:
+      - name: "Smoke Detector in Corridors (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 30"
+        page_ref: "p.511"
+        spec: "Per Section 4.3"
+        required: conditional
+        detail: "CONDITIONAL: Where corridors are part of the egress arrangement (most occupancies), a smoke detector shall be provided per Section 4.3. Already typically covered by the branch-level smoke-detection-throughout requirement; listed here for traceability with Table 8.14 row 30."
+
+  # Items 31-33: Temporary structures - conditional general reminder.
+  - id: fa_aux_temporary_structures
+    always_on: true
+    systems:
+      - name: "Smoke Detection in Temporary Kiosks / Tents / Modular Houses-Offices (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 items 31-33"
+        page_ref: "p.511"
+        spec: "Battery-operated listed smoke detectors (kiosks / tents) OR Section 4.3 (modular)"
+        required: conditional
+        detail: "CONDITIONAL: Temporary kiosks (item 31) and temporary tents (item 32) shall be provided with battery-operated smoke detectors listed and approved by Civil Defence. Temporary modular houses / offices (item 33) shall be provided with smoke detectors per Section 4.3. Applies only when the project includes any of these temporary structures."
+
+  # Item 34: Food trucks - keyed off LPG-cylinder food-truck flag (closest schema proxy).
+  - id: fa_aux_food_truck
+    flag: has_lpg_cylinders_food_truck
+    systems:
+      - name: "Heat Detector (Food Truck)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 34"
+        page_ref: "p.511"
+        spec: "Per Section 4.7"
+        detail: "Heat detector inside each food-truck cooking compartment per Section 4.7. Rule keyed off has_lpg_cylinders_food_truck (closest available schema flag); applies to all food trucks regardless of fuel type."
+
+  # Item 35: Mercantile trucks - conditional reminder (no clean flag).
+  - id: fa_aux_mercantile_truck
+    always_on: true
+    systems:
+      - name: "Heat Detector (Mercantile Truck) (Conditional)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 35"
+        page_ref: "p.511"
+        spec: "Per Section 4.7"
+        required: conditional
+        detail: "CONDITIONAL: Where mercantile trucks (mobile retail vehicles) are part of the project, a heat detector shall be provided inside each truck per Section 4.7."
+
+  # Item 37: Open storage shed - keyed off open-yard-storage flag.
+  - id: fa_aux_open_storage_shed
+    flag: is_open_yard_storage
+    systems:
+      - name: "Manual FA System (Open Storage Shed)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 37"
+        page_ref: "p.511"
+        spec: "Per Section 4.10"
+        detail: "Open storage sheds (yard / outdoor storage) shall be provided with Manual Fire Detection and Alarm System per Section 4.10 (manual call points only; automatic detection not required given the open-air envelope)."
 
 # ---------- EQUIPMENT: Table 8.15 -------------------------------------------
 equipment:
@@ -474,6 +729,12 @@ equipment:
         page_ref: "p.512"
         spec: "Per Section 4.7"
 
+  # Note: Code text for cooling-tower / oil-filled-transformer linear-heat
+  # detection says "on the cable trays" which is a likely copy-paste artifact
+  # from the cable-spread row (Table 8.15 item 4). YAML omits the "on cable
+  # trays" phrase as it makes no engineering sense for these equipment items
+  # (linear-heat cable is routed along the cooling-tower basin / fill and
+  # along the transformer tank itself).
   - id: fa_eq_cooling_towers
     flag: has_cooling_towers
     systems:
@@ -481,6 +742,7 @@ equipment:
         code_ref: "Ch 8, #5.3 / Table 8.15 item 7"
         page_ref: "p.512"
         spec: "Per Section 4.8"
+        detail: "Linear-type heat-detection cable routed along the cooling-tower basin / fill structure. Code text says 'on the cable trays' which is a likely copy-paste artifact from Table 8.15 item 4 (cable spread); YAML omits that phrase as it makes no engineering sense for a cooling tower."
 
   - id: fa_eq_oil_filled_transformers
     flag: has_oil_filled_transformers
@@ -489,6 +751,7 @@ equipment:
         code_ref: "Ch 8, #5.3 / Table 8.15 item 8"
         page_ref: "p.512"
         spec: "Per Section 4.8"
+        detail: "Linear-type heat-detection cable routed along the transformer tank. Code text says 'on the cable trays' which is a likely copy-paste artifact from Table 8.15 item 4 (cable spread); YAML omits that phrase as it makes no engineering sense for an oil-filled transformer."
 
   - id: fa_eq_bulk_oil_storage
     flag: has_bulk_oil_storage

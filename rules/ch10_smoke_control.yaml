@@ -13,8 +13,8 @@ branches:
     page: "p.855-856"
     systems:
       - name: "Stair Pressurization (multi-injection, all levels including basements)"
-        spec: "Per Section 2.6 - multiple injection arrangement; stair shafts interrupted every 90 m (smoke door at landing OR refuge area OR sealed-and-firestopped duct)"
-        detail: "Required throughout all stairs including basements. Stack-effect mitigation mandatory above 90 m height per Table 10.4.3."
+        spec: "Per Section 2.6 - multiple injection arrangement. Stair-shaft stack-effect mitigation per Table 10.19 item 1.iv (5 options at every 90 m intervals): (a) 2-way swing smoke door at stair landing; (b) transfer passageway or refuge area; (c) stair-shaft separation; (d) sealed-and-firestopped pressurization ducting; (e) compensated forced-airflow pressurization counteracting stack effect. Design ΔP per Table 10.3.a (12.5 / 25 / 35 / 45 Pa); max ΔP across door per Table 10.3.b (53-113 Pa); 133 N max door-opening force."
+        detail: "Required throughout all stairs including basements. Stack-effect mitigation mandatory above 90 m height per Table 10.4.3 - designer to integrate one or more of the 5 options listed in Table 10.19 item 1.iv (a) - (e)."
       - name: "Passenger Elevator Lobby (1-hr fire rated, smoke barrier)"
         spec: "Per Section 2.6 - lobby door 250 °C / 30 min temperature rise limit; self-closing leaves; smoke detector at door"
         detail: "Elevators opening directly to exit corridors WITHOUT lobby are NOT permitted in super-highrise."
@@ -26,14 +26,16 @@ branches:
         detail: "Mandatory for all super-highrise. Lobby is 1-hr fire-rated smoke partition. No separate smoke control needed for the lift shaft when lobby is provided."
 
   # ---------- Table 10.20 - Highrise (23-90 m) ----------
+  # Code §3.2.1 (p.857): "more than 23 m but less than 90 m" - strict less-than at 90 m.
+  # At exactly 90 m the building is classified as super-highrise (height_m_gt: 90).
   - id: sc_highrise
-    match: {height_m_gt: 23, height_m_lte: 90}
+    match: {height_m_gt: 23, height_m_lt: 90}
     section: "Ch 10, #3.2 / Table 10.20"
     page: "p.857"
     systems:
       - name: "Stair Pressurization"
-        spec: "Per Section 2.6 - multiple injection arrangement for buildings > 30.5 m"
-        detail: "Stair pressurization extends to all levels including basements. Multiple-injection arrangement required when building exceeds 30.5 m height."
+        spec: "Per Section 2.6 - multiple injection arrangement for buildings > 30.5 m. Design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height (3 / 4.5 / 6.5 m bands)."
+        detail: "Stair pressurization extends to all levels including basements. Multiple-injection arrangement required when building exceeds 30.5 m height. Max allowable ΔP across door per Table 10.3.b (53-113 Pa range, varies with door width 0.81-1.22 m and closer force 25-60 N); door-opening force shall not exceed 133 N."
       - name: "Passenger Elevator Lobby OR Lift Hoistway Pressurization"
         spec: "If lobby provided: 1-hr fire-rated smoke barrier per Table 10.20.2.1. If no lobby: lift hoistway pressurization per Section 2.19"
         detail: "Either approach acceptable. Lobby with smoke barrier is preferred; hoistway pressurization is the alternative when no lobby exists."
@@ -44,6 +46,11 @@ branches:
         detail: "Smoke exhaust only from roof (open to sky); no intermediate-level exhaust."
 
   # ---------- Table 10.21 - Midrise / Lowrise default (<23 m) ----------
+  # Per code §3.3.1 / Table 10.21 item 1: only the STAIR-PRESSURIZATION "not required"
+  # excludes hospitals/malls/educational/assembly (they get sc_lowrise_special_occupancy_stair
+  # instead). Lobby / firefighter-lift / corridor items (Table 10.21 items 2-4) apply EQUALLY
+  # to all lowrise/midrise occupancies and are emitted by sc_midrise_lowrise_lobby_lift_corridor
+  # below, with no occupancy exclusion.
   - id: sc_midrise_lowrise_default
     match:
       height_m_lte: 23
@@ -55,28 +62,29 @@ branches:
                       motor_fuel_dispensing,
                       parking_enclosed, parking_open,
                       storage_industrial]
-    section: "Ch 10, #3.3 / Table 10.21"
+    section: "Ch 10, #3.3 / Table 10.21 item 1"
     page: "p.858"
     systems:
       - name: "Stair Pressurization NOT Required (default)"
         required: not_required
-        detail: "Stair pressurization is NOT required for midrise / lowrise occupancies other than hospitals, malls, educational and assembly. Where provided, design per Section 2.6."
-      - name: "Passenger Elevator Lobby (no fire-resistance rating required)"
-        required: conditional
-        detail: "Lobby barriers do NOT require fire-resistance rating in midrise/lowrise. Lobby door leaves still self-closing. No smoke control required for the lobby itself. Lift hoistway pressurization NOT required."
-      - name: "Firefighting Lift (NOT mandatory)"
-        required: not_required
-        detail: "Firefighting lift is not mandatory in midrise/lowrise. Where provided, firefighting lobby not required either. Stair pressurization using vestibule per Section 2.16 permitted."
-      - name: "Corridor Smoke Management NOT Required"
-        required: not_required
-        detail: "A smoke management system for corridors and open circulation areas is NOT required at midrise/lowrise. Natural ventilation per Section 2.15 permitted."
+        detail: "Stair pressurization is NOT required for midrise / lowrise occupancies other than hospitals, malls, educational and assembly. Where provided, design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height band; max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N max door-opening force per Section 2.6."
+
+  # Lobby / Firefighter-lift / Corridor items - apply to ALL lowrise/midrise regardless of
+  # occupancy (Table 10.21 items 2, 3, 4). Previously these were lost for hospitals/malls/
+  # educational/assembly because they were grouped with the stair-press "not required" row
+  # whose exclusion list filtered them out.
+  # Note: sc_midrise_lowrise_lobby_lift_corridor is placed AFTER all occupancy-specific
+  # branches (mall, hospital, school, business) so those branches win first-match for
+  # selected_branch labelling. The lobby/lift/corridor rows here still fire and get
+  # combined with the occupancy-specific systems via engine de-duplication.
 
   # Special-occupancy override: hospitals, malls, educational, assembly always need stair pressurization
 
   # ---------- Table 10.22 - Underground / Basement > 7m depth OR > 2 basements (non-parking) ----------
-  # Code text (Ch 10, #3.4): "An underground structure or a building more than 7 m below
-  #                           OR having more than two basements below the level of exit discharge."
-  # The OR is implemented by two parallel branches; engine deduplicates overlapping systems.
+  # Code text (Ch 10, #3.4): the depth > 7 m criterion comes from Table 10.22 items 1 (stairs)
+  # and 3 (firefighting lift). The "more than two basements" criterion likely comes from
+  # Ch 1 definitions of "underground building" (not captured in the OCR'd Ch 10 text).
+  # Both branches collapse via engine de-duplication of identical systems.
   - id: sc_underground_deep
     match:
       floors_below_grade_gt: 2
@@ -85,7 +93,7 @@ branches:
     page: "p.859"
     systems:
       - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
-        spec: "Per Section 2.6 - extends to all levels of building if common stair"
+        spec: "Per Section 2.6 - extends to all levels of building if common stair. Design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height. Max ΔP across door per Table 10.3.b (53-113 Pa); 133 N max door-opening force."
         detail: "Triggered for stairs connecting underground / basements > 7 m below fire-access level OR more than two basements below exit discharge. Vestibule pressurization per Section 2.16 acceptable."
       - name: "Passenger Elevator Lobby (mandatory)"
         spec: "1-hr fire-rated smoke barrier; door 250 °C / 30 min temperature limit"
@@ -108,7 +116,7 @@ branches:
     page: "p.859"
     systems:
       - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
-        spec: "Per Section 2.6 - extends to all levels of building if common stair"
+        spec: "Per Section 2.6 - extends to all levels of building if common stair. Design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height. Max ΔP across door per Table 10.3.b (53-113 Pa); 133 N max door-opening force."
         detail: "Triggered for stairs connecting underground / basements > 7 m below fire-access level OR more than two basements below exit discharge. Vestibule pressurization per Section 2.16 acceptable."
       - name: "Passenger Elevator Lobby (mandatory)"
         spec: "1-hr fire-rated smoke barrier; door 250 °C / 30 min temperature limit"
@@ -163,12 +171,43 @@ branches:
         required: conditional
         spec: "Per Section 2.6"
 
+  # Deep-basement parking stair pressurization - closes the gap between sc_parking_*
+  # (which only triggers stair-press for parking ABOVE grade > 23 m) and sc_underground_deep
+  # (which excludes parking occupancies). A 2-basement enclosed parking 10 m below grade
+  # would otherwise get no stair-press rule. Per Table 10.22 items 1 + 3 and Table 10.23.
+  # OR-logic implemented as two parallel branches (engine dedupes overlapping systems):
+  # branch A fires when "more than two basements below"; branch B fires when "depth > 7 m".
+  - id: sc_basement_parking_deep
+    match:
+      occupancy_in: [parking_enclosed, parking_open]
+      floors_below_grade_gt: 2
+    section: "Ch 10, #3.4 / Table 10.22 + Table 10.23"
+    page: "p.859-860"
+    systems:
+      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
+        spec: "Per Section 2.6 - extends to all levels of parking if common stair. Design ΔP per Table 10.3.a (12.5 / 25 / 35 / 45 Pa); max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N door-opening force limit."
+        detail: "Triggered for stairs serving basement parking with more than two basements below exit discharge (Table 10.22 item 1). Vestibule pressurization per Section 2.16 acceptable."
+
+  - id: sc_basement_parking_deep_by_depth
+    match:
+      occupancy_in: [parking_enclosed, parking_open]
+      depth_below_grade_m_gt: 7
+    section: "Ch 10, #3.4 / Table 10.22 + Table 10.23"
+    page: "p.859-860"
+    systems:
+      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
+        spec: "Per Section 2.6 - extends to all levels of parking if common stair. Design ΔP per Table 10.3.a (12.5 / 25 / 35 / 45 Pa); max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N door-opening force limit."
+        detail: "Triggered for stairs serving basement parking > 7 m below fire-access level (Table 10.22 item 1). Vestibule pressurization per Section 2.16 acceptable."
+
   # ---------- Table 10.24 - Mall ----------
   - id: sc_mall
     match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
     section: "Ch 10, #3.6 / Table 10.24"
     page: "p.861"
     systems:
+      - name: "Mall Stair Pressurization (mandatory)"
+        spec: "Per Section 2.6 / Table 10.21 (p.858) - design ΔP per Table 10.3.a (12.5 / 25 / 35 / 45 Pa); max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N door-opening force limit."
+        detail: "Stair pressurization is mandatory for malls at every height tier (Table 10.21 special-occupancy override at lowrise/midrise; Table 10.20 at highrise; Table 10.19 at super-highrise). Emitted here explicitly so the mall branch is self-contained."
       - name: "Mall Circulation Smoke Control"
         spec: "Per Section 2.10 + automatic smoke curtains / permanent downstands at max 122 m travel intervals"
       - name: "Atrium Smoke Control (where atrium present)"
@@ -194,14 +233,13 @@ branches:
       corridor_length_m_gt: 60
       occupancy_in: [residential, business,
                      mercantile_a, mercantile_b,
-                     hotel_a, hotel_b, hotel_c,
-                     staff_accommodation, labour_accommodation, hostel]
+                     staff_accommodation, labour_accommodation]
     section: "Ch 10, #3.9 / Table 10.27 item 4"
     page: "p.866"
     systems:
       - name: "Enclosed Corridor Natural Ventilation (corridor length > 60 m, lowrise/midrise)"
         spec: "Per Section 2.15 - automatic openable ventilation panels where exterior façade / roof accessible"
-        detail: "Triggered for enclosed corridors with circulation length > 60 m in mercantile, staff/labour accommodations, residential, hotel, hostel and office (business) buildings at lowrise/midrise heights. Where exterior façade or roof is accessible, natural ventilation per Section 2.15 shall be provided. Fire rating of corridor walls shall be ensured (Table 3.2 fire-resistance rating retained)."
+        detail: "Triggered for enclosed corridors with circulation length > 60 m in covered mercantile, staff/labour accommodations, residential and office (business) buildings at lowrise/midrise heights (Code Table 10.27 item 4, p.866). Where exterior façade or roof is accessible, natural ventilation per Section 2.15 shall be provided. Fire rating of corridor walls shall be ensured (Table 3.2 fire-resistance rating retained). NOTE: hotels and hostel were trimmed from the occupancy list because the code text explicitly enumerates ONLY covered mercantile, staff/labour accommodation, residential and office; hotels/hostel are not in the code text and were over-applied previously."
 
   - id: sc_lowrise_special_occupancy_stair
     match:
@@ -214,21 +252,21 @@ branches:
     page: "p.858"
     systems:
       - name: "Stair Pressurization (special occupancy override)"
-        spec: "Per Section 2.6"
+        spec: "Per Section 2.6 - design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height. Max ΔP across door per Table 10.3.b (53-113 Pa); 133 N max door-opening force."
         detail: "Stair pressurization IS required for hospitals / malls / educational / assembly even at midrise / lowrise heights. Vestibule pressurization per Section 2.16 acceptable for stairs."
 
   # ---------- Table 10.26 - Storage / Industrial (Factories & Warehouses) ----------
   - id: sc_storage_industrial_under_230
-    match: {occupancy: storage_industrial, ground_floor_bua_m2_lte: 230}
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_lt: 230}
     section: "Ch 10, #3.8 / Table 10.26.1.1"
     page: "p.864"
     systems:
       - name: "Roof Ventilation System"
         spec: "Per Section 2.11 - natural roof venting"
-        detail: "Make-up air via unit entrances and openings is sufficient at this BUA tier (< 230 m²)."
+        detail: "Make-up air via unit entrances and openings is sufficient at this BUA tier (< 230 m², strict less-than per code text)."
 
   - id: sc_storage_industrial_230_900
-    match: {occupancy: storage_industrial, ground_floor_bua_m2_gt: 230, ground_floor_bua_m2_lte: 900}
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lte: 900}
     section: "Ch 10, #3.8 / Table 10.26.1.2"
     page: "p.864"
     systems:
@@ -256,6 +294,32 @@ branches:
         detail: "Mechanical roof exhaust required at this BUA tier. Natural ventilation only acceptable when justified by engineering analysis."
       - name: "Make-up Air Fans OR Sufficient Replacement-air Openings"
 
+  # ---------- Table 10.27 items 9-13 - Assembly hall / Auditorium / Sports / Stadium > 2000 m² ----------
+  # Code text triggers on hall AREA, not on the presence of a permanent stage. The schema
+  # field `assembly_area_m2` is the primary trigger; a fallback fires for any assembly_* main
+  # occupancy whose total GFA > 2000 m² (the typical case). The has_permanent_stages flag
+  # path remains as a third alternative in auxiliary_rooms.
+  - id: sc_aux_assembly_hall_by_area
+    match:
+      assembly_area_m2_gt: 2000
+    section: "Ch 10, #3.9 / Table 10.27 items 9-13"
+    page: "p.866"
+    systems:
+      - name: "Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"
+        spec: "Per Section 2.13 - 6 ACH; Section 2.11 / 2.15 natural permitted if engineering analysis"
+        detail: "Triggered by assembly_area_m2 > 2000. Exhibition centres, assembly halls, sports halls, auditoriums, indoor stadiums > 2000 m² shall have a dedicated mechanical smoke purge system."
+
+  - id: sc_aux_assembly_hall_by_gfa
+    match:
+      occupancy_in: [assembly_a, assembly_b, assembly_c]
+      gross_floor_area_m2_gt: 2000
+    section: "Ch 10, #3.9 / Table 10.27 items 9-13"
+    page: "p.866"
+    systems:
+      - name: "Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"
+        spec: "Per Section 2.13 - 6 ACH; Section 2.11 / 2.15 natural permitted if engineering analysis"
+        detail: "Triggered by assembly occupancy with GFA > 2000 m² (fallback when assembly_area_m2 not set explicitly)."
+
   # ---------- Table 10.27 - Hospitals (overrides height-based smoke control) ----------
   - id: sc_hospital_extras
     match: {occupancy: healthcare_a}
@@ -266,9 +330,14 @@ branches:
         spec: "Per Section 2.8 - minimum 2 smoke zones per floor"
         detail: "Each hospital floor shall have a minimum of two smoke zones, separated by smoke compartments and smoke doors. Activation by sprinkler activation OR cross-zoned smoke detection in that zone. HVAC permitted to operate in zones other than the fire zone."
       - name: "Stair Pressurization"
-        spec: "Per Section 2.6"
+        spec: "Per Section 2.6 - design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height. Max ΔP across door per Table 10.3.b (53-113 Pa); 133 N max door-opening force."
 
   # ---------- Table 10.27 - Schools ----------
+  # NOTE: Code Table 10.21 mandates stair pressurization for educational at lowrise (via
+  # sc_lowrise_special_occupancy_stair), while Table 10.27 item 2 (below) makes the same stair
+  # pressurization conditional. The tool faithfully emits BOTH rows so the designer can
+  # reconcile per project context; typical Civil Defence practice is that the lowrise
+  # stair-pressurization IS provided for compliance.
   - id: sc_school_extras
     match: {occupancy_in: [education_a, education_b, education_c]}
     section: "Ch 10, #3.9 / Table 10.27 item 2"
@@ -280,6 +349,33 @@ branches:
       - name: "Stair (vestibule pressurization permitted, NOT mandatory if not highrise)"
         spec: "Per Section 2.16 if pressurization required"
         required: conditional
+        detail: "Code-internal conflict: Table 10.21 (lowrise/midrise special occupancy) mandates stair pressurization for educational; Table 10.27 item 2 makes it conditional. The tool emits both rows so the designer can reconcile per project context (typically the lowrise stair-press IS provided for Civil Defence compliance)."
+
+  # ---------- Table 10.25 - Tunnel kind-specific (road/rail vs cable) ----------
+  # Differentiation per Ch 10 §3.7 (~p.862). Engine flag mechanism is bool-only, so the
+  # kind-aware logic is implemented at the branch level using the schema's `tunnel_kind`
+  # Literal. Both branches gate on has_tunnel so they only fire when a tunnel is present.
+  - id: sc_aux_tunnel_road_rail
+    match:
+      has_tunnel: true
+      tunnel_kind_is: road_rail
+    section: "Ch 10, #3.7 / Table 10.25"
+    page: "p.862-863"
+    systems:
+      - name: "Tunnel Smoke Management - Road / Rail"
+        spec: "Tunnel < 90 m: natural ventilation (Section 2.11 / 2.15) acceptable. Tunnel > 90 m: jet-fan longitudinal system (Section 2.14) or mechanical ducting (Section 2.13)."
+        detail: "Road tunnel: bidirectional traffic - smoke stratification preserved with ceiling extraction; unidirectional - longitudinal jet-fan velocity above critical to prevent backlayering. Rail tunnels follow the same length thresholds."
+
+  - id: sc_aux_tunnel_cable
+    match:
+      has_tunnel: true
+      tunnel_kind_is: cable
+    section: "Ch 10, #3.7 / Table 10.25"
+    page: "p.862-863"
+    systems:
+      - name: "Tunnel Smoke Management - Service / Cable"
+        spec: "Mechanical ventilation per Section 2.17 - of any length."
+        detail: "Service / cable tunnels of any length use dedicated mechanical ventilation per Section 2.17 (not jet-fan; smoke is purged not driven longitudinally)."
 
   # ---------- Table 10.27 - Business open-plan office ----------
   - id: sc_business_open_plan
@@ -296,6 +392,29 @@ branches:
         spec: "Per Section 2.6"
         detail: "Open-plan office stairs in highrise buildings shall be pressurized."
 
+  # ---------- Table 10.21 items 2-4 - Lobby / Firefighter Lift / Corridor rows for ALL lowrise/midrise ----------
+  # Placed AFTER occupancy-specific branches so those win first-match for the displayed
+  # `selected_branch` label. This branch still matches and contributes systems via engine de-dup.
+  - id: sc_midrise_lowrise_lobby_lift_corridor
+    match:
+      height_m_lte: 23
+      occupancy_not: [villa_private, villa_commercial,
+                      parking_enclosed, parking_open,
+                      storage_industrial,
+                      motor_fuel_dispensing]
+    section: "Ch 10, #3.3 / Table 10.21 items 2-4"
+    page: "p.858"
+    systems:
+      - name: "Passenger Elevator Lobby (no fire-resistance rating required)"
+        required: conditional
+        detail: "Lobby barriers do NOT require fire-resistance rating in midrise/lowrise. Lobby door leaves still self-closing. No smoke control required for the lobby itself. Lift hoistway pressurization NOT required. (Applies to ALL lowrise/midrise occupancies including hospitals / malls / educational / assembly.)"
+      - name: "Firefighting Lift (NOT mandatory)"
+        required: not_required
+        detail: "Firefighting lift is not mandatory in midrise/lowrise. Where provided, firefighting lobby not required either. Stair pressurization using vestibule per Section 2.16 permitted."
+      - name: "Corridor Smoke Management NOT Required"
+        required: not_required
+        detail: "A smoke management system for corridors and open circulation areas is NOT required at midrise/lowrise. Natural ventilation per Section 2.15 permitted. (Special-occupancy corridor requirements - e.g. mall service corridor, hospital corridor - are emitted separately by their occupancy-specific branches.)"
+
 # ---------- AUXILIARY ROOMS / ZONES (Tables 10.27 + 10.24 atrium etc.) ------
 auxiliary_rooms:
   - id: sc_aux_atrium
@@ -305,7 +424,7 @@ auxiliary_rooms:
         code_ref: "Ch 10, #2.7 / Table 10.27 item 15"
         page_ref: "p.866"
         spec: "Per Section 2.7 - dedicated atrium smoke control or natural ventilation per Section 2.15 if exterior facade / roof accessible"
-        detail: "Engineered smoke layer maintained above the highest occupied level; smoke exhaust from atrium ceiling, make-up air at lower levels."
+        detail: "Engineered smoke layer maintained above the highest occupied level; smoke exhaust from atrium ceiling, make-up air at lower levels. Per §2.5 item 4 (p.808): smoke layer depth shall be at least 20% of the floor-to-ceiling height, with a minimum smoke-layer depth of 1830 mm."
 
   - id: sc_aux_fire_pump
     flag: has_fire_pump_room
@@ -343,6 +462,10 @@ auxiliary_rooms:
         spec: "Per Section 2.13 (mechanical purge, 6 ACH) - theatres also per Section 2.9"
         detail: "Cinemas and theatres shall have dedicated mechanical smoke purge providing 6 air changes per hour. Theatres additionally require theatre smoke management per Section 2.9."
 
+  # Kept as a permanent-stage trigger (additional path); the primary > 2000 m² area trigger
+  # is implemented as branch rules sc_aux_assembly_hall_by_area_* below so the engine can
+  # compare assembly_area_m2 / gross_floor_area_m2 numerically (the flag mechanism only
+  # supports boolean attrs).
   - id: sc_aux_assembly_hall
     flag: has_permanent_stages
     systems:
@@ -350,7 +473,7 @@ auxiliary_rooms:
         code_ref: "Ch 10, #3.9 / Table 10.27 items 9-13"
         page_ref: "p.866"
         spec: "Per Section 2.13 - 6 ACH; Section 2.11 / 2.15 natural permitted if engineering analysis"
-        detail: "Exhibition centres, assembly halls, sports halls, auditoriums, indoor stadiums > 2000 m2 shall have a dedicated mechanical smoke purge system."
+        detail: "Permanent-stage trigger (alternative path). Exhibition centres, assembly halls, sports halls, auditoriums, indoor stadiums > 2000 m2 shall have a dedicated mechanical smoke purge system."
 
   - id: sc_aux_kitchen
     flag: has_commercial_kitchen
@@ -370,11 +493,14 @@ auxiliary_rooms:
         spec: "Per Section 2.20"
         detail: "Rooms storing hazardous and flammable chemicals (including LPG plant rooms) shall have dedicated ventilation per Section 2.20."
 
+  # Single umbrella entry (flag-based; engine flag mechanism is bool-only). Differentiation
+  # by tunnel_kind (road_rail vs cable) is done by parallel branch rules below
+  # (sc_aux_tunnel_road_rail, sc_aux_tunnel_cable) which CAN evaluate tunnel_kind_is.
   - id: sc_aux_tunnel
     flag: has_tunnel
     systems:
       - name: "Tunnel Smoke Management"
         code_ref: "Ch 10, #3.7 / Table 10.25"
         page_ref: "p.862-863"
-        spec: "Tunnel < 90 m: natural ventilation (Section 2.11/2.15). Tunnel > 90 m: jet-fan system (Section 2.14) - or mechanical purging (Section 2.13) for rail/service tunnels."
-        detail: "Road tunnel: bidirectional traffic - smoke stratification preserved, ceiling extraction; unidirectional - longitudinal velocity above critical to prevent backlayering. Rail tunnels follow same length thresholds. Service / cable tunnels of any length use mechanical ventilation per Section 2.17."
+        spec: "Tunnel < 90 m: natural ventilation (Section 2.11/2.15). Tunnel > 90 m: jet-fan system (Section 2.14) for road/rail - or mechanical purging (Section 2.13) for service tunnels. Cable tunnels of any length: mechanical ventilation per Section 2.17."
+        detail: "Umbrella rule - see kind-specific branches sc_aux_tunnel_road_rail and sc_aux_tunnel_cable for design-specific requirements."

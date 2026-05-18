@@ -12,17 +12,17 @@ general:
     systems:
       - name: "Yard Fire Hydrant System"
         code_ref: "Ch 9, #4.1.4"
-        page_ref: "p.693"
+        page_ref: "p.694"
         detail: "Yard hydrant loop around plot per Section 3.11. Required because non-storage/non-industrial plot > 20,000 m2 (typically cluster of buildings). Hydrants spaced per code; breeching inlets accessible to Civil Defence."
   - id: g_yard_hydrant_storage_plot
     when:
       building_category_is: storage_industrial
-      plot_area_m2_gt: 3600
+      ground_floor_bua_m2_gt: 3600
     systems:
       - name: "Yard Fire Hydrant System"
         code_ref: "Ch 9, #4.1.6"
-        page_ref: "p.693"
-        detail: "Yard hydrant loop per Section 3.11. Required because storage/industrial BUA > 3,600 m2 OR ground-floor > 100 m from existing functional hydrant."
+        page_ref: "p.694"
+        detail: "Yard hydrant loop per Section 3.11. Required because storage/industrial built-up area (BUA) > 3,600 m2 OR ground-floor > 100 m from existing functional hydrant. Trigger keyed off ground-floor BUA per code text 'more than 3600 m2 built-up area' (#4.1.6, p.694) - NOT plot area; a 4,000 m2 BUA warehouse on a small plot must still trigger this rule."
   - id: g_storage_sprinkler_over_3floors
     when:
       building_category_is: storage_industrial
@@ -30,7 +30,7 @@ general:
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         code_ref: "Ch 9, #4.1.7"
-        page_ref: "p.693"
+        page_ref: "p.694"
         detail: "Full sprinkler coverage throughout the storage/industrial building - trigger is > 3 floors above fire access level, irrespective of BUA. Design density per commodity class per NFPA 13."
 
 branches:
@@ -368,6 +368,59 @@ branches:
       - name: "Fire Water Tank"
         spec: "45 minutes duration"
 
+  # ---- Midrise single-exit small footprint (Table 9.20.c, #4.4.3) ----
+  # Residential/Business/Animal Housing midrise (15-23 m) with single exit stair
+  # AND ground-floor BUA <= 500 m2. Fixed 500 gpm @ 6.9 bar / 45 min tank.
+  - id: midrise_single_exit_small
+    match:
+      height_m_gt: 15
+      height_m_lt: 23
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
+      ground_floor_bua_m2_lte: 500
+      has_single_exit_stair_is: true
+    section: "Ch 9, #4.4.3 / Table 9.20.c"
+    page: "p.703"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Full sprinkler coverage throughout the building including basements and podiums (open and closed) per Section 3.5. Triggered because midrise single-exit-stair building has GF BUA <= 500 m2."
+      - name: "Wet Riser System (interconnected at highest level)"
+        requires_wet_riser: true
+        detail: "Wet risers throughout per Section 3.4; interconnected at the highest level."
+      - name: "Fire Pump (Midrise Single-Exit)"
+        spec: "500 gpm @ 6.9 bar at most remote landing valve"
+        detail: "Fixed 500 gpm duty per Table 9.20.c - independent of number of standpipes."
+      - name: "Fire Water Tank"
+        spec: "45 minutes duration"
+        detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
+
+  # ---- Midrise Detention (Table 9.20.d, #4.4.4) - SAFETY CRITICAL ----
+  # Detention midrise: pre-action sprinklers in cells/inmate areas (NFPA Section 3.7)
+  # PLUS standard wet-pipe sprinklers in non-cell areas. Unique system type.
+  - id: midrise_detention
+    match:
+      height_m_gt: 15
+      height_m_lt: 23
+      occupancy_in: [detention_a, detention_b, detention_c]
+    section: "Ch 9, #4.4.4 / Table 9.20.d"
+    page: "p.704"
+    systems:
+      - name: "Pre-action Sprinkler System (CELLS + INMATE AREAS)"
+        spec: "Pre-action sprinklers per Section 3.7 throughout all cells and inmate-accessible areas"
+        detail: "DETENTION-SPECIFIC: cells and inmate areas use pre-action sprinklers (not wet-pipe) to prevent accidental discharge and tampering, and to allow staff verification before water release. Heads in inmate areas shall be institutional/tamper-resistant per NFPA 13."
+      - name: "Automatic Sprinkler System (NON-CELL AREAS incl. basements & podiums)"
+        detail: "All areas other than cells/inmate areas (admin, kitchen, laundry, plant rooms, basements, podiums - open and closed) protected with standard wet-pipe sprinklers per Section 3.5."
+      - name: "Wet Riser System (interconnected at highest level)"
+        requires_wet_riser: true
+        detail: "Wet risers throughout per Section 3.4; interconnected at the highest level."
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrant loop per Section 3.11. NOT required where infrastructure yard hydrants are available within 60 m of the towers; tapping into the existing infrastructure network is permitted to achieve coverage."
+      - name: "Fire Pump (Detention Midrise - combined yard + internal)"
+        spec: "Combined (yard + internal): 1000 gpm @ 6.9 bar at most remote landing valve and hydrant (irrespective of number of standpipes); OR internal-only: 750 gpm (2 standpipes) / 1000 gpm (more than 2 standpipes) @ 6.9 bar"
+        detail: "Where the fire pump is combined (serves both yard hydrants and internal systems) the duty is fixed at 1000 gpm. Where it serves only internal building systems, the duty follows the standpipe-dependent bracket."
+      - name: "Fire Water Tank (Detention Midrise)"
+        spec: "60 minutes duration"
+        detail: "Combined yard + internal: dedicated direct breeching inlet, low-level detection, instantaneous utility refill. Internal-only configuration also 60 min."
+
   - id: lowrise_public_upto_500
     match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_lte: 500}
     section: "Ch 9, #4.5.1 / Table 9.21.a.1"
@@ -482,6 +535,180 @@ branches:
         spec: "60 minutes duration"
         detail: "Combined yard + internal tank with dedicated breeching inlet, low-level detection, instantaneous refill."
 
+  # ---------------- LOWRISE SINGLE-EXIT (Ch 9, #4.5.3 / Table 9.21.c) ----
+  # Residential / Business / Mercantile / Hotel lowrise (<=15 m) with single exit stair.
+  # 2 tiers: <=500 m2 = hose-reel only (50 gpm @ 4.5 bar / 30 min); >500 m2 = sprinklers + hose reel (300 gpm @ 4.5 bar / 30 min).
+  - id: lowrise_single_exit_small
+    match:
+      height_m_lte: 15
+      occupancy_in: [residential, business, mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]
+      ground_floor_bua_m2_lte: 500
+      has_single_exit_stair_is: true
+    section: "Ch 9, #4.5.3 / Table 9.21.c.1"
+    page: "p.709"
+    systems:
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reels throughout per Section 3.3. Lowrise single-exit-stair building with GF BUA <= 500 m2 requires hose reel only - no sprinklers, no wet risers."
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required at this size."
+      - name: "Fire Pump (Lowrise Single-Exit <=500 m2)"
+        spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
+        detail: "Small pump set sized for hose-reel duty only. Fire pump and/or fire water tank permitted on roof if existing structure can bear the additional load."
+      - name: "Fire Water Tank"
+        spec: "30 minutes duration"
+        detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
+
+  - id: lowrise_single_exit_over_500
+    match:
+      height_m_lte: 15
+      occupancy_in: [residential, business, mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]
+      ground_floor_bua_m2_gt: 500
+      has_single_exit_stair_is: true
+    section: "Ch 9, #4.5.3 / Table 9.21.c.2"
+    page: "p.709"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Full sprinkler coverage throughout the building including basements and podiums (open and closed) per Section 3.5. Triggered because lowrise single-exit-stair building has GF BUA > 500 m2."
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reels throughout per Section 3.3."
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required - sprinklers + hose reel cover this size."
+      - name: "Fire Pump (Lowrise Single-Exit >500 m2)"
+        spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet"
+        detail: "Combined sprinkler + hose-reel pump duty. Fire pump and/or fire water tank permitted on roof if existing structure can bear the additional load."
+      - name: "Fire Water Tank"
+        spec: "30 minutes duration"
+        detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
+
+  # ---------------- LOWRISE VILLA CONVERTED TO COMMERCIAL (Ch 9, #4.5.4 / Table 9.21.d) ----
+  # Existing G+1 villas converted to nurseries, clinics, daycare, restaurants, showrooms,
+  # boutiques. <900 m2 = extinguishers only. >900 m2 with 2 stairs = extinguishers only.
+  # >900 m2 with only 1 stair = highly recommended: add external 2nd stair OR
+  # sprinklers + hose reel (with 250 gpm @ 4.5 bar / 30 min tank).
+  - id: lowrise_villa_converted
+    match:
+      height_m_lte: 15
+      villa_converted_use_is: true
+    section: "Ch 9, #4.5.4 / Table 9.21.d"
+    page: "p.710"
+    systems:
+      - name: "Portable Fire Extinguishers (Chapter 4)"
+        detail: "Extinguishers per Chapter 4 are the baseline requirement for all converted villa tiers. (Tier 1: <900 m2 irrespective of stairs. Tier 2: >900 m2 with 2 exit stairs. Tier 3: >900 m2 with only 1 exit stair.)"
+      - name: "Second Exit Stair (HIGHLY RECOMMENDED for >900 m2 single-stair villas)"
+        required: recommended
+        detail: "Where GF BUA > 900 m2 AND only one exit stair is available: it is HIGHLY RECOMMENDED that the owner consider providing a second exit stair externally from the first floor."
+      - name: "Automatic Sprinkler System (full coverage incl. basements) - HIGHLY RECOMMENDED for >900 m2 single-stair villas"
+        required: recommended
+        detail: "Alternative to adding a second exit stair: provide automatic sprinklers throughout the building (including basements) per Section 3.5. Applies only where GF BUA > 900 m2 AND only one exit stair is available."
+      - name: "Hose Reel System (HIGHLY RECOMMENDED for >900 m2 single-stair villas if sprinklers added)"
+        required: recommended
+        detail: "Where sprinklers are added per the recommendation above, also provide hose reels per Section 3.3."
+      - name: "Fire Pump (if sprinklers are added per recommendation)"
+        required: conditional
+        spec: "250 gpm @ 4.5 bar at most remote hose-reel outlet"
+        detail: "Required only where the recommended sprinkler + hose-reel option is adopted for a >900 m2 single-stair converted villa. Fire pump and/or fire water tank permitted on roof if existing structure can bear the additional load."
+      - name: "Fire Water Tank (if sprinklers are added per recommendation)"
+        required: conditional
+        spec: "30 minutes duration"
+        detail: "Low-level detection, instantaneous utility refill."
+
+  # ---------------- LOWRISE COMMERCIAL OUTLET ATTACHED (Ch 9, #4.5.5 / Table 9.21.e) ----
+  # Villas / business / mosques with commercial / mercantile outlets attached or in the
+  # same plot. Tiers keyed off the commercial-outlet BUA, not the host building.
+  - id: lowrise_commercial_outlet_attached_small
+    match:
+      height_m_lte: 15
+      has_attached_commercial_outlet_is: true
+      ground_floor_bua_m2_lte: 900
+    section: "Ch 9, #4.5.5 / Table 9.21.e.1"
+    page: "p.711"
+    systems:
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reels throughout the building per Section 3.3. Triggered because attached/same-plot commercial outlet BUA <= 900 m2."
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required at this tier."
+      - name: "Hose Reel / Dry Landing Valve (exemption)"
+        required: conditional
+        detail: "Hose reels OR dry landing valves are NOT required if infrastructure yard hydrants are available and cover the commercial outlet."
+      - name: "Fire Pump (Commercial Outlet Attached <=900 m2)"
+        spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
+        detail: "Pump sized for hose-reel duty only. Fire pump and/or fire water tank permitted on roof if structure can bear additional load."
+      - name: "Fire Water Tank"
+        spec: "30 minutes duration"
+        detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
+
+  - id: lowrise_commercial_outlet_attached_large
+    match:
+      height_m_lte: 15
+      has_attached_commercial_outlet_is: true
+      ground_floor_bua_m2_gt: 900
+    section: "Ch 9, #4.5.5 / Table 9.21.e.2"
+    page: "p.711"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements)"
+        detail: "Full sprinkler coverage throughout the building including basements per Section 3.5. Triggered because attached/same-plot commercial outlet BUA > 900 m2."
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reels throughout per Section 3.3."
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required at this tier."
+      - name: "Hose Reel / Dry Landing Valve (exemption)"
+        required: conditional
+        detail: "Hose reels OR dry landing valves are NOT required if infrastructure yard hydrants are available and cover the commercial outlet."
+      - name: "Fire Pump (Commercial Outlet Attached >900 m2)"
+        spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet"
+        detail: "Combined sprinkler + hose-reel pump duty. Fire pump and/or fire water tank permitted on roof if structure can bear additional load."
+      - name: "Fire Water Tank"
+        spec: "30 minutes duration"
+        detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
+
+  # ---------------- LOWRISE TENTS / MARQUEES / SITE OFFICES (Ch 9, #4.5.6 / Table 9.21.f) ----
+  # Six sub-tiers depending on tent_marquee_kind:
+  #   temporary           -> extinguishers only
+  #   permanent           -> hose reel + 50 gpm @ 4.5 bar / 30 min tank
+  #   commercial_desert   -> hose reel + 50 gpm @ 4.5 bar / 30 min tank
+  #   site_office_short   -> extinguishers only (used <6 months)
+  #   site_office_long    -> hose reel + 50 gpm @ 4.5 bar / 30 min tank (used >6 months)
+  #   small_detached      -> extinguishers only (detached G+1 <=150 m2 any occupancy)
+  - id: lowrise_tent_marquee_extinguishers_only
+    match:
+      tent_marquee_kind_in: [temporary, site_office_short, small_detached]
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows A / D / F)"
+    page: "p.712"
+    systems:
+      - name: "Portable Fire Extinguishers (only)"
+        spec: "Per Chapter 4"
+        detail: "Temporary tents/marquees, short-duration site offices (<6 months), and detached G+1 buildings with GF BUA <= 150 m2 (any occupancy) require extinguishers per Chapter 4 only - no fixed water-based system."
+      - name: "Automatic Sprinkler System"
+        required: not_required
+      - name: "Hose Reel System"
+        required: not_required
+      - name: "Fire Pump"
+        required: not_required
+      - name: "Fire Water Tank"
+        required: not_required
+
+  - id: lowrise_tent_marquee_hose_reel
+    match:
+      tent_marquee_kind_in: [permanent, commercial_desert, site_office_long]
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows B / C / E)"
+    page: "p.712"
+    systems:
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reels throughout per Section 3.3. Permanent tents/marquees, permanent commercial tents and desert camps, and long-duration site offices (>6 months) require a hose-reel system."
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required."
+      - name: "Fire Pump (Tents / Marquees / Long-Duration Site Office)"
+        spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
+        detail: "Pump sized for hose-reel duty only."
+      - name: "Fire Water Tank"
+        spec: "30 minutes duration"
+        detail: "Low-level detection, instantaneous refill."
+
   # ---------------- MOTOR FUEL DISPENSING (#4.9 / Table 9.25) --------------
   # ---------- Table 9.25 - Motor Fuel Dispensing - 3 sub-groups (A / B / C) ----------
   # Code text Table 9.25:
@@ -570,7 +797,7 @@ branches:
   - id: infrastructure_general
     match: {occupancy: infrastructure}
     section: "Ch 9, #4.10 / Table 9.26"
-    page: "p.728"
+    page: "p.723"
     systems:
       - name: "Yard Fire Hydrants - Dedicated Network (NOT shared with irrigation)"
         spec: "Per Section 3.11 - dedicated loop along fire-access road; intervals per Table 3.13"
@@ -595,8 +822,8 @@ branches:
   # ============================================================================
   - id: storage_industrial_tier1_lh
     match: {occupancy: storage_industrial, hazard_class_in: [LH], ground_floor_bua_m2_lt: 230, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 1"
-    page: "p.730"
+    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 1 (Multi-Tenant Light Hazard)"
+    page: "p.724"
     systems:
       - name: "Hose Reel System (throughout, incl. mezzanine)"
         spec: "Per Section 3.3"
@@ -614,8 +841,8 @@ branches:
 
   - id: storage_industrial_tier2_lh
     match: {occupancy: storage_industrial, hazard_class_in: [LH], ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lt: 900, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 2"
-    page: "p.730"
+    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 2 (Multi-Tenant Light Hazard)"
+    page: "p.724"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (1500 ft2 area of operation)"
@@ -632,8 +859,8 @@ branches:
 
   - id: storage_industrial_tier3_lh
     match: {occupancy: storage_industrial, hazard_class_in: [LH], ground_floor_bua_m2_gte: 900, ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 3"
-    page: "p.730"
+    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 3 (Multi-Tenant Light Hazard)"
+    page: "p.725"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2"
@@ -648,8 +875,8 @@ branches:
 
   - id: storage_industrial_tier4_lh
     match: {occupancy: storage_industrial, hazard_class_in: [LH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 4"
-    page: "p.730"
+    section: "Ch 9, #4.11 / Table 9.27 Group A Tier 4 (Multi-Tenant Light Hazard)"
+    page: "p.725"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2"
@@ -665,11 +892,14 @@ branches:
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
 
-  # ---- Ordinary Hazard tiers (Group B) - same area tiers, higher pump duty ----
+  # ---- Multi-tenant Ordinary Hazard 1 (Group B) tiers ----
+  # Per Table 9.27 Group B (p.725): density 0.15 gpm / 140 m2, pump 300 gpm @ Tier 2-3.
+  # OH1 ONLY - OH2 is handled by separate `storage_industrial_tier*_oh2` rules below
+  # because Group C (OH2) uses a higher density (0.20) and higher pump (350 gpm).
   - id: storage_industrial_tier1_oh
-    match: {occupancy: storage_industrial, hazard_class_in: [OH1, OH2], ground_floor_bua_m2_lt: 230, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 1"
-    page: "p.730"
+    match: {occupancy: storage_industrial, hazard_class_in: [OH1], ground_floor_bua_m2_lt: 230, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 1 (Multi-Tenant OH1)"
+    page: "p.725"
     systems:
       - name: "Hose Reel System (throughout, incl. mezzanine)"
         spec: "Per Section 3.3"
@@ -681,12 +911,12 @@ branches:
         spec: "Per Section 4.11 preamble"
 
   - id: storage_industrial_tier2_oh
-    match: {occupancy: storage_industrial, hazard_class_in: [OH1, OH2], ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lt: 900, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 2"
-    page: "p.730"
+    match: {occupancy: storage_industrial, hazard_class_in: [OH1], ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lt: 900, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 2 (Multi-Tenant OH1)"
+    page: "p.725"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
-        spec: "Per Section 3.5; design density 0.15 gpm / 140 m2"
+        spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (OH1)"
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 2 OH)"
@@ -697,12 +927,12 @@ branches:
         spec: "Per Section 4.11 preamble"
 
   - id: storage_industrial_tier3_oh
-    match: {occupancy: storage_industrial, hazard_class_in: [OH1, OH2], ground_floor_bua_m2_gte: 900, ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 3"
-    page: "p.730"
+    match: {occupancy: storage_industrial, hazard_class_in: [OH1], ground_floor_bua_m2_gte: 900, ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 3 (Multi-Tenant OH1)"
+    page: "p.725"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
-        spec: "Per Section 3.5; design density 0.15 gpm / 140 m2"
+        spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (OH1)"
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 3 OH)"
@@ -713,12 +943,12 @@ branches:
         spec: "Per Section 4.11 preamble"
 
   - id: storage_industrial_tier4_oh
-    match: {occupancy: storage_industrial, hazard_class_in: [OH1, OH2], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 4"
-    page: "p.730"
+    match: {occupancy: storage_industrial, hazard_class_in: [OH1], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group B Tier 4 (Multi-Tenant OH1)"
+    page: "p.725"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
-        spec: "Per Section 3.5; design density 0.15 gpm / 140 m2"
+        spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (OH1)"
       - name: "Yard Fire Hydrants (loop covering entire facility)"
         spec: "Per Section 3.11"
       - name: "Hose Reel System (throughout)"
@@ -730,11 +960,177 @@ branches:
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
 
-  # ---- High Hazard tier (Groups L-O - plastics/rubber/tires/paper, Class I-IV) -----
+  # ---- Multi-tenant Ordinary Hazard 2 (Group C) tiers ----
+  # Per Table 9.27 Group C (p.726): density 0.20 gpm / 140 m2, pump 350 gpm @ Tier 2-3
+  # (NOT 300 gpm like Group B). Tier 1 hose-reel-only is identical to Group B.
+  - id: storage_industrial_tier1_oh2
+    match: {occupancy: storage_industrial, hazard_class_in: [OH2], ground_floor_bua_m2_lt: 230, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group C Tier 1 (Multi-Tenant OH2)"
+    page: "p.726"
+    systems:
+      - name: "Hose Reel System (throughout, incl. mezzanine)"
+        spec: "Per Section 3.3"
+      - name: "Fire Pump (Tier 1 OH2)"
+        spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
+      - name: "Fire Water Tank (Tier 1)"
+        spec: "30 minutes duration"
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  - id: storage_industrial_tier2_oh2
+    match: {occupancy: storage_industrial, hazard_class_in: [OH2], ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lt: 900, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group C Tier 2 (Multi-Tenant OH2)"
+    page: "p.726"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        spec: "Per Section 3.5; design density 0.20 gpm / 140 m2 (OH2 - higher than OH1's 0.15)"
+      - name: "Hose Reel System (throughout)"
+        spec: "Per Section 3.3"
+      - name: "Fire Pump (Tier 2 OH2)"
+        spec: "350 gpm @ 4.5 bar at most remote hose-reel outlet valve"
+        detail: "OH2 pump is 350 gpm (50 gpm higher than OH1's 300 gpm) per Table 9.27 Group C."
+      - name: "Fire Water Tank (Tier 2)"
+        spec: "45 minutes duration"
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  - id: storage_industrial_tier3_oh2
+    match: {occupancy: storage_industrial, hazard_class_in: [OH2], ground_floor_bua_m2_gte: 900, ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group C Tier 3 (Multi-Tenant OH2)"
+    page: "p.726"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        spec: "Per Section 3.5; design density 0.20 gpm / 140 m2 (OH2)"
+      - name: "Hose Reel System (throughout)"
+        spec: "Per Section 3.3"
+      - name: "Fire Pump (Tier 3 OH2)"
+        spec: "350 gpm @ 4.5 bar at most remote hose-reel outlet valve"
+      - name: "Fire Water Tank (Tier 3)"
+        spec: "60 minutes duration with dedicated direct breeching inlet"
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  - id: storage_industrial_tier4_oh2
+    match: {occupancy: storage_industrial, hazard_class_in: [OH2], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group C Tier 4 (Multi-Tenant OH2)"
+    page: "p.726"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        spec: "Per Section 3.5; design density 0.20 gpm / 140 m2 (OH2)"
+      - name: "Yard Fire Hydrants (loop covering entire facility)"
+        spec: "Per Section 3.11"
+      - name: "Hose Reel System (throughout)"
+        spec: "Per Section 3.3"
+      - name: "Fire Pump (Tier 4 OH2)"
+        spec: "750 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
+      - name: "Fire Water Tank (Tier 4)"
+        spec: "60 minutes duration with dedicated direct breeching inlet"
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  # ---- Multi-tenant Extra Hazard 1 (Group D) tiers ----
+  # Per Table 9.27 Group D (p.727): density 0.30 gpm / 232 m2.
+  # Tier 1 (<3600 m2): 750 gpm @ 4.5 bar / 60 min.
+  # Tier 2 (>3600 m2): 1250 gpm @ 6.9 bar / 90 min + yard hydrants.
+  # NOTE: Group D has ONLY 2 tiers (unlike Groups A-C with 4). The HH catch-all
+  # below `storage_industrial_tier_hh` is retained for commodity-specific Groups L-O
+  # (plastics / rubber / tires / paper) where the design is driven by Table 9.7 sub-tables.
+  - id: storage_industrial_eh1_tier1
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group D Tier 1 (Multi-Tenant EH1, <=3600 m2)"
+    page: "p.727"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        spec: "Per Section 3.5; design density 0.30 gpm / 232 m2 (2500 ft2) per Table 9.27 Group D (EH1)"
+        detail: "EH1 multi-tenant: 0.30 gpm density across a 2500 ft2 design area. Foam-water sprinklers per Section 3.9 mandatory where MSDS demands."
+      - name: "Hose Reel System (throughout)"
+        spec: "Per Section 3.3"
+      - name: "Dry Landing Valves"
+        required: not_required
+      - name: "Fire Pump (Multi-Tenant EH1 Tier 1)"
+        spec: "750 gpm @ 4.5 bar at most remote hose-reel outlet valve"
+      - name: "Fire Water Tank (EH1 Tier 1)"
+        spec: "60 minutes duration"
+        detail: "Low water-level detection, instantaneous refilling arrangement."
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  - id: storage_industrial_eh1_tier2
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: false}
+    section: "Ch 9, #4.11 / Table 9.27 Group D Tier 2 (Multi-Tenant EH1, >3600 m2)"
+    page: "p.727"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        spec: "Per Section 3.5; design density 0.30 gpm / 232 m2 (EH1)"
+      - name: "Yard Fire Hydrants (loop covering entire facility)"
+        spec: "Per Section 3.11"
+      - name: "Hose Reel System (throughout)"
+        spec: "Per Section 3.3"
+      - name: "Fire Pump (Multi-Tenant EH1 Tier 2)"
+        spec: "1250 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
+      - name: "Fire Water Tank (EH1 Tier 2)"
+        spec: "90 minutes duration with dedicated direct breeching inlet"
+        detail: "Note: EH1 Tier 2 tank is 90 min (not 60 min). Required for the elevated demand of extra-hazard storage > 3600 m2."
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  # ---- Multi-tenant Extra Hazard 2 (Group E) tiers ----
+  # Per Table 9.27 Group E (p.728): density 0.40 gpm / 232 m2.
+  # Tier 1 (<3600 m2): 1000 gpm @ 4.5 bar / 60 min.
+  # Tier 2 (>3600 m2): 1500 gpm @ 6.9 bar / 120 min + yard hydrants.
+  # Gated by the `is_extra_hazard_2` flag so the designer can distinguish
+  # EH1 vs EH2 within the HH hazard class (Definition 1.1.13.4 vs 1.1.13.5).
+  - id: storage_industrial_eh2_tier1
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: true}
+    section: "Ch 9, #4.11 / Table 9.27 Group E Tier 1 (Multi-Tenant EH2, <=3600 m2)"
+    page: "p.728"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        spec: "Per Section 3.5; design density 0.40 gpm / 232 m2 (2500 ft2) per Table 9.27 Group E (EH2)"
+        detail: "EH2 multi-tenant: 0.40 gpm density across a 2500 ft2 design area (vs 0.30 for EH1). Foam-water sprinklers per Section 3.9 mandatory where MSDS demands."
+      - name: "Hose Reel System (throughout)"
+        spec: "Per Section 3.3"
+      - name: "Dry Landing Valves"
+        required: not_required
+      - name: "Fire Pump (Multi-Tenant EH2 Tier 1)"
+        spec: "1000 gpm @ 4.5 bar at most remote hose-reel outlet valve"
+        detail: "EH2 Tier 1 pump is 1000 gpm (vs 750 gpm for EH1)."
+      - name: "Fire Water Tank (EH2 Tier 1)"
+        spec: "60 minutes duration"
+        detail: "Low water-level detection, instantaneous refilling arrangement."
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  - id: storage_industrial_eh2_tier2
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: true}
+    section: "Ch 9, #4.11 / Table 9.27 Group E Tier 2 (Multi-Tenant EH2, >3600 m2)"
+    page: "p.728"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        spec: "Per Section 3.5; design density 0.40 gpm / 232 m2 (EH2)"
+      - name: "Yard Fire Hydrants (loop covering entire facility)"
+        spec: "Per Section 3.11"
+      - name: "Hose Reel System (throughout)"
+        spec: "Per Section 3.3"
+      - name: "Fire Pump (Multi-Tenant EH2 Tier 2)"
+        spec: "1500 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
+        detail: "EH2 Tier 2 pump is 1500 gpm (vs 1250 gpm for EH1). HALF of code-mandated pump in earlier YAML revisions."
+      - name: "Fire Water Tank (EH2 Tier 2)"
+        spec: "120 minutes duration with dedicated direct breeching inlet"
+        detail: "120-min tank (vs 90 min for EH1). Required for the elevated demand of EH2 storage > 3600 m2."
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per Section 4.11 preamble"
+
+  # ---- High Hazard catch-all (Groups L-O - plastics/rubber/tires/paper, Class I-IV) -----
+  # Retained for commodity-specific design via Table 9.7.M / X / DD / EE / GG sub-tables.
+  # Triggers only when an EH1/EH2 building is NOT one of the Group L-O commodity classes.
+  # Practically, this matches HH multi-tenant storage that has NOT been flagged as EH2
+  # (via `is_extra_hazard_2`) AND has an unusual commodity that the designer wants to
+  # design from the commodity tables - it acts as the fallback for the EH1 rules above.
   - id: storage_industrial_tier_hh
-    match: {occupancy: storage_industrial, hazard_class_in: [HH], is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false}
-    section: "Ch 9, #4.11 / Table 9.27 Groups L-O (High Hazard, Class I-IV / plastics / rubber / tires / paper)"
-    page: "p.730"
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_commodity_specific_storage: true}
+    section: "Ch 9, #4.11 / Table 9.27 Groups L-O (Class I-IV / plastics / rubber / tires / paper - commodity-specific design)"
+    page: "p.734"
     systems:
       - name: "Automatic Sprinkler System (commodity-specific design)"
         spec: "Per Section 3.5; design density per Tables 9.7.M / 9.7.X / 9.7.DD / 9.7.EE / 9.7.GG (commodity- and storage-height-dependent)"
@@ -745,36 +1141,43 @@ branches:
         detail: "Required at Tier 4 (>3600 m2). Below that tier, follow OH thresholds."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
-      - name: "Fire Pump (HH)"
-        spec: "Sized to design density - typically 750+ gpm @ 6.9 bar at hydrant outlet for Tier 4"
+      - name: "Fire Pump (Commodity-Specific)"
+        spec: "Sized to design density per Tables 9.7.M / X / DD / EE / GG - 750-2000 gpm typical"
         detail: "Pump duty scales with sprinkler design density per Tables 9.7.M-GG. NOT a fixed value."
-      - name: "Fire Water Tank (HH)"
+      - name: "Fire Water Tank (Commodity-Specific)"
         spec: "60-90 minutes duration"
-        detail: "30 min Tier 1; 60 min Tier 2-3; 90 min Tier 4 / commodities with elevated demand. Dedicated direct breeching inlet at Tier 3+."
+        detail: "Per commodity sub-table. Dedicated direct breeching inlet at Tier 3+."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
         detail: "Mandatory for all HH commodities."
 
   # ---- Specialty groups (overlay; flag-driven) ------------------------------
-  # Group P - Cold storage (< 40 deg C) - dry-pipe sprinklers
+  # Group P - Cold storage (code-literal "BELOW 40C TEMPERATURES") - dry-pipe sprinklers
+  # NOTE: The code text on p.739 literally reads "STORAGE FACILITIES WITH BELOW 40C
+  # TEMPERATURES" - this is the code's wording, copied verbatim. Engineering interpretation:
+  # most likely intended is "+4 °C and below" (true cold storage / chillers / freezers,
+  # where wet sprinklers risk freezing). 40 °C as written is incoherent (40 °C is hot,
+  # not cold). Designer should treat this as ANY refrigerated facility (chillers 0-10 °C,
+  # freezers below 0 °C) per typical industry practice and ASHRAE refrigeration guides.
   - id: storage_cold_storage
     match: {occupancy: storage_industrial, is_cold_storage: true}
     section: "Ch 9, #4.11 / Table 9.27 Group P (Cold Storage)"
-    page: "p.730"
+    page: "p.739"
     systems:
       - name: "Automatic DRY-Pipe Sprinkler System (NOT wet pipe)"
-        spec: "Per Section 3.6 - dry-pipe sprinklers throughout cold-storage area below 40 deg C"
-        detail: "Wet sprinklers would freeze; dry-pipe is mandatory for cold-storage facilities operating below 40 deg C. Density per Tables 9.7.H / 9.7.I / 9.8.A / 9.7.Z.a / 9.7.Z.b / 9.7.AA.a-c (commodity-specific)."
+        spec: "Per Section 3.6 - dry-pipe sprinklers throughout cold-storage area (code text: 'BELOW 40C')"
+        detail: "Wet sprinklers would freeze; dry-pipe is mandatory for cold-storage facilities. Density per Tables 9.7.H / 9.7.I / 9.8.A / 9.7.Z.a / 9.7.Z.b / 9.7.AA.a-c (commodity-specific). CODE-LITERAL TEMPERATURE: 'BELOW 40C' as printed on p.739 - engineering interpretation: any refrigerated facility (typically +4 °C chillers and below, or freezers below 0 °C). Verify with Civil Defence for the specific room conditions."
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Water Tank (Cold Storage)"
-        spec: "60-90 minutes duration"
+        spec: "30 min (<230 m2) / 45 min (230-900 m2) / 60 min (900-3600 m2 and >3600 m2)"
+        detail: "Tier-based per Table 9.27 Group P. Tier 3-4 require dedicated direct breeching inlet for refilling."
 
   # Group Q - Aircraft hanger
   - id: storage_aircraft_hanger
     match: {occupancy: storage_industrial, is_aircraft_hanger: true}
     section: "Ch 9, #4.11 / Table 9.27 Group Q (Aircraft Hanger)"
-    page: "p.730"
+    page: "p.741-742"
     systems:
       - name: "Foam-Water Deluge System"
         spec: "Per Section 3.9 / Table 9.11; foam discharge density min 0.16 gpm/ft2 (Group I); area per deluge system <= 1394 m2 (15,000 ft2); max 3.7 m between devices"
@@ -793,7 +1196,7 @@ branches:
   - id: storage_flammable_liquid_warehouse
     match: {occupancy: storage_industrial, is_flammable_liquid_warehouse: true}
     section: "Ch 9, #4.11 / Table 9.27 Group R (Flammable / Combustible Liquid Warehouse)"
-    page: "p.730"
+    page: "p.743"
     systems:
       - name: "Sprinkler OR Foam-Water Sprinkler System"
         spec: "Per Section 3.5 (sprinklers) OR Section 3.9 / Table 9.11 (foam) - in-rack per Table 9.7.KK for advanced storage"
@@ -813,7 +1216,7 @@ branches:
   - id: storage_flammable_liquid_industrial
     match: {occupancy: storage_industrial, is_flammable_liquid_industrial: true}
     section: "Ch 9, #4.11 / Table 9.27 Group S (Flammable / Combustible Liquid Industrial Process)"
-    page: "p.730"
+    page: "p.744"
     systems:
       - name: "Foam-Water Sprinkler System (Process)"
         spec: "Per Table 9.11.C - process-specific foam sprinkler"
@@ -832,7 +1235,7 @@ branches:
   - id: storage_open_yard
     match: {occupancy: storage_industrial, is_open_yard_storage: true}
     section: "Ch 9, #4.11 / Table 9.27 Group U (Open Yard Storage)"
-    page: "p.730"
+    page: "p.745"
     systems:
       - name: "Portable Fire Extinguishers"
         spec: "Per Chapter 4 - light hazard <2000 m2 OR plant nursery: extinguishers ONLY"
@@ -854,7 +1257,7 @@ branches:
   - id: storage_single_tenant_lh_tier1
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [LH], ground_floor_bua_m2_lt: 900, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group F Tier 1"
-    page: "p.730"
+    page: "p.729"
     systems:
       - name: "Hose Reel System (single-tenant LH < 900 m2)"
         spec: "Per Section 3.3 - throughout building, NO dry landing valves"
@@ -866,7 +1269,7 @@ branches:
   - id: storage_single_tenant_lh_tier2
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [LH], ground_floor_bua_m2_gte: 900, ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group F Tier 2"
-    page: "p.730"
+    page: "p.729"
     systems:
       - name: "Automatic Sprinkler System (single-tenant LH 900-3600 m2)"
         spec: "Per Section 3.5; design density 0.10 gpm / 139 m2 (1500 ft2 area of operation) per Table 9.7.F"
@@ -880,7 +1283,7 @@ branches:
   - id: storage_single_tenant_lh_tier3
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [LH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group F Tier 3"
-    page: "p.730"
+    page: "p.729"
     systems:
       - name: "Automatic Sprinkler System"
         spec: "Per Section 3.5; design density 0.10 gpm / 139 m2 per Table 9.7.F"
@@ -898,6 +1301,7 @@ branches:
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [OH1], ground_floor_bua_m2_lt: 900, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group G Tier 1 (Single-Tenant OH1)"
     page: "p.730"
+    # NOTE: Group G page is p.730 (unchanged from prior YAML - happens to be correct).
     systems:
       - name: "Hose Reel System (single-tenant OH1 < 900 m2)"
         spec: "Per Section 3.3"
@@ -940,7 +1344,7 @@ branches:
   - id: storage_single_tenant_oh2_tier1
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [OH2], ground_floor_bua_m2_lt: 900, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group H Tier 1 (Single-Tenant OH2)"
-    page: "p.730"
+    page: "p.731"
     systems:
       - name: "Hose Reel System (single-tenant OH2 < 900 m2)"
         spec: "Per Section 3.3"
@@ -952,7 +1356,7 @@ branches:
   - id: storage_single_tenant_oh2_tier2
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [OH2], ground_floor_bua_m2_gte: 900, ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group H Tier 2 (Single-Tenant OH2)"
-    page: "p.730"
+    page: "p.731"
     systems:
       - name: "Automatic Sprinkler System (OH2 - higher density)"
         spec: "Per Section 3.5; design density 0.20 gpm / 139 m2 per Table 9.7.F (vs 0.15 for OH1)"
@@ -966,7 +1370,7 @@ branches:
   - id: storage_single_tenant_oh2_tier3
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [OH2], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group H Tier 3 (Single-Tenant OH2)"
-    page: "p.730"
+    page: "p.731"
     systems:
       - name: "Automatic Sprinkler System"
         spec: "Per Section 3.5; density 0.20 gpm / 139 m2"
@@ -983,10 +1387,10 @@ branches:
   - id: storage_single_tenant_extra_hazard
     match: {occupancy: storage_industrial, is_single_tenant_storage: true, hazard_class_in: [HH], is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_idle_pallet_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Groups I + J (Single-Tenant Extra Hazard)"
-    page: "p.730"
+    page: "p.732"
     systems:
       - name: "Automatic Sprinkler System (Extra Hazard)"
-        spec: "Per Section 3.5; density 0.30 gpm / 232 m2 (2500 ft2) for EH1 OR 0.40 gpm / 232 m2 for EH2 per Table 9.7.F"
+        spec: "Per Section 3.5; density 0.30 gpm / 232 m2 (2500 ft2) for EH1 OR 0.40 gpm / 232 m2 for EH2 per Table 9.27 Groups I + J"
         detail: "Where MSDS demands foam sprinklers per Section 3.9, foam-water sprinklers shall be provided throughout. Designer shall determine EH1 vs EH2 from activity (Definition 1.1.13.4 vs 1.1.13.5)."
       - name: "Hose Reel System"
         spec: "Per Section 3.3 (no dry landing valves)"
@@ -994,11 +1398,11 @@ branches:
         spec: "Per Section 3.11 - required when sum of all GF BUA > 3600 m2"
         required: conditional
       - name: "Fire Pump (Single-Tenant Extra Hazard)"
-        spec: "EH1: 750 gpm @ 4.5 bar (< 3600 m2) -> 1250 gpm @ 6.9 bar (> 3600 m2). EH2: 1000 gpm @ 4.5 bar (< 3600 m2) -> 1500 gpm @ 6.9 bar (> 3600 m2)"
+        spec: "EH1: 750 gpm @ 4.5 bar (<=3600 m2) -> 1250 gpm @ 6.9 bar (>3600 m2). EH2: 1000 gpm @ 4.5 bar (<=3600 m2) -> 1500 gpm @ 6.9 bar (>3600 m2)"
         detail: "Pump duty escalates by both hazard sub-group AND total area."
       - name: "Fire Water Tank"
-        spec: "60 minutes (EH1) / 60-120 minutes (EH2) duration; dedicated direct breeching inlet at all tiers"
-        detail: "EH2 + > 3600 m2: 120 min tank required."
+        spec: "EH1 <=3600 m2: 60 min; EH1 >3600 m2: 90 min; EH2 <=3600 m2: 60 min; EH2 >3600 m2: 120 min. Dedicated direct breeching inlet at all >3600 m2 tiers."
+        detail: "EH1 Tier 2 (>3600 m2) tank is 90 min (per Table 9.27 Group I, p.732) - NOT 60 min. EH2 Tier 2 (>3600 m2) tank is 120 min (per Table 9.27 Group J, p.733)."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
 
@@ -1006,7 +1410,7 @@ branches:
   - id: storage_idle_pallet_warehouse
     match: {occupancy: storage_industrial, is_idle_pallet_storage: true}
     section: "Ch 9, #4.11 / Table 9.27 Group K (Idle Wood / Plastic Pallet Warehouse)"
-    page: "p.730"
+    page: "p.734"
     systems:
       - name: "Automatic Sprinkler System (commodity-specific design)"
         spec: "Per Section 3.5; density per Table 9.7 sub-tables for idle wooden / plastic pallet storage (typically OH2-equivalent or higher)"
@@ -1031,7 +1435,7 @@ branches:
   - id: tunnel_cable_short
     match: {has_tunnel: true, tunnel_kind: cable, tunnel_length_m_lt: 60}
     section: "Ch 9, #4.12 / Table 9.28 Group A (Cable Tunnel < 60 m)"
-    page: "p.732"
+    page: "p.747"
     systems:
       - name: "Automatic Deluge Water Spray OR Water Mist System"
         spec: "Per Section 3.8 (deluge) OR Section 3.10 (water mist)"
@@ -1049,7 +1453,7 @@ branches:
   - id: tunnel_cable_long
     match: {has_tunnel: true, tunnel_kind: cable, tunnel_length_m_gte: 60}
     section: "Ch 9, #4.12 / Table 9.28 Group A (Cable Tunnel >= 60 m)"
-    page: "p.732"
+    page: "p.747"
     systems:
       - name: "Automatic Deluge Water Spray OR Water Mist System"
         spec: "Per Section 3.8 OR Section 3.10"
@@ -1064,7 +1468,7 @@ branches:
   - id: tunnel_road_rail_medium
     match: {has_tunnel: true, tunnel_kind: road_rail, tunnel_length_m_gte: 90, tunnel_length_m_lte: 1000}
     section: "Ch 9, #4.12 / Table 9.28 Group B (Road/Rail Tunnel 90-1000 m)"
-    page: "p.732"
+    page: "p.748"
     systems:
       - name: "Wet Riser System (throughout)"
         spec: "Per Section 3.4"
@@ -1076,7 +1480,7 @@ branches:
   - id: tunnel_road_rail_long
     match: {has_tunnel: true, tunnel_kind: road_rail, tunnel_length_m_gt: 1000}
     section: "Ch 9, #4.12 / Table 9.28 Group B (Road/Rail Tunnel > 1000 m)"
-    page: "p.732"
+    page: "p.748"
     systems:
       - name: "Automatic Deluge Water Spray OR Water Mist System"
         spec: "Per Section 3.8 OR Section 3.10"
@@ -1091,7 +1495,7 @@ branches:
   - id: tunnel_road_rail_short_none
     match: {has_tunnel: true, tunnel_kind: road_rail, tunnel_length_m_lt: 90}
     section: "Ch 9, #4.12 / Table 9.28 Group B (Road/Rail Tunnel < 90 m)"
-    page: "p.732"
+    page: "p.748"
     systems:
       - name: "No Tunnel Fire Protection System Required"
         required: not_required
@@ -1100,7 +1504,7 @@ branches:
   - id: storage_plant_nursery
     match: {occupancy: storage_industrial, is_plant_nursery: true}
     section: "Ch 9, #4.11 / Table 9.27 Group V (Plant Nursery)"
-    page: "p.730"
+    page: "p.746"
     systems:
       - name: "Portable Fire Extinguishers (only)"
         spec: "Per Chapter 4"
@@ -1144,13 +1548,18 @@ branches:
         detail: "Required only where open parking is part of a mall/highrise/super-highrise; standalone open parking does not require sprinklers."
 
 various_locations:
+  # NOTE: Exterior balcony sprinklers (Table 9.29.B, p.749) not encoded - user explicitly
+  # skipped to avoid UI bloat. The code requires sidewall/pendent sprinklers on exterior
+  # balconies of sprinklered buildings (max 12 m2 per head, 79 °C rating). Designers
+  # checking balcony coverage should consult Table 9.29.B directly.
   - id: var_atrium
     flag: has_atrium
     systems:
       - name: "Atrium Sprinklers (ceiling + adjacent to opening)"
+        required: recommended
         code_ref: "Ch 9, #4.13.1 / Table 9.29.A"
         page_ref: "p.749"
-        detail: "Sprinklers at atrium ceiling and immediately adjacent to every atrium opening. Non-combustible draft stops 450 mm deep. See Ch 10 for atrium smoke control."
+        detail: "Atriums SHOULD be provided with sprinklers at the atrium ceiling and immediately adjacent to every atrium opening (code uses 'should', not 'shall' - Table 9.29.A is the only 'should' entry). Non-combustible draft stops 450 mm deep. See Ch 10 for atrium smoke control."
   - id: var_rain_screen
     flag: has_rain_screen_glazing
     systems:
@@ -1177,10 +1586,10 @@ various_locations:
   - id: var_bathroom_heaters
     flag: has_bathrooms_with_heaters
     systems:
-      - name: "Bathroom False-Ceiling Sprinklers (where heaters are installed)"
+      - name: "Bathroom Sprinklers (where electric water-heaters are installed)"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.G"
         page_ref: "p.749"
-        detail: "False-ceiling space above bathrooms with heaters shall be sprinklered per Section 3.5. Public washrooms are also sprinklered; private residential/hotel/apartment washrooms are exempt."
+        detail: "Bathrooms equipped with electric water-heaters shall be sprinklered per Section 3.5 (Table 9.29.G - BATHROOMS). Public washrooms in commercial buildings are also sprinklered; private residential/hotel/apartment guest washrooms WITHOUT heaters are exempt. (NOTE: Table 9.29.F covers the separate 'above false ceiling' provision - that requires sprinklers in concealed combustible-construction spaces and is a different trigger - flag a designer review where both conditions apply.)"
   - id: var_laundry_storage
     flag: has_laundry_storage_rooms
     systems:
@@ -1452,6 +1861,14 @@ equipment:
         code_ref: "Ch 9, #4.15 / Table 9.31.D"
         page_ref: "p.756"
         detail: "Cable spread / cable tray galleries: water deluge spray per Table 3.8 or water mist per Table 3.10. Water mist preferred where water damage is a concern."
+
+  - id: eq_E_diesel_generator
+    flag: has_diesel_generator_room
+    systems:
+      - name: "Foam Sprinkler System (Section 3.9)"
+        code_ref: "Ch 9, #4.15 / Table 9.31.E"
+        page_ref: "p.756"
+        detail: "Diesel Generator Room - Foam sprinkler system per Section 3.9 (Table 9.31.E). Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from the predominant occupancy are exempt. NOTE: This overlaps with Table 9.30.G (auxiliary-room provision) - both are valid citations for the same physical system. The duplicate suppression in the engine will keep only one line in the report."
 
   - id: eq_F_boilers
     flag: has_boilers

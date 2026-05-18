@@ -13,16 +13,25 @@ general:
     systems:
       - name: "EVC Control Unit Location"
         code_ref: "Ch 7, #2.4 / Table 7.1 item 1"
-        page_ref: "p.444"
+        page_ref: "p.433"
         spec: "Next to FACP, continuously monitored location"
         detail: "EVC control unit shall be installed adjacent to FACP at a continuously monitored location attended by facility management or designated personnel at all times: reception, security guard house, central command centre, facility monitoring room, nurse station (hospitals). See FACP location, Ch 8 Table 8.1.14.1."
+
+  - id: evc_general_arabic_english_messages
+    when: {}
+    systems:
+      - name: "Pre-recorded Messages in Arabic and English"
+        code_ref: "Ch 7, #2.2.2"
+        page_ref: "p.431"
+        spec: "Pre-recorded voice messages SHALL be both in Arabic and English"
+        detail: "Per §2.2.2, pre-recorded voice messages shall be both in Arabic and English, in an accent which is familiar and intelligible to the people of UAE (cosmopolitan environment with 165+ nationalities). Messages shall be prepared by people familiar with fire emergency procedures and shall be simple, to the point, and customised to the specific building (not generalised). MANDATORY ('shall')."
 
   - id: evc_general_voice_messages
     when: {}
     systems:
       - name: "Voice Message Pattern + Pre-recorded Content"
         code_ref: "Ch 7, #2.4 / Table 7.1 item 2"
-        page_ref: "p.444"
+        page_ref: "p.433"
         spec: "Pre-recorded / synthesized / live messages; speakers listed and approved by Civil Defence"
         detail: "Evacuation messages shall be PRECEDED and FOLLOWED by a minimum of TWO CYCLES of the emergency evacuation signal. Non-evacuation (relocation) messages shall use a continuous alert tone of 3-10 seconds, followed by message, sequence repeated at least 3 times. Voice messages developed for each scenario in the emergency response plan. Speakers listed and approved by Civil Defence."
 
@@ -30,17 +39,53 @@ general:
     when: {}
     systems:
       - name: "Positive Alarm Sequence (Delayed Alarm)"
-        code_ref: "Ch 7, #2.4 / Table 7.1 item 3"
-        page_ref: "p.444"
-        spec: "Per Ch 8 Table 8.1.14.2 - 15 s acknowledge / 180 s multi-zone / 240 s building-wide"
-        detail: "PAS permitted (not mandatory). EVC integrates with FA Stage-1/2/3 timings: Stage 1 at 15 s acknowledgment, Stage 2 expansion at 180 s, Stage 3 building-wide at 240 s. Hotel override 120 s."
+        code_ref: "Table 7.1 #3 + Ch 8 Table 8.1 #14"
+        page_ref: "p.433"
+        spec: "PAS permitted per Ch 8 Table 8.1.14.2; numeric timings live in Ch 8 (not Ch 7)"
+        detail: "Ch 7 Table 7.1 #3 only states that PAS (Delayed Alarm sequence) per Ch 8 Table 8.1.14.2 shall be permitted - it is NOT mandatory. The actual numeric timings (Stage 1 acknowledge 15 s; Stage 2 multi-zone expansion 180 s; Stage 3 building-wide 240 s; hotel override 120 s) are defined in Ch 8, not in Ch 7. Backup duration is also not specified in Ch 7 - defer to Ch 8 / NFPA 72 for minutes of standby."
+
+  - id: evc_general_sleeping_risk_tone
+    when: {}
+    systems:
+      - name: "Tone in Sleeping-Risk Occupancies"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 4.1"
+        page_ref: "p.434"
+        spec: "Tone preceding voice message may be part of the voice message in sleeping-risk occupancies"
+        detail: "Per Table 7.1 #4.1, the tone preceding any voice message shall be permitted to be part of the voice message in occupancies where sleeping risk is involved (hotels, residential highrise, hospitals, dormitories). Allows a single continuous tone-plus-message stream rather than separated tone + announcement."
+
+  - id: evc_general_private_mode_audibility
+    when: {}
+    systems:
+      - name: "Private Mode Audibility (10 dB above ambient)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 4.2"
+        page_ref: "p.434"
+        spec: "Voice messages in private mode/areas: 10 dB above ambient, 60 s duration, measured 1.5 m above floor (dBA)"
+        detail: "Per Table 7.1 #4.2, voice messages in private mode/areas shall be 10 dB above the ambient sound level having duration of 60 seconds, measured 1.5 m above the floor area required to be served using A-weighted scale (dBA)."
+
+  - id: evc_general_public_mode_audibility
+    when: {}
+    systems:
+      - name: "Public Mode Audibility (15 dB above ambient)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 4.3"
+        page_ref: "p.434"
+        spec: "Voice messages in public mode/areas: 15 dB above ambient, 60 s duration, measured 1.5 m above floor (dBA)"
+        detail: "Per Table 7.1 #4.3, voice messages in public mode/areas shall be 15 dB above the ambient sound level having duration of 60 seconds, measured 1.5 m above the floor area required to be served using A-weighted scale (dBA)."
+
+  - id: evc_general_stairway_zoning
+    when: {}
+    systems:
+      - name: "Stairway Speaker Zoning (Manual Paging Only)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 5.v"
+        page_ref: "p.434"
+        spec: "Speakers in each enclosed stairway shall be on a SEPARATE notification zone for MANUAL PAGING ONLY"
+        detail: "Per Table 7.1 #5.v, where speakers are provided in enclosed stairways, they shall be connected to a separate notification zone for manual paging only. Stairway speakers are NOT to broadcast the general auto evacuation message - the firefighter / incident commander uses them for targeted live instructions."
 
   - id: evc_general_message_priority
     when: {}
     systems:
       - name: "Message Priority Hierarchy"
-        code_ref: "Ch 7, #2.4 / Table 7.1 item 7"
-        page_ref: "p.444"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 7.2"
+        page_ref: "p.435"
         spec: "Life safety > property protection > trouble > all other"
         detail: "Voice evacuation messages override prior signals, music, communication signals to the selected notification zone. Live voice (microphone) overrides recorded; on microphone release, recorded messages do NOT auto-resume - must be re-triggered manually or per emergency response plan. Manual zone selection or all-call from control unit."
 
@@ -49,16 +94,34 @@ general:
     systems:
       - name: "Circuits + Wiring (Class A, addressable, 2-hr fire rated)"
         code_ref: "Ch 7, #2.4 / Table 7.1 item 9"
-        page_ref: "p.445"
+        page_ref: "p.435"
         spec: "All EVC speaker circuits: Class A, addressable, redundant pathways"
         detail: "Single-open-fault tolerance with trouble annunciation; ground-fault annunciation; ALL EVC cables and wiring shall be 2-HOUR FIRE RATED. Ancillary functions (music, paging) permitted only with safeguards against tampering/misadjustment and continued integrity monitoring."
+
+  - id: evc_general_installation_heights
+    when: {}
+    systems:
+      - name: "Installation Heights (910-1220 mm mounting envelope)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 10"
+        page_ref: "p.436"
+        spec: "Operable controls 910 mm min / 1220 mm max (horizontal reach < 25 cm); text & indicators 1020-1520 mm"
+        detail: "Per Table 7.1 #10, user-accessible controls (control units, switches, microphone, latches) shall be located 910 mm minimum and 1220 mm maximum above finished floor where horizontal reach is less than 25 cm. For a horizontal reach of 25-61 cm, maximum elevation is limited to 1070 mm and minimum to 710 mm. Text and visual indicators (lamps, screens, displays, labels) shall be visible within 1020-1520 mm above finished floor."
+
+  - id: evc_general_facp_interfacing
+    when: {}
+    systems:
+      - name: "FACP Interfacing + Civil Defence 24x7 Monitoring"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 11"
+        page_ref: "p.436"
+        spec: "Combined FACP+EVC control unit preferred; if separate, fully interfaced + connected to Civil Defence 24x7 monitoring"
+        detail: "Per Table 7.1 #11: (a) a combined FACP+EVC control unit is preferred by Civil Defence; (b) a single dedicated EVC control panel is permitted if interfaced to the FACP; (c) the interface shall indicate failure at the impaired control unit, give audible + distinctive visible 'ECV active' indication at the affected FACP, cause the FA system to deactivate audible/visible appliances that could interfere with EVC intelligibility, NOT permit the FA system to turn off appliances used for special-suppression pre-discharge notification, and (d) the system shall be CONNECTED TO CIVIL DEFENCE 24x7 MONITORING for activation and trouble indication."
 
   - id: evc_general_two_way_phone_jacks
     when: {}
     systems:
       - name: "Two-way Telephone Jack Locations (Fireman's Phone)"
         code_ref: "Ch 7, #2.5 / Table 7.2 item 2"
-        page_ref: "p.446"
+        page_ref: "p.437"
         spec: "Common talk / party-line; jacks at every required location"
         detail: "Telephone station OR jack at: (a) every stair landing, every floor; (b) every fire lift lobby; (c) inside every elevator car; (d) fire / emergency command centre; (e) fire pump room; (f) every area of refuge. AT LEAST 2 HANDSETS at each control centre for emergency responders. Each station/jack permanently labelled to allow caller to identify location by voice."
 
@@ -67,7 +130,7 @@ general:
     systems:
       - name: "Two-way Telephone System Features"
         code_ref: "Ch 7, #2.5 / Table 7.2 item 3"
-        page_ref: "p.446"
+        page_ref: "p.437"
         spec: "Listed; integrity-monitored; simultaneous 5-station common-talk capability"
         detail: "Equipment listed and approved for two-way telephone service. Integrity monitoring of all circuits. Simultaneous operation of any 5 telephone stations in common-talk mode. Distinctive off-hook indication at control unit (visible per circuit if selective talk)."
 
@@ -106,8 +169,8 @@ branches:
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
-        spec: "Per Section 2.4 + Table 7.1 - 60-75 dBA public-mode audibility"
-        detail: "EVC required for malls (covered / open / mixed). Multi-zone messaging with all-call override; ambient design level 40 dBA mercantile, 55 dBA assembly zones."
+        spec: "Per Section 2.4 + Table 7.1 - public-mode audibility 15 dB above ambient (Table 7.1 #4.3)"
+        detail: "EVC required for malls (covered / open / mixed). Multi-zone messaging with all-call override; public-mode voice messages shall be 15 dB above the ambient sound level (Table 7.1 #4.3, p.434). Average ambient sound levels for information: 40 dBA mercantile, 55 dBA assembly zones (Ch 7 §2.3, p.432)."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
         detail: "Two-way telephone jacks at every fire-command interface and major mall circulation node."
@@ -126,13 +189,16 @@ branches:
 
   - id: evc_amusement
     match:
-      occupancy_in: [assembly_a, assembly_b, assembly_c]
       has_amusement_confounding_is: true
     section: "Ch 7, #3.1 / Table 7.3 item 5"
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation (Amusement / Theme Parks)"
-        detail: "Amusement and theme parks require EVC + Two-way telephone irrespective of occupant load. (Already covered by the assembly branch above; this branch confirms applicability for amusement-classified buildings.)"
+        spec: "Per Section 2.4 + Table 7.1 - standalone EVC trigger irrespective of occupant load"
+        detail: "Per Table 7.3 item 5, Amusement and Theme Parks require EVC + Two-way Telephone IRRESPECTIVE OF OCCUPANT LOAD and irrespective of occupancy classification - this is a STANDALONE trigger, not gated on Assembly. Includes mazes, mirror houses, motion simulators, dark rides, indoor play areas with confounding layouts."
+      - name: "Two-way Telephone Communication System"
+        spec: "Per Section 2.5 + Table 7.2"
+        detail: "Two-way telephone jacks at every fire-command interface and major circulation/ride control node."
 
   - id: evc_education
     match:
@@ -179,8 +245,8 @@ branches:
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
-        spec: "Per Section 2.4 + Table 7.1 - 30 dBA storage / 80 dBA industrial / 85 dBA mechanical-room ambient design levels"
-        detail: "EVC required for storage and industrial occupancies with built-up area > 5,000 m². Speaker placement to overcome high industrial ambient noise."
+        spec: "Per Section 2.4 + Table 7.1 - 30 dBA storage / 80 dBA industrial / 85 dBA mechanical-room average ambient sound levels for information (Ch 7 §2.3, p.432)"
+        detail: "EVC required for storage and industrial occupancies with built-up area > 5,000 m². Speaker placement to overcome high industrial ambient noise. The 30/80/85 dBA figures from Ch 7 §2.3 (p.432) are 'average ambient sound levels for information' (informational reference) - NOT design thresholds. Public-mode audibility design target is 15 dB above the measured ambient (Table 7.1 #4.3)."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
 
@@ -216,7 +282,7 @@ branches:
     systems:
       - name: "Emergency Voice Evacuation (EVC) - healthcare under highrise"
         required: not_required
-        detail: "EVC and two-way telephone are NOT mandatory for healthcare occupancies under highrise threshold. Hospitals taller than 23 m fall under the highrise branch and require EVC."
+        detail: "EVC and two-way telephone are NOT mandatory for healthcare occupancies under highrise threshold per Table 7.3 (healthcare is not listed). Hospitals taller than 23 m fall under the highrise branch and require EVC. NOTE: §2.1.1 Table 7.1 control-unit location text (p.433) specifically calls out 'nurse stations at hospitals' as a continuously monitored location for EVC siting - this implies the code anticipates EVC at hospitals even though Table 7.3 does not mandate it. RECOMMENDED practice: highrise / super-highrise hospitals and any hospital with phased / staged evacuation procedures should provide EVC even when not strictly mandated."
 
   - id: evc_mercantile_not_required
     match:

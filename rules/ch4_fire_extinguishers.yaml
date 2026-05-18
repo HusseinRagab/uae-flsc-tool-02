@@ -15,8 +15,8 @@ general:
     when: {}
     systems:
       - name: "Civil Defence Approval + Licensed Contractor"
-        code_ref: "Ch 4, #6 / Material Test Standards"
-        page_ref: "p.388"
+        code_ref: "Ch 4, #4 / Material Test Standards"
+        page_ref: "p.381-382"
         spec: "All extinguishers Listed, Approved, Registered by Civil Defence Material Approval Department"
         detail: "Listing per ANSI/NFPA 10, EN 3-7 / EN 3-8 / EN 3-9, ANSI/UL 8 (Foam), UL 2129 (Halocarbon), CAN/ULC-S507-92 (Water 9 L), CAN/ULC-S508-M90 (Class D media). Installation only by Civil Defence approved and licensed contractors. Civil Defence registration mark on each extinguisher body."
 
@@ -24,19 +24,37 @@ general:
     when: {}
     systems:
       - name: "Mounting Heights + Cabinet + Signage"
-        code_ref: "Ch 4, #5 / Table 4.4 (Installation)"
-        page_ref: "p.385"
-        spec: "Top of extinguisher <= 1.5 m above floor (units <= 18 kg). Top <= 1.07 m above floor (units > 18 kg). Bottom > 100 mm above floor."
-        detail: "Mount on bracket or hook, OR house in Fire Hose Cabinet (FHC) with clear external signage / pictogram. Extinguishers shall NEVER be placed on floor directly. Path to extinguisher unobstructed. ID label at eye level for FHCs. Signage in red background with white pictogram visible from approach direction."
+        code_ref: "Ch 4, #2.3 / Table 4.1 row 4 (Installation)"
+        page_ref: "p.361"
+        spec: "Top of extinguisher <= 1.5 m above floor. Bottom >= 300 mm (30 cm) above floor."
+        detail: "Per code Table 4.1 row 4 (p.361): top not more than 1.5 m above floor, bottom not less than 30 cm from finished floor. The 'Top <= 1.07 m above floor (units > 18 kg)' guidance is NFPA 10 industry practice and is NOT in UAE Ch 4 text. Mount on bracket or hook, OR house in Fire Hose Cabinet (FHC) with clear external signage / pictogram. Extinguishers shall NEVER be placed on floor directly. Path to extinguisher unobstructed. ID label at eye level for FHCs. Signage in red background with white pictogram visible from approach direction. Cabinets shall not be kept locked. Installation only in temperatures 4 C to 49 C."
+
+  - id: fe_g_training_requirement
+    when: {}
+    systems:
+      - name: "Personnel Fire-Extinguisher Training (10%)"
+        code_ref: "Ch 4, #2.2.9 / Training"
+        page_ref: "p.359"
+        spec: "At least 10% of Security personnel, Occupants, Employees and Supervisory personnel of each occupancy SHALL be trained on basic fire awareness, types, use and operation of fire extinguishers."
+        detail: "Per code #2.2.9.1: training is mandatory ('shall'). Per code #2.2.9.2: training SHALL be conducted by an agency authorized by the Civil Defence, or by Civil Defence department personnel directly. Records of trained personnel and training-agency certification shall be retained at the facility for inspection."
+
+  - id: fe_g_obsolete_types_banned
+    when: {}
+    systems:
+      - name: "Obsolete Extinguisher Types - Removed From Service"
+        code_ref: "Ch 4, #2.2.8 / Obsolete Extinguishers"
+        page_ref: "p.359"
+        spec: "Obsolete extinguisher types SHALL be removed from service and replaced."
+        detail: "Per code #2.2.8.1, the following are obsolete and shall be removed: (a) Soda acid; (b) Chemical foam (excluding film-forming agents); (c) Vaporizing liquid; (d) Cartridge-operated water; (e) Cartridge-operated loaded stream; (f) Copper or brass shell extinguishers joined by soft solder or rivets (excluding pump tanks); (g) Extinguishers rated prior to 1955 and marked B-1, C-1 on the nameplate; (h) Extinguishers not listed or labeled; (i) Halon 1211 and Halon 1301 agents. Facility management shall audit the existing extinguisher inventory at acceptance and during periodic inspections and replace any obsolete units."
 
   - id: fe_g_inspection_intervals
     when: {}
     systems:
       - name: "Inspection + Testing Intervals"
-        code_ref: "Ch 4, #7 / Table 4.5 (Inspection + Maintenance)"
-        page_ref: "p.387"
-        spec: "Monthly visual / Annual professional / 6-year teardown / 12-year hydrostatic test"
-        detail: "MONTHLY: visual inspection by occupant (gauge in green, seal/tamper indicator intact, location accessible, instruction label legible). ANNUAL: professional service by Civil Defence licensed contractor (weighing, gauge calibration, recharging if discharged). 6-YEAR: stored-pressure extinguishers shall be torn down and internally inspected. 12-YEAR: hydrostatic pressure test of cylinder. Service tag shall be attached after each service. Records retained at facility for inspection."
+        code_ref: "Ch 4, #3.4 / Table 4.4 (Inspection + Maintenance)"
+        page_ref: "p.379-380"
+        spec: "Acceptance / Daily-Monthly visual / Annual professional service (per Table 4.4); refer to NFPA 10 for further intervals."
+        detail: "Per code Table 4.4 (p.379-380): ACCEPTANCE: verify location, height, signage, seals, gauge, weight, nozzle. DAILY/MONTHLY: facility management checks presence, location, pressure gauge; extinguishers cleaned and replaced on hangers; replacement unit installed when one is removed for service. ANNUAL: full disassembly maintenance (stored-pressure loaded-stream), CO2 hose conductivity test, pressure regulator test on wheeled units, weighing, recharging if discharged. Note: Table 4.4 states 'NFPA 10 shall be referred for further details.' The 6-year teardown / 12-year hydrostatic test intervals commonly cited are NFPA 10 derivatives and are NOT explicitly stated in UAE Ch 4 text. Service tag shall be attached after each service. Records retained at facility for inspection."
 
   - id: fe_g_class_a
     when:
@@ -57,9 +75,12 @@ general:
         spec: "Multi-purpose Dry Powder 2.5 kg or 4 kg per villa floor"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1"
         page_ref: "p.373"
-        detail: "Class A extinguisher recommended at each villa floor (kitchen, living areas). Not strictly mandatory for private villas but standard practice."
+        detail: "Class A extinguisher recommended at each villa floor (kitchen, living areas). INTERPRETATION NOTE: Treated as 'recommended' rather than 'required' as a pragmatic interpretation; UAE Ch 4 Table 4.3 row 1 uses 'shall' without explicit villa carve-out. See `fe_g_class_a` for the universal mandate. The '2.5 kg' size option is industry-practice carryover; Table 4.3 row 1 text only specifies 4 kg. Designer may justify either approach with Civil Defence approval."
 
   # Class K - Residential/Hotel kitchens (homes)
+  # NOTE: Despite the "Class K" naming (kept for industry convention + test stability),
+  # the code spec for KITCHEN/HOMES is a Multi-purpose Dry Powder (Class A/B:C) unit,
+  # NOT a Class K wet-chemical agent. See detail.
   - id: fe_g_class_k_residential
     when:
       occupancy_in: [residential, villa_private, villa_commercial, hotel_a, hotel_b, hotel_c, labour_accommodation, staff_accommodation, hostel]
@@ -68,7 +89,7 @@ general:
         spec: "Multi-purpose Dry Powder 2.5 kg, rating 3-A:20-B:C"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 6 item 1"
         page_ref: "p.377"
-        detail: "Inside residential / home / guest-room kitchens, placed next to the kitchen exit door."
+        detail: "Per code Table 4.3 row 6 (KITCHEN, HOMES): Multi-purpose Dry Powder unit (Class A/B:C), NOT a Class K wet-chemical agent. The 'Class K' naming follows industry convention for residential-kitchen extinguishers; the spec follows the code verbatim. For commercial / restaurant kitchens use `fe_class_k_commercial` (true Wet Chemical). Inside residential / home / guest-room kitchens, placed next to the kitchen exit door."
 
 # ---------- BRANCHES: Class B 'wheeled' branches by occupancy ----------------
 branches:
@@ -100,7 +121,7 @@ addons:
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 3 item 4"
         page_ref: "p.376"
         spec: "Wheeled Foam 50 L + Multi-purpose Dry Powder 4 kg (2-A:20-B:C)"
-        detail: "Parking areas within any building (basement, podium, attached covered parking) require wheeled foam at 15 m max travel. Place at protected locations - typically near ramps, bays, and exits. Applies to in-building parking areas in residential, hotel, mall, office and other occupancies (not just standalone parking buildings)."
+        detail: "Parking areas within any building (basement, podium, attached covered parking) require wheeled foam at 15 m max travel. Place at protected locations - typically near ramps, bays, and exits. Applies to in-building parking areas in residential, hotel, mall, office and other occupancies (not just standalone parking buildings). DESIGNER NOTE: This add-on overlaps with the standalone branch `fe_parking` (which fires when the primary occupancy itself is parking_enclosed / parking_open). The engine surfaces the rule from the most-specific layer for the building's primary occupancy and the add-on layer for attached parking — designers should count one wheeled foam unit per parking area regardless of which rule labels it. No double-counting intended."
 
   # ---- Class B (non-wheeled) ---------
   - id: fe_class_b_storage
@@ -112,6 +133,9 @@ addons:
         spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 4 kg (2-A:20-B:C) per location"
         detail: "Class B coverage applies to: chemical stores, linen stores, waste storage, flammable liquid stores, cleaning solvent stores, laboratories, paint/solvent rooms. Each extinguisher serves ~280 m²; maximum travel 15 m."
 
+  # Rule ID kept as `fe_class_b_assembly_bar` for downstream stability. The flag
+  # `has_nightclub_disco` is the only available UI input today and is interpreted
+  # broadly to cover ASSEMBLY: Bars, Pubs, Night Clubs (Table 4.3 row 2 item 1).
   - id: fe_class_b_assembly_bar
     flag: has_nightclub_disco
     systems:
@@ -119,7 +143,7 @@ addons:
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 1"
         page_ref: "p.375"
         spec: "Foam Type 9 L AND Multi-purpose Dry Powder 4 kg"
-        detail: "Bars, pubs and night clubs within assembly occupancies require Class B coverage at 15 m max travel."
+        detail: "Code Table 4.3 row 2 item 1 explicitly lists 'ASSEMBLY: Bars, Pubs, Night Clubs' as a single hazard category. DESIGNER NOTE: the UI flag `has_nightclub_disco` is the consolidated trigger for ALL three (bars, pubs, night clubs) — set it whenever any of these venues are present in an assembly occupancy, not just full nightclubs / discos. Bars and pubs in hotels, restaurants and clubs all require this Class B coverage at 15 m max travel."
 
   # ---- Class B (wheeled) - flag-driven additions on top of branches ----
   - id: fe_class_b_wheeled_diesel_gen
