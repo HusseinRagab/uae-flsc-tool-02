@@ -1,0 +1,47 @@
+# pump_specs.yaml — Fire-pump capacity & duty selection table.
+#
+# Externalised from engine.py so the sizing brackets can be reviewed,
+# updated, and audited against the cited standards without a code change.
+#
+# Each entry corresponds to one value of the rule-tree's `pump_spec_type`
+# field. The engine reads this file via load_rules("pump_specs.yaml") at
+# evaluation time and falls back to the previous hard-coded behaviour if
+# the file is missing — so existing deployments keep working.
+
+# ── Wet-riser dependent pumps ──────────────────────────────────────────────
+# Capacity scales with the number of standpipes per UAE FLSC 2018 Ch. 9
+# (aligning with NFPA 14:2019 §7.10 for Class I / III standpipe systems).
+standpipe_dependent:
+  source: "UAE FLSC 2018 Ch. 9 §3.4 / NFPA 14:2019 §7.10"
+  pressure_bar: 6.9
+  pressure_note: "at most remote landing valve"
+  pump_description: >-
+    UL/FM listed electric or diesel-driven pump set with jockey pump
+    and controller.
+  # Brackets are evaluated top-to-bottom; the first whose
+  # max_standpipes >= n applies. Use a sentinel like 999 for "or more".
+  brackets:
+    - max_standpipes: 2
+      gpm: 750
+    - max_standpipes: 999
+      gpm: 1000
+
+# ── Fixed-capacity pumps (yard hydrant networks etc.) ──────────────────────
+fixed_1000:
+  source: "UAE FLSC 2018 Ch. 9 (yard hydrant network)"
+  pressure_bar: 6.9
+  pressure_note: "at most remote hydrant outlet valve"
+  gpm: 1000
+  pump_description: >-
+    Electric or diesel driven UL/FM listed pump set for yard hydrant network.
+
+# ── Villa-scale combined sprinkler + hose-reel pump (Table 9.23) ───────────
+# Used by villa_private_*_1500 and villa_commercial_*_1500 branches when the
+# building requires sprinklers + hose reels at 250 gpm.
+fixed_250:
+  source: "UAE FLSC 2018 Table 9.23, p.716-717"
+  pressure_bar: 4.5
+  pressure_note: "at most remote hose-reel outlet valve"
+  gpm: 250
+  pump_description: >-
+    Electric-driven UL/FM listed fire pump set with jockey pump and controller.

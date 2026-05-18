@@ -10,7 +10,7 @@ Occupancy = Literal[
     "business",
     "education_a", "education_b", "education_c",
     "mercantile_a", "mercantile_b",
-    "healthcare_a",
+    "healthcare_a", "healthcare_b", "healthcare_c",
     "hotel_a", "hotel_b", "hotel_c",
     "daycare_a", "daycare_b", "daycare_c",
     "residential",
@@ -30,18 +30,26 @@ OCCUPANCY_DEFS = {
     "assembly_b": "Assembly Group B - Occupant load 301 to 1,000. Cinemas, theatres, banquet halls, conference halls, mid-size mosques, ballrooms.",
     "assembly_c": "Assembly Group C - Occupant load 50 to 300. Restaurants, cafes, small meeting rooms, small mosques, community halls, bars, nightclubs.",
     "business": "Business - Offices, non-inpatient clinics, government offices, banks, courthouses, professional services.",
-    "education_a": "Educational Group A - Universities and adult education.",
-    "education_b": "Educational Group B - Schools: Grade 1 through 12 (primary + secondary).",
-    "education_c": "Educational Group C - Kindergarten and early childhood (KG1/KG2) and pre-primary.",
+    # NOTE: Education group letters swapped 2026-05 to match UAE FLSC Ch 3 §5.3 / Table 3.13.3.
+    # Per code: Group A = Nurseries / KG / Preschool (Table 3.20); Group B/C = Schools and Colleges
+    # / Universities (Table 3.21). Schema IDs preserved (education_a/_b/_c) for backward compat
+    # with saved scenarios; their meaning is the code's meaning, not the schema's original.
+    "education_a": "Educational Group A - Nurseries, KG1/KG2, Preschool, Talent Centers (Table 3.20).",
+    "education_b": "Educational Group B - Schools: Grade 1 through 12 (Table 3.21).",
+    "education_c": "Educational Group C - Colleges, Universities, adult education (Table 3.21).",
     "mercantile_a": "Mercantile Group A - Retail up to 2 storeys and less than 2,800 m2. Shops, showrooms, boutiques.",
     "mercantile_b": "Mercantile Group B - Retail more than 2 storeys or exceeding 2,800 m2. Department stores, hypermarkets (stand-alone).",
-    "healthcare_a": "Healthcare Group A - Hospitals, nursing homes, inpatient medical facilities where occupants require assistance for evacuation.",
+    "healthcare_a": "Healthcare Group A - Hospitals, nursing homes, inpatient medical facilities where occupants require assistance for evacuation (Table 3.22).",
+    "healthcare_b": "Healthcare Group B - Clinics, day-surgery and outpatient medical facilities (Table 3.22).",
+    "healthcare_c": "Healthcare Group C - Ambulatory healthcare, walk-in clinics, dental/eye/diagnostic centres (Table 3.23).",
     "hotel_a": "Hotel Group A - Luxury / 4-5 star hotels.",
     "hotel_b": "Hotel Group B - Mid-range hotels (2-3 star).",
     "hotel_c": "Hotel Group C - Budget hotels, apartment hotels, furnished apartments.",
     "daycare_a": "Daycare Group A - Daycare for more than 12 clients.",
     "daycare_b": "Daycare Group B - Daycare for 7 to 12 clients.",
-    "daycare_c": "Daycare Group C - Daycare for 4 to 6 clients.",
+    # daycare_c: UAE FLSC Ch 3 §5.10 only defines Daycare Groups A and B. Schema keeps _c as a
+    # UI convenience for family daycare (4-6 clients); Ch 3 rules treat it the same as Group B.
+    "daycare_c": "Daycare Group C - Family daycare for 4 to 6 clients (UI category; Ch 3 falls back to Group B rules).",
     "residential": "Residential - Apartment buildings, flats, condominiums. Multi-family dwellings.",
     "labour_accommodation": "Labour Accommodation - Dormitory-style housing for construction/industrial workers with shared facilities.",
     "staff_accommodation": "Staff Accommodation - Housing for employees of a single institution (hospital/hotel/airport staff).",
@@ -70,7 +78,7 @@ HAZARD_BY_OCCUPANCY = {
     "business": "LH",
     "education_a": "LH", "education_b": "LH", "education_c": "LH",
     "mercantile_a": "OH1", "mercantile_b": "OH2",
-    "healthcare_a": "LH",
+    "healthcare_a": "LH", "healthcare_b": "LH", "healthcare_c": "LH",
     "hotel_a": "LH", "hotel_b": "LH", "hotel_c": "LH",
     "daycare_a": "LH", "daycare_b": "LH", "daycare_c": "LH",
     "residential": "LH",
@@ -88,7 +96,8 @@ HAZARD_BY_OCCUPANCY = {
 MIDRISE_PUBLIC = {
     "assembly_a", "assembly_b", "assembly_c",
     "education_a", "education_b", "education_c",
-    "healthcare_a", "mercantile_a", "mercantile_b",
+    "healthcare_a", "healthcare_b", "healthcare_c",
+    "mercantile_a", "mercantile_b",
     "hotel_a", "hotel_b", "hotel_c",
     "daycare_a", "daycare_b", "daycare_c",
     "mixed_multiple", "high_depth_underground",
@@ -128,6 +137,7 @@ class Building(BaseModel):
     basement_bua_m2: float = 0.0
     plot_area_m2: float = 0.0
     corridor_length_m: float = 0.0     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
+    assembly_area_m2: float = 0.0      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
 
     hazard_class: Literal["LH", "OH1", "OH2", "HH"] = "OH1"
 
@@ -146,6 +156,9 @@ class Building(BaseModel):
     has_diesel_generator_room: bool = False
     has_main_electrical_room: bool = True   # universal in any non-villa building
     has_ahu_room: bool = False
+    # has_lv_mv_room: code Table 8.14/9.30 item 11 mentions "LV ROOM" only; MV is treated
+    # the same here as an engineering-safe interpretation. Keep the combined flag for UI
+    # simplicity; surface MV in the rule detail text rather than splitting the flag.
     has_lv_mv_room: bool = False
     has_transformer_room_utility: bool = False
     has_transformer_room_private: bool = False
@@ -217,6 +230,16 @@ class Building(BaseModel):
     is_plant_nursery: bool = False                  # Group V - extinguishers only
     is_single_tenant_storage: bool = False          # Groups F-J - single-tenant variants (different pump/tank than multi-tenant Groups A-E)
     is_idle_pallet_storage: bool = False            # Group K - idle wood/plastic pallet warehouse
+    is_extra_hazard_2: bool = False                 # Multi-tenant HH: Group E (EH2, Definition 1.1.13.5) vs Group D (EH1, Definition 1.1.13.4 - default). Drives EH2's higher density (0.40 vs 0.30), higher pump (1000/1500 vs 750/1250 gpm), and 120-min tank.
+    is_commodity_specific_storage: bool = False     # Opt-in for Table 9.27 Groups L-O (Class I-IV / plastics / rubber / tires / paper) commodity-driven design. Routes the HH match to the commodity-specific catch-all rule.
+    # --- FP (Ch 9) - Single-exit-stair / commercial-attached / tent variants
+    # These drive Tables 9.20.c, 9.21.c, 9.21.e, 9.21.f branches.
+    # (Table 9.21.d - villas converted to commercial - reuses the existing
+    # `villa_converted_use` flag defined in the ES Ch 5 section above.)
+    has_single_exit_stair: bool = False             # Tables 9.20.c, 9.21.c - building has only one exit stair
+    has_attached_commercial_outlet: bool = False    # Table 9.21.e - villa/mosque/business with commercial outlet attached or in same plot
+    tent_marquee_kind: Literal["none", "temporary", "permanent", "commercial_desert", "site_office_short", "site_office_long", "small_detached"] = "none"
+    # Table 9.21.f - tents, marquees, site offices, site dwellings sub-types.
     # --- FP (Ch 9) - Tunnel Fire Protection (Table 9.28)
     tunnel_kind: Literal["road_rail", "cable"] = "road_rail"
     tunnel_length_m: float = 0.0

@@ -63,6 +63,12 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
             if not (getattr(b, key[:-4]) <= expected): return False
         elif key.endswith("_is"):
             if getattr(b, key[:-3]) != expected: return False
+        elif key.endswith("_in"):
+            # Generic membership check against any Building scalar field.
+            # `<field>_in: [a, b, c]` is equivalent to `getattr(b, field) in [a, b, c]`.
+            # `occupancy_in` and `hazard_class_in` are handled above; this catches the rest
+            # (e.g. `tent_marquee_kind_in: [permanent, commercial_desert]`).
+            if getattr(b, key[:-3], None) not in expected: return False
         else:
             if getattr(b, key, None) != expected: return False
     return True
@@ -70,22 +76,72 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
 
 # ---------------------------- Pump spec resolver -----------------------------
 
+_PUMP_SPECS_FILENAME = "pump_specs.yaml"
+
+# Hard-coded fallback used only when pump_specs.yaml is absent — preserves
+# the legacy behaviour for installations that haven't unpacked the new file.
+_PUMP_FALLBACK = {
+    "standpipe_dependent": {
+        "source": "UAE FLSC 2018 Ch. 9 / NFPA 14:2019 §7.10",
+        "pressure_bar": 6.9,
+        "pressure_note": "at most remote landing valve",
+        "pump_description": "UL/FM listed electric or diesel-driven pump set "
+                            "with jockey pump and controller.",
+        "brackets": [{"max_standpipes": 2, "gpm": 750},
+                     {"max_standpipes": 999, "gpm": 1000}],
+    },
+    "fixed_1000": {
+        "source": "UAE FLSC 2018 Ch. 9 (yard hydrant network)",
+        "pressure_bar": 6.9,
+        "pressure_note": "at most remote hydrant outlet valve",
+        "gpm": 1000,
+        "pump_description": "Electric or diesel driven UL/FM listed pump set "
+                            "for yard hydrant network.",
+    },
+}
+
+
+def _pump_table() -> Dict[str, Any]:
+    """Load the pump-spec table, falling back to the hard-coded defaults if
+    the YAML is missing or malformed."""
+    spec = load_rules(_PUMP_SPECS_FILENAME)
+    return spec if spec else _PUMP_FALLBACK
+
+
 def _resolve_pump(entry: Dict[str, Any], b: Building):
     pst = entry.get("pump_spec_type")
-    if pst == "standpipe_dependent":
+    table = _pump_table()
+    cfg = table.get(pst)
+    if cfg is None:
+        # Unknown spec type — fall through to the legacy if-tree below so the
+        # caller still gets a return value, never a None-from-missing-row.
+        cfg = _PUMP_FALLBACK.get(pst)
+    if pst == "standpipe_dependent" and cfg is not None:
         n = b.wet_riser_standpipes
-        gpm = 750 if n <= 2 else 1000
+        gpm = next((br["gpm"] for br in cfg.get("brackets", [])
+                    if n <= br.get("max_standpipes", 999)), None)
+        if gpm is None:
+            gpm = cfg.get("brackets", [{}])[-1].get("gpm", 1000)
+        bar  = cfg.get("pressure_bar", 6.9)
+        note = cfg.get("pressure_note", "at most remote landing valve")
+        desc = cfg.get("pump_description", "")
+        cite = cfg.get("source", "")
         return (
-            f"{gpm} gpm @ 6.9 bar at most remote landing valve",
-            f"Pump sized at {gpm} gpm based on {n} standpipe{'s' if n != 1 else ''} in the wet-riser system. "
-            f"UL/FM listed electric or diesel-driven pump set with jockey pump and controller.",
+            f"{gpm} gpm @ {bar} bar {note}",
+            f"Pump sized at {gpm} gpm based on {n} standpipe"
+            f"{'s' if n != 1 else ''} in the wet-riser system. {desc}"
+            + (f" [Source: {cite}]" if cite else ""),
         )
+    if pst in ("fixed_250", "fixed_1000") and cfg is not None:
+        gpm  = cfg.get("gpm")
+        bar  = cfg.get("pressure_bar")
+        note = cfg.get("pressure_note", "")
+        desc = cfg.get("pump_description", "")
+        return (f"{gpm} gpm @ {bar} bar {note}".strip(), desc)
+    # Backward-compatibility fallback - older pump_specs.yaml without `fixed_250`.
     if pst == "fixed_250":
         return ("250 gpm @ 4.5 bar at most remote hose-reel outlet valve",
                 "Electric-driven UL/FM listed fire pump set with jockey pump and controller.")
-    if pst == "fixed_1000":
-        return ("1000 gpm @ 6.9 bar at most remote hydrant outlet valve",
-                "Electric or diesel driven UL/FM listed pump set for yard hydrant network.")
     return None, None
 
 
@@ -141,9 +197,19 @@ def _collect_flag(sec: List[Dict[str, Any]], b: Building) -> List[Requirement]:
     out = []
     for rule in sec or []:
         flag = rule.get("flag")
-        if flag and getattr(b, flag, False):
-            for entry in rule.get("systems", []):
-                out.append(_as_req(entry, rule_id=rule["id"], b=b))
+        # A rule fires when (a) its `flag` (if any) is truthy on the building AND
+        # (b) its optional `when` clause evaluates true. Rules without a `flag`
+        # are skipped unless they explicitly opt in via `always_on: true` (used
+        # for conditional general-style aux rules whose match condition cannot
+        # be expressed as a single flag, e.g. Table 8.14 items 16/17/20).
+        flag_ok = bool(flag and getattr(b, flag, False)) or bool(rule.get("always_on"))
+        if not flag_ok:
+            continue
+        when = rule.get("when")
+        if when and not _eval_when(when, b):
+            continue
+        for entry in rule.get("systems", []):
+            out.append(_as_req(entry, rule_id=rule["id"], b=b))
     return out
 
 

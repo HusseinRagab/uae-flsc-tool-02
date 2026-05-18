@@ -41,7 +41,7 @@ OCCUPANCY_OPTIONS = {
     "Mall": ["mall_covered", "mall_open", "mall_mixed"],
     "Mercantile": ["mercantile_a", "mercantile_b"],
     "Education": ["education_a", "education_b", "education_c"],
-    "Healthcare": ["healthcare_a"],
+    "Healthcare": ["healthcare_a", "healthcare_b", "healthcare_c"],
     "Daycare": ["daycare_a", "daycare_b", "daycare_c"],
     "Detention": ["detention_a", "detention_b", "detention_c"],
     "Parking": ["parking_enclosed", "parking_open"],
@@ -295,6 +295,7 @@ with st.sidebar:
             *SPECIAL_ROOMS_KEYS, *VARIOUS_LOCATIONS_KEYS, *EQUIPMENT_KEYS,
             *FE_KEYS, *ES_FEATURE_KEYS, *ES_ZONE_KEYS,
             "ceiling_height_m_input", "corridor_length_m",
+            "assembly_area_m2_input",
             "gas_system_radio",
             "has_lpg_tank_roof_mounted", "has_lpg_tank_underground_mounded",
             "has_lpg_cylinders_indoor", "has_lpg_cylinders_food_truck", "has_lpg_flame_effect",
@@ -738,6 +739,19 @@ with st.sidebar:
                  "accommodation), Ch 10 Table 10.27 item 4 requires natural ventilation per "
                  "Section 2.15 where exterior façade / roof accessible.",
         )
+        # Assembly-area trigger for Table 10.27 items 9-13 (>2000 m² exhibition/sports/auditorium/stadium).
+        # Only relevant for assembly_* occupancies; for others the field is left at 0 and ignored.
+        if occupancy.startswith("assembly_"):
+            assembly_area_m2 = st.number_input(
+                "Largest assembly-hall area (m²)",
+                min_value=0.0, value=0.0, step=100.0,
+                key="assembly_area_m2_input",
+                help="Triggers Ch 10 Table 10.27 items 9–13 (exhibition / assembly / sports / "
+                     "auditorium / stadium) smoke management when > 2,000 m². If left at 0, "
+                     "falls back to total GFA for area-based triggering.",
+            )
+        else:
+            assembly_area_m2 = 0.0
         st.caption("Other SC outputs (Tables 10.19-10.27) auto-derive from height tier, occupancy, "
                    "depth below grade and Special Rooms / Various Locations / Equipment flags.")
 
@@ -760,6 +774,7 @@ building = Building(
     gross_floor_area_m2=gfa, ground_floor_bua_m2=ground_bua,
     basement_bua_m2=basement_bua, plot_area_m2=plot_area, hazard_class=hazard,
     corridor_length_m=float(corridor_length_m),
+    assembly_area_m2=float(assembly_area_m2),
     has_high_ceiling=gs("has_high_ceiling"), ceiling_height_m=ceiling_height_m,
     wet_riser_standpipes=int(wet_riser_standpipes),
     motor_fuel_group=motor_fuel_group_val,
