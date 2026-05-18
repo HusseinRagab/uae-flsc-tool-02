@@ -186,11 +186,18 @@ for key, default in (
 ):
     st.session_state.setdefault(key, default)
 
-# Flags that don't apply to a private/commercial villa — used by the villa
-# preset (auto-reset) and by the sanity check (warning) below. Villas are
-# single-family dwellings and per UAE FLSC don't have these dedicated rooms
-# / utilities. Stairs and elevator pit sprinklers + smoke detection also
-# don't apply (Ch 9 villa branches don't require sprinklers in the first place).
+# =============================================================================
+# Occupancy-aware flag auto-clear (silent UX, no nagging)
+# =============================================================================
+# When the user picks an occupancy that doesn't typically have certain rooms
+# / equipment, those flags are auto-unchecked in session_state. The user can
+# still tick anything manually if their specific project needs it — no
+# warnings, no flags, just sensible defaults.
+#
+# Defined as a dict so we can mirror the same logic for villa, petrol station,
+# animal housing, family daycare, etc.
+
+# Villa-specific incompatible flag list (single-family dwellings).
 VILLA_INCOMPATIBLE_FLAGS = [
     # Special Rooms — none of these are present in a typical villa
     "has_anesthetizing_room", "has_battery_charger_room", "has_bms_room",
@@ -224,6 +231,104 @@ VILLA_INCOMPATIBLE_FLAGS = [
     "has_mall_play_food_cinema", "has_robotic_parking",
     "fuel_dispensing_multistorey",
 ]
+
+
+# "Infrastructure" is a yard-hydrant network only — NOT a building. Clear
+# every building-level flag.
+INFRASTRUCTURE_INCOMPATIBLE_FLAGS = VILLA_INCOMPATIBLE_FLAGS + [
+    "has_parking_area",
+]
+
+
+# Animal housing — typically a single-storey stable / kennel / barn.
+ANIMAL_HOUSING_INCOMPATIBLE_FLAGS = [
+    "has_elevator", "has_lift_machine_room",
+    "has_diesel_generator_room", "has_main_telephone_room",
+    "has_fire_pump_room", "has_parking_area",
+    "has_commercial_kitchen", "has_atrium", "has_garbage_chute",
+    "has_anesthetizing_room", "has_operation_theater", "has_mri_scanning_room",
+    "has_records_room", "has_ups_room", "has_main_server_room",
+    "has_rmu_idf_mdf_room", "has_gsm_room", "has_bms_room",
+    "has_battery_charger_room", "has_battery_room", "has_computer_room",
+    "has_control_room", "has_cold_freezer_room",
+]
+
+
+# Daycare Group B (7-12 clients) — often in a villa-sized building.
+DAYCARE_B_INCOMPATIBLE_FLAGS = [
+    "has_elevator", "has_lift_machine_room", "has_diesel_generator_room",
+    "has_main_telephone_room", "has_fire_pump_room",
+    "has_commercial_kitchen", "has_atrium",
+    "has_anesthetizing_room", "has_operation_theater",
+    "has_mri_scanning_room", "has_main_server_room",
+    "has_rmu_idf_mdf_room", "has_gsm_room",
+]
+
+
+# Daycare Group C (4-6 clients, family daycare) — villa-like in scale.
+DAYCARE_C_INCOMPATIBLE_FLAGS = VILLA_INCOMPATIBLE_FLAGS
+
+
+# Motor fuel dispensing (petrol station) — single-storey canopy + small
+# kiosk. Group A may have a fire pump room; Group B/C typically don't.
+PETROL_STATION_INCOMPATIBLE_FLAGS = [
+    "has_stairs", "has_elevator", "has_lift_machine_room",
+    "has_main_telephone_room", "has_diesel_generator_room",
+    "has_atrium", "has_garbage_chute", "has_pantries",
+    "has_anesthetizing_room", "has_battery_charger_room", "has_bms_room",
+    "has_battery_room", "has_computer_room",
+    "has_lv_mv_room", "has_transformer_room_utility",
+    "has_transformer_room_private",
+    "has_main_server_room", "has_rmu_idf_mdf_room", "has_gsm_room",
+    "has_operation_theater", "has_mri_scanning_room",
+    "has_records_room", "has_ups_room", "has_cold_freezer_room",
+    "has_parking_area",
+    "has_commercial_kitchen", "has_flammable_liquid_tanks",
+    "has_bulk_oil_storage", "has_bulk_flammable_gas_storage",
+    "has_bulk_flammable_solid_storage", "has_high_hazard_logistics",
+    "has_chemical_warehouse", "has_explosives", "has_processing_plant",
+    "has_permanent_stages", "has_amusement_confounding",
+    "has_nightclub_disco", "has_theater_cinema",
+    "has_nursery_within", "has_auditorium_within",
+    "has_hh_storage_zones", "has_mall_play_food_cinema",
+    "has_robotic_parking", "villa_converted_use",
+]
+
+
+# Small mercantile (<2 storeys, <2,800 m²) — typically no lift / diesel gen.
+MERCANTILE_A_INCOMPATIBLE_FLAGS = [
+    "has_elevator", "has_lift_machine_room",
+    "has_diesel_generator_room",
+    "has_anesthetizing_room", "has_operation_theater",
+    "has_mri_scanning_room",
+]
+
+
+# Map every occupancy to its incompatible-flag list. Occupancies absent from
+# the dict use the universal first-load defaults (typical multi-family/
+# commercial building) — no auto-clear happens for them.
+INCOMPATIBLE_FLAGS_BY_OCC = {
+    "villa_private":          VILLA_INCOMPATIBLE_FLAGS,
+    "villa_commercial":       VILLA_INCOMPATIBLE_FLAGS,
+    "infrastructure":         INFRASTRUCTURE_INCOMPATIBLE_FLAGS,
+    "animal_housing":         ANIMAL_HOUSING_INCOMPATIBLE_FLAGS,
+    "daycare_b":              DAYCARE_B_INCOMPATIBLE_FLAGS,
+    "daycare_c":              DAYCARE_C_INCOMPATIBLE_FLAGS,
+    "motor_fuel_dispensing":  PETROL_STATION_INCOMPATIBLE_FLAGS,
+    "mercantile_a":           MERCANTILE_A_INCOMPATIBLE_FLAGS,
+    "hostel":                 ["has_parking_area"],
+    "parking_enclosed":       ["has_main_telephone_room"],
+    "parking_open":           ["has_diesel_generator_room",
+                                "has_main_telephone_room"],
+    "storage_industrial":     ["has_elevator", "has_lift_machine_room"],
+}
+
+
+def _apply_incompatible_flag_reset(occupancy: str) -> None:
+    """Silently set incompatible flags to False for the given occupancy.
+    Does NOT touch flags that are compatible — user keeps their state."""
+    for flag in INCOMPATIBLE_FLAGS_BY_OCC.get(occupancy, []):
+        st.session_state[flag] = False
 
 
 # ---------------- Archetype presets ----------------
@@ -330,11 +435,10 @@ def _apply_preset():
     """Callback for the Apply-preset button. Writes preset values into session_state
     BEFORE widgets render (so widgets pick them up via their `key`).
 
-    For villa presets the function ALSO clears all VILLA_INCOMPATIBLE_FLAGS
-    before applying the preset overrides. This guards against stale state
-    from the first-load defaults (which set has_diesel_generator_room=True,
-    has_main_electrical_room=True, etc. for non-villa buildings) leaking
-    into a villa scenario."""
+    Auto-clears any flags marked as incompatible for the target occupancy
+    BEFORE applying the preset overrides — so stale first-load defaults
+    (e.g. has_diesel_generator_room=True) don't leak into a villa / petrol
+    station / animal-housing / family-daycare scenario."""
     name = st.session_state.get("archetype_preset_select", "Custom (manual entry)")
     cfg = ARCHETYPE_PRESETS.get(name)
     if not cfg:
@@ -346,11 +450,16 @@ def _apply_preset():
         st.session_state["occupancy_chosen"] = next(
             (kv for kv in OCC_FLAT if kv[1] == occ_target), None
         )
-        # Villa-baseline reset: clear flags that don't apply to single-family
-        # villas BEFORE the preset overrides are applied.
-        if occ_target.startswith("villa_"):
-            for flag in VILLA_INCOMPATIBLE_FLAGS:
-                st.session_state[flag] = False
+        # Also set the two-stage picker's session-state keys so the dropdowns
+        # show the new occupancy on next render.
+        for cat_label, occ_list in OCCUPANCY_OPTIONS.items():
+            if occ_target in occ_list:
+                st.session_state["occupancy_category_select"] = cat_label
+                st.session_state["occupancy_sub_select"] = occ_target
+                break
+        # Silent baseline reset for villa / petrol station / animal housing /
+        # daycare_b/c / infrastructure / hostel / parking / small mercantile.
+        _apply_incompatible_flag_reset(occ_target)
     for k, v in cfg.items():
         st.session_state[k] = v
 
@@ -555,17 +664,32 @@ with st.sidebar:
     # If the user changed category, default to the first occupancy in the new
     # category. Otherwise keep their current sub-occupancy if still valid.
     _sub_idx = _options_in_cat.index(_cur_occ) if _cur_occ in _options_in_cat else 0
+    def _on_occupancy_sub_change():
+        # When the user changes specific occupancy, auto-clear flags that
+        # don't apply (silent — no warnings). User can still tick anything
+        # manually if their project needs it.
+        new_occ = st.session_state.get("occupancy_sub_select")
+        if new_occ:
+            _apply_incompatible_flag_reset(new_occ)
+
     _chosen_sub = st.selectbox(
         "2. Specific occupancy (UAE FLSC classification)",
         _options_in_cat,
         index=_sub_idx,
         format_func=lambda code: code,
         key="occupancy_sub_select",
+        on_change=_on_occupancy_sub_change,
     )
     # Persist back to the canonical tuple consumed by the rest of the app.
     st.session_state["occupancy_chosen"] = (_chosen_cat, _chosen_sub)
     occupancy = _chosen_sub
     st.info(OCCUPANCY_DEFS.get(occupancy, ""))
+    if occupancy in INCOMPATIBLE_FLAGS_BY_OCC:
+        st.caption(
+            "💡 Special Rooms / Equipment that typically don't apply to this "
+            "occupancy were auto-cleared. Tick anything below if your "
+            "specific project needs it."
+        )
 
     st.subheader("📐 Geometry")
     st.caption("Above-grade left, below-grade + plot right.")
@@ -1288,44 +1412,11 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
             "underground SC still triggers via the depth threshold (intended)."
         )
 
-    # --- Villa-specific: warn about flags that don't apply to single-family villas ---
-    if b.occupancy.startswith("villa_"):
-        # Friendly labels for the most-confusing flags, mirroring the sidebar UI text.
-        _VILLA_LABELS = {
-            "has_diesel_generator_room": "Diesel generator room",
-            "has_main_electrical_room": "Main electrical room",
-            "has_main_telephone_room": "Main telephone room",
-            "has_lift_machine_room": "Lift machine room",
-            "has_fire_pump_room": "Fire pump room",
-            "has_stairs": "Stairs (shaft sprinklers)",
-            "has_elevator": "Elevator (pit sprinklers)",
-            "has_atrium": "Atrium",
-            "has_commercial_kitchen": "Commercial kitchen",
-            "has_diesel_generator_room": "Diesel generator room",
-            "has_ahu_room": "AHU room",
-            "has_lv_mv_room": "LV/MV room",
-            "has_transformer_room_utility": "Transformer (utility)",
-            "has_transformer_room_private": "Transformer (private)",
-            "has_main_server_room": "Main server room",
-            "has_rmu_idf_mdf_room": "RMU/IDF/MDF",
-        }
-        ticked_villa_incompatible = [
-            _VILLA_LABELS.get(f, f.replace("has_", "").replace("_", " "))
-            for f in VILLA_INCOMPATIBLE_FLAGS
-            if getattr(b, f, False)
-        ]
-        if ticked_villa_incompatible:
-            preview = ", ".join(ticked_villa_incompatible[:6])
-            extra = (f" + {len(ticked_villa_incompatible) - 6} more"
-                     if len(ticked_villa_incompatible) > 6 else "")
-            warns.append(
-                f"⚠ Villa occupancy (`{b.occupancy}`) with the following "
-                f"flags ticked that are typically **NOT applicable** to a "
-                f"single-family villa: {preview}{extra}. Uncheck them in "
-                "the sidebar Special Rooms / Various Locations / Equipment "
-                "expanders, or click **Apply preset** on a villa archetype "
-                "to auto-clear them."
-            )
+    # NOTE: villa / petrol-station / animal-housing / daycare_c / etc. used
+    # to get a "flags ticked that don't apply" warning here. That's been
+    # replaced by silent auto-clear at occupancy-change time (see
+    # `_on_occupancy_sub_change` + `_apply_incompatible_flag_reset`). The
+    # user can still tick anything manually — no nagging.
 
     return errs, warns, info
 
