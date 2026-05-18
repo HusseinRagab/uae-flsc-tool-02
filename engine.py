@@ -503,6 +503,45 @@ def _branch_requires_wet_riser(rules: Dict[str, Any], b: Building) -> bool:
     return False
 
 
+def build_rule_lookup() -> Dict[str, Dict[str, Any]]:
+    """Map source_rule ID -> {'file', 'kind', 'match'} for the UI 'Why triggered?'
+    expander. Walks every chapter YAML and indexes general / branches /
+    auxiliary_rooms / equipment / addons / various_locations by rule `id`.
+
+    'kind' is one of: 'general' (uses `when:`), 'branch' (uses `match:`),
+    'flag-rule' (uses `flag:` and/or `when:` per the engine's _collect_flag).
+    """
+    lookup: Dict[str, Dict[str, Any]] = {}
+    for yf in sorted(RULES_DIR.glob("ch*.yaml")):
+        d = load_rules(yf.name)
+        for rule in (d.get("general") or []):
+            rid = rule.get("id")
+            if rid:
+                lookup[rid] = {"file": yf.name, "kind": "general",
+                               "match": rule.get("when", {}) or {}}
+        for rule in (d.get("branches") or []):
+            rid = rule.get("id")
+            if rid:
+                lookup[rid] = {"file": yf.name, "kind": "branch",
+                               "match": rule.get("match", {}) or {}}
+        for section_key in ("auxiliary_rooms", "equipment", "addons",
+                            "various_locations"):
+            for rule in (d.get(section_key) or []):
+                rid = rule.get("id")
+                if not rid:
+                    continue
+                match: Dict[str, Any] = {}
+                if rule.get("flag"):
+                    match["flag"] = rule["flag"]
+                if rule.get("when"):
+                    match["when"] = rule["when"]
+                if rule.get("always_on"):
+                    match["always_on"] = True
+                lookup[rid] = {"file": yf.name, "kind": "flag-rule",
+                               "match": match}
+    return lookup
+
+
 # Chapter ordering follows the UAE FLSC chapter numbering (Ch 4 -> Ch 10).
 # When new chapters are added, insert them in numerical order here.
 CHAPTER_ORDER = [
@@ -695,6 +734,13 @@ def report_to_markdown(r: ComplianceReport) -> str:
         if hc.code_ref:
             L.append(f"- _Ref: {hc.code_ref} - {hc.page_ref}_")
         L.append("")
+
+    # Mandatory disclaimer footer
+    from schema import DISCLAIMER as _DISCLAIMER
+    L.append("---")
+    L.append("")
+    L.append(f"_{_DISCLAIMER}_")
+    L.append("")
 
     return "\n".join(L)
 

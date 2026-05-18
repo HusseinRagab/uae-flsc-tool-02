@@ -5,6 +5,18 @@ from typing import Any, Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
 
 
+# Mandatory liability / scope disclaimer shown in the UI footer and every export.
+DISCLAIMER = (
+    "This tool is a design-aid based on UAE Fire & Life Safety Code 2018 "
+    "(CDGH-OP-25, September 2018). It does NOT replace UAE Civil Defence review "
+    "or the judgement of a registered Fire Protection Engineer / Engineer-of-Record. "
+    "Final compliance verification, code interpretation in edge cases, and submission "
+    "to the relevant Civil Defence Department remain the responsibility of the "
+    "engineer-of-record. Rule citations point at the cited code section but the user "
+    "is expected to cross-check against the current edition of the code."
+)
+
+
 Occupancy = Literal[
     "assembly_a", "assembly_b", "assembly_c",
     "business",

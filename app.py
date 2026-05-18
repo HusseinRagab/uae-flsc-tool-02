@@ -18,9 +18,16 @@ from __future__ import annotations
 
 import streamlit as st
 
-from schema import Building, OCCUPANCY_DEFS, default_hazard
-from engine import evaluate, report_to_markdown
+from schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
+from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes
+
+
+# Index of source_rule -> {file, kind, match} for the "Why triggered?" expander.
+# Cached so it builds once per server start (rules YAMLs don't change at runtime).
+@st.cache_data(show_spinner=False)
+def _cached_rule_lookup():
+    return build_rule_lookup()
 
 
 # ----- Cached evaluate to remove the ~0.4 s lag on every input change -----
@@ -899,8 +906,40 @@ _STATUS_BADGE = {
     "not_required": ("⚪", "NOT REQUIRED"),
 }
 
+_STATUS_ORDER = ["required", "recommended", "conditional", "not_required"]
 
-def render_block(title, items):
+
+def _filter_items(items, allowed_statuses: set, text_q: str):
+    """Apply the global status + text filter to a list of Requirements."""
+    text_q = (text_q or "").strip().lower()
+    out = []
+    for r in items:
+        if allowed_statuses and r.status not in allowed_statuses:
+            continue
+        if text_q:
+            hay = " ".join(filter(None, [r.system, r.spec, r.detail,
+                                          r.code_ref])).lower()
+            if text_q not in hay:
+                continue
+        out.append(r)
+    return out
+
+
+def _chapter_counts(ch):
+    """Return {status -> count} totals across all blocks in a chapter, plus 'total'."""
+    counts = {s: 0 for s in _STATUS_ORDER}
+    for blk in ch.blocks:
+        for it in blk.items:
+            counts[it.status] = counts.get(it.status, 0) + 1
+    counts["total"] = sum(counts[s] for s in _STATUS_ORDER)
+    return counts
+
+
+_RULE_LOOKUP = _cached_rule_lookup()
+
+
+def render_block(title, items, allowed_statuses: set, text_q: str):
+    items = _filter_items(items, allowed_statuses, text_q)
     if not items:
         return
     st.subheader(title)
@@ -915,18 +954,77 @@ def render_block(title, items):
             cite = [p for p in (req.code_ref, req.page_ref) if p]
             if cite:
                 st.caption("📖 " + " · ".join(cite))
+            # "Why triggered?" — surface the rule ID + the match conditions from
+            # the source YAML so designers can verify why this requirement appeared.
+            if req.source_rule:
+                info = _RULE_LOOKUP.get(req.source_rule)
+                with st.expander(
+                    f"🔍 Why triggered — rule `{req.source_rule}`", expanded=False
+                ):
+                    if info:
+                        st.caption(
+                            f"Source: `rules/{info['file']}` · kind: `{info['kind']}`"
+                        )
+                        if info["match"]:
+                            st.code(_format_match_yaml(info["match"]),
+                                     language="yaml")
+                        else:
+                            st.caption("(Universal rule — fires for every building)")
+                    else:
+                        st.caption("(Match conditions not located in YAML index.)")
 
+
+def _format_match_yaml(match: dict) -> str:
+    """Pretty-print a match/when dict as a small YAML snippet."""
+    import yaml as _y
+    return _y.safe_dump(match, sort_keys=False, default_flow_style=False).strip()
+
+
+# ---------- Status legend (Tier-1 UI #1) -------------------------------------
+st.markdown(
+    "**Status legend:** "
+    "🔴 `REQUIRED` (code 'shall') · "
+    "🔵 `RECOMMENDED` (code 'should') · "
+    "🟡 `CONDITIONAL` (subject to project context) · "
+    "⚪ `NOT REQUIRED` (exemption captured for traceability)"
+)
+
+# ---------- Filter bar (Tier-1 UI #2) ----------------------------------------
+_filt_c1, _filt_c2 = st.columns([2, 3])
+with _filt_c1:
+    _allowed = st.multiselect(
+        "Filter by status",
+        options=_STATUS_ORDER,
+        default=_STATUS_ORDER,
+        format_func=lambda s: f"{_STATUS_BADGE[s][0]} {_STATUS_BADGE[s][1]}",
+        help="Narrow the report by status. Default = show all.",
+        key="filter_status",
+    )
+with _filt_c2:
+    _text_q = st.text_input(
+        "Search requirements",
+        value="",
+        placeholder="e.g. 'Sprinkler', 'Pa', 'Civil Defence', 'Section 4.6' …",
+        help="Case-insensitive substring match against system name, spec, detail, and code-ref.",
+        key="filter_text",
+    )
+_allowed_set = set(_allowed)
 
 col_left, col_right = st.columns([2, 1])
 
 with col_left:
     for ch in report.chapters:
+        # Skip the entire chapter heading if no items pass the filter — keeps
+        # the report tight when the user is searching for a specific term.
+        if not any(_filter_items(blk.items, _allowed_set, _text_q)
+                   for blk in ch.blocks):
+            continue
         st.markdown(f"<a name='ch-{ch.chapter_code.lower()}'></a>", unsafe_allow_html=True)
         st.markdown(f"## {ch.chapter_code} - {ch.chapter_title}")
         if ch.selected_branch:
             st.caption(f"Matched branch: `{ch.selected_branch}` · {ch.selected_branch_section}")
         for block in ch.blocks:
-            render_block(block.title, block.items)
+            render_block(block.title, block.items, _allowed_set, _text_q)
 
     # ---------- Attached parking sub-occupancy section ----------
     if report.attached_parking_chapters:
@@ -938,11 +1036,14 @@ with col_left:
         st.caption(f"Sub-occupancy evaluation as `{synth_occ}` (driven by **Building has parking** in Special rooms and usage). "
                    "All parking-specific requirements from MOE / FE / ES / EL / FA / FP / SC are surfaced here.")
         for ch in report.attached_parking_chapters:
+            if not any(_filter_items(blk.items, _allowed_set, _text_q)
+                       for blk in ch.blocks):
+                continue
             st.markdown(f"## P-{ch.chapter_code} - {ch.chapter_title}")
             if ch.selected_branch:
                 st.caption(f"Matched parking branch: `{ch.selected_branch}` - {ch.selected_branch_section}")
             for block in ch.blocks:
-                render_block(block.title, block.items)
+                render_block(block.title, block.items, _allowed_set, _text_q)
         st.markdown("---")
 
     if report.high_ceiling and report.high_ceiling.applies:
@@ -967,19 +1068,28 @@ with col_left:
                 st.caption(hc.note)
 
 with col_right:
-    # ----- Table of contents (UX #5) -----
+    # ----- Table of contents with per-chapter status counts (Tier-1 UI #3) -----
     st.subheader("📑 Table of contents")
     _toc = []
     for ch in report.chapters:
         anchor = ch.chapter_code.lower()
         _short = ch.chapter_title.split("(")[0].strip()
-        _toc.append(f"- [{ch.chapter_code} - {_short}](#ch-{anchor})")
+        c = _chapter_counts(ch)
+        # Build a compact suffix: "(14 items · 🔴9 · 🔵3 · 🟡2)" — non-zero only
+        bits = [f"{c['total']} items"]
+        for s in _STATUS_ORDER:
+            if c[s]:
+                bits.append(f"{_STATUS_BADGE[s][0]}{c[s]}")
+        suffix = " · ".join(bits)
+        _toc.append(f"- [{ch.chapter_code} - {_short}](#ch-{anchor}) — _{suffix}_")
     if report.attached_parking_chapters:
-        _toc.append("- [⮕ ATTACHED PARKING AREA](#attached-parking)")
+        ap_total = sum(_chapter_counts(c)["total"]
+                       for c in report.attached_parking_chapters)
+        _toc.append(f"- [⮕ ATTACHED PARKING AREA](#attached-parking) — _{ap_total} items_")
     if report.high_ceiling and report.high_ceiling.applies:
         _toc.append("- [FP - High Ceiling Sprinkler Design](#high-ceiling)")
     st.markdown("\n".join(_toc))
-    st.caption("Click a chapter to jump.")
+    st.caption("Click a chapter to jump. Counts ignore the filter bar.")
 
     st.markdown("---")
     with st.expander("📤 Copy / Export", expanded=False):
@@ -1013,3 +1123,8 @@ st.caption(
     "All UAE FLSC life-safety chapters loaded: MOE (Ch 3), FE (Ch 4), ES (Ch 5), EL (Ch 6), "
     "EVC (Ch 7), FA (Ch 8), FP (Ch 9), SC (Ch 10), LPG (Ch 11)."
 )
+
+# ---------- Disclaimer footer (Tier-1 UI #4) ---------------------------------
+st.markdown("---")
+with st.container(border=True):
+    st.markdown(f"⚖️ **Disclaimer.** {DISCLAIMER}")
