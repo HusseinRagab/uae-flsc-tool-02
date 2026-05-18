@@ -117,19 +117,24 @@ CASES = [
          expect_el_branch="el_lowrise_general",
          expect_el_systems=["Monitored Self-Contained EL (Section 3.3)"]),
 
-    dict(name="EL: Small business lowrise -> Stand-alone Self-Contained",
+    # Audit-correction (Ch 6 finding): Table 6.5 rows 5-8 are a MERGED cell mandating
+    # Monitored Self-Contained EL for ALL Lowrise/Midrise/Warehouses/Factories regardless of
+    # business/mercantile sub-type. Only Group C carve-outs (rows 11-13) route to stand-alone.
+    # Since the schema doesn't model business/mercantile Group C separately, lowrise business and
+    # mercantile_a now correctly match el_lowrise_general -> Monitored Self-Contained.
+    dict(name="EL: Small business lowrise -> Monitored Self-Contained (audit-correct)",
          inputs=dict(occupancy="business", height_m=10,
                      floors_above_grade=2, ground_floor_bua_m2=400,
                      plot_area_m2=1000),
-         expect_el_branch="el_business_lowrise",
-         expect_el_systems=["Stand-alone Self-Contained EL (Section 3.4)"]),
+         expect_el_branch="el_lowrise_general",
+         expect_el_systems=["Monitored Self-Contained EL (Section 3.3)"]),
 
-    dict(name="EL: Mercantile Group A -> Stand-alone",
+    dict(name="EL: Mercantile Group A lowrise -> Monitored Self-Contained (audit-correct)",
          inputs=dict(occupancy="mercantile_a", height_m=8,
                      floors_above_grade=2, ground_floor_bua_m2=1500,
                      plot_area_m2=2000),
-         expect_el_branch="el_mercantile_small",
-         expect_el_systems=["Stand-alone Self-Contained EL (Section 3.4)"]),
+         expect_el_branch="el_lowrise_general",
+         expect_el_systems=["Monitored Self-Contained EL (Section 3.3)"]),
 
     dict(name="EL: Fuel station -> Stand-alone",
          inputs=dict(occupancy="motor_fuel_dispensing", height_m=4,
@@ -433,8 +438,11 @@ CASES = [
          expect_sc_systems=["Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"]),
 
     # AUDIT Ch 10 Table 10.27 item 4 - lowrise corridor > 60 m
-    dict(name="AUDIT SC: Hotel lowrise corridor 80m -> long-corridor natural ventilation (Table 10.27 item 4)",
-         inputs=dict(occupancy="hotel_b", height_m=18, floors_above_grade=5,
+    # Audit-correction: Table 10.27 item 4 (p.866) lists ONLY mercantile, staff/labour
+    # accommodation, residential, office. Hotels and hostel are NOT in the code text,
+    # so the trigger was scoped down. Test switched from hotel_b to residential.
+    dict(name="AUDIT SC: Residential lowrise corridor 80m -> long-corridor natural ventilation (Table 10.27 item 4)",
+         inputs=dict(occupancy="residential", height_m=18, floors_above_grade=5,
                      corridor_length_m=80, ground_floor_bua_m2=800, plot_area_m2=2000),
          expect_sc_systems=["Enclosed Corridor Natural Ventilation (corridor length > 60 m, lowrise/midrise)"]),
 
