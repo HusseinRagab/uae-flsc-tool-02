@@ -300,8 +300,31 @@ es_zone_cb = _register_master("es_zone_all", ES_ZONE_KEYS)
 
 
 # -----------------------------------------------------------------------------
-st.set_page_config(page_title="UAE FLSC 2018 - Fire & Life Safety",
-                   page_icon="FP", layout="wide")
+# Print-friendly mode (Tier 3 UI #15): ?print=1 hides sidebar + right TOC col
+# so the main report prints cleanly to A4 from the browser.
+PRINT_MODE = str(st.query_params.get("print", "0")) == "1"
+
+st.set_page_config(
+    page_title="UAE FLSC 2018 - Fire & Life Safety",
+    page_icon="FP",
+    layout="wide",
+    initial_sidebar_state="collapsed" if PRINT_MODE else "expanded",
+)
+if PRINT_MODE:
+    # Hide the sidebar entirely + tighten margins for print.
+    st.markdown(
+        """
+        <style>
+          [data-testid="stSidebar"], [data-testid="collapsedControl"] { display: none !important; }
+          .main .block-container { max-width: 950px; padding-top: 1rem; }
+          @media print {
+            .stExpander { page-break-inside: avoid; }
+            .stDownloadButton, .stButton { display: none !important; }
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 st.markdown(
     """
     <div style="font-size:1.05rem; margin-bottom:0.5rem;">
@@ -447,15 +470,38 @@ with st.sidebar:
     )
 
     # Set initial selectbox value if not already in session_state
+    # ----- Two-stage occupancy picker (Tier 3 UI #11) -----
+    # Stage 1: pick the broad category (Villa / Residential / Hotel / ...)
+    # Stage 2: pick the specific occupancy within that category.
+    # The legacy `occupancy_chosen` (category, occupancy) tuple is kept as the
+    # source of truth so all downstream code, scenario save/load, and presets
+    # continue to work unchanged.
     if "occupancy_chosen" not in st.session_state:
         st.session_state["occupancy_chosen"] = next(kv for kv in OCC_FLAT if kv[1] == "residential")
-    chosen = st.selectbox(
-        "Dominant occupancy (UAE FLSC classification)",
-        OCC_FLAT,
-        format_func=lambda kv: f"{kv[1]}  ({kv[0]})",
-        key="occupancy_chosen",
+    _cur_cat, _cur_occ = st.session_state["occupancy_chosen"]
+    _categories = list(OCCUPANCY_OPTIONS.keys())
+    _cat_idx = _categories.index(_cur_cat) if _cur_cat in _categories else 0
+    _chosen_cat = st.selectbox(
+        "1. Category",
+        _categories,
+        index=_cat_idx,
+        key="occupancy_category_select",
+        help="Pick the broad occupancy family. The sub-occupancy list updates below.",
     )
-    occupancy = chosen[1]
+    _options_in_cat = OCCUPANCY_OPTIONS[_chosen_cat]
+    # If the user changed category, default to the first occupancy in the new
+    # category. Otherwise keep their current sub-occupancy if still valid.
+    _sub_idx = _options_in_cat.index(_cur_occ) if _cur_occ in _options_in_cat else 0
+    _chosen_sub = st.selectbox(
+        "2. Specific occupancy (UAE FLSC classification)",
+        _options_in_cat,
+        index=_sub_idx,
+        format_func=lambda code: code,
+        key="occupancy_sub_select",
+    )
+    # Persist back to the canonical tuple consumed by the rest of the app.
+    st.session_state["occupancy_chosen"] = (_chosen_cat, _chosen_sub)
+    occupancy = _chosen_sub
     st.info(OCCUPANCY_DEFS.get(occupancy, ""))
 
     st.subheader("📐 Geometry")
@@ -970,6 +1016,106 @@ st.markdown(
 )
 st.caption(f"**Occupancy:** `{occupancy}` - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
 
+# ---------- Special-rooms / flags summary chip strip (Tier 3 UI #12) ---------
+# Shows at a glance which Special Rooms / Various Locations / Equipment flags
+# the user has ticked. Makes it easy to confirm the input set without scrolling
+# the sidebar.
+def _ticked_chips(building_obj: Building) -> str:
+    _LABELS = {
+        # Special rooms
+        "has_anesthetizing_room": "Anesthetizing",
+        "has_battery_charger_room": "Battery charger",
+        "has_bms_room": "BMS",
+        "has_battery_room": "Battery",
+        "has_computer_room": "Computer",
+        "has_control_room": "Control / FCC",
+        "has_diesel_generator_room": "Diesel gen",
+        "has_main_electrical_room": "Main electrical",
+        "has_ahu_room": "AHU",
+        "has_lv_mv_room": "LV/MV",
+        "has_transformer_room_utility": "Transformer (utility)",
+        "has_transformer_room_private": "Transformer (private)",
+        "has_lift_machine_room": "Lift machine",
+        "has_main_telephone_room": "Main telephone",
+        "has_main_server_room": "Main server",
+        "has_rmu_idf_mdf_room": "RMU/IDF/MDF",
+        "has_gsm_room": "GSM",
+        "has_operation_theater": "OT",
+        "has_mri_scanning_room": "MRI",
+        "has_records_room": "Records",
+        "has_ups_room": "UPS",
+        "has_cold_freezer_room": "Cold/Freezer",
+        "has_fire_pump_room": "Fire pump",
+        # Various locations
+        "has_atrium": "Atrium",
+        "has_rain_screen_glazing": "Rain-screen",
+        "has_stairs": "Stairs",
+        "has_elevator": "Elevator",
+        "has_bathrooms_with_heaters": "Bathrooms+heaters",
+        "has_laundry_storage_rooms": "Laundry/storage",
+        "has_pantries": "Pantries",
+        "has_permanent_stages": "Permanent stages",
+        "has_roof_lpg_or_restaurant": "Roof LPG/restaurant",
+        "has_garbage_chute": "Garbage chute",
+        "has_high_ceiling": "High ceiling",
+        "has_tunnel": "Tunnel",
+        # Equipment
+        "has_commercial_kitchen": "Commercial kitchen",
+        "has_flammable_liquid_tanks": "Flammable liquid tanks",
+        "has_cable_spread_areas": "Cable spread",
+        "has_boilers": "Boilers",
+        "has_cooling_towers": "Cooling towers",
+        "has_oil_filled_transformers": "Oil-filled transformers",
+        "has_bulk_oil_storage": "Bulk oil",
+        "has_bulk_flammable_liquid_storage": "Bulk flammable liquid",
+        "has_bulk_flammable_gas_storage": "Bulk flammable gas",
+        "has_bulk_flammable_solid_storage": "Bulk flammable solid",
+        "has_high_hazard_logistics": "HH logistics",
+        "has_chemical_warehouse": "Chemical warehouse",
+        "has_explosives": "Explosives",
+        "has_processing_plant": "Processing plant",
+        # Gas
+        "has_lpg_tanks": "LPG tanks",
+        "has_gas_infra_connection": "Gas-infra connection",
+        "has_gas_cylinders_villa": "Gas cylinders (villa)",
+        "has_lpg_tank_roof_mounted": "LPG roof tank",
+        "has_lpg_tank_underground_mounded": "LPG UG/mounded",
+        "has_lpg_cylinders_indoor": "LPG indoor cyl",
+        "has_lpg_cylinders_food_truck": "Food-truck LPG",
+        "has_lpg_flame_effect": "Flame-effect LPG",
+        # ES feature/zone
+        "has_evacuation_elevator": "Evac. elevator",
+        "has_horizontal_exits": "Horizontal exits",
+        "has_dead_end_paths": "Dead-ends",
+        "has_amusement_confounding": "Amusement",
+        "has_nightclub_disco": "Nightclub",
+        "has_theater_cinema": "Theatre/cinema",
+        "has_nursery_within": "Nursery within",
+        "has_auditorium_within": "Auditorium within",
+        "has_hh_storage_zones": "HH storage zones",
+        "has_mall_play_food_cinema": "Mall play/food/cinema",
+        "has_robotic_parking": "Robotic parking",
+        "villa_converted_use": "Villa converted",
+        "fuel_dispensing_multistorey": "Fuel multi-storey",
+        # FE-specific
+        "has_class_b_storage_zones": "Class B storage",
+        "has_combustible_metals": "Combustible metals",
+        "has_hv_or_heavy_electrical": "HV/heavy electrical",
+        "has_parking_area": "Parking area",
+    }
+    ticked = [lab for attr, lab in _LABELS.items()
+              if getattr(building_obj, attr, False)]
+    if not ticked:
+        return ""
+    return " ".join(f"`{t}`" for t in ticked)
+
+_chip_str = _ticked_chips(building)
+if _chip_str:
+    _n = _chip_str.count("`") // 2
+    with st.expander(f"🔧 Inputs summary — {_n} flag(s) ticked",
+                      expanded=False):
+        st.markdown(_chip_str)
+
 # ---------- Sanity-check banner (Tier 2 UI #9) -------------------------------
 _errs, _warns, _info = _sanity_check_inputs(building)
 if _errs:
@@ -1024,7 +1170,104 @@ def _chapter_counts(ch):
 _RULE_LOOKUP = _cached_rule_lookup()
 
 
-def render_block(title, items, allowed_statuses: set, text_q: str):
+# ---------- Code-excerpt lookup (Tier 3 UI #14) ------------------------------
+# Optional feature: if the user has populated `data/code_excerpts/chXX.txt` or
+# the original `_extracted/chXX.txt` folder is reachable, the citation expander
+# can pull a short excerpt around the cited page so designers can verify the
+# rule against the actual code text without flipping to the PDF.
+#
+# The data files are NOT bundled in the repo (Civil Defence text — leave
+# distribution to the user). The helper degrades silently when files are absent.
+
+import re as _re
+from pathlib import Path as _Path
+
+
+@st.cache_data(show_spinner=False)
+def _load_chapter_text(chapter_code: str) -> str:
+    """Read the extracted chapter text. Returns '' if unavailable."""
+    chapter_num_map = {
+        "MOE": "03", "FE": "04", "ES": "05", "EL": "06",
+        "EVC": "07", "FA": "08", "FP": "09", "SC": "10", "LPG": "11",
+    }
+    ch_num = chapter_num_map.get(chapter_code)
+    if not ch_num:
+        return ""
+    here = _Path(__file__).parent
+    candidates = [
+        here / "data" / "code_excerpts" / f"ch{ch_num}.txt",
+        here / ".." / "_extracted" / f"ch{ch_num}.txt",
+    ]
+    for cand in candidates:
+        try:
+            if cand.is_file():
+                return cand.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+    return ""
+
+
+def _excerpt_around_page(chapter_code: str, page_ref: str,
+                         max_chars: int = 800) -> str:
+    """Try to pull a short excerpt around the cited page. page_ref is text
+    like 'p.713' or 'p.713-715' or 'pp.713-715'. Returns '' if not found."""
+    text = _load_chapter_text(chapter_code)
+    if not text or not page_ref:
+        return ""
+    m = _re.search(r"(\d{2,4})", page_ref)
+    if not m:
+        return ""
+    page = int(m.group(1))
+    marker = f"===== PAGE {page} ====="
+    idx = text.find(marker)
+    if idx < 0:
+        return ""
+    start = idx + len(marker)
+    end = text.find("===== PAGE", start)
+    page_body = text[start:end if end > 0 else len(text)].strip()
+    if len(page_body) > max_chars:
+        page_body = page_body[:max_chars].rstrip() + " […]"
+    return page_body
+
+
+# ---------- Audit-traceability index (Tier 3 UI #17) -------------------------
+# Scans every chapter YAML for lines containing TODO / "needs verification" /
+# "not located" markers (added by the audit-fix campaign) so designers can see
+# the open items at a glance and verify them against the code themselves.
+
+@st.cache_data(show_spinner=False)
+def _scan_audit_notes() -> list[dict]:
+    """Return a list of {file, line, text} dicts for every audit-style note
+    found in the rule YAML files. Markers covered:
+      - '# TODO' / 'TODO'
+      - 'needs verification' / 'needs human verification'
+      - 'claim not located'
+      - 'not encoded'
+      - 'verify against'
+    """
+    notes = []
+    rules_dir = _Path(__file__).parent / "rules"
+    patterns = _re.compile(
+        r"(TODO|needs (?:human )?verification|claim not located|not encoded|verify against)",
+        _re.IGNORECASE,
+    )
+    for yf in sorted(rules_dir.glob("ch*.yaml")):
+        try:
+            with open(yf, encoding="utf-8") as fh:
+                for i, line in enumerate(fh, start=1):
+                    if patterns.search(line):
+                        notes.append({
+                            "file": yf.name,
+                            "line": i,
+                            "text": line.strip().lstrip("#").strip(),
+                        })
+        except Exception:
+            continue
+    return notes
+
+
+def render_block(title, items, allowed_statuses: set, text_q: str,
+                  chapter_code: str = ""):
     items = _filter_items(items, allowed_statuses, text_q)
     if not items:
         return
@@ -1040,6 +1283,19 @@ def render_block(title, items, allowed_statuses: set, text_q: str):
             cite = [p for p in (req.code_ref, req.page_ref) if p]
             if cite:
                 st.caption("📖 " + " · ".join(cite))
+            # Citation excerpt (Tier 3 UI #14) — pulls a short slice of the
+            # cited PDF page if the user has the extracted text bundled.
+            if chapter_code and req.page_ref:
+                excerpt = _excerpt_around_page(chapter_code, req.page_ref)
+                if excerpt:
+                    with st.expander(
+                        f"📖 Code excerpt — {req.page_ref}", expanded=False
+                    ):
+                        st.text(excerpt)
+                        st.caption(
+                            "Auto-extracted from UAE FLSC 2018 PDF. "
+                            "Always verify against the official current edition."
+                        )
             # "Why triggered?" — surface the rule ID + the match conditions from
             # the source YAML so designers can verify why this requirement appeared.
             if req.source_rule:
@@ -1290,7 +1546,13 @@ with _filt_c2:
     )
 _allowed_set = set(_allowed)
 
-col_left, col_right = st.columns([2, 1])
+if PRINT_MODE:
+    # Single full-width column for print; create a dummy right column we just
+    # don't render into.
+    col_left = st.container()
+    col_right = st.container()
+else:
+    col_left, col_right = st.columns([2, 1])
 
 with col_left:
     for ch in report.chapters:
@@ -1310,7 +1572,8 @@ with col_left:
                 + (f"\n\n**Why this branch:** {_human}" if _human else "")
             )
         for block in ch.blocks:
-            render_block(block.title, block.items, _allowed_set, _text_q)
+            render_block(block.title, block.items, _allowed_set, _text_q,
+                         chapter_code=ch.chapter_code)
 
     # ---------- Attached parking sub-occupancy section ----------
     if report.attached_parking_chapters:
@@ -1335,7 +1598,8 @@ with col_left:
                     + (f"\n\n**Why this branch:** {_human}" if _human else "")
                 )
             for block in ch.blocks:
-                render_block(block.title, block.items, _allowed_set, _text_q)
+                render_block(block.title, block.items, _allowed_set, _text_q,
+                             chapter_code=ch.chapter_code)
         st.markdown("---")
 
     if report.high_ceiling and report.high_ceiling.applies:
@@ -1360,6 +1624,7 @@ with col_left:
                 st.caption(hc.note)
 
 with col_right:
+  if not PRINT_MODE:
     # ----- Table of contents with per-chapter status counts (Tier-1 UI #3) -----
     st.subheader("📑 Table of contents")
     _toc = []
@@ -1382,6 +1647,33 @@ with col_right:
         _toc.append("- [FP - High Ceiling Sprinkler Design](#high-ceiling)")
     st.markdown("\n".join(_toc))
     st.caption("Click a chapter to jump. Counts ignore the filter bar.")
+
+    # Print-friendly view link (Tier 3 UI #15)
+    st.markdown(
+        "[📄 Open print-friendly view](?print=1) "
+        "<small>(hides sidebar + this column; use browser Print to PDF)</small>",
+        unsafe_allow_html=True,
+    )
+
+    # ----- Audit-traceability expander (Tier 3 UI #17) -----
+    _audit_notes = _scan_audit_notes()
+    if _audit_notes:
+        with st.expander(
+            f"🔬 Audit notes — {len(_audit_notes)} item(s)", expanded=False
+        ):
+            st.caption(
+                "Markers left in the YAML by the audit-fix campaign — items "
+                "the audit flagged as 'needs verification', 'not encoded', or "
+                "'TODO'. Cross-check these against the UAE FLSC PDF."
+            )
+            # Group by file for readability
+            _by_file: dict[str, list[dict]] = {}
+            for n in _audit_notes:
+                _by_file.setdefault(n["file"], []).append(n)
+            for fname in sorted(_by_file.keys()):
+                st.markdown(f"**`{fname}`** — {len(_by_file[fname])} note(s)")
+                for n in _by_file[fname]:
+                    st.markdown(f"- L{n['line']}: {n['text']}")
 
     st.markdown("---")
     with st.expander("📤 Copy / Export", expanded=False):
