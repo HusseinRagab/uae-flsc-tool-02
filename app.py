@@ -186,6 +186,46 @@ for key, default in (
 ):
     st.session_state.setdefault(key, default)
 
+# Flags that don't apply to a private/commercial villa — used by the villa
+# preset (auto-reset) and by the sanity check (warning) below. Villas are
+# single-family dwellings and per UAE FLSC don't have these dedicated rooms
+# / utilities. Stairs and elevator pit sprinklers + smoke detection also
+# don't apply (Ch 9 villa branches don't require sprinklers in the first place).
+VILLA_INCOMPATIBLE_FLAGS = [
+    # Special Rooms — none of these are present in a typical villa
+    "has_anesthetizing_room", "has_battery_charger_room", "has_bms_room",
+    "has_battery_room", "has_computer_room", "has_control_room",
+    "has_diesel_generator_room", "has_main_electrical_room", "has_ahu_room",
+    "has_lv_mv_room", "has_transformer_room_utility",
+    "has_transformer_room_private", "has_lift_machine_room",
+    "has_main_telephone_room", "has_main_server_room", "has_rmu_idf_mdf_room",
+    "has_gsm_room", "has_operation_theater", "has_mri_scanning_room",
+    "has_records_room", "has_ups_room", "has_cold_freezer_room",
+    "has_fire_pump_room",
+    # Various locations — stair shaft sprinklers + elevator pit sprinklers
+    # don't apply to villas (Ch 9 villa branches don't require sprinklers).
+    "has_stairs", "has_elevator",
+    "has_atrium", "has_rain_screen_glazing", "has_bathrooms_with_heaters",
+    "has_laundry_storage_rooms", "has_pantries", "has_permanent_stages",
+    "has_roof_lpg_or_restaurant", "has_garbage_chute", "has_tunnel",
+    # Equipment / commercial / industrial
+    "has_commercial_kitchen", "has_flammable_liquid_tanks",
+    "has_cable_spread_areas", "has_boilers", "has_cooling_towers",
+    "has_oil_filled_transformers", "has_bulk_oil_storage",
+    "has_bulk_flammable_liquid_storage", "has_bulk_flammable_gas_storage",
+    "has_bulk_flammable_solid_storage", "has_high_hazard_logistics",
+    "has_chemical_warehouse", "has_explosives", "has_processing_plant",
+    # FE hazard add-ons
+    "has_class_b_storage_zones", "has_combustible_metals",
+    "has_hv_or_heavy_electrical",
+    # ES special zones
+    "has_amusement_confounding", "has_nightclub_disco", "has_theater_cinema",
+    "has_nursery_within", "has_auditorium_within", "has_hh_storage_zones",
+    "has_mall_play_food_cinema", "has_robotic_parking",
+    "fuel_dispensing_multistorey",
+]
+
+
 # ---------------- Archetype presets ----------------
 # A preset writes geometry + occupancy + a few common flags. Selecting "Custom" leaves
 # everything as-is so the user can build from scratch.
@@ -197,6 +237,16 @@ ARCHETYPE_PRESETS = {
         "ground_bua_input": 250.0, "basement_bua_input": 0.0,
         "gfa_input": 500.0, "plot_area_input": 600.0,
         "has_parking_area": False,
+        # Villas don't have these — _apply_preset() also enforces this
+        # via VILLA_INCOMPATIBLE_FLAGS but listing the most-important ones
+        # here makes the preset self-documenting.
+        "has_diesel_generator_room": False,
+        "has_main_electrical_room": False,
+        "has_main_telephone_room": False,
+        "has_lift_machine_room": False,
+        "has_fire_pump_room": False,
+        "has_stairs": False,    # Ch 9 villa branches don't require stair sprinklers
+        "has_elevator": False,  # Ch 9 villa branches don't require elevator pit sprinklers
     },
     "Lowrise residential (G+3, 800 m² GF)": {
         "occ": "residential",
@@ -278,16 +328,29 @@ ARCHETYPE_PRESETS = {
 
 def _apply_preset():
     """Callback for the Apply-preset button. Writes preset values into session_state
-    BEFORE widgets render (so widgets pick them up via their `key`)."""
+    BEFORE widgets render (so widgets pick them up via their `key`).
+
+    For villa presets the function ALSO clears all VILLA_INCOMPATIBLE_FLAGS
+    before applying the preset overrides. This guards against stale state
+    from the first-load defaults (which set has_diesel_generator_room=True,
+    has_main_electrical_room=True, etc. for non-villa buildings) leaking
+    into a villa scenario."""
     name = st.session_state.get("archetype_preset_select", "Custom (manual entry)")
     cfg = ARCHETYPE_PRESETS.get(name)
     if not cfg:
         return
+    # Work on a copy so we can pop("occ") without mutating ARCHETYPE_PRESETS.
+    cfg = dict(cfg)
     occ_target = cfg.pop("occ", None)
     if occ_target:
         st.session_state["occupancy_chosen"] = next(
             (kv for kv in OCC_FLAT if kv[1] == occ_target), None
         )
+        # Villa-baseline reset: clear flags that don't apply to single-family
+        # villas BEFORE the preset overrides are applied.
+        if occ_target.startswith("villa_"):
+            for flag in VILLA_INCOMPATIBLE_FLAGS:
+                st.session_state[flag] = False
     for k, v in cfg.items():
         st.session_state[k] = v
 
@@ -1224,6 +1287,45 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
             "ℹ Depth > 7 m with ≤ 2 basements — Ch 10 Table 10.22 deep-"
             "underground SC still triggers via the depth threshold (intended)."
         )
+
+    # --- Villa-specific: warn about flags that don't apply to single-family villas ---
+    if b.occupancy.startswith("villa_"):
+        # Friendly labels for the most-confusing flags, mirroring the sidebar UI text.
+        _VILLA_LABELS = {
+            "has_diesel_generator_room": "Diesel generator room",
+            "has_main_electrical_room": "Main electrical room",
+            "has_main_telephone_room": "Main telephone room",
+            "has_lift_machine_room": "Lift machine room",
+            "has_fire_pump_room": "Fire pump room",
+            "has_stairs": "Stairs (shaft sprinklers)",
+            "has_elevator": "Elevator (pit sprinklers)",
+            "has_atrium": "Atrium",
+            "has_commercial_kitchen": "Commercial kitchen",
+            "has_diesel_generator_room": "Diesel generator room",
+            "has_ahu_room": "AHU room",
+            "has_lv_mv_room": "LV/MV room",
+            "has_transformer_room_utility": "Transformer (utility)",
+            "has_transformer_room_private": "Transformer (private)",
+            "has_main_server_room": "Main server room",
+            "has_rmu_idf_mdf_room": "RMU/IDF/MDF",
+        }
+        ticked_villa_incompatible = [
+            _VILLA_LABELS.get(f, f.replace("has_", "").replace("_", " "))
+            for f in VILLA_INCOMPATIBLE_FLAGS
+            if getattr(b, f, False)
+        ]
+        if ticked_villa_incompatible:
+            preview = ", ".join(ticked_villa_incompatible[:6])
+            extra = (f" + {len(ticked_villa_incompatible) - 6} more"
+                     if len(ticked_villa_incompatible) > 6 else "")
+            warns.append(
+                f"⚠ Villa occupancy (`{b.occupancy}`) with the following "
+                f"flags ticked that are typically **NOT applicable** to a "
+                f"single-family villa: {preview}{extra}. Uncheck them in "
+                "the sidebar Special Rooms / Various Locations / Equipment "
+                "expanders, or click **Apply preset** on a villa archetype "
+                "to auto-clear them."
+            )
 
     return errs, warns, info
 
