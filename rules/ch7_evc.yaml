@@ -274,8 +274,10 @@ branches:
         detail: "EVC and two-way telephone are NOT mandatory for business (office) occupancies under highrise threshold. Once height > 23 m the highrise branch applies and EVC + Two-way are required."
 
   - id: evc_healthcare_not_required
+    # Table 7.3 lists no healthcare category — EVC is not mandated for ANY
+    # healthcare sub-type (hospital / clinic / ambulatory) under highrise.
     match:
-      occupancy: healthcare_a
+      occupancy_in: [healthcare_a, healthcare_b, healthcare_c]
       height_m_lte: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"

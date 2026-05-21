@@ -365,12 +365,21 @@ def evaluate_es(b: Building, rules: Dict[str, Any]) -> ChapterReport:
 def evaluate_evc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 7 - Emergency Voice Evacuation + Two-way Telephone."""
     blocks = []
-    # General requirements only fire when an EVC system IS required by the branch.
+    # General requirements only fire when an EVC system IS actually required.
+    # Determine that from the matched branches' system STATUSES (robust) rather
+    # than from a naming convention on the branch id (fragile - a branch like
+    # `evc_storage_industrial_small` emits only a not_required item but its id
+    # doesn't contain "_not_required", which used to wrongly trigger the full
+    # general block for a building that doesn't need EVC).
     branch_items, sel_id, sel_section, matched = _collect_branch(rules.get("branches", []), b)
     evc_required = False
     for br in matched:
-        if "_not_required" not in br.get("id", ""):
-            evc_required = True; break
+        for e in br.get("systems", []):
+            if e.get("required", "required") != "not_required":
+                evc_required = True
+                break
+        if evc_required:
+            break
     if evc_required:
         gen = _dedupe(_collect_general(rules, b))
         if gen:

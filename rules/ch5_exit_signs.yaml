@@ -212,7 +212,9 @@ branches:
         detail: "Universal Exit/Directional Signs and Evacuation Plan apply. Nurseries and auditoriums also require Photoluminescent Exit Marking strips per Table 5.1.4 (see add-ons)."
 
   - id: es_healthcare
-    match: {occupancy: healthcare_a}
+    # Table 5.3 item 9 "HEALTHCARE OCCUPANCIES" is a single undivided row covering
+    # all healthcare — hospitals, clinics and ambulatory facilities alike.
+    match: {occupancy_in: [healthcare_a, healthcare_b, healthcare_c]}
     section: "Ch 5, #3 / Table 5.3 item 9"
     page: "p.398"
     systems:

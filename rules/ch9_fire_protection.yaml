@@ -317,7 +317,12 @@ branches:
         spec: "60 minutes duration"
 
   - id: midrise_public_small_plot
-    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_public, plot_area_m2_lt: 20000}
+    # Detention excluded — midrise detention has its own dedicated branch
+    # (midrise_detention, Table 9.20.d). Without this exclusion a 15-23 m
+    # detention building matched BOTH and produced duplicate Fire Pump lines.
+    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_public,
+            occupancy_not: [detention_a, detention_b, detention_c],
+            plot_area_m2_lt: 20000}
     section: "Ch 9, #4.4.1 / Table 9.20.a (plot < 20,000 m2)"
     page: "p.700"
     systems:
@@ -334,7 +339,10 @@ branches:
         detail: "Dedicated breeching inlet + instantaneous refill."
 
   - id: midrise_public_large_plot
-    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_public, plot_area_m2_gte: 20000}
+    # Detention excluded — see midrise_public_small_plot note above.
+    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_public,
+            occupancy_not: [detention_a, detention_b, detention_c],
+            plot_area_m2_gte: 20000}
     section: "Ch 9, #4.4.1 / Table 9.20.a (plot >= 20,000 m2)"
     page: "p.700"
     systems:
@@ -1036,7 +1044,7 @@ branches:
   # below `storage_industrial_tier_hh` is retained for commodity-specific Groups L-O
   # (plastics / rubber / tires / paper) where the design is driven by Table 9.7 sub-tables.
   - id: storage_industrial_eh1_tier1
-    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: false}
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: false, is_commodity_specific_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group D Tier 1 (Multi-Tenant EH1, <=3600 m2)"
     page: "p.727"
     systems:
@@ -1056,7 +1064,7 @@ branches:
         spec: "Per Section 4.11 preamble"
 
   - id: storage_industrial_eh1_tier2
-    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: false}
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: false, is_commodity_specific_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group D Tier 2 (Multi-Tenant EH1, >3600 m2)"
     page: "p.727"
     systems:
@@ -1081,7 +1089,7 @@ branches:
   # Gated by the `is_extra_hazard_2` flag so the designer can distinguish
   # EH1 vs EH2 within the HH hazard class (Definition 1.1.13.4 vs 1.1.13.5).
   - id: storage_industrial_eh2_tier1
-    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: true}
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_lte: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: true, is_commodity_specific_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group E Tier 1 (Multi-Tenant EH2, <=3600 m2)"
     page: "p.728"
     systems:
@@ -1102,7 +1110,7 @@ branches:
         spec: "Per Section 4.11 preamble"
 
   - id: storage_industrial_eh2_tier2
-    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: true}
+    match: {occupancy: storage_industrial, hazard_class_in: [HH], ground_floor_bua_m2_gt: 3600, is_aircraft_hanger: false, is_cold_storage: false, is_flammable_liquid_warehouse: false, is_flammable_liquid_industrial: false, is_open_yard_storage: false, is_plant_nursery: false, is_single_tenant_storage: false, is_idle_pallet_storage: false, is_extra_hazard_2: true, is_commodity_specific_storage: false}
     section: "Ch 9, #4.11 / Table 9.27 Group E Tier 2 (Multi-Tenant EH2, >3600 m2)"
     page: "p.728"
     systems:
@@ -1868,7 +1876,7 @@ equipment:
       - name: "Foam Sprinkler System (Section 3.9)"
         code_ref: "Ch 9, #4.15 / Table 9.31.E"
         page_ref: "p.756"
-        detail: "Diesel Generator Room - Foam sprinkler system per Section 3.9 (Table 9.31.E). Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from the predominant occupancy are exempt. NOTE: This overlaps with Table 9.30.G (auxiliary-room provision) - both are valid citations for the same physical system. The duplicate suppression in the engine will keep only one line in the report."
+        detail: "Diesel Generator Room - Foam sprinkler system per Section 3.9 (Table 9.31.E). Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from the predominant occupancy are exempt. NOTE: The same physical system is also cited under Table 9.30.G (Auxiliary Rooms block) - both citations are valid. The two entries appear in different report blocks (FP Equipment vs FP Auxiliary Rooms); engine de-duplication is per-block, so the requirement is intentionally shown once in each block for full traceability."
 
   - id: eq_F_boilers
     flag: has_boilers

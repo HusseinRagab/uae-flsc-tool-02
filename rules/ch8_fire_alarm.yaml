@@ -67,7 +67,8 @@ branches:
                       parking_enclosed, parking_open,
                       storage_industrial,
                       detention_a, detention_b, detention_c,
-                      healthcare_a, education_a, education_b, education_c]
+                      healthcare_a, healthcare_b, healthcare_c,
+                      education_a, education_b, education_c]
     section: "Ch 8, #5.1 / Table 8.13 item 1"
     page: "p.502"
     systems:
@@ -103,7 +104,8 @@ branches:
                       parking_enclosed, parking_open,
                       storage_industrial,
                       detention_a, detention_b, detention_c,
-                      healthcare_a, education_a, education_b, education_c]
+                      healthcare_a, healthcare_b, healthcare_c,
+                      education_a, education_b, education_c]
     section: "Ch 8, #5.1 / Table 8.13 item 2"
     page: "p.502"
     systems:
@@ -131,7 +133,8 @@ branches:
                       parking_enclosed, parking_open,
                       storage_industrial,
                       detention_a, detention_b, detention_c,
-                      healthcare_a, education_a, education_b, education_c,
+                      healthcare_a, healthcare_b, healthcare_c,
+                      education_a, education_b, education_c,
                       hotel_a, hotel_b, hotel_c]
     section: "Ch 8, #5.1 / Table 8.13 items 3-4 + 9-13"
     page: "p.502-503"
@@ -180,7 +183,10 @@ branches:
       - name: "Main FACP at Continuously Attended Location"
 
   - id: fa_healthcare
-    match: {occupancy: healthcare_a}
+    # Table 8.13 item 16 "HEALTHCARE BUILDINGS" is a single undivided row — code
+    # provides no lighter FA tier for clinics / ambulatory, so all healthcare
+    # sub-types get the full hospital-style detection + nurse-station protocol.
+    match: {occupancy_in: [healthcare_a, healthcare_b, healthcare_c]}
     section: "Ch 8, #5.1 / Table 8.13 item 16"
     page: "p.504"
     systems:

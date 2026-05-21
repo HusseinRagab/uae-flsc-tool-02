@@ -54,7 +54,11 @@ branches:
   - id: sc_midrise_lowrise_default
     match:
       height_m_lte: 23
-      occupancy_not: [healthcare_a,
+      # healthcare_b (clinics / day-surgery) treated as a hospital for stair
+      # pressurization — non-ambulatory / sedated patients need evacuation
+      # assistance. healthcare_c (ambulatory) is NOT excluded — occupants are
+      # mobile and self-evacuating, so it stays under the default treatment.
+      occupancy_not: [healthcare_a, healthcare_b,
                       mall_covered, mall_open, mall_mixed,
                       assembly_a, assembly_b, assembly_c,
                       education_a, education_b, education_c,
@@ -244,7 +248,9 @@ branches:
   - id: sc_lowrise_special_occupancy_stair
     match:
       height_m_lte: 23
-      occupancy_in: [healthcare_a,
+      # healthcare_b (clinics) included; healthcare_c (ambulatory) excluded —
+      # see the rationale note on sc_midrise_lowrise_default above.
+      occupancy_in: [healthcare_a, healthcare_b,
                      mall_covered, mall_open, mall_mixed,
                      assembly_a, assembly_b, assembly_c,
                      education_a, education_b, education_c]
@@ -321,8 +327,11 @@ branches:
         detail: "Triggered by assembly occupancy with GFA > 2000 m² (fallback when assembly_area_m2 not set explicitly)."
 
   # ---------- Table 10.27 - Hospitals (overrides height-based smoke control) ----------
+  # Applies to inpatient hospitals (healthcare_a) and clinics / day-surgery
+  # (healthcare_b — grouped with hospitals in Ch 3 Table 3.22). Ambulatory
+  # healthcare (healthcare_c) is excluded — occupants are mobile.
   - id: sc_hospital_extras
-    match: {occupancy: healthcare_a}
+    match: {occupancy_in: [healthcare_a, healthcare_b]}
     section: "Ch 10, #3.9 / Table 10.27 item 1"
     page: "p.865"
     systems:

@@ -187,7 +187,7 @@ branches:
 
   - id: moe_healthcare_b
     match: {occupancy: healthcare_b}
-    section: "Ch 3, #4 + #5.4.1 / Tables 3.13.5 + 3.16.4 + 3.22"
+    section: "Ch 3, #4 + #5.4.1 / Tables 3.13.4 + 3.16.4 + 3.22"
     page: "p.286, 293, 309-314"
     systems:
       - name: "Occupant Load Factor (Healthcare Group B - Clinics, Day-Surgery)"

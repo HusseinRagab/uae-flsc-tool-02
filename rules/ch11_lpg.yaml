@@ -29,10 +29,10 @@ general:
     when: {}
     systems:
       - name: "Ignition-Source Clearance + Electrical Hazard Class"
-        code_ref: "Ch 11, #2.1.7 / Table 11.1 #7 (outdoor), Table 11.2 #6 (indoor)"
-        page_ref: "p.895 (outdoor) / p.898 (indoor)"
-        spec: "Outdoor cylinders: NO ignition source within 3 m (Table 11.1 #7, p.895). Indoor cylinders: NO ignition source within 1.5 m (Table 11.2 #6, p.898). Fixed electrical equipment within 1.5 m: explosion-proof / hazard-class rated."
-        detail: "All electrical connections and appliances within 1.5 m of LPG installation shall be NFPA 70 Class I Division 1 or 2 rated as appropriate. Cooking appliances NOT to be used with CNG fuel unless certified for it. Cylinder enclosures locked against tampering. Steel barricades where near vehicle paths (parking lots / ramps / roads)."
+        code_ref: "Ch 11, #2.1.7 / Table 11.1 #7 (outdoor ignition), Table 11.2 #2.i (indoor exit-route clearance)"
+        page_ref: "p.895 (outdoor) / p.896 (indoor)"
+        spec: "Outdoor cylinders: NO ignition source within 3 m (Table 11.1 #7, p.895). Indoor cylinder compartment: 1.5 m clearance to fire-exit routes / exit doors / exit stairs / windows & openings (Table 11.2 #2.i, p.896) — this 1.5 m is an EXIT-ROUTE clearance, NOT an ignition-source clearance; the indoor ignition-source / cooking-appliance separation is 3 m (see next item). Fixed electrical equipment near the installation: explosion-proof / hazard-class rated."
+        detail: "All electrical connections and appliances near an LPG installation shall be NFPA 70 Class I Division 1 or 2 rated as appropriate. Cooking appliances NOT to be used with CNG fuel unless certified for it. Cylinder enclosures locked against tampering. Steel barricades where near vehicle paths (parking lots / ramps / roads). NOTE: the 1.5 m indoor figure is the Table 11.2 #2.i separation from exit routes / doors / stairs / windows — do not confuse it with the 3 m indoor ignition-source / cooking-appliance separation in the next item."
       - name: "Indoor Cylinder Compartment - 3 m Clearance to Cooking Appliance"
         code_ref: "Ch 11, #2.2 / Table 11.2 #2.ii"
         page_ref: "p.896"
