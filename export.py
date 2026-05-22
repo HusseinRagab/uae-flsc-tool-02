@@ -180,6 +180,10 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
     normal = ParagraphStyle("n", parent=ss["Normal"], fontSize=9, leading=11)
     cite_s = ParagraphStyle("cite", parent=normal, fontSize=8,
                              textColor=colors.dimgrey, fontName="Helvetica-Oblique")
+    # White header text — TableStyle TEXTCOLOR does NOT apply to Paragraph cell
+    # content, so the navy header row needs its own white paragraph style.
+    hdr_s = ParagraphStyle("hdr", parent=normal, fontSize=9,
+                            textColor=colors.white, fontName="Helvetica-Bold")
 
     story = []
     story.append(Paragraph("UAE FLSC 2018 - Fire & Life Safety Requirements", title_s))
@@ -225,9 +229,9 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
         if not items:
             return
         story.append(Paragraph(title, h2))
-        data = [[Paragraph("<b>System</b>", normal),
-                 Paragraph("<b>Spec / Detail</b>", normal),
-                 Paragraph("<b>Code Ref</b>", normal)]]
+        data = [[Paragraph("System", hdr_s),
+                 Paragraph("Spec / Detail", hdr_s),
+                 Paragraph("Code Ref", hdr_s)]]
         for req in items:
             tag = "" if req.status == "required" else f" <font color=grey>[{req.status}]</font>"
             sys_p = Paragraph(f"<b>{req.system}</b>{tag}", normal)
