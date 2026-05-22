@@ -9,12 +9,29 @@ from flsc_schema import ComplianceReport, Requirement, OCCUPANCY_DEFS, SectionBl
 
 def report_to_docx_bytes(r: ComplianceReport) -> bytes:
     from docx import Document
-    from docx.shared import Pt
+    from docx.shared import Pt, Cm
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.section import WD_ORIENT
 
     doc = Document()
     doc.styles["Normal"].font.name = "Calibri"
     doc.styles["Normal"].font.size = Pt(10)
+
+    # Landscape A4 — wide page so the middle "Spec / Detail" column has room.
+    section = doc.sections[0]
+    section.orientation = WD_ORIENT.LANDSCAPE
+    section.page_width = Cm(29.7)
+    section.page_height = Cm(21.0)
+    section.left_margin = Cm(1.8)
+    section.right_margin = Cm(1.8)
+    section.top_margin = Cm(1.8)
+    section.bottom_margin = Cm(1.8)
+
+    # 3-column requirement-table widths (System / Spec-Detail / Code Ref).
+    # Middle column widened; outer two trimmed. Total 26 cm fits landscape A4.
+    COL_SYSTEM = Cm(4.5)
+    COL_SPEC = Cm(17.5)
+    COL_CITE = Cm(4.0)
 
     title = doc.add_heading("UAE FLSC 2018 - Fire & Life Safety Requirements", level=0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -57,6 +74,7 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
         doc.add_heading(title, level=1)
         t = doc.add_table(rows=1, cols=3)
         t.style = "Light Grid Accent 1"
+        t.autofit = False
         hdr = t.rows[0].cells
         hdr[0].text = "System"; hdr[1].text = "Spec / Detail"; hdr[2].text = "Code Ref"
         for cell in hdr:
@@ -73,6 +91,11 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
             row[1].text = "\n\n".join(parts) if parts else "-"
             cite = " - ".join(p for p in (req.code_ref, req.page_ref) if p)
             row[2].text = cite or "-"
+        # Word column widths must be set on every cell of the column to stick.
+        for row in t.rows:
+            row.cells[0].width = COL_SYSTEM
+            row.cells[1].width = COL_SPEC
+            row.cells[2].width = COL_CITE
 
     for ch in r.chapters:
         doc.add_heading(f"{ch.chapter_code} - {ch.chapter_title}", level=1)
@@ -126,7 +149,7 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
 
 def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.platypus import (
@@ -137,8 +160,9 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
     NAVY = colors.HexColor("#0B3D91")
     LIGHT = colors.HexColor("#E8EEF7")
 
+    # Landscape A4 — gives the middle "Spec / Detail" column room to breathe.
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4,
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4),
                             leftMargin=1.8*cm, rightMargin=1.8*cm,
                             topMargin=1.8*cm, bottomMargin=1.8*cm,
                             title="UAE FLSC Fire & Life Safety Report")
@@ -182,7 +206,7 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
         profile.append(["High ceiling", f"{b.ceiling_height_m} m"])
     if r.requires_wet_riser:
         profile.append(["Wet riser standpipes", str(b.wet_riser_standpipes)])
-    t = Table(profile, colWidths=[4.5*cm, 13*cm])
+    t = Table(profile, colWidths=[5*cm, 21*cm])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (0, -1), LIGHT),
         ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
@@ -214,7 +238,9 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
             cite_t = " - ".join(p for p in (req.code_ref, req.page_ref) if p)
             cite_p = Paragraph(cite_t, cite_s) if cite_t else Paragraph("-", cite_s)
             data.append([sys_p, spec_p, cite_p])
-        t = Table(data, colWidths=[5.3*cm, 7.8*cm, 4.4*cm], repeatRows=1)
+        # Middle column (Spec / Detail) carries all the content — widened;
+        # System + Code Ref columns trimmed. Total ~26 cm fits landscape A4.
+        t = Table(data, colWidths=[4.5*cm, 17.5*cm, 4*cm], repeatRows=1)
         t.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), NAVY),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
@@ -256,7 +282,7 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
             ["Pump (no hydrant)", f"{hc.pump_without_hydrant_gpm} gpm" if hc.pump_without_hydrant_gpm else "-"],
             ["Pump (with hydrant)", f"{hc.pump_with_hydrant_gpm} gpm" if hc.pump_with_hydrant_gpm else "-"],
         ]
-        t = Table(hc_data, colWidths=[5*cm, 12.5*cm])
+        t = Table(hc_data, colWidths=[5*cm, 21*cm])
         t.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (0, -1), LIGHT),
             ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),

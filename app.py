@@ -1535,42 +1535,6 @@ def _excerpt_around_page(chapter_code: str, page_ref: str,
     return page_body
 
 
-# ---------- Audit-traceability index (Tier 3 UI #17) -------------------------
-# Scans every chapter YAML for lines containing TODO / "needs verification" /
-# "not located" markers (added by the audit-fix campaign) so designers can see
-# the open items at a glance and verify them against the code themselves.
-
-@st.cache_data(show_spinner=False)
-def _scan_audit_notes() -> list[dict]:
-    """Return a list of {file, line, text} dicts for every audit-style note
-    found in the rule YAML files. Markers covered:
-      - '# TODO' / 'TODO'
-      - 'needs verification' / 'needs human verification'
-      - 'claim not located'
-      - 'not encoded'
-      - 'verify against'
-    """
-    notes = []
-    rules_dir = _Path(__file__).parent / "rules"
-    patterns = _re.compile(
-        r"(TODO|needs (?:human )?verification|claim not located|not encoded|verify against)",
-        _re.IGNORECASE,
-    )
-    for yf in sorted(rules_dir.glob("ch*.yaml")):
-        try:
-            with open(yf, encoding="utf-8") as fh:
-                for i, line in enumerate(fh, start=1):
-                    if patterns.search(line):
-                        notes.append({
-                            "file": yf.name,
-                            "line": i,
-                            "text": line.strip().lstrip("#").strip(),
-                        })
-        except Exception:
-            continue
-    return notes
-
-
 def render_block(title, items, allowed_statuses: set, text_q: str,
                   chapter_code: str = ""):
     items = _filter_items(items, allowed_statuses, text_q)
@@ -1848,26 +1812,6 @@ with col_right:
         unsafe_allow_html=True,
     )
 
-    # ----- Audit-traceability expander (Tier 3 UI #17) -----
-    _audit_notes = _scan_audit_notes()
-    if _audit_notes:
-        with st.expander(
-            f"🔬 Audit notes — {len(_audit_notes)} item(s)", expanded=False
-        ):
-            st.caption(
-                "Markers left in the YAML by the audit-fix campaign — items "
-                "the audit flagged as 'needs verification', 'not encoded', or "
-                "'TODO'. Cross-check these against the UAE FLSC PDF."
-            )
-            # Group by file for readability
-            _by_file: dict[str, list[dict]] = {}
-            for n in _audit_notes:
-                _by_file.setdefault(n["file"], []).append(n)
-            for fname in sorted(_by_file.keys()):
-                st.markdown(f"**`{fname}`** — {len(_by_file[fname])} note(s)")
-                for n in _by_file[fname]:
-                    st.markdown(f"- L{n['line']}: {n['text']}")
-
     st.markdown("---")
     with st.expander("📤 Copy / Export", expanded=False):
         md_base = report_to_markdown(report)
@@ -1877,9 +1821,6 @@ with col_right:
         st.code(md, language="markdown")
     fname_stem = (project_name or "building").replace(" ", "_")
 
-    st.download_button("Download Markdown (.md)", data=md,
-                       file_name=f"{fname_stem}_FLSC_requirements.md",
-                       mime="text/markdown", use_container_width=True)
     try:
         st.download_button("Download Word (.docx)",
                            data=report_to_docx_bytes(report),
