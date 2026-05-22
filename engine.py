@@ -616,6 +616,84 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
     return chapters
 
 
+# ---------------------------- Empty-chapter explanatory note -----------------
+# When a chapter produces NO requirements at all (e.g. Smoke Control for a
+# lowrise villa), the report section would otherwise be silently blank. Instead
+# we append a single explanatory "not required" item so every section always
+# states why it has nothing to show. `{tier}` / `{occ}` are filled per building.
+_EMPTY_CHAPTER_NOTES = {
+    "MOE": ("Means of Egress - Not Triggered",
+            "No occupancy-specific means-of-egress requirements were triggered "
+            "for this {tier} {occ} building. General egress provisions still "
+            "apply - refer to UAE FLSC Ch 3."),
+    "FE":  ("Fire Extinguishers - Not Triggered",
+            "No fire-extinguisher requirements were triggered for this "
+            "building configuration."),
+    "ES":  ("Exit Signs Not Required",
+            "Exit signs are not required for this {occ} building per UAE FLSC "
+            "Ch 5 Table 5.3 - private villas are exempt unless the building is "
+            "converted to another use."),
+    "EL":  ("Emergency Lighting Not Required",
+            "Emergency lighting is not required for this {tier} {occ} building "
+            "per UAE FLSC Ch 6 Table 6.5."),
+    "EVC": ("Emergency Voice Evacuation Not Required",
+            "Emergency Voice Evacuation and Two-way Telephone systems are not "
+            "required - UAE FLSC Ch 7 Table 7.3 does not list this occupancy "
+            "or height tier."),
+    "FA":  ("Fire Detection & Alarm - Not Triggered",
+            "No fire detection & alarm requirements were triggered for this "
+            "building configuration."),
+    "FP":  ("Fire Protection - Not Triggered",
+            "No fire-protection requirements were triggered for this "
+            "building configuration."),
+    "SC":  ("Smoke Control Not Required",
+            "Smoke control / smoke management systems are NOT required for "
+            "this {tier} {occ} building. UAE FLSC Ch 10 mandates smoke control "
+            "only for: highrise and super-highrise buildings (above 23 m); "
+            "special occupancies (hospitals, malls, educational, assembly); "
+            "deep basements and underground areas (more than 7 m below grade "
+            "or more than 2 basements); enclosed parking; atria; tunnels; and "
+            "large assembly halls. None of these conditions apply to the "
+            "current building profile, so a smoke control system is not "
+            "required - natural ventilation per Ch 10 Section 2.15 applies "
+            "where an accessible external facade or roof is available."),
+    "LPG": ("No Gas System Present",
+            "No LPG or gas-system requirements - no gas system is present in "
+            "this building."),
+}
+
+_CHAPTER_CODE_REF = {
+    "MOE": "UAE FLSC 2018 Ch 3",  "FE": "UAE FLSC 2018 Ch 4",
+    "ES":  "UAE FLSC 2018 Ch 5",  "EL": "UAE FLSC 2018 Ch 6",
+    "EVC": "UAE FLSC 2018 Ch 7",  "FA": "UAE FLSC 2018 Ch 8",
+    "FP":  "UAE FLSC 2018 Ch 9",  "SC": "UAE FLSC 2018 Ch 10",
+    "LPG": "UAE FLSC 2018 Ch 11",
+}
+
+
+def _ensure_chapter_not_blank(ch: ChapterReport, b: Building) -> None:
+    """If a chapter produced no requirement items, append an explanatory
+    'not required' block so the report section is never silently empty."""
+    if sum(len(blk.items) for blk in ch.blocks) > 0:
+        return
+    system, detail_tpl = _EMPTY_CHAPTER_NOTES.get(
+        ch.chapter_code,
+        (f"{ch.chapter_code} - Not Triggered",
+         "No requirements were triggered for this building configuration."),
+    )
+    tier = b.height_class.replace("_", "-")
+    detail = detail_tpl.format(tier=tier, occ=b.occupancy.replace("_", " "))
+    ch.blocks.append(SectionBlock(
+        title=f"{ch.chapter_code} - Status",
+        items=[Requirement(
+            system=system,
+            status="not_required",
+            detail=detail,
+            code_ref=_CHAPTER_CODE_REF.get(ch.chapter_code),
+        )],
+    ))
+
+
 def evaluate(b: Building) -> ComplianceReport:
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
@@ -657,6 +735,13 @@ def evaluate(b: Building) -> ComplianceReport:
             attached = evaluate_attached_parking(b)
         except Exception:
             attached = []
+
+    # Never leave a report section silently blank — append an explanatory
+    # "not required" note to any chapter that produced zero requirements.
+    for ch in chapters:
+        _ensure_chapter_not_blank(ch, b)
+    for ch in attached:
+        _ensure_chapter_not_blank(ch, b)
 
     return ComplianceReport(
         building=b,
