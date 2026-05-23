@@ -697,7 +697,7 @@ with st.sidebar:
     with c1:
         st.markdown("**Above-grade**")
         height_m = st.number_input("Building height (m)", min_value=0.0, step=1.0, key="height_m_input")
-        floors_above = st.number_input("Floors above grade", min_value=1, step=1, key="floors_above_input")
+        floors_above = st.number_input("Floors above grade (including GF)", min_value=1, step=1, key="floors_above_input")
         ground_bua = st.number_input("Ground-floor BUA (m²)", min_value=0.0, step=50.0, key="ground_bua_input")
         gfa = st.number_input("Total GFA (m²)", min_value=0.0, step=100.0, key="gfa_input")
     with c2:
