@@ -569,16 +569,31 @@ with st.sidebar:
         _scenario = {k: _serializable(st.session_state.get(k)) for k in _save_keys
                      if k in st.session_state}
         _scenario_json = _json.dumps(_scenario, indent=2, default=str)
-        _stem = (st.session_state.get("project_name", "scenario") or "scenario").replace(" ", "_")
+        # Mimic a Save-As dialogue: pre-fill the filename with the project name
+        # (or "default project" if none yet), let the user edit, then download.
+        _default_stem = (st.session_state.get("project_name") or "").strip() or "default project"
+        _save_name = st.text_input(
+            "Save as",
+            value=_default_stem,
+            key="save_as_filename",
+            help="Edit the filename if you want; the file saves with the .flsc extension.",
+        )
+        _safe_stem = (_save_name or "default project").strip().replace(" ", "_") or "default_project"
         st.download_button(
-            "Save current inputs (JSON)",
+            "💾 Save project (.flsc)",
             data=_scenario_json,
-            file_name=f"{_stem or 'scenario'}_FLSC_inputs.json",
-            mime="application/json",
+            file_name=f"{_safe_stem}.flsc",
+            mime="application/octet-stream",
             use_container_width=True,
         )
         # ----- Load -----
-        _uploaded = st.file_uploader("Load scenario JSON", type=["json"], key="scenario_uploader")
+        # Accepts the new .flsc extension AND .json for backward compatibility
+        # with older saved scenarios from before the extension change.
+        _uploaded = st.file_uploader(
+            "Load project (.flsc)",
+            type=["flsc", "json"],
+            key="scenario_uploader",
+        )
         if _uploaded is not None and not st.session_state.get("_scenario_loaded_marker"):
             try:
                 _data = _json.loads(_uploaded.read().decode("utf-8"))
