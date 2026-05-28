@@ -23,6 +23,20 @@ general:
         code_ref: "Ch 9, #4.1.6"
         page_ref: "p.694"
         detail: "Yard hydrant loop per Section 3.11. Required because storage/industrial built-up area (BUA) > 3,600 m2 OR ground-floor > 100 m from existing functional hydrant. Trigger keyed off ground-floor BUA per code text 'more than 3600 m2 built-up area' (#4.1.6, p.694) - NOT plot area; a 4,000 m2 BUA warehouse on a small plot must still trigger this rule."
+  - id: g_yard_hydrant_storage_total_bua
+    # Companion to g_yard_hydrant_storage_plot: code §4.1.6 keys off TOTAL
+    # built-up area (all floors), so a multi-storey warehouse on a small
+    # footprint (e.g. 2,000 m2 ground x 3 floors = 6,000 m2 total) must also
+    # trigger even though its ground-floor BUA is below 3,600 m2. Emits the
+    # same item, so the engine de-duplicates when both conditions are true.
+    when:
+      building_category_is: storage_industrial
+      gross_floor_area_m2_gt: 3600
+    systems:
+      - name: "Yard Fire Hydrant System"
+        code_ref: "Ch 9, #4.1.6"
+        page_ref: "p.694"
+        detail: "Yard hydrant loop per Section 3.11. Required because total storage/industrial built-up area across all floors > 3,600 m2 (#4.1.6, p.694). This companion trigger catches multi-storey storage buildings whose ground-floor footprint alone is below 3,600 m2."
   - id: g_storage_sprinkler_over_3floors
     when:
       building_category_is: storage_industrial
