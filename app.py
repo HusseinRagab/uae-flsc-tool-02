@@ -112,6 +112,14 @@ OCCUPANCY_OPTIONS = {
 OCC_FLAT = [(g, occ) for g, items in OCCUPANCY_OPTIONS.items() for occ in items]
 
 
+def _occ_label(code: str) -> str:
+    """Short, human-friendly label for an occupancy code — the part of its
+    definition before ' - ', e.g. 'hotel_a' -> 'Hotel Group A'. Falls back to
+    the raw code if no definition is found."""
+    defn = OCCUPANCY_DEFS.get(code, code)
+    return defn.split(" - ", 1)[0].strip() if " - " in defn else code
+
+
 # ---------------- Master 'Check all' helper ----------------------------------
 def _register_master(master_key: str, child_keys: list[str]):
     if master_key not in st.session_state:
@@ -463,6 +471,20 @@ def _apply_preset():
     for k, v in cfg.items():
         st.session_state[k] = v
 
+
+def _clear_all_flags():
+    """Uncheck every Special Room / Various Location / Equipment / FE / ES
+    flag (and the master 'Check all' toggles) so the user can start from a
+    clean flag set without unticking each box individually. Geometry,
+    occupancy and gas-system selections are left untouched."""
+    for k in (SPECIAL_ROOMS_KEYS + VARIOUS_LOCATIONS_KEYS + EQUIPMENT_KEYS
+              + FE_KEYS + ES_FEATURE_KEYS + ES_ZONE_KEYS):
+        st.session_state[k] = False
+    for master in ("rooms_all", "var_all", "eq_all", "fe_all",
+                   "es_feat_all", "es_zone_all"):
+        st.session_state[master] = False
+
+
 rooms_cb = _register_master("rooms_all", SPECIAL_ROOMS_KEYS)
 var_cb   = _register_master("var_all",   VARIOUS_LOCATIONS_KEYS)
 eq_cb    = _register_master("eq_all",    EQUIPMENT_KEYS)
@@ -517,6 +539,29 @@ st.markdown(
 st.title("UAE FLSC 2018 - Fire & Life Safety Requirements")
 st.caption("CDGH-OP-25, September 2018  |  Chapters loaded: MOE (Ch 3), FE (Ch 4), ES (Ch 5), EL (Ch 6), EVC (Ch 7), FA (Ch 8), FP (Ch 9), SC (Ch 10), LPG (Ch 11)")
 
+# ----- Top disclaimer one-liner (full text in the footer) -----
+st.caption(
+    "⚖️ **Design aid only** — not a substitute for UAE Civil Defence review or a "
+    "registered Fire Protection Engineer. Full disclaimer at the bottom of the report."
+)
+
+# ----- First-run orientation: how to use + 'this is a sample' note -----
+with st.expander("ℹ️ New here? How to use this tool (3 steps)", expanded=False):
+    st.markdown(
+        "1. **Set the building profile** in the sidebar — pick the occupancy and "
+        "enter the geometry (height, floors, areas). Or open **⚡ Quick start** to "
+        "load a typical UAE archetype.\n"
+        "2. **Tick the special rooms, equipment and gas systems** your building has "
+        "— these drive the fire-alarm, fire-protection, smoke-control and LPG "
+        "requirements.\n"
+        "3. **Read the colour-coded report** below "
+        "(🔴 required · 🔵 recommended · 🟡 conditional · ⚪ not required), filter or "
+        "search it, expand **🔍 Why triggered** on any line, then **download Word or "
+        "PDF**.\n\n"
+        "_The report updates live as you edit. The building shown on first load is "
+        "just a sample — change the profile or load an archetype to begin._"
+    )
+
 
 with st.sidebar:
     # ----- Quick start: archetype presets -----
@@ -531,6 +576,12 @@ with st.sidebar:
         )
         st.button("Apply preset", on_click=_apply_preset, use_container_width=True)
         st.caption("'Custom' leaves your current inputs untouched.")
+        st.markdown("---")
+        st.button("🔄 Clear all rooms / equipment flags",
+                  on_click=_clear_all_flags, use_container_width=True,
+                  help="Unticks every Special Room / Various Location / Equipment / "
+                       "FE / ES flag so you can start a clean set. Geometry, "
+                       "occupancy and gas selections are left as-is.")
 
     with st.expander("💾 Save / Load scenario", expanded=False):
         # ----- Save -----
@@ -691,7 +742,7 @@ with st.sidebar:
         "2. Specific occupancy (UAE FLSC classification)",
         _options_in_cat,
         index=_sub_idx,
-        format_func=lambda code: code,
+        format_func=_occ_label,
         key="occupancy_sub_select",
         on_change=_on_occupancy_sub_change,
     )
@@ -1828,7 +1879,7 @@ with col_right:
     )
 
     st.markdown("---")
-    with st.expander("📤 Copy / Export", expanded=False):
+    with st.expander("📋 Copy report (Markdown)", expanded=False):
         md_base = report_to_markdown(report)
         # Prepend project notes if any
         _notes = st.session_state.get("project_notes_input", "").strip()
