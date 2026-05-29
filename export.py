@@ -12,6 +12,26 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
     from docx.shared import Pt, Cm
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.section import WD_ORIENT
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    def _fixed_table_layout(table, widths_cm):
+        """Force Word to honour explicit column widths instead of auto-fitting
+        to content. Two things are required: (1) w:tblLayout type='fixed', and
+        (2) the w:tblGrid column widths — fixed layout renders from the GRID,
+        not from per-cell widths, so without this the table falls back to
+        equal columns."""
+        tblPr = table._tbl.tblPr
+        layout = tblPr.find(qn("w:tblLayout"))
+        if layout is None:
+            layout = OxmlElement("w:tblLayout")
+            tblPr.append(layout)
+        layout.set(qn("w:type"), "fixed")
+        # 1 cm = 1440/2.54 twips. Set each grid column's width.
+        grid = table._tbl.tblGrid
+        cols = grid.findall(qn("w:gridCol"))
+        for col, wcm in zip(cols, widths_cm):
+            col.set(qn("w:w"), str(int(round(wcm * 1440 / 2.54))))
 
     doc = Document()
     doc.styles["Normal"].font.name = "Calibri"
@@ -28,10 +48,13 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
     section.bottom_margin = Cm(1.8)
 
     # 3-column requirement-table widths (System / Spec-Detail / Code Ref).
-    # Middle column widened; outer two trimmed. Total 26 cm fits landscape A4.
-    COL_SYSTEM = Cm(4.5)
-    COL_SPEC = Cm(17.5)
-    COL_CITE = Cm(4.0)
+    # x : 2x : x arrangement (6.5 / 13 / 6.5 cm = 26 cm, fits landscape A4) —
+    # middle column stays the widest (carries the spec + detail text) while the
+    # outer two get enough room that System names and long Code Refs no longer
+    # wrap into 3+ lines.
+    COL_SYSTEM = Cm(6.5)
+    COL_SPEC = Cm(13.0)
+    COL_CITE = Cm(6.5)
 
     title = doc.add_heading("UAE FLSC 2018 - Fire & Life Safety Requirements", level=0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -75,6 +98,8 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
         t = doc.add_table(rows=1, cols=3)
         t.style = "Light Grid Accent 1"
         t.autofit = False
+        t.allow_autofit = False
+        _fixed_table_layout(t, [6.5, 13.0, 6.5])
         hdr = t.rows[0].cells
         hdr[0].text = "System"; hdr[1].text = "Spec / Detail"; hdr[2].text = "Code Ref"
         for cell in hdr:
@@ -242,9 +267,10 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
             cite_t = " - ".join(p for p in (req.code_ref, req.page_ref) if p)
             cite_p = Paragraph(cite_t, cite_s) if cite_t else Paragraph("-", cite_s)
             data.append([sys_p, spec_p, cite_p])
-        # Middle column (Spec / Detail) carries all the content — widened;
-        # System + Code Ref columns trimmed. Total ~26 cm fits landscape A4.
-        t = Table(data, colWidths=[4.5*cm, 17.5*cm, 4*cm], repeatRows=1)
+        # x : 2x : x column arrangement (6.5 / 13 / 6.5 cm = 26 cm, landscape A4).
+        # Middle (Spec / Detail) stays the widest; outer columns get enough room
+        # that System names and long Code Refs stop wrapping into 3+ lines.
+        t = Table(data, colWidths=[6.5*cm, 13*cm, 6.5*cm], repeatRows=1)
         t.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), NAVY),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
