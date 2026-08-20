@@ -38,7 +38,20 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
         elif key == "occupancy_not":
             if b.occupancy in expected: return False
         elif key == "occupancy_in":
-            if b.occupancy not in expected: return False
+            if b.occupancy not in expected:
+                # Healthcare B/C follow Table 9.20.b / 9.21.b (residential /
+                # business sprinkler tier), not Table 9.20.a / 9.21.a (hospitals).
+                # Older YAML occupancy_in lists omit them; a residential-tier
+                # list is treated as including clinics / outpatient.
+                if b.occupancy in ("healthcare_b", "healthcare_c"):
+                    residential_tier = {
+                        "residential", "labour_accommodation", "staff_accommodation",
+                        "hostel", "business", "animal_housing",
+                    }
+                    if not residential_tier.issubset(set(expected)):
+                        return False
+                else:
+                    return False
         elif key == "hazard_class_in":
             if b.hazard_class not in expected: return False
         elif key == "occupancy_group_is":
@@ -58,7 +71,16 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
         elif key.endswith("_gte"):
             if not (getattr(b, key[:-4]) >= expected): return False
         elif key.endswith("_lt"):
-            if not (getattr(b, key[:-3]) < expected): return False
+            actual = getattr(b, key[:-3])
+            # Ch 1 §1.7.41-42 + FAQ Annexure 1: 23 m is still midrise (highrise
+            # starts *more than* 23 m); 90 m is still highrise (super starts
+            # *more than* 90 m). YAML drafts that still use height_m_lt: 23/90
+            # would otherwise drop those exact heights into a gap.
+            if key == "height_m_lt" and expected in (23, 90, 23.0, 90.0):
+                if not (actual <= expected):
+                    return False
+            elif not (actual < expected):
+                return False
         elif key.endswith("_lte"):
             if not (getattr(b, key[:-4]) <= expected): return False
         elif key.endswith("_is"):
@@ -72,6 +94,20 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
         else:
             if getattr(b, key, None) != expected: return False
     return True
+
+
+def _align_fa_height_thresholds(rules: Dict[str, Any]) -> None:
+    """Table 8.13 item 2 highrise is Ch 1 §1.7.41 (more than 23 m), not the
+    15 m midrise floor. Older YAML drafts used height_m_gt: 15 on fa_highrise
+    and height_m_lte: 15 on fa_midrise_lowrise, which sent 15-23 m buildings
+    into 5-floor phased evacuation. Mutates the cached rules dict in place."""
+    for br in rules.get("branches") or []:
+        rid = br.get("id")
+        m = br.get("match") or {}
+        if rid == "fa_highrise" and m.get("height_m_gt") == 15:
+            m["height_m_gt"] = 23
+        if rid == "fa_midrise_lowrise" and m.get("height_m_lte") == 15:
+            m["height_m_lte"] = 23
 
 
 # ---------------------------- Pump spec resolver -----------------------------
@@ -414,6 +450,7 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
 
 def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 8 - Fire Detection & Alarm."""
+    _align_fa_height_thresholds(rules)
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
     if gen:
