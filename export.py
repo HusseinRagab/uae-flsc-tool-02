@@ -53,11 +53,14 @@ def _compact_docx(r: ComplianceReport) -> bytes:
         run.bold = True
 
     doc.add_heading("Building Profile", level=1)
+    occ_label = OCCUPANCY_DEFS.get(b.occupancy, b.occupancy).split(" - ")[0]
     profile = [
-        ("Occupancy", b.occupancy),
-        ("Height", f"{b.height_m} m  ({b.height_class})"),
-        ("Storeys", f"{b.floors_above_grade} above + {b.floors_below_grade} basement"),
-        ("GFA", f"{b.gross_floor_area_m2} m2"),
+        ("Occupancy", occ_label),
+        ("Height class", f"{b.height_m:g} m  |  {str(b.height_class).replace('_', ' ')}"),
+        ("Storeys", f"{b.floors_above_grade} above grade  |  {b.floors_below_grade} basement"),
+        ("Gross floor area", f"{b.gross_floor_area_m2:,.0f} m2"),
+        ("GF / basement BUA", f"{b.ground_floor_bua_m2:,.0f} m2  |  {b.basement_bua_m2:,.0f} m2"),
+        ("Plot area", f"{b.plot_area_m2:,.0f} m2"),
         ("Hazard class", b.hazard_class),
     ]
     tbl = doc.add_table(rows=len(profile), cols=2)
@@ -68,10 +71,17 @@ def _compact_docx(r: ComplianceReport) -> bytes:
 
     doc.add_heading("Required systems - headers only", level=1)
     for ch in r.chapters:
-        items = [it for blk in ch.blocks for it in blk.items if it.status == "required"]
+        seen = set()
+        items = []
+        for blk in ch.blocks:
+            for it in blk.items:
+                if it.status != "required" or it.system in seen:
+                    continue
+                seen.add(it.system)
+                items.append(it)
         if not items:
             continue
-        doc.add_heading(f"{ch.chapter_code}  {ch.chapter_title}", level=2)
+        doc.add_heading(f"{ch.chapter_code}  {ch.chapter_title}  ({len(items)} required)", level=2)
         for it in items:
             doc.add_paragraph(it.system, style="List Bullet")
 
@@ -286,90 +296,191 @@ def _rl_figure(fig, max_w, max_h):
 def _compact_pdf(r: ComplianceReport) -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.platypus import (
-        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, ListFlowable, ListItem,
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether,
     )
 
     TEAL = colors.HexColor("#163A3A")
-    buf = BytesIO()
-    doc = SimpleDocTemplate(
-        buf, pagesize=A4,
-        leftMargin=1.7 * cm, rightMargin=1.7 * cm,
-        topMargin=1.6 * cm, bottomMargin=1.5 * cm,
-        title="UAE FLSC compact report",
-    )
-    ss = getSampleStyleSheet()
-    title_s = ParagraphStyle("t", parent=ss["Title"], fontSize=16, textColor=TEAL, spaceAfter=4)
-    sub_s = ParagraphStyle("s", parent=ss["Normal"], fontSize=9, textColor=colors.grey, spaceAfter=8)
-    h1 = ParagraphStyle("h1", parent=ss["Heading1"], fontSize=11, textColor=TEAL, spaceBefore=10, spaceAfter=4)
-    normal = ParagraphStyle("n", parent=ss["Normal"], fontSize=9, leading=12)
-    small = ParagraphStyle("small", parent=ss["Normal"], fontSize=8, textColor=colors.dimgrey, leading=10)
+    PAPER = colors.HexColor("#F3EFE6")
+    INK = colors.HexColor("#1A1F1C")
+    MUTED = colors.HexColor("#5C635E")
+    RULE = colors.HexColor("#D9D1C6")
+    WHITE = colors.white
+    REQ = colors.HexColor("#8B1E1E")
+    REC = colors.HexColor("#2C4A6E")
+    COND = colors.HexColor("#6B4E16")
+    NA = colors.HexColor("#5C635E")
 
+    W, H = A4
     b = r.building
-    story = [
-        Paragraph("UAE FIRE & LIFE SAFETY CODE 2018", title_s),
-        Paragraph("CDGH-OP-25 | September 2018 | Compact report - required systems", sub_s),
-        Paragraph(f"<b>{b.project_name or 'Fire & life safety report'}</b>", normal),
-        Spacer(1, 8),
-        Paragraph("Building profile", h1),
-    ]
-    profile = [
-        ["Occupancy", b.occupancy],
-        ["Height", f"{b.height_m} m ({b.height_class})"],
-        ["Storeys", f"{b.floors_above_grade} above + {b.floors_below_grade} basement"],
-        ["GFA", f"{b.gross_floor_area_m2} m2"],
-        ["Hazard class", b.hazard_class],
-    ]
-    t = Table(profile, colWidths=[4.5 * cm, 12 * cm])
-    t.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-    ]))
-    story.append(t)
+    occ_label = OCCUPANCY_DEFS.get(b.occupancy, b.occupancy).split(" - ")[0]
+    hc = str(b.height_class).replace("_", " ")
 
-    req_n = rec_n = cond_n = na_n = 0
+    tot = {"required": 0, "recommended": 0, "conditional": 0, "not_required": 0}
     for ch in r.chapters:
         for blk in ch.blocks:
             for it in blk.items:
-                if it.status == "required":
-                    req_n += 1
-                elif it.status == "recommended":
-                    rec_n += 1
-                elif it.status == "conditional":
-                    cond_n += 1
-                else:
-                    na_n += 1
-    story.append(Spacer(1, 8))
-    story.append(Paragraph("Requirement counts", h1))
-    story.append(Paragraph(
-        f"<b>Required {req_n}</b> &nbsp; Recommended {rec_n} &nbsp; "
-        f"Conditional {cond_n} &nbsp; Not required {na_n}",
-        normal,
-    ))
+                tot[it.status] = tot.get(it.status, 0) + 1
+
+    def _later(c, doc):
+        c.saveState()
+        c.setFillColor(TEAL)
+        c.rect(0, H - 7, W, 7, fill=1, stroke=0)
+        c.setStrokeColor(RULE)
+        c.setLineWidth(0.4)
+        c.line(48, 30, W - 48, 30)
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 7)
+        name = (b.project_name or "Fire & life safety report")[:72]
+        c.drawString(48, H - 20, f"{name}  |  Compact")
+        c.drawString(48, 18, "UAE FLSC 2018  |  CDGH-OP-25  |  Required systems only")
+        c.drawRightString(W - 48, 18, f"Page {doc.page}")
+        c.restoreState()
+
+    def _first(c, doc):
+        c.saveState()
+        c.setFillColor(PAPER)
+        c.rect(0, 0, W, H, fill=1, stroke=0)
+        c.setFillColor(TEAL)
+        c.rect(0, H - 96, W, 96, fill=1, stroke=0)
+        c.setFillColor(WHITE)
+        c.setFont("Helvetica-Bold", 15)
+        c.drawString(48, H - 50, "UAE FIRE & LIFE SAFETY CODE 2018")
+        c.setFillColor(colors.HexColor("#C7DBDB"))
+        c.setFont("Helvetica", 9)
+        c.drawString(48, H - 70, "CDGH-OP-25  |  September 2018  |  Compact report  -  required systems")
+        c.restoreState()
+        _later(c, doc)
+
+    h_title = ParagraphStyle("ctitle", fontName="Helvetica-Bold", fontSize=16, textColor=INK, leading=20, spaceAfter=8)
+    h_sec = ParagraphStyle("csec", fontName="Helvetica-Bold", fontSize=10, textColor=TEAL, spaceBefore=6, spaceAfter=4)
+    k_s = ParagraphStyle("ck", fontName="Helvetica-Bold", fontSize=8.5, textColor=MUTED, leading=11)
+    v_s = ParagraphStyle("cv", fontName="Helvetica", fontSize=9.5, textColor=INK, leading=12)
+    item_s = ParagraphStyle("ci", fontName="Helvetica", fontSize=8.5, textColor=INK, leading=11, splitLongWords=0)
+    ch_s = ParagraphStyle("cch", fontName="Helvetica-Bold", fontSize=9.5, textColor=WHITE, leading=12)
+    n_s = ParagraphStyle("cn", fontName="Helvetica-Bold", fontSize=8, textColor=WHITE, leading=11, alignment=2)
+    small = ParagraphStyle("csm", fontName="Helvetica", fontSize=8, textColor=MUTED, leading=10)
+    ital = ParagraphStyle("cit", fontName="Helvetica-Oblique", fontSize=7.5, textColor=MUTED, leading=10)
+
+    inner = 16.8 * cm
+    story = [Spacer(1, 58)]
+    story.append(Paragraph(b.project_name or "Fire & life safety report", h_title))
+    story.append(Paragraph("Building profile", h_sec))
+
+    rows = [
+        ["Occupancy", occ_label],
+        ["Height class", f"{b.height_m:g} m  |  {hc}"],
+        ["Storeys", f"{b.floors_above_grade} above grade  |  {b.floors_below_grade} basement"],
+        ["Gross floor area", f"{b.gross_floor_area_m2:,.0f} m2"],
+        ["GF / basement BUA", f"{b.ground_floor_bua_m2:,.0f} m2  |  {b.basement_bua_m2:,.0f} m2"],
+        ["Plot area", f"{b.plot_area_m2:,.0f} m2"],
+        ["Hazard class", b.hazard_class],
+    ]
+    if r.requires_wet_riser:
+        rows.append(["Wet riser standpipes", str(b.wet_riser_standpipes)])
+    pt = Table([[Paragraph(k, k_s), Paragraph(str(v), v_s)] for k, v in rows],
+               colWidths=[4.4 * cm, 12.4 * cm])
+    pt.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 1.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 1.5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    story.append(pt)
     story.append(Spacer(1, 6))
-    story.append(Paragraph("Required systems - headers only", h1))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=RULE, spaceAfter=8))
+    story.append(Paragraph("Requirement counts", h_sec))
+
+    chip_rows = []
+    for st, label, col, n in (
+        ("required", "REQUIRED", REQ, tot["required"]),
+        ("recommended", "RECOMMENDED", REC, tot["recommended"]),
+        ("conditional", "CONDITIONAL", COND, tot["conditional"]),
+        ("not_required", "NOT REQUIRED", NA, tot["not_required"]),
+    ):
+        inner_t = Table(
+            [[Paragraph(f'<font color="{col.hexval()}"><b>{label}</b></font>',
+                        ParagraphStyle("clab", fontName="Helvetica-Bold", fontSize=7, textColor=col, leading=9))],
+             [Paragraph(str(n), ParagraphStyle("cnum", fontName="Helvetica-Bold", fontSize=14, textColor=INK, leading=16))]],
+            colWidths=[3.9 * cm],
+        )
+        inner_t.setStyle(TableStyle([
+            ("BOX", (0, 0), (-1, -1), 1.1, col),
+            ("BACKGROUND", (0, 0), (-1, -1), WHITE),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (0, 0), 5),
+            ("BOTTOMPADDING", (0, -1), (-1, -1), 5),
+        ]))
+        chip_rows.append(inner_t)
+    chips = Table([chip_rows], colWidths=[4.2 * cm] * 4)
+    chips.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+    ]))
+    story.append(chips)
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("Required systems  -  headers only", h_sec))
 
     for ch in r.chapters:
-        items = [it for blk in ch.blocks for it in blk.items if it.status == "required"]
+        seen = set()
+        items = []
+        for blk in ch.blocks:
+            for it in blk.items:
+                if it.status != "required":
+                    continue
+                if it.system in seen:
+                    continue
+                seen.add(it.system)
+                items.append(it)
         if not items:
             continue
-        story.append(Paragraph(f"{ch.chapter_code} &nbsp; {ch.chapter_title}", h1))
-        bullets = [ListItem(Paragraph(it.system, normal), leftIndent=12) for it in items]
-        story.append(ListFlowable(bullets, bulletType="bullet", start="•"))
+        bar = Table(
+            [[Paragraph(f"{ch.chapter_code}  |  {ch.chapter_title}", ch_s),
+              Paragraph(f"{len(items)} required", n_s)]],
+            colWidths=[13.4 * cm, 3.4 * cm],
+        )
+        bar.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), TEAL),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        names = [Paragraph("•  " + it.system, item_s) for it in items]
+        body = Table([[p] for p in names], colWidths=[inner])
+        body.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 10),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 1),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+            ("LINEBEFORE", (0, 0), (0, -1), 2.2, TEAL),
+            ("BACKGROUND", (0, 0), (-1, -1), WHITE),
+        ]))
+        story.append(Spacer(1, 5))
+        story.append(bar)
+        story.append(body)
 
-    story.append(Spacer(1, 12))
-    story.append(HRFlowable(width="100%", thickness=0.4, color=colors.grey))
-    story.append(Paragraph(
-        "Compact export. Use Detailed PDF for figures and full clauses.",
-        small,
-    ))
-    story.append(Paragraph(f"<i>{DISCLAIMER}</i>", small))
-    doc.build(story)
+    story.append(Spacer(1, 10))
+    story.append(HRFlowable(width="100%", thickness=0.4, color=RULE, spaceAfter=6))
+    story.append(Paragraph("Compact export. Use Detailed PDF for figures and full clauses.", small))
+    story.append(Paragraph(DISCLAIMER, ital))
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=48, rightMargin=48,
+        topMargin=40, bottomMargin=42,
+        title=f"{b.project_name or 'UAE FLSC'} - compact Fire & Life Safety Report",
+    )
+    doc.build(story, onFirstPage=_first, onLaterPages=_later)
     return buf.getvalue()
+
 
 
 def _detailed_pdf(r: ComplianceReport) -> bytes:
