@@ -45,27 +45,3 @@ branches:
       - name: "Enclosed Corridor Smoke Management (exhaust from roof only)"
         spec: "Per Section 2.8"
         detail: "Smoke exhaust only from roof (open to sky); no intermediate-level exhaust."
-
-  # ---------- Table 10.21 - Midrise / Lowrise default (<23 m) ----------
-  # Per code §3.3.1 / Table 10.21 item 1: only the STAIR-PRESSURIZATION "not required"
-  # excludes hospitals/malls/educational/assembly (they get sc_lowrise_special_occupancy_stair
-  # instead). Lobby / firefighter-lift / corridor items (Table 10.21 items 2-4) apply EQUALLY
-  # to all lowrise/midrise occupancies and are emitted by sc_midrise_lowrise_lobby_lift_corridor
-  # below, with no occupancy exclusion.
-  - id: sc_midrise_lowrise_default
-    match:
-      height_m_lte: 23
-      occupancy_not: [healthcare_a, healthcare_b,
-                      mall_covered, mall_open, mall_mixed,
-                      assembly_a, assembly_b, assembly_c,
-                      education_a, education_b, education_c,
-                      villa_private, villa_commercial,
-                      motor_fuel_dispensing,
-                      parking_enclosed, parking_open,
-                      storage_industrial]
-    section: "Ch 10, #3.3 / Table 10.21 item 1"
-    page: "p.858"
-    systems:
-      - name: "Stair Pressurization NOT Required (default)"
-        required: not_required
-        detail: "Stair pressurization is NOT required for midrise / lowrise occupancies other than hospitals, malls, educational and assembly. Where provided, design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height band; max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N max door-opening force per Section 2.6."
