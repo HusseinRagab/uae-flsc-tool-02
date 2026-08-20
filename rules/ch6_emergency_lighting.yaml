@@ -133,7 +133,7 @@ branches:
   - id: el_highrise
     match:
       height_m_gt: 23
-      height_m_lt: 90
+      height_m_lte: 90
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     section: "Ch 6, #4.3 / Table 6.5 item 2"
     page: "p.419"
@@ -186,7 +186,7 @@ branches:
   - id: el_midrise_general
     match:
       height_m_gt: 15
-      height_m_lt: 23
+      height_m_lte: 23
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     section: "Ch 6, #4.3 / Table 6.5 item 5"
     page: "p.419"
