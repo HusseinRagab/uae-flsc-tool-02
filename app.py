@@ -16,12 +16,25 @@ only items truly unique to that chapter.
 """
 from __future__ import annotations
 
+import inspect
+
 import streamlit as st
 
 from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes
 from figures import figure_caption, figures_for
+
+
+def _call_export(fn, report, kind: str):
+    """Cloud can hot-reload app.py before export.py. Accept 1-arg fallback."""
+    try:
+        n = len(inspect.signature(fn).parameters)
+    except (TypeError, ValueError):
+        n = 1
+    if n >= 2:
+        return fn(report, kind)
+    return fn(report)
 
 
 # Index of source_rule -> {file, kind, match} for the "Why triggered?" expander.
@@ -1891,12 +1904,26 @@ with col_right:
         st.code(md, language="markdown")
     fname_stem = (project_name or "building").replace(" ", "_")
 
+    w1, w2 = st.columns(2)
     try:
-        st.download_button("Download Word (.docx)",
-                           data=report_to_docx_bytes(report),
-                           file_name=f"{fname_stem}_FLSC_requirements.docx",
-                           mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                           use_container_width=True)
+        with w1:
+            st.download_button(
+                "Compact Word",
+                data=_call_export(report_to_docx_bytes, report, "compact"),
+                file_name=f"{fname_stem}_FLSC_compact.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+                help="Required system headers only",
+            )
+        with w2:
+            st.download_button(
+                "Detailed Word",
+                data=_call_export(report_to_docx_bytes, report, "detailed"),
+                file_name=f"{fname_stem}_FLSC_detailed.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+                help="Full evaluation + code figures",
+            )
     except Exception as e:
         st.warning(f"Word export needs python-docx: {e}")
     pdf_c1, pdf_c2 = st.columns(2)
@@ -1904,7 +1931,7 @@ with col_right:
         with pdf_c1:
             st.download_button(
                 "Compact PDF",
-                data=report_to_pdf_bytes(report, "compact"),
+                data=_call_export(report_to_pdf_bytes, report, "compact"),
                 file_name=f"{fname_stem}_FLSC_compact.pdf",
                 mime="application/pdf",
                 use_container_width=True,
@@ -1913,7 +1940,7 @@ with col_right:
         with pdf_c2:
             st.download_button(
                 "Detailed PDF",
-                data=report_to_pdf_bytes(report, "detailed"),
+                data=_call_export(report_to_pdf_bytes, report, "detailed"),
                 file_name=f"{fname_stem}_FLSC_detailed.pdf",
                 mime="application/pdf",
                 use_container_width=True,

@@ -8,7 +8,85 @@ from flsc_schema import ComplianceReport, Requirement, OCCUPANCY_DEFS, SectionBl
 from figures import figure_caption, figures_for
 
 
-def report_to_docx_bytes(r: ComplianceReport) -> bytes:
+def report_to_docx_bytes(r: ComplianceReport, kind: str = "detailed") -> bytes:
+    if kind == "compact":
+        return _compact_docx(r)
+    return _detailed_docx(r)
+
+
+def _add_docx_figure(doc, fig, width_in: float) -> None:
+    from docx.shared import Inches, Pt
+    path = fig["path"]
+    if not path.exists():
+        return
+    doc.add_picture(str(path), width=Inches(width_in))
+    cap = doc.add_paragraph()
+    run = cap.add_run(figure_caption(fig))
+    run.italic = True
+    run.font.size = Pt(8)
+
+
+def _compact_docx(r: ComplianceReport) -> bytes:
+    from docx import Document
+    from docx.shared import Pt, Cm
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = Document()
+    doc.styles["Normal"].font.name = "Calibri"
+    doc.styles["Normal"].font.size = Pt(10)
+    section = doc.sections[0]
+    section.page_width = Cm(21.0)
+    section.page_height = Cm(29.7)
+    section.left_margin = Cm(1.8)
+    section.right_margin = Cm(1.8)
+
+    title = doc.add_heading("UAE FLSC 2018 - Compact report", level=0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    sub = doc.add_paragraph()
+    sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    sub.add_run("CDGH-OP-25, September 2018  |  Required system headers only").italic = True
+
+    b = r.building
+    if b.project_name:
+        p = doc.add_paragraph()
+        run = p.add_run(f"Project: {b.project_name}")
+        run.bold = True
+
+    doc.add_heading("Building Profile", level=1)
+    profile = [
+        ("Occupancy", b.occupancy),
+        ("Height", f"{b.height_m} m  ({b.height_class})"),
+        ("Storeys", f"{b.floors_above_grade} above + {b.floors_below_grade} basement"),
+        ("GFA", f"{b.gross_floor_area_m2} m2"),
+        ("Hazard class", b.hazard_class),
+    ]
+    tbl = doc.add_table(rows=len(profile), cols=2)
+    tbl.style = "Light Grid Accent 1"
+    for i, (k, v) in enumerate(profile):
+        tbl.rows[i].cells[0].text = k
+        tbl.rows[i].cells[1].text = str(v)
+
+    doc.add_heading("Required systems - headers only", level=1)
+    for ch in r.chapters:
+        items = [it for blk in ch.blocks for it in blk.items if it.status == "required"]
+        if not items:
+            continue
+        doc.add_heading(f"{ch.chapter_code}  {ch.chapter_title}", level=2)
+        for it in items:
+            doc.add_paragraph(it.system, style="List Bullet")
+
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    p.add_run("Compact export. Use Detailed Word/PDF for figures and full clauses.").italic = True
+    disc = doc.add_paragraph()
+    disc.add_run(DISCLAIMER).italic = True
+
+    buf = BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def _detailed_docx(r: ComplianceReport) -> bytes:
     from docx import Document
     from docx.shared import Pt, Cm
     from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -129,6 +207,8 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
             p = doc.add_paragraph()
             p.add_run("Matched branch: ").bold = True
             p.add_run(f"{ch.selected_branch}  -  {ch.selected_branch_section}")
+        for fig in figures_for(ch.chapter_code):
+            _add_docx_figure(doc, fig, width_in=8.4)
         for block in ch.blocks:
             req_block(block.title, block.items)
 
