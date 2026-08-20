@@ -21,6 +21,7 @@ import streamlit as st
 from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes
+from figures import figure_caption, figures_for
 
 
 # Index of source_rule -> {file, kind, match} for the "Why triggered?" expander.
@@ -1794,6 +1795,9 @@ with col_left:
                 f"Matched branch: `{ch.selected_branch}` · {ch.selected_branch_section}"
                 + (f"\n\n**Why this branch:** {_human}" if _human else "")
             )
+        for fig in figures_for(ch.chapter_code):
+            if fig["path"].exists():
+                st.image(str(fig["path"]), caption=figure_caption(fig), use_container_width=True)
         for block in ch.blocks:
             render_block(block.title, block.items, _allowed_set, _text_q,
                          chapter_code=ch.chapter_code)
@@ -1895,11 +1899,26 @@ with col_right:
                            use_container_width=True)
     except Exception as e:
         st.warning(f"Word export needs python-docx: {e}")
+    pdf_c1, pdf_c2 = st.columns(2)
     try:
-        st.download_button("Download PDF (.pdf)",
-                           data=report_to_pdf_bytes(report),
-                           file_name=f"{fname_stem}_FLSC_requirements.pdf",
-                           mime="application/pdf", use_container_width=True)
+        with pdf_c1:
+            st.download_button(
+                "Compact PDF",
+                data=report_to_pdf_bytes(report, "compact"),
+                file_name=f"{fname_stem}_FLSC_compact.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                help="Required system headers only",
+            )
+        with pdf_c2:
+            st.download_button(
+                "Detailed PDF",
+                data=report_to_pdf_bytes(report, "detailed"),
+                file_name=f"{fname_stem}_FLSC_detailed.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                help="Full evaluation + code figures",
+            )
     except Exception as e:
         st.warning(f"PDF export needs reportlab: {e}")
 

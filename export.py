@@ -5,6 +5,7 @@ from io import BytesIO
 from typing import List
 
 from flsc_schema import ComplianceReport, Requirement, OCCUPANCY_DEFS, SectionBlock, DISCLAIMER
+from figures import figure_caption, figures_for
 
 
 def report_to_docx_bytes(r: ComplianceReport) -> bytes:
@@ -172,13 +173,132 @@ def report_to_docx_bytes(r: ComplianceReport) -> bytes:
     return buf.getvalue()
 
 
-def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
+def report_to_pdf_bytes(r: ComplianceReport, kind: str = "detailed") -> bytes:
+    if kind == "compact":
+        return _compact_pdf(r)
+    return _detailed_pdf(r)
+
+
+def _rl_figure(fig, max_w, max_h):
+    from reportlab.platypus import Image as RLImage, Paragraph, Spacer
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib import colors
+
+    path = fig["path"]
+    if not path.exists():
+        return []
+    img = RLImage(str(path))
+    iw, ih = float(img.imageWidth), float(img.imageHeight)
+    scale = min(max_w / iw, max_h / ih)
+    img.drawWidth = iw * scale
+    img.drawHeight = ih * scale
+    cap = ParagraphStyle(
+        "figcap",
+        fontName="Helvetica-Oblique",
+        fontSize=8,
+        textColor=colors.HexColor("#163A3A"),
+        leading=10,
+        spaceAfter=8,
+    )
+    return [img, Spacer(1, 4), Paragraph(figure_caption(fig).replace("—", "-"), cap)]
+
+
+def _compact_pdf(r: ComplianceReport) -> bytes:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, ListFlowable, ListItem,
+    )
+
+    TEAL = colors.HexColor("#163A3A")
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=1.7 * cm, rightMargin=1.7 * cm,
+        topMargin=1.6 * cm, bottomMargin=1.5 * cm,
+        title="UAE FLSC compact report",
+    )
+    ss = getSampleStyleSheet()
+    title_s = ParagraphStyle("t", parent=ss["Title"], fontSize=16, textColor=TEAL, spaceAfter=4)
+    sub_s = ParagraphStyle("s", parent=ss["Normal"], fontSize=9, textColor=colors.grey, spaceAfter=8)
+    h1 = ParagraphStyle("h1", parent=ss["Heading1"], fontSize=11, textColor=TEAL, spaceBefore=10, spaceAfter=4)
+    normal = ParagraphStyle("n", parent=ss["Normal"], fontSize=9, leading=12)
+    small = ParagraphStyle("small", parent=ss["Normal"], fontSize=8, textColor=colors.dimgrey, leading=10)
+
+    b = r.building
+    story = [
+        Paragraph("UAE FIRE & LIFE SAFETY CODE 2018", title_s),
+        Paragraph("CDGH-OP-25 | September 2018 | Compact report - required systems", sub_s),
+        Paragraph(f"<b>{b.project_name or 'Fire & life safety report'}</b>", normal),
+        Spacer(1, 8),
+        Paragraph("Building profile", h1),
+    ]
+    profile = [
+        ["Occupancy", b.occupancy],
+        ["Height", f"{b.height_m} m ({b.height_class})"],
+        ["Storeys", f"{b.floors_above_grade} above + {b.floors_below_grade} basement"],
+        ["GFA", f"{b.gross_floor_area_m2} m2"],
+        ["Hazard class", b.hazard_class],
+    ]
+    t = Table(profile, colWidths=[4.5 * cm, 12 * cm])
+    t.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    story.append(t)
+
+    req_n = rec_n = cond_n = na_n = 0
+    for ch in r.chapters:
+        for blk in ch.blocks:
+            for it in blk.items:
+                if it.status == "required":
+                    req_n += 1
+                elif it.status == "recommended":
+                    rec_n += 1
+                elif it.status == "conditional":
+                    cond_n += 1
+                else:
+                    na_n += 1
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("Requirement counts", h1))
+    story.append(Paragraph(
+        f"<b>Required {req_n}</b> &nbsp; Recommended {rec_n} &nbsp; "
+        f"Conditional {cond_n} &nbsp; Not required {na_n}",
+        normal,
+    ))
+    story.append(Spacer(1, 6))
+    story.append(Paragraph("Required systems - headers only", h1))
+
+    for ch in r.chapters:
+        items = [it for blk in ch.blocks for it in blk.items if it.status == "required"]
+        if not items:
+            continue
+        story.append(Paragraph(f"{ch.chapter_code} &nbsp; {ch.chapter_title}", h1))
+        bullets = [ListItem(Paragraph(it.system, normal), leftIndent=12) for it in items]
+        story.append(ListFlowable(bullets, bulletType="bullet", start="•"))
+
+    story.append(Spacer(1, 12))
+    story.append(HRFlowable(width="100%", thickness=0.4, color=colors.grey))
+    story.append(Paragraph(
+        "Compact export. Use Detailed PDF for figures and full clauses.",
+        small,
+    ))
+    story.append(Paragraph(f"<i>{DISCLAIMER}</i>", small))
+    doc.build(story)
+    return buf.getvalue()
+
+
+def _detailed_pdf(r: ComplianceReport) -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.platypus import (
-        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable,
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image as RLImage,
     )
     from reportlab.lib.enums import TA_CENTER
 
@@ -294,6 +414,8 @@ def report_to_pdf_bytes(r: ComplianceReport) -> bytes:
             story.append(Paragraph(
                 f"<b>Matched branch:</b> {ch.selected_branch} - {ch.selected_branch_section}", normal))
             story.append(Spacer(1, 4))
+        for fig in figures_for(ch.chapter_code):
+            story.extend(_rl_figure(fig, 16 * cm, 8.5 * cm))
         for block in ch.blocks:
             req_block(block.title, block.items)
 

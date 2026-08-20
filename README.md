@@ -6,6 +6,10 @@ systems required by Chapters 3–11, with section and page citations.
 
 Live app: https://uae-flsc-tool-02-itxfbnyhtfm8omkrezp5be.streamlit.app/
 
+PDF export:
+- **Compact** — required system headers only
+- **Detailed** — full evaluation plus authentic UAE FLSC 2018 code plates
+
 This tool is a **design aid**. It does not replace UAE Civil Defence review or
 the judgement of a registered Fire Protection Engineer.
 
