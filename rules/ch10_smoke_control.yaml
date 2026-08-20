@@ -45,3 +45,279 @@ branches:
       - name: "Enclosed Corridor Smoke Management (exhaust from roof only)"
         spec: "Per Section 2.8"
         detail: "Smoke exhaust only from roof (open to sky); no intermediate-level exhaust."
+
+  # ---------- Table 10.21 - Midrise / Lowrise default (<23 m) ----------
+  - id: sc_midrise_lowrise_default
+    match:
+      height_m_lte: 23
+      occupancy_not: [healthcare_a, healthcare_b,
+                      mall_covered, mall_open, mall_mixed,
+                      assembly_a, assembly_b, assembly_c,
+                      education_a, education_b, education_c,
+                      villa_private, villa_commercial,
+                      motor_fuel_dispensing,
+                      parking_enclosed, parking_open,
+                      storage_industrial]
+    section: "Ch 10, #3.3 / Table 10.21 item 1"
+    page: "p.858"
+    systems:
+      - name: "Stair Pressurization NOT Required (default)"
+        required: not_required
+        detail: "Stair pressurization is NOT required for midrise / lowrise occupancies other than hospitals, malls, educational and assembly. Where provided, design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height band; max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N max door-opening force per Section 2.6."
+
+  - id: sc_underground_deep
+    match:
+      floors_below_grade_gt: 2
+      occupancy_not: [parking_enclosed, parking_open]
+    section: "Ch 10, #3.4 / Table 10.22"
+    page: "p.859"
+    systems:
+      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
+        spec: "Per Section 2.6"
+      - name: "Passenger Elevator Lobby (mandatory)"
+      - name: "Firefighting Lift (deep basements - > 7 m below OR > 2 basements)"
+      - name: "Corridor Smoke Management (basement, non-parking)"
+      - name: "Dedicated Smoke Exhaust for Enclosed Rooms > 280 m²"
+
+  - id: sc_underground_deep_by_depth
+    match:
+      depth_below_grade_m_gt: 7
+      occupancy_not: [parking_enclosed, parking_open]
+    section: "Ch 10, #3.4 / Table 10.22"
+    page: "p.859"
+    systems:
+      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
+      - name: "Passenger Elevator Lobby (mandatory)"
+      - name: "Firefighting Lift (deep basements - > 7 m below OR > 2 basements)"
+      - name: "Corridor Smoke Management (basement, non-parking)"
+      - name: "Dedicated Smoke Exhaust for Enclosed Rooms > 280 m²"
+
+  - id: sc_parking_enclosed
+    match: {occupancy: parking_enclosed}
+    section: "Ch 10, #3.5 / Table 10.23.1"
+    page: "p.860"
+    systems:
+      - name: "Mechanical Smoke Purging via Dedicated Ducting"
+        spec: "Per Section 2.13"
+      - name: "Stair Pressurization (when parking height > 23 m)"
+        required: conditional
+
+  - id: sc_parking_open_small
+    match: {occupancy: parking_open, gross_floor_area_m2_lte: 4000}
+    section: "Ch 10, #3.5 / Table 10.23.2.2"
+    page: "p.860"
+    systems:
+      - name: "Smoke Purging / Ventilation NOT Required"
+        required: not_required
+      - name: "Stair Pressurization (when parking height > 23 m)"
+        required: conditional
+
+  - id: sc_parking_open_large
+    match: {occupancy: parking_open, gross_floor_area_m2_gt: 4000}
+    section: "Ch 10, #3.5 / Table 10.23.2.3"
+    page: "p.860"
+    systems:
+      - name: "Mechanical Smoke Purging OR Jet Fan System"
+      - name: "Stair Pressurization (when parking height > 23 m)"
+        required: conditional
+
+  - id: sc_basement_parking_deep
+    match: {occupancy_in: [parking_enclosed, parking_open], floors_below_grade_gt: 2}
+    section: "Ch 10, #3.4 / Table 10.22 + Table 10.23"
+    page: "p.859-860"
+    systems:
+      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
+
+  - id: sc_basement_parking_deep_by_depth
+    match: {occupancy_in: [parking_enclosed, parking_open], depth_below_grade_m_gt: 7}
+    section: "Ch 10, #3.4 / Table 10.22 + Table 10.23"
+    page: "p.859-860"
+    systems:
+      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
+
+  - id: sc_mall
+    match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
+    section: "Ch 10, #3.6 / Table 10.24"
+    page: "p.861"
+    systems:
+      - name: "Mall Stair Pressurization (mandatory)"
+      - name: "Mall Circulation Smoke Control"
+      - name: "Atrium Smoke Control (where atrium present)"
+      - name: "Enclosed Service Corridor Smoke Management"
+      - name: "Anchor / Hypermarket / Tenant > 1000 m² Smoke Management"
+      - name: "Communicating Spaces - Smoke Containment Approach"
+
+  - id: sc_lowrise_long_corridor
+    match:
+      height_m_lte: 23
+      corridor_length_m_gt: 60
+      occupancy_in: [residential, business, mercantile_a, mercantile_b, staff_accommodation, labour_accommodation]
+    section: "Ch 10, #3.9 / Table 10.27 item 4"
+    page: "p.866"
+    systems:
+      - name: "Enclosed Corridor Natural Ventilation (corridor length > 60 m, lowrise/midrise)"
+
+  - id: sc_lowrise_special_occupancy_stair
+    match:
+      height_m_lte: 23
+      occupancy_in: [healthcare_a, healthcare_b, mall_covered, mall_open, mall_mixed, assembly_a, assembly_b, assembly_c, education_a, education_b, education_c]
+    section: "Ch 10, #3.3 / Table 10.21 (special occupancy)"
+    page: "p.858"
+    systems:
+      - name: "Stair Pressurization (special occupancy override)"
+
+  - id: sc_storage_industrial_under_230
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_lt: 230}
+    section: "Ch 10, #3.8 / Table 10.26.1.1"
+    page: "p.864"
+    systems:
+      - name: "Roof Ventilation System"
+
+  - id: sc_storage_industrial_230_900
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lte: 900}
+    section: "Ch 10, #3.8 / Table 10.26.1.2"
+    page: "p.864"
+    systems:
+      - name: "Roof Ventilation System"
+      - name: "Make-up Air Fans OR Sufficient Replacement-air Openings"
+
+  - id: sc_storage_industrial_901_2000
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_gt: 900, ground_floor_bua_m2_lte: 2000}
+    section: "Ch 10, #3.8 / Table 10.26.1.3"
+    page: "p.864"
+    systems:
+      - name: "Roof Ventilation OR Mechanical Roof Exhaust Fans"
+      - name: "Make-up Air Fans OR Sufficient Replacement-air Openings"
+
+  - id: sc_storage_industrial_over_2000
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_gt: 2000}
+    section: "Ch 10, #3.8 / Table 10.26.1.4"
+    page: "p.864"
+    systems:
+      - name: "Mechanical Roof Exhaust Fans (with engineering analysis if natural)"
+      - name: "Make-up Air Fans OR Sufficient Replacement-air Openings"
+
+  - id: sc_aux_assembly_hall_by_area
+    match: {assembly_area_m2_gt: 2000}
+    section: "Ch 10, #3.9 / Table 10.27 items 9-13"
+    page: "p.866"
+    systems:
+      - name: "Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"
+
+  - id: sc_aux_assembly_hall_by_gfa
+    match: {occupancy_in: [assembly_a, assembly_b, assembly_c], gross_floor_area_m2_gt: 2000}
+    section: "Ch 10, #3.9 / Table 10.27 items 9-13"
+    page: "p.866"
+    systems:
+      - name: "Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"
+
+  - id: sc_hospital_extras
+    match: {occupancy_in: [healthcare_a, healthcare_b]}
+    section: "Ch 10, #3.9 / Table 10.27 item 1"
+    page: "p.865"
+    systems:
+      - name: "Corridor & Open-spaces Smoke Management"
+      - name: "Stair Pressurization"
+
+  - id: sc_school_extras
+    match: {occupancy_in: [education_a, education_b, education_c]}
+    section: "Ch 10, #3.9 / Table 10.27 item 2"
+    page: "p.865"
+    systems:
+      - name: "Enclosed Corridor / Circulation Smoke Management"
+      - name: "Stair (vestibule pressurization permitted, NOT mandatory if not highrise)"
+        required: conditional
+
+  - id: sc_aux_tunnel_road_rail
+    match: {has_tunnel: true, tunnel_kind_is: road_rail}
+    section: "Ch 10, #3.7 / Table 10.25"
+    page: "p.862-863"
+    systems:
+      - name: "Tunnel Smoke Management - Road / Rail"
+
+  - id: sc_aux_tunnel_cable
+    match: {has_tunnel: true, tunnel_kind_is: cable}
+    section: "Ch 10, #3.7 / Table 10.25"
+    page: "p.862-863"
+    systems:
+      - name: "Tunnel Smoke Management - Service / Cable"
+
+  - id: sc_business_open_plan
+    match: {occupancy: business}
+    section: "Ch 10, #3.9 / Table 10.27 item 3"
+    page: "p.865"
+    systems:
+      - name: "Open-Plan Office: Openable Ventilation Panels"
+        required: conditional
+      - name: "Stair Pressurization (open-plan office in highrise)"
+        required: conditional
+
+  - id: sc_midrise_lowrise_lobby_lift_corridor
+    match:
+      height_m_lte: 23
+      occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
+    section: "Ch 10, #3.3 / Table 10.21 items 2-4"
+    page: "p.858"
+    systems:
+      - name: "Passenger Elevator Lobby (no fire-resistance rating required)"
+        required: conditional
+      - name: "Firefighting Lift (NOT mandatory)"
+        required: not_required
+      - name: "Corridor Smoke Management NOT Required"
+        required: not_required
+
+auxiliary_rooms:
+  - id: sc_aux_atrium
+    flag: has_atrium
+    systems:
+      - name: "Atrium Smoke Management System"
+        code_ref: "Ch 10, #2.7 / Table 10.27 item 15"
+        page_ref: "p.866"
+  - id: sc_aux_fire_pump
+    flag: has_fire_pump_room
+    systems:
+      - name: "Fire Pump Room - Dedicated Mechanical Ventilation"
+        code_ref: "Ch 10, #3.9 / Table 10.27 item 5"
+        page_ref: "p.866"
+  - id: sc_aux_command_centre
+    flag: has_control_room
+    systems:
+      - name: "Emergency Command Centre - Dedicated Mechanical Ventilation"
+        code_ref: "Ch 10, #3.9 / Table 10.27 item 6"
+        page_ref: "p.866"
+  - id: sc_aux_diesel_generator
+    flag: has_diesel_generator_room
+    systems:
+      - name: "Diesel Generator Room - Dedicated Mechanical Ventilation"
+        code_ref: "Ch 10, #3.9 / Table 10.27 item 7"
+        page_ref: "p.866"
+  - id: sc_aux_cinema
+    flag: has_theater_cinema
+    systems:
+      - name: "Cinema / Theatre Smoke Purge"
+        code_ref: "Ch 10, #3.9 / Table 10.27 items 8, 14"
+        page_ref: "p.866"
+  - id: sc_aux_assembly_hall
+    flag: has_permanent_stages
+    systems:
+      - name: "Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"
+        code_ref: "Ch 10, #3.9 / Table 10.27 items 9-13"
+        page_ref: "p.866"
+  - id: sc_aux_kitchen
+    flag: has_commercial_kitchen
+    systems:
+      - name: "Kitchen Cooking Operation Ventilation"
+        code_ref: "Ch 10, #3.9 / Table 10.27 item 16"
+        page_ref: "p.866"
+  - id: sc_aux_lpg_hazardous
+    flag: has_lpg_tanks
+    systems:
+      - name: "LPG / Hazardous + Flammable Chemical Room Ventilation"
+        code_ref: "Ch 10, #2.20 / Table 10.26.2"
+        page_ref: "p.864"
+  - id: sc_aux_tunnel
+    flag: has_tunnel
+    systems:
+      - name: "Tunnel Smoke Management"
+        code_ref: "Ch 10, #3.7 / Table 10.25"
+        page_ref: "p.862-863"
