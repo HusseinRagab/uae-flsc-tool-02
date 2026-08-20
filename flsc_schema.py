@@ -52,8 +52,8 @@ OCCUPANCY_DEFS = {
     "mercantile_a": "Mercantile Group A - Retail up to 2 storeys and less than 2,800 m2. Shops, showrooms, boutiques.",
     "mercantile_b": "Mercantile Group B - Retail more than 2 storeys or exceeding 2,800 m2. Department stores, hypermarkets (stand-alone).",
     "healthcare_a": "Healthcare Group A - Hospitals, nursing homes, inpatient medical facilities where occupants require assistance for evacuation (Table 3.22).",
-    "healthcare_b": "Healthcare Group B - Clinics, day-surgery and outpatient medical facilities (Table 3.22).",
-    "healthcare_c": "Healthcare Group C - Ambulatory healthcare, walk-in clinics, dental/eye/diagnostic centres (Table 3.23).",
+    "healthcare_b": "Healthcare Group B - Clinics, day-surgery and outpatient medical facilities (Table 3.22). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with residential / business), NOT the public-assembly Table 9.20.a / 9.21.a used by Healthcare Group A hospitals.",
+    "healthcare_c": "Healthcare Group C - Ambulatory healthcare, walk-in clinics, dental/eye/diagnostic centres (Table 3.23). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with Healthcare Group B), not Table 9.20.a / 9.21.a.",
     "hotel_a": "Hotel Group A - Luxury / 4-5 star hotels.",
     "hotel_b": "Hotel Group B - Mid-range hotels (2-3 star).",
     "hotel_c": "Hotel Group C - Budget hotels, apartment hotels, furnished apartments.",
@@ -70,8 +70,8 @@ OCCUPANCY_DEFS = {
     "detention_a": "Detention & Correctional Group A - Maximum security; occupants restrained and require supervised evacuation.",
     "detention_b": "Detention & Correctional Group B - Medium security correctional facilities.",
     "detention_c": "Detention & Correctional Group C - Minimum security, police holding cells, short-term detention.",
-    "villa_private": "Private Villa - Single-family detached dwelling for one family. G, G+1, G+2 typical.",
-    "villa_commercial": "Commercial Villa - Villa used as nursery / clinic / office / salon / pharmacy / small showroom. Converted residential structure for non-residential use.",
+    "villa_private": "Private Villa (Ch 1 §1.7.34) - Single-family dwelling unit, generally ground with first floor, built and solely owned by an individual on an individual plot.",
+    "villa_commercial": "Commercial Villa (Ch 1 §1.7.35) - One- or two-family dwelling units built in a group by a developer and sold, leased or rented to individual families. Mosques, community halls and recreation facilities may also be part of this development. NOT a private villa converted to a shop/clinic - use the 'villa converted to other use' flag for that (Table 8.13 item 14 / Table 9.21.d).",
     "mall_covered": "Covered Mall - Fully enclosed/climatised shopping mall with common internal circulation; tenants accessed from internal mall.",
     "mall_open": "Open Mall - Outdoor strip mall or open-air shopping complex. Tenants accessed from external circulation only.",
     "mall_mixed": "Mixed Mall - Development combining covered and open mall elements (covered anchor + open retail street).",
@@ -108,7 +108,7 @@ HAZARD_BY_OCCUPANCY = {
 MIDRISE_PUBLIC = {
     "assembly_a", "assembly_b", "assembly_c",
     "education_a", "education_b", "education_c",
-    "healthcare_a", "healthcare_b", "healthcare_c",
+    "healthcare_a",
     "mercantile_a", "mercantile_b",
     "hotel_a", "hotel_b", "hotel_c",
     "daycare_a", "daycare_b", "daycare_c",
@@ -117,6 +117,7 @@ MIDRISE_PUBLIC = {
 MIDRISE_RESIDENTIAL = {
     "residential", "labour_accommodation", "staff_accommodation",
     "hostel", "business", "animal_housing",
+    "healthcare_b", "healthcare_c",
 }
 LOWRISE_PUBLIC = MIDRISE_PUBLIC | {
     "detention_a", "detention_b", "detention_c", "low_depth_underground",
@@ -300,6 +301,13 @@ class Building(BaseModel):
 
     @property
     def height_class(self) -> str:
+        # Ch 1 §1.7.39–1.7.42 + FAQ Annexure 1 (p.1273):
+        #   lowrise  : height at or up to 15 m
+        #   midrise  : between 15 m and 23 m (include 23 m; highrise starts *more than* 23 m)
+        #   highrise : more than 23 m up to 90 m (include 90 m; super starts *more than* 90 m)
+        #   super    : more than 90 m
+        # Ch 9 wording has a 1 mm gap at exactly 23 m and 90 m; the inclusive
+        # edges above match Civil Defence practice and the FAQ.
         if self.height_m > 90:
             return "super_highrise"
         if self.height_m > 23:
