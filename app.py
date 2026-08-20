@@ -17,6 +17,7 @@ only items truly unique to that chapter.
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 
 import streamlit as st
 
@@ -552,6 +553,14 @@ st.markdown(
 )
 st.title("UAE FLSC 2018 - Fire & Life Safety Requirements")
 st.caption("CDGH-OP-25, September 2018  |  Chapters loaded: MOE (Ch 3), FE (Ch 4), ES (Ch 5), EL (Ch 6), EVC (Ch 7), FA (Ch 8), FP (Ch 9), SC (Ch 10), LPG (Ch 11)")
+
+_HERO = Path(__file__).parent / "assets" / "hero.jpg"
+if not PRINT_MODE and _HERO.exists():
+    st.image(
+        str(_HERO),
+        use_container_width=True,
+        caption="Landing art only — not part of the compliance report or PDF/Word export.",
+    )
 
 # ----- Top disclaimer one-liner (full text in the footer) -----
 st.caption(
@@ -1808,9 +1817,15 @@ with col_left:
                 f"Matched branch: `{ch.selected_branch}` · {ch.selected_branch_section}"
                 + (f"\n\n**Why this branch:** {_human}" if _human else "")
             )
-        for fig in figures_for(ch.chapter_code):
-            if fig["path"].exists():
-                st.image(str(fig["path"]), caption=figure_caption(fig), use_container_width=True)
+        _figs = [fig for fig in figures_for(ch.chapter_code) if fig["path"].exists()]
+        if _figs:
+            with st.expander(
+                f"UAE FLSC figure — {_figs[0]['figure']}"
+                + (f" + {len(_figs)-1} more" if len(_figs) > 1 else ""),
+                expanded=False,
+            ):
+                for fig in _figs:
+                    st.image(str(fig["path"]), caption=figure_caption(fig), use_container_width=True)
         for block in ch.blocks:
             render_block(block.title, block.items, _allowed_set, _text_q,
                          chapter_code=ch.chapter_code)
