@@ -3,4 +3,5 @@ pydantic>=2
 pyyaml
 python-docx
 reportlab
-# force Streamlit Cloud rebuild 2026-08-20d
+openpyxl
+# force Streamlit Cloud rebuild 2026-08-21 phase C
