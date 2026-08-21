@@ -11,6 +11,8 @@ from figures import figure_caption, figures_for
 def report_to_docx_bytes(r: ComplianceReport, kind: str = "detailed") -> bytes:
     if kind == "compact":
         return _compact_docx(r)
+    if kind == "executive":
+        return _executive_docx(r)
     return _detailed_docx(r)
 
 
@@ -266,6 +268,8 @@ def _detailed_docx(r: ComplianceReport) -> bytes:
 def report_to_pdf_bytes(r: ComplianceReport, kind: str = "detailed") -> bytes:
     if kind == "compact":
         return _compact_pdf(r)
+    if kind == "executive":
+        return _executive_pdf(r)
     return _detailed_pdf(r)
 
 
@@ -650,3 +654,424 @@ def _detailed_pdf(r: ComplianceReport) -> bytes:
 
     doc.build(story)
     return buf.getvalue()
+
+def _status_counts(r):
+    return r.count_status() if hasattr(r, "count_status") else {"required": 0, "recommended": 0, "conditional": 0, "not_required": 0}
+
+def _required_headers(r, limit=20):
+    rows = []
+    for ch in r.chapters:
+        seen = set()
+        for blk in ch.blocks:
+            for it in blk.items:
+                if it.status != "required" or it.system in seen:
+                    continue
+                seen.add(it.system)
+                rows.append((ch.chapter_code, it.system, it.spec or "", it.code_ref or ""))
+                if len(rows) >= limit:
+                    return rows
+    return rows
+
+def _executive_pdf(r):
+    """Professional one-page executive summary (A4 portrait)."""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.units import mm, cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+        KeepTogether, HRFlowable, Flowable,
+    )
+    from reportlab.pdfgen import canvas as pdfcanvas
+
+    TEAL = colors.HexColor("#0F3D3E")
+    TEAL_MID = colors.HexColor("#1A5556")
+    GOLD = colors.HexColor("#C4A574")
+    INK = colors.HexColor("#1A1F1C")
+    MUTED = colors.HexColor("#5C635E")
+    RULE = colors.HexColor("#E5DFD6")
+    PAPER = colors.HexColor("#FAF8F5")
+    WHITE = colors.white
+    RED = colors.HexColor("#B42318")
+    AMBER = colors.HexColor("#B54708")
+    GREY = colors.HexColor("#667085")
+
+    b = r.building
+    tot = _status_counts(r)
+    buf = BytesIO()
+    page_w, page_h = A4
+
+    def _draw_chrome(c: pdfcanvas.Canvas, doc):
+        c.saveState()
+        # Top banner
+        c.setFillColor(TEAL)
+        c.rect(0, page_h - 32 * mm, page_w, 32 * mm, fill=1, stroke=0)
+        c.setFillColor(GOLD)
+        c.rect(0, page_h - 33.2 * mm, page_w, 1.2 * mm, fill=1, stroke=0)
+        c.setFillColor(WHITE)
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(18 * mm, page_h - 14 * mm, "UAE FIRE & LIFE SAFETY CODE 2018")
+        c.setFont("Helvetica", 8)
+        c.drawString(18 * mm, page_h - 20 * mm, "CDGH-OP-25  ·  September 2018  ·  Executive summary (design aid)")
+        c.setFont("Helvetica", 7.5)
+        c.drawRightString(page_w - 18 * mm, page_h - 14 * mm, "CONFIDENTIAL · DESIGN AID")
+        # Footer
+        c.setFillColor(RULE)
+        c.rect(18 * mm, 12 * mm, page_w - 36 * mm, 0.3, fill=1, stroke=0)
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 7)
+        proj = (b.project_name or "FLSC report")[:50]
+        c.drawString(18 * mm, 7 * mm, proj)
+        c.drawRightString(page_w - 18 * mm, 7 * mm, "Page 1 of 1  ·  Not an official Civil Defence document")
+        c.restoreState()
+
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=18 * mm, rightMargin=18 * mm,
+        topMargin=38 * mm, bottomMargin=18 * mm,
+        title=f"{b.project_name or 'UAE FLSC'} — executive summary",
+    )
+
+    title_style = ParagraphStyle("ex_title", fontName="Helvetica-Bold", fontSize=13,
+                                 textColor=TEAL, spaceAfter=2, leading=16)
+    sub_style = ParagraphStyle("ex_sub", fontName="Helvetica", fontSize=8.5,
+                                textColor=MUTED, spaceAfter=8, leading=11)
+    label = ParagraphStyle("ex_label", fontName="Helvetica-Bold", fontSize=8,
+                            textColor=MUTED, leading=10)
+    value = ParagraphStyle("ex_val", fontName="Helvetica", fontSize=9,
+                            textColor=INK, leading=11)
+    section = ParagraphStyle("ex_sec", fontName="Helvetica-Bold", fontSize=9.5,
+                              textColor=TEAL, spaceBefore=8, spaceAfter=4, leading=12)
+    body = ParagraphStyle("ex_body", fontName="Helvetica", fontSize=8.5,
+                           textColor=INK, leading=11)
+    tiny = ParagraphStyle("ex_tiny", fontName="Helvetica-Oblique", fontSize=7,
+                           textColor=MUTED, leading=9)
+    chip_lbl = ParagraphStyle("chip_l", fontName="Helvetica-Bold", fontSize=8,
+                               textColor=WHITE, alignment=1, leading=10)
+    chip_num = ParagraphStyle("chip_n", fontName="Helvetica-Bold", fontSize=12,
+                               textColor=WHITE, alignment=1, leading=14)
+
+    story = []
+    proj = b.project_name or "Fire & life safety requirements"
+    story.append(Paragraph(proj, title_style))
+    story.append(Paragraph("Executive overview of systems triggered by the building profile", sub_style))
+
+    # Status chips row
+    chip_data = [[
+        Paragraph(str(tot.get("required", 0)), chip_num),
+        Paragraph(str(tot.get("conditional", 0)), chip_num),
+        Paragraph(str(tot.get("recommended", 0)), chip_num),
+        Paragraph(str(tot.get("not_required", 0)), chip_num),
+    ], [
+        Paragraph("REQUIRED", chip_lbl),
+        Paragraph("CONDITIONAL", chip_lbl),
+        Paragraph("RECOMMENDED", chip_lbl),
+        Paragraph("NOT REQUIRED", chip_lbl),
+    ]]
+    chips = Table(chip_data, colWidths=[42 * mm, 42 * mm, 42 * mm, 42 * mm], rowHeights=[10 * mm, 6 * mm])
+    chips.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), RED),
+        ("BACKGROUND", (1, 0), (1, -1), AMBER),
+        ("BACKGROUND", (2, 0), (2, -1), TEAL_MID),
+        ("BACKGROUND", (3, 0), (3, -1), GREY),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("BOX", (0, 0), (-1, -1), 0, WHITE),
+        ("INNERGRID", (0, 0), (-1, -1), 1.5, WHITE),
+    ]))
+    story.append(chips)
+    story.append(Spacer(1, 8 * mm))
+
+    # Profile section
+    story.append(Paragraph("BUILDING PROFILE", section))
+    occ = OCCUPANCY_DEFS.get(b.occupancy, b.occupancy).split(" - ")[0]
+    datum = ("Lowest grade / Fire Service access"
+             if getattr(b, "height_datum", "grade") == "grade"
+             else "Occupiable ceiling")
+    rows = [
+        ["Occupancy", occ],
+        ["Height class", f"{b.height_m:g} m  ·  {b.height_class.replace('_', ' ').title()}"],
+        ["Height datum", datum],
+        ["Storeys", f"{b.floors_above_grade} above grade  ·  {b.floors_below_grade} basement"],
+        ["Gross floor area", f"{b.gross_floor_area_m2:,.0f} m²"],
+        ["Plot / GF BUA", f"{b.plot_area_m2:,.0f} m² plot  ·  {b.ground_floor_bua_m2:,.0f} m² GF"],
+        ["Hazard class", b.hazard_class],
+    ]
+    if r.occupant_load and r.occupant_load.occupant_load:
+        rows.append([
+            "Occupant load",
+            f"{r.occupant_load.occupant_load:,} persons  →  ≥ {r.occupant_load.min_exits} exits  (Table 3.14)",
+        ])
+    if r.fire_access:
+        rows.append(["Fire service access", f"{r.fire_access.extent}  ·  {r.fire_access.extent_ref}"])
+    if getattr(b, "construction_type", "unspecified") != "unspecified":
+        rows.append(["Construction type", b.construction_type.replace("_", " ").title()])
+    if r.mixed_occupancy_note:
+        rows.append(["Mixed occupancy", r.mixed_occupancy_note[:140]])
+
+    profile_tbl = Table(
+        [[Paragraph(k, label), Paragraph(str(v), value)] for k, v in rows],
+        colWidths=[42 * mm, 126 * mm],
+    )
+    profile_tbl.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F3F1EC")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LINEBELOW", (0, 0), (-1, -2), 0.4, RULE),
+        ("BOX", (0, 0), (-1, -1), 0.6, RULE),
+    ]))
+    story.append(profile_tbl)
+
+    # Matched branches strip
+    story.append(Paragraph("MATCHED BRANCHES", section))
+    branch_cells = []
+    for ch in r.chapters:
+        if ch.selected_branch and ch.chapter_code != "FSA":
+            branch_cells.append(
+                Paragraph(f"<b>{ch.chapter_code}</b>  {ch.selected_branch}", body)
+            )
+    if branch_cells:
+        # 2-column wrap
+        pairs = []
+        for i in range(0, len(branch_cells), 2):
+            left = branch_cells[i]
+            right = branch_cells[i + 1] if i + 1 < len(branch_cells) else Paragraph("", body)
+            pairs.append([left, right])
+        bt = Table(pairs, colWidths=[84 * mm, 84 * mm])
+        bt.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 1),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+        ]))
+        story.append(bt)
+    else:
+        story.append(Paragraph("No specific branch IDs recorded.", body))
+
+    # Required systems — neat table, top 16
+    story.append(Paragraph("KEY REQUIRED SYSTEMS", section))
+    hdr = [
+        Paragraph("<b>Ch</b>", label),
+        Paragraph("<b>System</b>", label),
+        Paragraph("<b>Specification</b>", label),
+    ]
+    sys_rows = [hdr]
+    for code, system, spec, ref in _required_headers(r, limit=16):
+        sys_rows.append([
+            Paragraph(code, body),
+            Paragraph(system[:55], body),
+            Paragraph((spec or "—")[:70], body),
+        ])
+    st = Table(sys_rows, colWidths=[14 * mm, 68 * mm, 86 * mm])
+    st.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), TEAL),
+        ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
+        ("BACKGROUND", (0, 1), (-1, -1), WHITE),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, colors.HexColor("#F7F5F1")]),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LINEBELOW", (0, 0), (-1, -2), 0.3, RULE),
+        ("BOX", (0, 0), (-1, -1), 0.6, TEAL),
+        ("LINEBEFORE", (0, 1), (0, -1), 2.5, RED),
+    ]))
+    story.append(st)
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph(
+        "This is a one-page executive extract. Use the Detailed PDF for full clauses, "
+        "code figures, and complete requirement lists.",
+        tiny,
+    ))
+    story.append(Spacer(1, 2 * mm))
+    story.append(Paragraph(DISCLAIMER, tiny))
+
+    doc.build(story, onFirstPage=_draw_chrome, onLaterPages=_draw_chrome)
+    return buf.getvalue()
+
+
+def _executive_docx(r):
+    """Professional executive Word (mirrors PDF structure)."""
+    from docx import Document
+    from docx.shared import Pt, Cm, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
+    def shade(cell, hex_color):
+        tc = cell._tePr if hasattr(cell, "_tePr") else cell._tc.get_or_add_tcPr()
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:fill"), hex_color)
+        shd.set(qn("w:val"), "clear")
+        tc.append(shd)
+
+    doc = Document()
+    style = doc.styles["Normal"]
+    style.font.name = "Calibri"
+    style.font.size = Pt(10)
+    sec = doc.sections[0]
+    sec.page_width = Cm(21.0)
+    sec.page_height = Cm(29.7)
+    sec.left_margin = Cm(1.8)
+    sec.right_margin = Cm(1.8)
+    sec.top_margin = Cm(1.6)
+    sec.bottom_margin = Cm(1.6)
+
+    b = r.building
+    tot = _status_counts(r)
+
+    head = doc.add_paragraph()
+    head.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run = head.add_run("UAE FIRE & LIFE SAFETY CODE 2018")
+    run.bold = True
+    run.font.size = Pt(14)
+    run.font.color.rgb = RGBColor(0x0F, 0x3D, 0x3E)
+
+    sub = doc.add_paragraph()
+    r2 = sub.add_run("CDGH-OP-25  ·  September 2018  ·  Executive summary (design aid)")
+    r2.italic = True
+    r2.font.size = Pt(9)
+    r2.font.color.rgb = RGBColor(0x5C, 0x63, 0x5E)
+
+    if b.project_name:
+        p = doc.add_paragraph()
+        rr = p.add_run(b.project_name)
+        rr.bold = True
+        rr.font.size = Pt(12)
+
+    # Chips as a 1x4 table
+    chips = doc.add_table(rows=2, cols=4)
+    chip_vals = [
+        (str(tot.get("required", 0)), "REQUIRED", "B42318"),
+        (str(tot.get("conditional", 0)), "CONDITIONAL", "B54708"),
+        (str(tot.get("recommended", 0)), "RECOMMENDED", "1A5556"),
+        (str(tot.get("not_required", 0)), "NOT REQUIRED", "667085"),
+    ]
+    for i, (num, lab, color) in enumerate(chip_vals):
+        c0 = chips.rows[0].cells[i]
+        c1 = chips.rows[1].cells[i]
+        c0.text = num
+        c1.text = lab
+        for c in (c0, c1):
+            for p in c.paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in p.runs:
+                    run.bold = True
+                    run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+                    run.font.size = Pt(10 if c is c0 else 8)
+            # shading
+            tc = c._tc.get_or_add_tcPr()
+            shd = OxmlElement("w:shd")
+            shd.set(qn("w:fill"), color)
+            shd.set(qn("w:val"), "clear")
+            tc.append(shd)
+
+    doc.add_paragraph()
+    h1 = doc.add_paragraph()
+    hr = h1.add_run("BUILDING PROFILE")
+    hr.bold = True
+    hr.font.color.rgb = RGBColor(0x0F, 0x3D, 0x3E)
+    hr.font.size = Pt(10)
+
+    occ = OCCUPANCY_DEFS.get(b.occupancy, b.occupancy).split(" - ")[0]
+    datum = ("Lowest grade / Fire Service access"
+             if getattr(b, "height_datum", "grade") == "grade"
+             else "Occupiable ceiling")
+    rows = [
+        ("Occupancy", occ),
+        ("Height class", f"{b.height_m:g} m · {b.height_class.replace('_', ' ').title()}"),
+        ("Height datum", datum),
+        ("Storeys", f"{b.floors_above_grade} above · {b.floors_below_grade} basement"),
+        ("GFA", f"{b.gross_floor_area_m2:,.0f} m²"),
+        ("Hazard", b.hazard_class),
+    ]
+    if r.occupant_load and r.occupant_load.occupant_load:
+        rows.append(("Occupant load", f"{r.occupant_load.occupant_load:,} → ≥ {r.occupant_load.min_exits} exits"))
+    if r.fire_access:
+        rows.append(("Fire access", r.fire_access.extent))
+
+    pt = doc.add_table(rows=len(rows), cols=2)
+    pt.style = "Table Grid"
+    for i, (k, v) in enumerate(rows):
+        pt.rows[i].cells[0].text = k
+        pt.rows[i].cells[1].text = str(v)
+        for p in pt.rows[i].cells[0].paragraphs:
+            for run in p.runs:
+                run.bold = True
+                run.font.size = Pt(9)
+        for p in pt.rows[i].cells[1].paragraphs:
+            for run in p.runs:
+                run.font.size = Pt(9)
+
+    h2 = doc.add_paragraph()
+    hr2 = h2.add_run("KEY REQUIRED SYSTEMS")
+    hr2.bold = True
+    hr2.font.color.rgb = RGBColor(0x0F, 0x3D, 0x3E)
+
+    for code, system, spec, ref in _required_headers(r, limit=16):
+        line = f"{code}  ·  {system}"
+        if spec:
+            line += f" — {spec[:80]}"
+        doc.add_paragraph(line, style="List Bullet")
+
+    disc = doc.add_paragraph()
+    dr = disc.add_run(DISCLAIMER)
+    dr.italic = True
+    dr.font.size = Pt(8)
+    dr.font.color.rgb = RGBColor(0x5C, 0x63, 0x5E)
+
+    buf = BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def report_to_xlsx_bytes(r):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+    wb = Workbook(); ws = wb.active; ws.title = "Required systems"
+    headers = ["Chapter", "Chapter title", "Block", "System", "Status", "Spec", "Detail", "Code ref", "Page", "Source rule"]
+    ws.append(headers)
+    hf = Font(bold=True, color="FFFFFF"); hfill = PatternFill("solid", fgColor="163A3A")
+    for col, _ in enumerate(headers, 1):
+        c = ws.cell(1, col); c.font = hf; c.fill = hfill
+    fills = {"required": PatternFill("solid", fgColor="F8D7DA"), "recommended": PatternFill("solid", fgColor="D6EAF8"),
+             "conditional": PatternFill("solid", fgColor="FCF3CF"), "not_required": PatternFill("solid", fgColor="EAECEE")}
+    for ch in r.chapters:
+        for blk in ch.blocks:
+            for it in blk.items:
+                ws.append([ch.chapter_code, ch.chapter_title, blk.title, it.system, it.status,
+                           it.spec or "", (it.detail or "")[:500], it.code_ref or "", it.page_ref or "", it.source_rule or ""])
+                if it.status in fills:
+                    ws.cell(ws.max_row, 5).fill = fills[it.status]
+    wp = wb.create_sheet("Profile", 0); wp.append(["Field", "Value"]); wp["A1"].font = hf; wp["B1"].font = hf; wp["A1"].fill = hfill; wp["B1"].fill = hfill
+    b = r.building
+    for k, v in [("Project", b.project_name or ""), ("Occupancy", b.occupancy), ("Height m", b.height_m),
+                 ("Height class", b.height_class), ("Height datum", getattr(b, "height_datum", "grade")),
+                 ("GFA m2", b.gross_floor_area_m2), ("Hazard", b.hazard_class)]:
+        wp.append([k, v])
+    if r.occupant_load:
+        wp.append(["Occupant load", r.occupant_load.occupant_load])
+        wp.append(["Min exits", r.occupant_load.min_exits])
+    if r.fire_access:
+        wp.append(["Fire access", r.fire_access.extent])
+    try:
+        from submission_checklist import build_submission_checklist
+        wc = wb.create_sheet("CD checklist"); wc.append(["Required?", "Package", "Note"])
+        for c in wc[1]:
+            c.font = hf; c.fill = hfill
+        for pkg, note, req in build_submission_checklist(r):
+            wc.append(["YES" if req else "optional", pkg, note])
+    except Exception:
+        pass
+    for col, width in enumerate([12, 28, 28, 42, 14, 42, 50, 22, 12, 22], 1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+    buf = BytesIO(); wb.save(buf); return buf.getvalue()

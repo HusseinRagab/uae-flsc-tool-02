@@ -140,8 +140,10 @@ class Building(BaseModel):
     project_name: str = Field("", description="Project reference")
     occupancy: Occupancy
     secondary_occupancies: List[Occupancy] = Field(default_factory=list)
+    mixed_occupancy_mode: Literal["none", "most_restrictive", "separated"] = "none"
 
     height_m: float = 0.0
+    height_datum: Literal["grade", "occupiable_ceiling"] = "grade"
     floors_above_grade: int = 1
     floors_below_grade: int = 0
     depth_below_grade_m: float = 0.0   # SC Ch 10 - >7 m underground trigger (Table 10.22)
@@ -151,6 +153,10 @@ class Building(BaseModel):
     plot_area_m2: float = 0.0
     corridor_length_m: float = 0.0     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
     assembly_area_m2: float = 0.0      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
+
+    construction_type: Literal[
+        "unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"
+    ] = "unspecified"
 
     hazard_class: Literal["LH", "OH1", "OH2", "HH"] = "OH1"
 
@@ -344,6 +350,32 @@ class HighCeilingSpec(BaseModel):
     note: Optional[str] = None
 
 
+
+
+class OccupantLoadSummary(BaseModel):
+    """Table 3.13 factor → OL → Table 3.14 min exits."""
+    area_m2: float = 0.0
+    factor_m2_per_person: float = 0.0
+    factor_ref: str = ""
+    occupant_load: int = 0
+    min_exits: int = 2
+    exit_ref: str = ""
+    note: str = ""
+
+
+class FireAccessSummary(BaseModel):
+    """Ch 2 vehicle access extent and clearances."""
+    accessway_width_m: float = 6.0
+    vertical_clearance_m: float = 4.5
+    max_distance_entrance_m: float = 15.0
+    max_distance_breeching_m: float = 18.0
+    max_road_grade_pct: float = 10.0
+    extent: str = ""
+    extent_ref: str = ""
+    footprint_m2: float = 0.0
+    sprinklered_assumed: bool = True
+    notes: List[str] = Field(default_factory=list)
+
 class SectionBlock(BaseModel):
     """One titled group of requirements in a chapter result."""
     title: str                                 # already prefix-tagged (e.g. "FP - General ...")
@@ -364,7 +396,10 @@ class ComplianceReport(BaseModel):
     chapters: List[ChapterReport] = Field(default_factory=list)
     requires_wet_riser: bool = False
     high_ceiling: Optional[HighCeilingSpec] = None
-    attached_parking_chapters: List[ChapterReport] = Field(default_factory=list)  # parking sub-occupancy when has_parking_area + non-parking main occupancy
+    attached_parking_chapters: List[ChapterReport] = Field(default_factory=list)
+    occupant_load: Optional[OccupantLoadSummary] = None
+    fire_access: Optional[FireAccessSummary] = None
+    mixed_occupancy_note: Optional[str] = None
 
     def chapter(self, code: str) -> Optional[ChapterReport]:
         return next((c for c in self.chapters if c.chapter_code == code), None)
@@ -376,3 +411,11 @@ class ComplianceReport(BaseModel):
     @property
     def es(self) -> Optional[ChapterReport]:
         return self.chapter("ES")
+
+    def count_status(self) -> Dict[str, int]:
+        tot = {"required": 0, "recommended": 0, "conditional": 0, "not_required": 0}
+        for ch in self.chapters:
+            for blk in ch.blocks:
+                for it in blk.items:
+                    tot[it.status] = tot.get(it.status, 0) + 1
+        return tot

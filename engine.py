@@ -23,8 +23,12 @@ import yaml
 
 from flsc_schema import (
     Building, ChapterReport, ComplianceReport, HighCeilingSpec,
-    Requirement, SectionBlock, occupancy_group,
+    Requirement, SectionBlock, occupancy_group, default_hazard,
 )
+from occupant_load import compute_occupant_load
+from fire_access import evaluate_fire_access, compute_fire_access
+from accessibility import evaluate_accessibility
+from eap import evaluate_eap
 
 RULES_DIR = Path(__file__).parent / "rules"
 
@@ -700,11 +704,14 @@ _EMPTY_CHAPTER_NOTES = {
 }
 
 _CHAPTER_CODE_REF = {
+    "FSA": "UAE FLSC 2018 Ch 2",
     "MOE": "UAE FLSC 2018 Ch 3",  "FE": "UAE FLSC 2018 Ch 4",
     "ES":  "UAE FLSC 2018 Ch 5",  "EL": "UAE FLSC 2018 Ch 6",
     "EVC": "UAE FLSC 2018 Ch 7",  "FA": "UAE FLSC 2018 Ch 8",
     "FP":  "UAE FLSC 2018 Ch 9",  "SC": "UAE FLSC 2018 Ch 10",
     "LPG": "UAE FLSC 2018 Ch 11",
+    "ACC": "UAE FLSC 2018 Ch 15",
+    "EAP": "UAE FLSC 2018 Ch 19",
 }
 
 
@@ -731,6 +738,27 @@ def _ensure_chapter_not_blank(ch: ChapterReport, b: Building) -> None:
     ))
 
 
+
+def _mixed_occupancy_note(b: Building) -> Optional[str]:
+    if not b.secondary_occupancies and b.mixed_occupancy_mode == "none":
+        return None
+    secs = ", ".join(b.secondary_occupancies) if b.secondary_occupancies else "(none listed)"
+    if b.mixed_occupancy_mode == "separated":
+        return (
+            f"Mixed occupancy treated as SEPARATED (Ch 1 §2.5). Secondary: {secs}. "
+            "Provide fire-barrier ratings per Table 1.2 between occupancy compartments."
+        )
+    if b.mixed_occupancy_mode == "most_restrictive" or b.secondary_occupancies:
+        rank = {"LH": 0, "OH1": 1, "OH2": 2, "HH": 3}
+        hazards = [default_hazard(b.occupancy)] + [default_hazard(o) for o in b.secondary_occupancies]
+        top = max(hazards, key=lambda h: rank.get(h, 0))
+        return (
+            f"Mixed occupancy treated as MOST RESTRICTIVE (Ch 1 §2.4). Secondary: {secs}. "
+            f"Highest default hazard among listed occupancies: {top}."
+        )
+    return None
+
+
 def evaluate(b: Building) -> ComplianceReport:
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
@@ -742,6 +770,9 @@ def evaluate(b: Building) -> ComplianceReport:
     fp_rules  = load_rules("ch9_fire_protection.yaml")
     sc_rules  = load_rules("ch10_smoke_control.yaml")
     lpg_rules = load_rules("ch11_lpg.yaml")
+
+    wet = _branch_requires_wet_riser(fp_rules, b)
+    chapters.append(evaluate_fire_access(b, requires_wet_riser=wet))
 
     # MOE -> FE -> ES -> EL -> EVC -> FA -> FP -> SC -> LPG - chapter-number order.
     if moe_rules:
@@ -763,6 +794,14 @@ def evaluate(b: Building) -> ComplianceReport:
     if lpg_rules:
         chapters.append(evaluate_lpg(b, lpg_rules))
 
+    # Ch 15 Accessibility + Ch 19 EAP (light modules)
+    chapters.append(evaluate_accessibility(b))
+    chapters.append(evaluate_eap(b))
+
+    for ch in chapters:
+        for blk in ch.blocks:
+            blk.items = _dedupe(blk.items)
+
     # Attached parking sub-evaluation: when the main occupancy is NOT itself parking
     # but the building has an in-building parking area, run a parallel evaluation
     # using a synthetic parking Building so all parking-specific requirements surface.
@@ -780,12 +819,18 @@ def evaluate(b: Building) -> ComplianceReport:
     for ch in attached:
         _ensure_chapter_not_blank(ch, b)
 
+    ol = compute_occupant_load(b)
+    fa_summary = compute_fire_access(b, requires_wet_riser=wet)
+
     return ComplianceReport(
         building=b,
         chapters=chapters,
-        requires_wet_riser=_branch_requires_wet_riser(fp_rules, b),
+        requires_wet_riser=wet,
         high_ceiling=_eval_high_ceiling(fp_rules, b),
         attached_parking_chapters=attached,
+        occupant_load=ol,
+        fire_access=fa_summary,
+        mixed_occupancy_note=_mixed_occupancy_note(b),
     )
 
 

@@ -23,8 +23,32 @@ import streamlit as st
 
 from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
 from engine import evaluate, report_to_markdown, build_rule_lookup
-from export import report_to_docx_bytes, report_to_pdf_bytes
+from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
+from submission_checklist import build_submission_checklist
+
+# Bilingual chapter titles (EN / AR) for report headings
+CHAPTER_AR = {
+    "FSA": "الوصول لمركبات الدفاع المدني",
+    "MOE": "وسائل الهروب",
+    "FE": "طفايات الحريق",
+    "ES": "لافتات المخارج",
+    "EL": "الإضاءة الطارئة",
+    "EVC": "نظام الإخلاء الصوتي",
+    "FA": "كشف وإنذار الحريق",
+    "FP": "أنظمة الحماية من الحريق",
+    "SC": "التحكم في الدخان",
+    "LPG": "غاز البترول المسال",
+    "ACC": "إمكانية الوصول",
+    "EAP": "خطط الطوارئ والإخلاء",
+}
+
+def chapter_heading(code: str, title: str, bilingual: bool = True) -> str:
+    ar = CHAPTER_AR.get(code, "")
+    if bilingual and ar:
+        return f"{code} — {title}  ·  {ar}"
+    return f"{code} — {title}"
+
 
 
 def _call_export(fn, report, kind: str):
@@ -552,6 +576,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.title("UAE FLSC 2018 - Fire & Life Safety Requirements")
+bilingual_headings = st.checkbox("Bilingual chapter headings (EN + AR)", value=True, key="bilingual_headings")
+wizard_mode = st.toggle("Guided mode (3 steps)", value=False, key="wizard_mode",
+    help="Step through Profile → Special systems → Report & export")
+if "wizard_step" not in st.session_state:
+    st.session_state.wizard_step = 1
 st.caption("CDGH-OP-25, September 2018  |  Chapters loaded: MOE (Ch 3), FE (Ch 4), ES (Ch 5), EL (Ch 6), EVC (Ch 7), FA (Ch 8), FP (Ch 9), SC (Ch 10), LPG (Ch 11)")
 
 _HERO = Path(__file__).parent / "assets" / "hero.jpg"
@@ -707,6 +736,7 @@ with st.sidebar:
     with st.expander("📍 Jump to OUTPUT section", expanded=False):
         st.markdown(
             "Click to scroll the main report:\n\n"
+            "- [FSA - Fire Service Access](#ch-fsa)\n"
             "- [MOE - Means of Egress](#ch-moe)\n"
             "- [FE - Fire Extinguishers](#ch-fe)\n"
             "- [ES - Exit Signs](#ch-es)\n"
@@ -782,6 +812,13 @@ with st.sidebar:
 
     st.subheader("📐 Geometry")
     st.caption("Above-grade left, below-grade + plot right.")
+    height_datum = st.radio(
+        "Height datum (FAQ Annexure 1)",
+        options=["grade", "occupiable_ceiling"],
+        format_func=lambda x: "Lowest grade / Fire Service access" if x == "grade" else "Ceiling of highest occupiable space",
+        horizontal=True, key="height_datum_input",
+        help="Use the same datum the Civil Defence reviewer will use at the 23 m / 90 m boundaries.",
+    )
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("**Above-grade**")
@@ -825,6 +862,23 @@ with st.sidebar:
 
     derived_hazard = default_hazard(occupancy)
     st.caption(f"Hazard class (auto-derived from occupancy): **{derived_hazard}**")
+    with st.expander("Mixed occupancy + construction type (Ch 1)", expanded=False):
+        st.selectbox(
+            "Mixed occupancy mode (Ch 1 §2.4–2.5)",
+            options=["none", "most_restrictive", "separated"],
+            format_func=lambda x: {
+                "none": "Single occupancy (default)",
+                "most_restrictive": "Most restrictive package (intermingled)",
+                "separated": "Separated by fire barriers (Table 1.2)",
+            }[x],
+            key="mixed_occupancy_mode_input",
+        )
+        st.selectbox(
+            "Construction type (Ch 1 §2.6 — reporting aid)",
+            options=["unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"],
+            format_func=lambda x: x.replace("_", " ").title() if x != "unspecified" else "Not specified",
+            key="construction_type_input",
+        )
     with st.expander("Override hazard class (advanced)"):
         hazard = st.selectbox("Hazard class", ["LH", "OH1", "OH2", "HH"],
                               index=["LH", "OH1", "OH2", "HH"].index(derived_hazard))
@@ -1170,6 +1224,9 @@ def gs(k):
 
 building = Building(
     project_name=project_name, occupancy=occupancy, height_m=height_m,
+    height_datum=st.session_state.get("height_datum_input", "grade"),
+    mixed_occupancy_mode=st.session_state.get("mixed_occupancy_mode_input", "none"),
+    construction_type=st.session_state.get("construction_type_input", "unspecified"),
     floors_above_grade=int(floors_above), floors_below_grade=int(floors_below),
     depth_below_grade_m=float(depth_below_grade),
     gross_floor_area_m2=gfa, ground_floor_bua_m2=ground_bua,
@@ -1291,6 +1348,67 @@ st.markdown(
 """, unsafe_allow_html=True
 )
 st.caption(f"**Occupancy:** `{occupancy}` - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
+
+_ol = report.occupant_load
+_fa = report.fire_access
+_tot = report.count_status()
+d1, d2, d3, d4 = st.columns(4)
+with d1:
+    st.metric("Height class", building.height_class.replace("_", " "))
+    st.caption(f"Datum: {getattr(building, 'height_datum', 'grade').replace('_', ' ')}")
+with d2:
+    st.metric("Occupant load", f"{_ol.occupant_load if _ol else '—'}")
+    st.caption(f"≥ {_ol.min_exits if _ol else 2} exits (Table 3.14)" if _ol else "")
+with d3:
+    st.metric("Required systems", _tot.get("required", 0))
+    st.caption(f"Conditional {_tot.get('conditional', 0)}")
+with d4:
+    st.metric("Fire access", ((_fa.extent or "—")[:28] if _fa else "—"))
+    st.caption(_fa.extent_ref if _fa else "")
+if _ol and _ol.note:
+    st.caption(f"OL: {_ol.note}")
+if report.mixed_occupancy_note:
+    st.info(report.mixed_occupancy_note)
+
+# ---------- Scenario A vs B compare ------------------------------------------
+with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False):
+    st.caption("Quick what-if: keep current profile as A, edit B, compare required counts.")
+    sc1, sc2 = st.columns(2)
+    with sc1:
+        st.markdown("**Scenario A (current)**")
+        st.write(f"Occupancy: `{building.occupancy}`")
+        st.write(f"Height: {building.height_m:g} m → **{building.height_class}**")
+        st.write(f"Required systems: **{_tot.get('required', 0)}**")
+        if _ol:
+            st.write(f"OL: {_ol.occupant_load} → ≥ {_ol.min_exits} exits")
+    with sc2:
+        st.markdown("**Scenario B**")
+        b_occ = st.selectbox("B occupancy", options=list(OCCUPANCY_DEFS.keys()),
+                             index=list(OCCUPANCY_DEFS.keys()).index(building.occupancy)
+                             if building.occupancy in OCCUPANCY_DEFS else 0,
+                             key="scenario_b_occ")
+        b_h = st.number_input("B height (m)", min_value=0.0, value=float(building.height_m),
+                              step=1.0, key="scenario_b_height")
+        if st.button("Run comparison", key="run_scenario_compare"):
+            from flsc_schema import default_hazard as _dh
+            b_building = building.model_copy(update={
+                "occupancy": b_occ,
+                "height_m": float(b_h),
+                "hazard_class": _dh(b_occ),
+            })
+            b_report = evaluate(b_building)
+            b_tot = b_report.count_status()
+            st.success(
+                f"B → **{b_building.height_class}** · Required **{b_tot.get('required', 0)}** "
+                f"(Δ {b_tot.get('required', 0) - _tot.get('required', 0):+d} vs A)"
+            )
+            if b_report.occupant_load:
+                st.caption(
+                    f"B OL: {b_report.occupant_load.occupant_load} → "
+                    f"≥ {b_report.occupant_load.min_exits} exits"
+                )
+
+
 
 # ---------- Special-rooms / flags summary chip strip (Tier 3 UI #12) ---------
 # Shows at a glance which Special Rooms / Various Locations / Equipment flags
@@ -1961,8 +2079,31 @@ with col_right:
                 use_container_width=True,
                 help="Full evaluation + code figures",
             )
+        st.download_button(
+            "Executive PDF (1-page)",
+            data=_call_export(report_to_pdf_bytes, report, "executive"),
+            file_name=f"{fname_stem}_FLSC_executive.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            help="Profile, OL, top required systems",
+        )
     except Exception as e:
         st.warning(f"PDF export needs reportlab: {e}")
+    try:
+        st.download_button(
+            "Excel system schedule (.xlsx)",
+            data=report_to_xlsx_bytes(report),
+            file_name=f"{fname_stem}_FLSC_systems.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            help="Profile + every requirement + CD checklist",
+        )
+        st.caption("Downloads go to your browser’s download folder.")
+    except Exception as e:
+        st.warning(f"Excel export needs openpyxl: {e}")
+    with st.expander("CD drawing submission checklist (Annexure 2)", expanded=False):
+        for pkg, note, req in build_submission_checklist(report):
+            st.markdown(f"{'☑' if req else '☐'} **{pkg}** — {note}")
 
 st.caption(
     "All UAE FLSC life-safety chapters loaded: MOE (Ch 3), FE (Ch 4), ES (Ch 5), EL (Ch 6), "

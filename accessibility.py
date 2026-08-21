@@ -42,15 +42,15 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
             ),
             Requirement(
                 system="Accessible parking",
-                status="conditional",
-                spec="Accessible bays + access aisles per Table 15.2 when parking is provided",
+                status="required" if b.has_parking_area else "conditional",
+                spec="Accessible bays + access aisles per Table 15.2; aisles adjoin accessible route",
                 code_ref="Ch 15, Table 15.2",
                 page_ref="p.1095+",
                 source_rule="acc_parking",
             ),
             Requirement(
                 system="Accessible stair features",
-                status="required",
+                status="required" if b.has_stairs else "not_required",
                 spec="Nosings, handrails, contrast, and tactile warning per Table 15.3",
                 code_ref="Ch 15, Table 15.3",
                 page_ref="p.1096+",
@@ -65,7 +65,7 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
                 source_rule="acc_av_signs",
             ),
         ])
-        if b.height_class in ("highrise", "super_highrise") or getattr(b, "has_evacuation_elevator", False):
+        if b.height_class in ("highrise", "super_highrise") or b.has_evacuation_elevator:
             items.append(Requirement(
                 system="Area of refuge / evacuation elevator access",
                 status="required",

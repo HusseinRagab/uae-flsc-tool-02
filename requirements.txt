@@ -4,4 +4,4 @@ pyyaml
 python-docx
 reportlab
 openpyxl
-# force Streamlit Cloud rebuild 2026-08-21 phase C
+# force Streamlit Cloud rebuild 2026-08-21 enhancements
