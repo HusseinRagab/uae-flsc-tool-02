@@ -1,8 +1,37 @@
-# Streamlit config — suppress auto-opening the default browser so run.py
-# can open Chrome explicitly.
+# Streamlit config — headless so run.py can open the browser explicitly,
+# plus the full visual theme for the FLSC compliance console.
 
 [server]
 headless = true
 
 [browser]
 gatherUsageStats = false
+
+# ---------------------------------------------------------------------------
+# Theme — light "engineering console" main area with a deep-navy sidebar.
+# Fonts (Inter / IBM Plex Mono / Noto Kufi Arabic) are loaded via @import in
+# ui.py; the config only points the CSS variables at them.
+# ---------------------------------------------------------------------------
+[theme]
+base = "light"
+primaryColor = "#C8102E"
+backgroundColor = "#F4F6F9"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1B2532"
+linkColor = "#1D4ED8"
+font = "Inter, 'Segoe UI', sans-serif"
+headingFont = "Inter, 'Segoe UI', sans-serif"
+codeFont = "'IBM Plex Mono', 'Source Code Pro', monospace"
+baseRadius = "10px"
+buttonRadius = "10px"
+borderColor = "#E2E8F0"
+showWidgetBorder = true
+showSidebarBorder = false
+
+[theme.sidebar]
+backgroundColor = "#101F38"
+secondaryBackgroundColor = "#1B3153"
+textColor = "#E8EDF5"
+borderColor = "#2C456B"
+primaryColor = "#F0A43B"
+linkColor = "#9EC5FF"

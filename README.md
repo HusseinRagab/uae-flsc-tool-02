@@ -35,7 +35,9 @@ python tests/test_cases.py
 ## Structure
 
 ```
-├── app.py                          Streamlit UI
+├── app.py                          Streamlit UI (inputs + report logic)
+├── ui.py                           Presentation layer: theme CSS, hero, badges, cards, TOC
+├── .streamlit/config.toml          Theme (fonts, colors, dark sidebar)
 ├── engine.py                       YAML rule evaluator + markdown renderer
 ├── flsc_schema.py                  Pydantic Building / Requirement models
 ├── export.py                       DOCX / PDF exporters
