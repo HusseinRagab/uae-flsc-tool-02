@@ -17,15 +17,19 @@ only items truly unique to that chapter.
 from __future__ import annotations
 
 import inspect
+import json as _json
+import re as _re
 from pathlib import Path
 
 import streamlit as st
+import yaml as _yaml
 
 from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
 from submission_checklist import build_submission_checklist
+import ui
 
 # Bilingual chapter titles (EN / AR) for report headings
 CHAPTER_AR = {
@@ -539,62 +543,15 @@ PRINT_MODE = str(st.query_params.get("print", "0")) == "1"
 
 st.set_page_config(
     page_title="UAE FLSC 2018 - Fire & Life Safety",
-    page_icon="FP",
+    page_icon="🧯",
     layout="wide",
     initial_sidebar_state="collapsed" if PRINT_MODE else "expanded",
 )
-if PRINT_MODE:
-    # Hide the sidebar entirely + tighten margins for print.
-    st.markdown(
-        """
-        <style>
-          [data-testid="stSidebar"], [data-testid="collapsedControl"] { display: none !important; }
-          .main .block-container { max-width: 950px; padding-top: 1rem; }
-          @media print {
-            .stExpander { page-break-inside: avoid; }
-            .stDownloadButton, .stButton { display: none !important; }
-          }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-st.markdown(
-    """
-    <div style="font-size:1.05rem; margin-bottom:0.5rem;">
-      Created by <strong>Hussein Ragab</strong> ·
-      <a href="https://www.linkedin.com/in/husseinragab" target="_blank"
-         style="text-decoration:none; vertical-align:middle;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-             width="22" height="22" fill="#0A66C2"
-             style="vertical-align:-5px; margin:0 4px;">
-          <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.65-1.85 3.4-1.85 3.64 0 4.31 2.4 4.31 5.51v6.23zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/>
-        </svg>
-        LinkedIn
-      </a>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-st.title("UAE FLSC 2018 - Fire & Life Safety Requirements")
-bilingual_headings = st.checkbox("Bilingual chapter headings (EN + AR)", value=True, key="bilingual_headings")
-wizard_mode = st.toggle("Guided mode (3 steps)", value=False, key="wizard_mode",
-    help="Step through Profile → Special systems → Report & export")
-if "wizard_step" not in st.session_state:
-    st.session_state.wizard_step = 1
-st.caption("CDGH-OP-25, September 2018  |  Chapters loaded: MOE (Ch 3), FE (Ch 4), ES (Ch 5), EL (Ch 6), EVC (Ch 7), FA (Ch 8), FP (Ch 9), SC (Ch 10), LPG (Ch 11)")
-
-_HERO = Path(__file__).parent / "assets" / "hero.jpg"
-if not PRINT_MODE and _HERO.exists():
-    st.image(
-        str(_HERO),
-        use_container_width=True,
-        caption="Landing art only — not part of the compliance report or PDF/Word export.",
-    )
-
-# ----- Top disclaimer one-liner (full text in the footer) -----
-st.caption(
-    "⚖️ **Design aid only** — not a substitute for UAE Civil Defence review or a "
-    "registered Fire Protection Engineer. Full disclaimer at the bottom of the report."
+ui.inject_css(PRINT_MODE)
+ui.render_hero(PRINT_MODE)
+bilingual_headings = st.checkbox(
+    "Bilingual chapter headings (EN + AR)", value=True, key="bilingual_headings",
+    help="Show the Arabic chapter title under each English chapter heading in the report.",
 )
 
 # ----- First-run orientation: how to use + 'this is a sample' note -----
@@ -616,6 +573,7 @@ with st.expander("ℹ️ New here? How to use this tool (3 steps)", expanded=Fal
 
 
 with st.sidebar:
+    ui.render_sidebar_brand()
     # ----- Quick start: archetype presets -----
     with st.expander("⚡ Quick start - load an archetype", expanded=False):
         st.selectbox(
@@ -637,7 +595,6 @@ with st.sidebar:
 
     with st.expander("💾 Save / Load scenario", expanded=False):
         # ----- Save -----
-        import json as _json
         _save_keys = [
             # Geometry
             "height_m_input", "floors_above_input", "floors_below_input",
@@ -1340,12 +1297,16 @@ fp_b, fp_s   = _branch("FP")
 sc_b, sc_s   = _branch("SC")
 lpg_b, lpg_s = _branch("LPG")
 
+st.markdown("### Building classification")
 st.markdown(
-    f"""### Building classification
-| Class | Cat | MOE | FE | ES | EL | EVC | FA | FP | SC | LPG |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **{building.height_class}** | {building.building_category} | `{moe_b or '-'}` | `{fe_b or '-'}` | `{es_b or '-'}` | `{el_b or '-'}` | `{evc_b or '-'}` | `{fa_b or '-'}` | `{fp_b or '-'}` | `{sc_b or '-'}` | `{lpg_b or '-'}` |
-""", unsafe_allow_html=True
+    ui.classification_html(
+        building.height_class,
+        building.building_category,
+        [("MOE", moe_b), ("FE", fe_b), ("ES", es_b), ("EL", el_b),
+         ("EVC", evc_b), ("FA", fa_b), ("FP", fp_b), ("SC", sc_b),
+         ("LPG", lpg_b)],
+    ),
+    unsafe_allow_html=True,
 )
 st.caption(f"**Occupancy:** `{occupancy}` - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
 
@@ -1363,8 +1324,9 @@ with d3:
     st.metric("Required systems", _tot.get("required", 0))
     st.caption(f"Conditional {_tot.get('conditional', 0)}")
 with d4:
-    st.metric("Fire access", ((_fa.extent or "—")[:28] if _fa else "—"))
+    st.metric("Fire access", ((_fa.extent or "—")[:40] if _fa else "—"))
     st.caption(_fa.extent_ref if _fa else "")
+st.markdown(ui.status_summary_html(_tot), unsafe_allow_html=True)
 if _ol and _ol.note:
     st.caption(f"OL: {_ol.note}")
 if report.mixed_occupancy_note:
@@ -1390,11 +1352,10 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
         b_h = st.number_input("B height (m)", min_value=0.0, value=float(building.height_m),
                               step=1.0, key="scenario_b_height")
         if st.button("Run comparison", key="run_scenario_compare"):
-            from flsc_schema import default_hazard as _dh
             b_building = building.model_copy(update={
                 "occupancy": b_occ,
                 "height_m": float(b_h),
-                "hazard_class": _dh(b_occ),
+                "hazard_class": default_hazard(b_occ),
             })
             b_report = evaluate(b_building)
             b_tot = b_report.count_status()
@@ -1691,9 +1652,6 @@ _RULE_LOOKUP = _cached_rule_lookup()
 # The data files are NOT bundled in the repo (Civil Defence text — leave
 # distribution to the user). The helper degrades silently when files are absent.
 
-import re as _re
-from pathlib import Path as _Path
-
 
 @st.cache_data(show_spinner=False)
 def _load_chapter_text(chapter_code: str) -> str:
@@ -1705,7 +1663,7 @@ def _load_chapter_text(chapter_code: str) -> str:
     ch_num = chapter_num_map.get(chapter_code)
     if not ch_num:
         return ""
-    here = _Path(__file__).parent
+    here = Path(__file__).parent
     candidates = [
         here / "data" / "code_excerpts" / f"ch{ch_num}.txt",
         here / ".." / "_extracted" / f"ch{ch_num}.txt",
@@ -1749,9 +1707,9 @@ def render_block(title, items, allowed_statuses: set, text_q: str,
         return
     st.subheader(title)
     for req in items:
-        emoji, label = _STATUS_BADGE.get(req.status, _STATUS_BADGE["required"])
         with st.container(border=True):
-            st.markdown(f"{emoji} `{label}` **{req.system}**")
+            st.markdown(ui.requirement_head(req.status, req.system),
+                        unsafe_allow_html=True)
             if req.spec:
                 st.markdown(f"**Spec:** {req.spec}")
             if req.detail:
@@ -1794,8 +1752,7 @@ def render_block(title, items, allowed_statuses: set, text_q: str,
 
 def _format_match_yaml(match: dict) -> str:
     """Pretty-print a match/when dict as a small YAML snippet."""
-    import yaml as _y
-    return _y.safe_dump(match, sort_keys=False, default_flow_style=False).strip()
+    return _yaml.safe_dump(match, sort_keys=False, default_flow_style=False).strip()
 
 
 _OP_SUFFIX_LABEL = {
@@ -1881,13 +1838,7 @@ def _human_match(match: dict) -> str:
 
 
 # ---------- Status legend (Tier-1 UI #1) -------------------------------------
-st.markdown(
-    "**Status legend:** "
-    "🔴 `REQUIRED` (code 'shall') · "
-    "🔵 `RECOMMENDED` (code 'should') · "
-    "🟡 `CONDITIONAL` (subject to project context) · "
-    "⚪ `NOT REQUIRED` (exemption captured for traceability)"
-)
+st.markdown(ui.legend_html(), unsafe_allow_html=True)
 
 # ---------- Filter bar (Tier-1 UI #2) ----------------------------------------
 _filt_c1, _filt_c2 = st.columns([2, 3])
@@ -1925,8 +1876,14 @@ with col_left:
         if not any(_filter_items(blk.items, _allowed_set, _text_q)
                    for blk in ch.blocks):
             continue
-        st.markdown(f"<a name='ch-{ch.chapter_code.lower()}'></a>", unsafe_allow_html=True)
-        st.markdown(f"## {ch.chapter_code} - {ch.chapter_title}")
+        st.markdown(
+            ui.chapter_header(
+                ch.chapter_code, ch.chapter_title,
+                arabic=CHAPTER_AR.get(ch.chapter_code) if bilingual_headings else None,
+                anchor=f"ch-{ch.chapter_code.lower()}",
+            ),
+            unsafe_allow_html=True,
+        )
         if ch.selected_branch:
             _human = _human_match(
                 (_RULE_LOOKUP.get(ch.selected_branch) or {}).get("match", {})
@@ -1951,17 +1908,30 @@ with col_left:
     # ---------- Attached parking sub-occupancy section ----------
     if report.attached_parking_chapters:
         st.markdown("---")
-        st.markdown("<a name='attached-parking'></a>", unsafe_allow_html=True)
         kind = report.building.attached_parking_kind
         synth_occ = "parking_open" if kind == "open" else "parking_enclosed"
-        st.markdown(f"# ATTACHED PARKING AREA")
+        st.markdown(
+            ui.chapter_header(
+                "🅿", "Attached Parking Area",
+                arabic="منطقة مواقف السيارات الملحقة" if bilingual_headings else None,
+                anchor="attached-parking", parking=True,
+            ),
+            unsafe_allow_html=True,
+        )
         st.caption(f"Sub-occupancy evaluation as `{synth_occ}` (driven by **Building has parking** in Special rooms and usage). "
                    "All parking-specific requirements from MOE / FE / ES / EL / FA / FP / SC are surfaced here.")
         for ch in report.attached_parking_chapters:
             if not any(_filter_items(blk.items, _allowed_set, _text_q)
                        for blk in ch.blocks):
                 continue
-            st.markdown(f"## P-{ch.chapter_code} - {ch.chapter_title}")
+            st.markdown(
+                ui.chapter_header(
+                    f"P-{ch.chapter_code}", ch.chapter_title,
+                    arabic=CHAPTER_AR.get(ch.chapter_code) if bilingual_headings else None,
+                    parking=True,
+                ),
+                unsafe_allow_html=True,
+            )
             if ch.selected_branch:
                 _human = _human_match(
                     (_RULE_LOOKUP.get(ch.selected_branch) or {}).get("match", {})
@@ -1999,26 +1969,21 @@ with col_left:
 with col_right:
   if not PRINT_MODE:
     # ----- Table of contents with per-chapter status counts (Tier-1 UI #3) -----
-    st.subheader("📑 Table of contents")
-    _toc = []
+    _toc_rows = []
     for ch in report.chapters:
-        anchor = ch.chapter_code.lower()
         _short = ch.chapter_title.split("(")[0].strip()
-        c = _chapter_counts(ch)
-        # Build a compact suffix: "(14 items · 🔴9 · 🔵3 · 🟡2)" — non-zero only
-        bits = [f"{c['total']} items"]
-        for s in _STATUS_ORDER:
-            if c[s]:
-                bits.append(f"{_STATUS_BADGE[s][0]}{c[s]}")
-        suffix = " · ".join(bits)
-        _toc.append(f"- [{ch.chapter_code} - {_short}](#ch-{anchor}) — _{suffix}_")
+        _toc_rows.append((f"ch-{ch.chapter_code.lower()}", ch.chapter_code,
+                          _short, _chapter_counts(ch)))
     if report.attached_parking_chapters:
-        ap_total = sum(_chapter_counts(c)["total"]
-                       for c in report.attached_parking_chapters)
-        _toc.append(f"- [⮕ ATTACHED PARKING AREA](#attached-parking) — _{ap_total} items_")
+        ap_counts = {s: 0 for s in _STATUS_ORDER}
+        for c in report.attached_parking_chapters:
+            for s, n in _chapter_counts(c).items():
+                if s in ap_counts:
+                    ap_counts[s] += n
+        _toc_rows.append(("attached-parking", "🅿", "Attached parking", ap_counts))
     if report.high_ceiling and report.high_ceiling.applies:
-        _toc.append("- [FP - High Ceiling Sprinkler Design](#high-ceiling)")
-    st.markdown("\n".join(_toc))
+        _toc_rows.append(("high-ceiling", "FP", "High-ceiling design", None))
+    st.markdown(ui.toc_html(_toc_rows), unsafe_allow_html=True)
     st.caption("Click a chapter to jump. Counts ignore the filter bar.")
 
     # Print-friendly view link (Tier 3 UI #15)
@@ -2105,12 +2070,5 @@ with col_right:
         for pkg, note, req in build_submission_checklist(report):
             st.markdown(f"{'☑' if req else '☐'} **{pkg}** — {note}")
 
-st.caption(
-    "All UAE FLSC life-safety chapters loaded: MOE (Ch 3), FE (Ch 4), ES (Ch 5), EL (Ch 6), "
-    "EVC (Ch 7), FA (Ch 8), FP (Ch 9), SC (Ch 10), LPG (Ch 11)."
-)
-
 # ---------- Disclaimer footer (Tier-1 UI #4) ---------------------------------
-st.markdown("---")
-with st.container(border=True):
-    st.markdown(f"⚖️ **Disclaimer.** {DISCLAIMER}")
+st.markdown(ui.footer_html(DISCLAIMER), unsafe_allow_html=True)
