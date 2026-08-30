@@ -4,7 +4,7 @@ Streamlit compliance tool for the UAE Fire & Life Safety Code of Practice
 (September 2018, CDGH-OP-25). Enter a building profile and get the minimum
 systems required by Chapters 3–11, with section and page citations.
 
-Live app: https://uae-flsc-tool-02-itxfbnyhtfm8omkrezp5be.streamlit.app/
+Live app: https://uae-fire-life-safety.streamlit.app/
 
 PDF export:
 - **Compact** — required system headers only
