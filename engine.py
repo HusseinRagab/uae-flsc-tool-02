@@ -609,13 +609,23 @@ CHAPTER_ORDER = [
 
 
 def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
-    """Build a synthetic parking Building (preserving height / parking area) and run every
-    chapter against it, returning a per-chapter list. Used to surface parking sub-occupancy
-    requirements when the main occupancy is non-parking but has an in-building parking area.
+    """Build a synthetic parking Building and run every chapter against it.
 
-    The PARKING AREA (parking_area_m2) drives Ch 10 SC area-based thresholds (e.g. 3600 m^2
-    make-up-air exception for enclosed parking; 4000 m^2 small-vs-large open parking split).
-    Falls back to basement BUA or ground-floor BUA when not set explicitly.
+    Used to surface parking sub-occupancy requirements when the main occupancy
+    is non-parking but has an in-building parking area.
+
+    Do not copy the host tower's habitable height or above-grade storey count.
+    Those already drive the main-building evaluation. Reusing them makes a
+    basement or podium garage match highrise FP / SC / EL overlays (wet riser,
+    firefighting lift, central battery) as if the parking itself were 45 m tall.
+    Host basement depth is preserved so Table 10.22 deep-parking triggers still
+    fire. Parking stair-pressurization stays conditional on the parking branch
+    ("when parking height > 23 m") rather than being forced by the host height.
+
+    The PARKING AREA (parking_area_m2) drives Ch 10 SC area-based thresholds
+    (e.g. 3600 m^2 make-up-air exception for enclosed parking; 4000 m^2
+    small-vs-large open parking split). Falls back to basement BUA or
+    ground-floor BUA when not set explicitly.
     """
     synth_occ = "parking_open" if b.attached_parking_kind == "open" else "parking_enclosed"
     parking_area = b.parking_area_m2 or b.basement_bua_m2 or b.ground_floor_bua_m2 or 0.0
@@ -624,8 +634,8 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
     synth = Building(
         project_name=b.project_name + " (parking sub-occupancy)" if b.project_name else "",
         occupancy=synth_occ,
-        height_m=b.height_m,
-        floors_above_grade=b.floors_above_grade,
+        height_m=0.0,
+        floors_above_grade=1,
         floors_below_grade=b.floors_below_grade,
         depth_below_grade_m=b.depth_below_grade_m,
         gross_floor_area_m2=parking_area,

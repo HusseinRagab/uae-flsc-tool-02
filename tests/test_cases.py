@@ -719,6 +719,36 @@ CASES = [
                      has_parking_area=False),
          expect_attached_parking_count=0),
 
+    # Host-tower height must not be copied onto the parking synth building.
+    # Default first-load is a 45 m residential with parking=True; before the fix
+    # attached FP/SC matched highrise_23_45 / sc_highrise (firefighting lift,
+    # wet riser, central battery) as if the garage itself were 45 m tall.
+    dict(name="AUDIT Parking: 45 m residential + enclosed parking -> FP parking_enclosed (not host highrise)",
+         inputs=dict(occupancy="residential", height_m=45, floors_above_grade=12,
+                     floors_below_grade=1, ground_floor_bua_m2=800, plot_area_m2=4000,
+                     has_parking_area=True, attached_parking_kind="enclosed"),
+         expect_attached_parking_count=7,
+         expect_attached_parking_branch_for=("FP", "parking_enclosed")),
+
+    dict(name="AUDIT Parking: 45 m residential + enclosed parking -> SC parking_enclosed (not host highrise)",
+         inputs=dict(occupancy="residential", height_m=45, floors_above_grade=12,
+                     floors_below_grade=1, ground_floor_bua_m2=800, plot_area_m2=4000,
+                     has_parking_area=True, attached_parking_kind="enclosed"),
+         expect_attached_parking_count=7,
+         expect_attached_parking_branch_for=("SC", "sc_parking_enclosed"),
+         expect_attached_parking_systems=["Mechanical Smoke Purging via Dedicated Ducting"],
+         expect_attached_parking_systems_absent=["Firefighting Lift (mandatory)"]),
+
+    dict(name="AUDIT Parking: highrise + 4 basements still triggers deep-parking stair pressurization",
+         inputs=dict(occupancy="residential", height_m=45, floors_above_grade=12,
+                     floors_below_grade=4, depth_below_grade_m=14.0,
+                     ground_floor_bua_m2=800, basement_bua_m2=2000, plot_area_m2=4000,
+                     has_parking_area=True, attached_parking_kind="enclosed"),
+         expect_attached_parking_branch_for=("SC", "sc_parking_enclosed"),
+         expect_attached_parking_systems=[
+             "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)",
+         ]),
+
     # ---- AUDIT FP: Single-tenant variants (Groups F-J) ----
     dict(name="AUDIT FP: Single-tenant LH 600 m2 -> Group F Tier 1 (45-min tank)",
          inputs=dict(occupancy="storage_industrial", is_single_tenant_storage=True,
@@ -1091,6 +1121,20 @@ def run_all():
             if not ch or ch.selected_branch != expected_branch:
                 ok = False
                 reasons.append(f"attached parking {code} branch: expected {expected_branch}, got {ch.selected_branch if ch else None}")
+        attached_names = [
+            it.system
+            for ch in r.attached_parking_chapters
+            for blk in ch.blocks
+            for it in blk.items
+        ]
+        for s in case.get("expect_attached_parking_systems", []):
+            if s not in attached_names:
+                ok = False
+                reasons.append(f"missing attached-parking system: {s}")
+        for s in case.get("expect_attached_parking_systems_absent", []):
+            if s in attached_names:
+                ok = False
+                reasons.append(f"attached-parking should not list: {s}")
 
         # ----- MOE checks -----
         moe = r.chapter("MOE")
