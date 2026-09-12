@@ -279,7 +279,40 @@ CASES = [
              "Smoke Detection and Alarm System (entire building)",
              "Sub-FACPs / Annunciators every 45 m",
              "5-Floor Phased Evacuation Alarm",
+             "Annunciator at Reception Desk",
+             "Total Evacuation Alarm Initiating Switch (Reception Desk)",
+         ],
+         forbid_fa_systems=[
+             "General Fire Alarm Does NOT Trigger Evacuation",
+             "Positive Alarm Sequence (PAS) - 120 s",
          ]),
+
+    dict(name="FA: Midrise hotel -> investigate-first 120 s PAS (not highrise overlay)",
+         inputs=dict(occupancy="hotel_a", height_m=18, floors_above_grade=5,
+                     ground_floor_bua_m2=1000, plot_area_m2=2000),
+         expect_fa_branch="fa_hotel",
+         expect_fa_systems=[
+             "General Fire Alarm Does NOT Trigger Evacuation",
+             "Positive Alarm Sequence (PAS) - 120 s",
+             "Annunciator at Reception Desk",
+         ],
+         forbid_fa_systems=["5-Floor Phased Evacuation Alarm"]),
+
+    dict(name="FA: Plant nursery -> FA not required (Table 8.13 item 28)",
+         inputs=dict(occupancy="storage_industrial", height_m=4, floors_above_grade=1,
+                     ground_floor_bua_m2=300, plot_area_m2=1000,
+                     is_plant_nursery=True),
+         expect_fa_branch="fa_nursery_plants",
+         expect_fa_systems=["Fire Detection and Alarm System NOT REQUIRED (Plant / Vegetation Nursery)"],
+         forbid_fa_systems=["Smoke Detection and Alarm System (entire building)"]),
+
+    dict(name="FA: Cold storage -> aspiration in freezers, not conventional smoke throughout",
+         inputs=dict(occupancy="storage_industrial", height_m=10, floors_above_grade=1,
+                     ground_floor_bua_m2=2000, plot_area_m2=5000,
+                     is_cold_storage=True),
+         expect_fa_branch="fa_cold_storage",
+         expect_fa_systems=["Aspiration Air Sampling (Freezer / Cold Room)"],
+         forbid_fa_systems=["Smoke Detection and Alarm System (entire building)"]),
 
     dict(name="FA: Mall -> networked sub-FACPs + per-tenant PAS",
          inputs=dict(occupancy="mall_covered", height_m=18,
@@ -1020,6 +1053,10 @@ def run_all():
             if s not in _names(_items(r, "FA", "Detection & Alarm by Occupancy")):
                 ok = False
                 reasons.append(f"missing FA branch system: {s}")
+        for s in case.get("forbid_fa_systems", []):
+            if s in _names(_items(r, "FA", "Detection & Alarm by Occupancy")):
+                ok = False
+                reasons.append(f"FA branch should not emit: {s}")
         for s in case.get("expect_fa_aux", []):
             if s not in _names(_items(r, "FA", "Auxiliary Rooms")):
                 ok = False
