@@ -223,7 +223,14 @@ branches:
       - name: "Main FACP at Continuously Attended Location (Supervisor / Security)"
 
   - id: fa_hotel
-    match: {occupancy_in: [hotel_a, hotel_b, hotel_c]}
+    # Investigate-first / 120 s PAS is Table 8.13 item 18 for hotels that are
+    # NOT on the highrise overlay. The engine collects EVERY matching branch
+    # (not first-match), so leaving this unbounded stacked those protocols on
+    # top of fa_highrise / fa_super_highrise (5-floor phased evac + 15/180/240
+    # PAS) and produced contradictory required evacuation strategies.
+    match:
+      occupancy_in: [hotel_a, hotel_b, hotel_c]
+      height_m_lte: 23
     section: "Ch 8, #5.1 / Table 8.13 item 18"
     page: "p.505"
     systems:
@@ -237,6 +244,19 @@ branches:
         detail: "If not silenced or reset within 120 s, evacuation alarm triggers throughout the hotel."
       - name: "Main FACP at Continuously Attended Location"
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
+
+  - id: fa_hotel_highrise_reception
+    # Highrise / super-highrise hotels still need the hotel-specific reception
+    # controls from Table 8.13 item 18; the height-tier overlay supplies the
+    # evacuation protocol (do not re-emit investigate-first / 120 s PAS).
+    match:
+      occupancy_in: [hotel_a, hotel_b, hotel_c]
+      height_m_gt: 23
+    section: "Ch 8, #5.1 / Table 8.13 item 18 (highrise hotel reception)"
+    page: "p.505"
+    systems:
+      - name: "Annunciator at Reception Desk"
+      - name: "Total Evacuation Alarm Initiating Switch (Reception Desk)"
 
   - id: fa_nursery_plants
     # Plant / vegetation nursery exemption (Table 8.13 item 28, p.508).
@@ -282,7 +302,13 @@ branches:
       - name: "Main FACP at Continuously Attended Location"
 
   - id: fa_storage_industrial
-    match: {occupancy: storage_industrial}
+    # Engine collects every matching branch. Nursery (item 28) and cold storage
+    # (item 21) are dedicated rows; without these exclusions they also matched
+    # the generic warehouse row (conventional smoke throughout).
+    match:
+      occupancy: storage_industrial
+      is_plant_nursery: false
+      is_cold_storage: false
     section: "Ch 8, #5.1 / Table 8.13 items 19-20"
     page: "p.506"
     systems:
