@@ -207,8 +207,12 @@ branches:
         detail: "Self-contained luminaires reporting to a central monitoring unit."
 
   - id: el_storage_industrial
+    # Table 6.5 items 7-8 sit in the mid/low-rise merged cell. Height > 23 m
+    # is Table 6.5 item 2 (central battery OR monitored). Without a height
+    # cap the engine unioned both and required monitored *and* central battery.
     match:
       occupancy: storage_industrial
+      height_m_lte: 23
     section: "Ch 6, #4.3 / Table 6.5 items 7-8"
     page: "p.419"
     systems:
@@ -216,37 +220,11 @@ branches:
         spec: "Per Table 6.3"
         detail: "Warehouses and factories - self-contained luminaires with central monitoring."
 
-  - id: el_business_lowrise
-    match:
-      occupancy: business
-      height_m_lte: 15
-    section: "Ch 6, #4.3 / Table 6.5 item 11 (Business Group C)"
-    page: "p.419"
-    systems:
-      - name: "Stand-alone Self-Contained EL (Section 3.4)"
-        spec: "Per Table 6.4 - integral battery + lamp + transfer switch in each luminaire"
-        detail: "Each luminaire is fully self-contained with internal battery and self-test. No central monitoring required at this scale."
-
-  - id: el_business_midrise_highrise
-    match:
-      occupancy: business
-      height_m_gt: 15
-    section: "Ch 6, #4.3 / Table 6.5 item 5/2 (Business above lowrise)"
-    page: "p.419"
-    systems:
-      - name: "Monitored Self-Contained EL (Section 3.3)"
-        spec: "Per Table 6.3"
-        detail: "Business occupancies above lowrise upgrade to monitored self-contained EL."
-
-  - id: el_mercantile_small
-    match:
-      occupancy: mercantile_a
-    section: "Ch 6, #4.3 / Table 6.5 item 12 (Mercantile Group C)"
-    page: "p.419"
-    systems:
-      - name: "Stand-alone Self-Contained EL (Section 3.4)"
-        spec: "Per Table 6.4"
-        detail: "Mercantile Group A (small retail up to 2 storeys, < 2,800 m²) uses stand-alone self-contained luminaires."
+  # Table 6.5 items 11-12 (Business / Mercantile Group C → stand-alone EL) are
+  # not modelled as separate schema occupancies. The audit-corrected path is
+  # el_lowrise_general / el_midrise_general / el_highrise (monitored, or
+  # central battery OR monitored above 23 m). The old Group C rows are omitted
+  # so `_collect_branch` cannot require stand-alone *and* monitored together.
 
   - id: el_fuel_dispensing
     match:

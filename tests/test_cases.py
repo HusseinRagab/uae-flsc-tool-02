@@ -79,6 +79,37 @@ CASES = [
                      ground_floor_bua_m2=5000, plot_area_m2=10000),
          expect_high_ceiling_band="13.5 m to 18 m"),
 
+    # Height > 23 m must not also pull Table 9.19. Mid/low-rise already exclude
+    # storage via occupancy_group; highrise forgot to. A 25 m / 200 m² LH
+    # warehouse would otherwise require both 50 gpm hose-reel and 750 gpm wet riser.
+    dict(name="FP: High-bay warehouse 25 m stays on storage tier (not Table 9.19)",
+         inputs=dict(occupancy="storage_industrial", height_m=25,
+                     floors_above_grade=1, ground_floor_bua_m2=200,
+                     plot_area_m2=2000, hazard_class="LH"),
+         expect_fp_branch="storage_industrial_tier1_lh",
+         expect_fp_systems=["Hose Reel System (throughout, incl. mezzanine)",
+                            "Fire Pump (Tier 1)"],
+         expect_fp_systems_absent=["Wet Riser System",
+                                   "Wet Risers Interconnected at Highest Level"]),
+
+    dict(name="FP: Plant nursery 25 m stays extinguishers-only (not highrise sprinklers)",
+         inputs=dict(occupancy="storage_industrial", height_m=25,
+                     floors_above_grade=1, ground_floor_bua_m2=1500,
+                     plot_area_m2=3000, is_plant_nursery=True),
+         expect_fp_branch="storage_plant_nursery",
+         expect_fp_systems=["Portable Fire Extinguishers (only)"],
+         expect_fp_systems_absent=["Wet Riser System"]),
+
+    dict(name="FP: Enclosed parking 30 m stays on parking table (not Table 9.19)",
+         inputs=dict(occupancy="parking_enclosed", height_m=30,
+                     floors_above_grade=8, ground_floor_bua_m2=3000,
+                     plot_area_m2=4000),
+         expect_fp_branch="parking_enclosed",
+         expect_fp_systems=["Automatic Sprinkler System (full coverage)",
+                            "Wet Riser / Dry Riser (height-dependent)"],
+         expect_fp_systems_absent=["Wet Riser System",
+                                   "Wet Risers Interconnected at Highest Level"]),
+
     dict(name="FP: Mall with atrium",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
                      ground_floor_bua_m2=10000, plot_area_m2=25000,
@@ -127,14 +158,32 @@ CASES = [
                      floors_above_grade=2, ground_floor_bua_m2=400,
                      plot_area_m2=1000),
          expect_el_branch="el_lowrise_general",
-         expect_el_systems=["Monitored Self-Contained EL (Section 3.3)"]),
+         expect_el_systems=["Monitored Self-Contained EL (Section 3.3)"],
+         expect_el_systems_absent=["Stand-alone Self-Contained EL (Section 3.4)"]),
 
     dict(name="EL: Mercantile Group A lowrise -> Monitored Self-Contained (audit-correct)",
          inputs=dict(occupancy="mercantile_a", height_m=8,
                      floors_above_grade=2, ground_floor_bua_m2=1500,
                      plot_area_m2=2000),
          expect_el_branch="el_lowrise_general",
-         expect_el_systems=["Monitored Self-Contained EL (Section 3.3)"]),
+         expect_el_systems=["Monitored Self-Contained EL (Section 3.3)"],
+         expect_el_systems_absent=["Stand-alone Self-Contained EL (Section 3.4)"]),
+
+    dict(name="EL: Highrise office -> Central Battery, not also required monitored",
+         inputs=dict(occupancy="business", height_m=30,
+                     floors_above_grade=8, ground_floor_bua_m2=800,
+                     plot_area_m2=2500),
+         expect_el_branch="el_highrise",
+         expect_el_systems=["Central Battery Emergency Lighting (Section 3.2)"],
+         expect_el_systems_absent=["Monitored Self-Contained EL (Section 3.3)"]),
+
+    dict(name="EL: Highrise warehouse -> Central Battery overlay only",
+         inputs=dict(occupancy="storage_industrial", height_m=25,
+                     floors_above_grade=1, ground_floor_bua_m2=200,
+                     plot_area_m2=2000, hazard_class="LH"),
+         expect_el_branch="el_highrise",
+         expect_el_systems=["Central Battery Emergency Lighting (Section 3.2)"],
+         expect_el_systems_absent=["Monitored Self-Contained EL (Section 3.3)"]),
 
     dict(name="EL: Fuel station -> Stand-alone",
          inputs=dict(occupancy="motor_fuel_dispensing", height_m=4,
@@ -893,6 +942,10 @@ def run_all():
             if s not in _names(_items(r, "FP", "Branch Requirements")):
                 ok = False
                 reasons.append(f"missing FP branch system: {s}")
+        for s in case.get("expect_fp_systems_absent", []):
+            if s in _names(_items(r, "FP", "Branch Requirements")):
+                ok = False
+                reasons.append(f"unexpected FP branch system: {s}")
         for s in case.get("expect_fp_aux_systems", []):
             if s not in _names(_items(r, "FP", "Auxiliary Rooms")):
                 ok = False
@@ -946,6 +999,10 @@ def run_all():
             if s not in _names(_items(r, "EL", "System Type Selection")):
                 ok = False
                 reasons.append(f"missing EL system: {s}")
+        for s in case.get("expect_el_systems_absent", []):
+            if s in _names(_items(r, "EL", "System Type Selection")):
+                ok = False
+                reasons.append(f"unexpected EL system: {s}")
         for s in case.get("expect_el_general", []):
             if s not in _names(_items(r, "EL", "General Specs")):
                 ok = False
