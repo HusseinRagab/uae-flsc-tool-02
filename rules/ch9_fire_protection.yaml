@@ -234,7 +234,12 @@ branches:
         spec: "60 minutes duration"
 
   - id: superhighrise_large_plot
-    match: {height_m_gt: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    # Occupancies with their own Ch 9 tables (villas, malls, storage,
+    # parking, fuel, infrastructure) must not also match Table 9.18/9.19.
+    # Mid/low-rise already exclude them via occupancy_group; highrise used
+    # occupancy_not and only listed villas/malls, so a 25 m warehouse stacked
+    # wet-riser 750 gpm on top of the storage hose-reel package.
+    match: {height_m_gt: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed, storage_industrial, parking_enclosed, parking_open, motor_fuel_dispensing, infrastructure]}
     section: "Ch 9, #4.2.1 / Table 9.18.A"
     page: "p.695"
     systems:
@@ -257,7 +262,7 @@ branches:
         detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous utility refill."
 
   - id: superhighrise_small_plot
-    match: {height_m_gt: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gt: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed, storage_industrial, parking_enclosed, parking_open, motor_fuel_dispensing, infrastructure]}
     section: "Ch 9, #4.2.1 / Table 9.18.B"
     page: "p.696"
     systems:
@@ -276,7 +281,7 @@ branches:
         spec: "60 minutes duration"
 
   - id: highrise_45_90_large_plot
-    match: {height_m_gt: 45, height_m_lt: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gt: 45, height_m_lt: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed, storage_industrial, parking_enclosed, parking_open, motor_fuel_dispensing, infrastructure]}
     section: "Ch 9, #4.3.1 / Table 9.19.A"
     page: "p.697"
     systems:
@@ -296,7 +301,7 @@ branches:
         detail: "Dedicated breeching inlet + instantaneous refill."
 
   - id: highrise_45_90_small_plot
-    match: {height_m_gt: 45, height_m_lt: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gt: 45, height_m_lt: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed, storage_industrial, parking_enclosed, parking_open, motor_fuel_dispensing, infrastructure]}
     section: "Ch 9, #4.3.1 / Table 9.19.B"
     page: "p.697"
     systems:
@@ -314,7 +319,7 @@ branches:
         detail: "Dedicated breeching inlet."
 
   - id: highrise_23_45
-    match: {height_m_gt: 23, height_m_lte: 45, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gt: 23, height_m_lte: 45, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed, storage_industrial, parking_enclosed, parking_open, motor_fuel_dispensing, infrastructure]}
     section: "Ch 9, #4.3.1 / Table 9.19 (23 m < H <= 45 m)"
     page: "p.698"
     systems:
