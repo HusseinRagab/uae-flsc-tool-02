@@ -28,6 +28,7 @@ from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
+from scenario_io import apply_loaded_occupancy
 from submission_checklist import build_submission_checklist
 import ui
 
@@ -501,13 +502,13 @@ def _apply_preset():
         st.session_state["occupancy_chosen"] = next(
             (kv for kv in OCC_FLAT if kv[1] == occ_target), None
         )
-        # Also set the two-stage picker's session-state keys so the dropdowns
-        # show the new occupancy on next render.
-        for cat_label, occ_list in OCCUPANCY_OPTIONS.items():
-            if occ_target in occ_list:
-                st.session_state["occupancy_category_select"] = cat_label
-                st.session_state["occupancy_sub_select"] = occ_target
-                break
+        # Two-stage picker keys must be written here — selectboxes ignore
+        # index= once their key exists (same trap as scenario load).
+        apply_loaded_occupancy(
+            st.session_state,
+            st.session_state["occupancy_chosen"],
+            OCCUPANCY_OPTIONS,
+        )
         # Silent baseline reset for villa / petrol station / animal housing /
         # daycare_b/c / infrastructure / hostel / parking / small mercantile.
         _apply_incompatible_flag_reset(occ_target)
@@ -602,8 +603,12 @@ with st.sidebar:
             "plot_area_input", "depth_below_grade_input",
             # Project
             "project_notes_input",
-            # Hazard / occupancy
+            # Hazard / occupancy. The two-stage picker keys must be saved too:
+            # Streamlit selectboxes ignore `index=` once their key exists, so
+            # restoring occupancy_chosen alone leaves the dropdowns (and the
+            # next occupancy_chosen write-back) on the previously shown occupancy.
             "occupancy_chosen",
+            "occupancy_category_select", "occupancy_sub_select",
             # Parking
             "has_parking_area", "attached_parking_kind_radio", "parking_area_m2_input",
             # Special rooms / various / equipment / FE / ES / Gas / FP / SC
@@ -662,6 +667,14 @@ with st.sidebar:
                     if k == "occupancy_chosen" and isinstance(v, list) and len(v) == 2:
                         v = tuple(v)
                     st.session_state[k] = v
+                # Always sync the two-stage picker keys from occupancy_chosen so
+                # older .flsc files (which only stored the tuple) still restore
+                # the occupancy the engine will evaluate.
+                apply_loaded_occupancy(
+                    st.session_state,
+                    st.session_state.get("occupancy_chosen"),
+                    OCCUPANCY_OPTIONS,
+                )
                 st.session_state["_scenario_loaded_marker"] = True
                 st.success("Scenario loaded - sidebar widgets refreshed.")
                 st.rerun()
@@ -1147,6 +1160,7 @@ with st.sidebar:
         corridor_length_m = st.number_input(
             "Longest enclosed corridor length (m)",
             min_value=0.0, value=0.0, step=5.0,
+            key="corridor_length_m",
             help="If > 60 m at lowrise/midrise (residential/office/hotel/mercantile/staff "
                  "accommodation), Ch 10 Table 10.27 item 4 requires natural ventilation per "
                  "Section 2.15 where exterior façade / roof accessible.",
