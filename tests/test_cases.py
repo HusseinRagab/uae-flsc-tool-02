@@ -269,6 +269,40 @@ CASES = [
                      ground_floor_bua_m2=300, plot_area_m2=600),
          expect_evc_branch="evc_villa_not_required"),
 
+    dict(name="EVC: Highrise enclosed parking -> required, not stacked with not_required",
+         inputs=dict(occupancy="parking_enclosed", height_m=30, floors_above_grade=8,
+                     ground_floor_bua_m2=2000, gross_floor_area_m2=8000,
+                     plot_area_m2=4000),
+         expect_evc_branch="evc_highrise",
+         expect_evc_systems=[
+             "Emergency Voice Evacuation or Communication System (EVC)",
+             "Two-way Telephone Communication System",
+         ],
+         expect_evc_absent=["Emergency Voice Evacuation (EVC) - standalone parking"]),
+
+    dict(name="EVC: Midrise enclosed parking -> NOT required",
+         inputs=dict(occupancy="parking_enclosed", height_m=18, floors_above_grade=5,
+                     ground_floor_bua_m2=2000, gross_floor_area_m2=6000,
+                     plot_area_m2=4000),
+         expect_evc_branch="evc_parking_not_required",
+         expect_evc_status={"Emergency Voice Evacuation (EVC) - standalone parking": "not_required"},
+         expect_evc_absent=["Emergency Voice Evacuation or Communication System (EVC)"]),
+
+    dict(name="EVC: Highrise small warehouse -> highrise required, not stacked with small-storage not_required",
+         inputs=dict(occupancy="storage_industrial", height_m=30, floors_above_grade=4,
+                     ground_floor_bua_m2=2000, gross_floor_area_m2=3000,
+                     plot_area_m2=5000),
+         expect_evc_branch="evc_highrise",
+         expect_evc_systems=["Emergency Voice Evacuation or Communication System (EVC)"],
+         expect_evc_absent=["Emergency Voice Evacuation (EVC) - small storage/industrial"]),
+
+    dict(name="EVC: Highrise fuel station -> required, not stacked with not_required",
+         inputs=dict(occupancy="motor_fuel_dispensing", height_m=30, floors_above_grade=6,
+                     ground_floor_bua_m2=400, plot_area_m2=2000),
+         expect_evc_branch="evc_highrise",
+         expect_evc_systems=["Emergency Voice Evacuation or Communication System (EVC)"],
+         expect_evc_absent=["Emergency Voice Evacuation (EVC) - motor fuel dispensing"]),
+
 
     # ---- FA archetypes (Ch 8) ----
     dict(name="FA: Highrise -> sub-FACPs every 45m + 5-floor PAS",
@@ -1006,6 +1040,10 @@ def run_all():
             if got != want:
                 ok = False
                 reasons.append(f"EVC status for '{sname}': expected {want}, got {got}")
+        for s in case.get("expect_evc_absent", []):
+            if s in _names(_items(r, "EVC")):
+                ok = False
+                reasons.append(f"EVC system should be absent: {s}")
         # ----- FA checks -----
         fa = r.chapter("FA")
         if "expect_fa_branch" in case:
