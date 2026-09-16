@@ -364,7 +364,39 @@ CASES = [
     dict(name="SC: Lowrise hospital -> special-occupancy stair pressurization required",
          inputs=dict(occupancy="healthcare_a", height_m=12, floors_above_grade=3,
                      ground_floor_bua_m2=3000, plot_area_m2=8000),
-         expect_sc_systems=["Stair Pressurization (special occupancy override)"]),
+         expect_sc_systems=["Stair Pressurization (special occupancy override)",
+                            "Corridor & Open-spaces Smoke Management"],
+         expect_sc_absent=["Corridor Smoke Management NOT Required",
+                           "Firefighting Lift (NOT mandatory)"]),
+
+    dict(name="SC: Lowrise school -> corridor SM required, default not-required row excluded",
+         inputs=dict(occupancy="education_b", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=4000, plot_area_m2=10000),
+         expect_sc_systems=["Enclosed Corridor / Circulation Smoke Management"],
+         expect_sc_absent=["Corridor Smoke Management NOT Required"]),
+
+    dict(name="SC: Midrise mall -> mall corridor SM required, default not-required row excluded",
+         inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
+                     ground_floor_bua_m2=10000, plot_area_m2=25000),
+         expect_sc_systems=["Enclosed Service Corridor Smoke Management"],
+         expect_sc_absent=["Corridor Smoke Management NOT Required"]),
+
+    dict(name="SC: Lowrise office still gets Table 10.21 default corridor SM not required",
+         inputs=dict(occupancy="business", height_m=10, floors_above_grade=2,
+                     ground_floor_bua_m2=400, plot_area_m2=1000),
+         expect_sc_status={"Corridor Smoke Management NOT Required": "not_required"}),
+
+    dict(name="SC: Assembly hall 1500 m² must not inherit >2000 m² purge from GFA",
+         inputs=dict(occupancy="assembly_a", height_m=15, floors_above_grade=2,
+                     ground_floor_bua_m2=5000, gross_floor_area_m2=5000,
+                     assembly_area_m2=1500, plot_area_m2=10000),
+         expect_sc_absent=["Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"]),
+
+    dict(name="SC: Assembly GFA>2000 with hall area left at 0 still falls back to GFA purge",
+         inputs=dict(occupancy="assembly_a", height_m=15, floors_above_grade=2,
+                     ground_floor_bua_m2=5000, gross_floor_area_m2=5000,
+                     assembly_area_m2=0, plot_area_m2=10000),
+         expect_sc_systems=["Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"]),
 
     dict(name="SC: Enclosed parking -> mechanical purging via dedicated ducting",
          inputs=dict(occupancy="parking_enclosed", height_m=12, floors_above_grade=3,
@@ -1043,6 +1075,10 @@ def run_all():
             if s not in _names(_items(r, "SC", "Auxiliary Zones")):
                 ok = False
                 reasons.append(f"missing SC aux system: {s}")
+        for s in case.get("expect_sc_absent", []):
+            if s in _names(_items(r, "SC")):
+                ok = False
+                reasons.append(f"SC system should be absent: {s}")
         for sname, want in case.get("expect_sc_status", {}).items():
             sc_items = _items(r, "SC")
             got = next((rq.status for rq in sc_items if rq.system == sname), None)

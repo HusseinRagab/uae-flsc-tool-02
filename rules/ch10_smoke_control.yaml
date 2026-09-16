@@ -204,8 +204,13 @@ branches:
     systems:
       - name: "Assembly Hall / Auditorium / Sports Hall / Stadium Smoke Purge (> 2000 m2)"
 
+  # Fallback only when the designer left assembly-hall area at 0. An explicit
+  # hall area ≤ 2,000 m² must not inherit the > 2,000 m² purge from total GFA.
   - id: sc_aux_assembly_hall_by_gfa
-    match: {occupancy_in: [assembly_a, assembly_b, assembly_c], gross_floor_area_m2_gt: 2000}
+    match:
+      occupancy_in: [assembly_a, assembly_b, assembly_c]
+      gross_floor_area_m2_gt: 2000
+      assembly_area_m2_lte: 0
     section: "Ch 10, #3.9 / Table 10.27 items 9-13"
     page: "p.866"
     systems:
@@ -252,10 +257,22 @@ branches:
       - name: "Stair Pressurization (open-plan office in highrise)"
         required: conditional
 
+  # Table 10.21 items 2-4 are the *default* mid/low package (same occupancy
+  # set as sc_midrise_lowrise_default). Special occupancies have their own
+  # Table 10.21 / 10.24 / 10.27 rows that *require* corridor smoke management;
+  # leaving them on this branch unioned "corridor SM not required" onto
+  # hospitals, clinics, malls, assembly and schools.
   - id: sc_midrise_lowrise_lobby_lift_corridor
     match:
       height_m_lte: 23
-      occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
+      occupancy_not: [healthcare_a, healthcare_b,
+                      mall_covered, mall_open, mall_mixed,
+                      assembly_a, assembly_b, assembly_c,
+                      education_a, education_b, education_c,
+                      villa_private, villa_commercial,
+                      motor_fuel_dispensing,
+                      parking_enclosed, parking_open,
+                      storage_industrial]
     section: "Ch 10, #3.3 / Table 10.21 items 2-4"
     page: "p.858"
     systems:
