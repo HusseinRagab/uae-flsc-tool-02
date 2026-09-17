@@ -308,7 +308,9 @@ branches:
         detail: "The vehicle exit-route signs shall be clearly distinguishable in size, colour and format from Exit Signs and Directional Signs required by this chapter (so occupants do not confuse vehicular routes with pedestrian egress routes)."
 
   - id: es_villa_private
-    match: {occupancy: villa_private}
+    # Converted villas use es_villa_private_converted. The engine unions every
+    # match, so this not-required row must not fire when the convert flag is set.
+    match: {occupancy: villa_private, villa_converted_use_is: false}
     section: "Ch 5, #3 / Table 5.3 item 18"
     page: "p.399"
     systems:
@@ -325,7 +327,9 @@ branches:
         detail: "Once a private villa is converted to another occupancy, full Exit / Directional / supplementary signage per the new occupancy applies (Section 3 universal items + the relevant Table 5.3 occupancy row)."
 
   - id: es_villa_commercial
-    match: {occupancy: villa_commercial}
+    # Converted commercial villas use es_villa_commercial_converted. The engine
+    # unions every match, so this not-required row must not fire when converted.
+    match: {occupancy: villa_commercial, villa_converted_use_is: false}
     section: "Ch 5, #3 / Table 5.3 item 19"
     page: "p.399"
     systems:
@@ -342,7 +346,9 @@ branches:
         detail: "Once a commercial villa is converted to a different occupancy class, full Exit / Directional signage per the new occupancy applies."
 
   - id: es_motor_fuel_gf
-    match: {occupancy: motor_fuel_dispensing}
+    # Multi-storey stations use es_motor_fuel_multistorey. The engine unions
+    # every match, so this GF-only exemption must not fire when that flag is set.
+    match: {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
     section: "Ch 5, #3 / Table 5.3 item 20"
     page: "p.399"
     systems:
