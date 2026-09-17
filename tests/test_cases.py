@@ -687,7 +687,9 @@ CASES = [
     dict(name="AUDIT LPG: Flame effect (Table 11.12) -> dedicated addon fires",
          inputs=dict(occupancy="assembly_b", height_m=10, ground_floor_bua_m2=600,
                      plot_area_m2=1500, has_lpg_flame_effect=True),
-         expect_lpg_addons=["Flame Effect LPG Installation (Table 11.12)"]),
+         expect_lpg_addons=["Flame Effect LPG Installation (Table 11.12)"],
+         # Flame-effect-only must not also emit the "no gas system" row.
+         expect_lpg_status={"No Gas System Present": None}),
 
     dict(name="AUDIT LPG: No gas system -> NO general universal block",
          inputs=dict(occupancy="residential", height_m=10, ground_floor_bua_m2=400, plot_area_m2=1000),
@@ -839,6 +841,30 @@ CASES = [
                      ground_floor_bua_m2=300, plot_area_m2=600),
          expect_es_branch="es_villa_private",
          expect_es_status={"Exit Signs Not Required": "not_required"}),
+
+    dict(name="ES: Converted private villa -> signs required, not-required row suppressed",
+         inputs=dict(occupancy="villa_private", height_m=6, floors_above_grade=2,
+                     ground_floor_bua_m2=300, plot_area_m2=600,
+                     villa_converted_use=True),
+         expect_es_branch="es_villa_private_converted",
+         expect_es_systems=["Exit Signs at Exit Doors / Stairs (converted villa)"],
+         expect_es_status={"Exit Signs Not Required": None}),
+
+    dict(name="ES: Converted commercial villa -> signs required, not-required row suppressed",
+         inputs=dict(occupancy="villa_commercial", height_m=6, floors_above_grade=2,
+                     ground_floor_bua_m2=400, plot_area_m2=700,
+                     villa_converted_use=True),
+         expect_es_branch="es_villa_commercial_converted",
+         expect_es_systems=["Exit Signs at Exit Doors / Stairs (converted villa)"],
+         expect_es_status={"Exit Signs Not Required": None}),
+
+    dict(name="ES: Multi-storey fuel station -> signs required, GF-only exemption suppressed",
+         inputs=dict(occupancy="motor_fuel_dispensing", height_m=8, floors_above_grade=2,
+                     ground_floor_bua_m2=300, plot_area_m2=2000,
+                     fuel_dispensing_multistorey=True),
+         expect_es_branch="es_motor_fuel_multistorey",
+         expect_es_systems=["Exit Signs at Exit Doors / Stairs (multi-storey fuel dispensing)"],
+         expect_es_status={"Exit Signs Not Required (ground-floor-only stations)": None}),
 
     dict(name="ES: Mall with theatre/cinema -> photoluminescent",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,

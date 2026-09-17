@@ -147,17 +147,22 @@ branches:
 
   # ----- NO GAS SYSTEM (none of the flags ticked) -----
   - id: lpg_no_gas_system
+    # Flame-effect shows (Table 11.12) are a gas system even when no tank /
+    # cylinder / infrastructure flag is ticked. The engine unions every
+    # matching branch, so omitting has_lpg_flame_effect here stacked
+    # "No Gas System Present" onto the flame-effect package.
     match:
       has_lpg_tanks_is: false
       has_gas_infra_connection_is: false
       has_gas_cylinders_villa_is: false
       has_lpg_cylinders_food_truck_is: false
+      has_lpg_flame_effect_is: false
     section: "Ch 11"
     page: "p.877-939"
     systems:
       - name: "No Gas System Present"
         required: not_required
-        detail: "Building has no LPG tanks, no gas-infrastructure connection, no LPG cylinders, and no food-truck LPG. Chapter 11 LPG Code of Practice does NOT apply to this building. If a gas system is added later, Ch 11 design and installation requirements must be implemented and re-submitted to Civil Defence."
+        detail: "Building has no LPG tanks, no gas-infrastructure connection, no LPG cylinders, no food-truck LPG, and no flame-effect LPG. Chapter 11 LPG Code of Practice does NOT apply to this building. If a gas system is added later, Ch 11 design and installation requirements must be implemented and re-submitted to Civil Defence."
 
 # ---------- ADD-ON VARIANTS: layer additional requirements per tank/cylinder type
 addons:
