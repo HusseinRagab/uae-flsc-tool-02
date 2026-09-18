@@ -136,6 +136,34 @@ def default_hazard(occ: str) -> str:
     return HAZARD_BY_OCCUPANCY.get(occ, "OH1")
 
 
+HAZARD_CLASSES = ("LH", "OH1", "OH2", "HH")
+HAZARD_CLASS_STATE_KEY = "hazard_class_select"
+HAZARD_OCC_STATE_KEY = "_hazard_for_occupancy"
+
+
+def sync_hazard_class_for_occupancy(occupancy: str, state: Dict[str, Any]) -> str:
+    """Keep hazard class aligned with occupancy after the occupancy changes.
+
+    Streamlit selectboxes treat `index=` as a first-render default only. The
+    hazard override widget is created on the first page load (residential →
+    LH) and then ignores a new index when the user switches occupancy. A
+    warehouse or petrol station would keep evaluating as Light Hazard —
+    Table 9.27 Group A instead of Group C / HH.
+
+    A user override is preserved for the *current* occupancy; changing
+    occupancy writes the new occupancy's default.
+    """
+    derived = default_hazard(occupancy)
+    if state.get(HAZARD_OCC_STATE_KEY) != occupancy:
+        state[HAZARD_CLASS_STATE_KEY] = derived
+        state[HAZARD_OCC_STATE_KEY] = occupancy
+    value = state.get(HAZARD_CLASS_STATE_KEY, derived)
+    if value not in HAZARD_CLASSES:
+        state[HAZARD_CLASS_STATE_KEY] = derived
+        return derived
+    return value
+
+
 class Building(BaseModel):
     project_name: str = Field("", description="Project reference")
     occupancy: Occupancy
