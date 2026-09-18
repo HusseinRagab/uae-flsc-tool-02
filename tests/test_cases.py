@@ -3,7 +3,13 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from flsc_schema import Building
+from flsc_schema import (
+    Building,
+    default_hazard,
+    sync_hazard_class_for_occupancy,
+    HAZARD_CLASS_STATE_KEY,
+    HAZARD_OCC_STATE_KEY,
+)
 from engine import evaluate
 
 
@@ -531,6 +537,18 @@ CASES = [
              "MSDS Review (DESIGNER OBLIGATION)",
          ]),
 
+    # Default warehouse hazard is OH2 (HAZARD_BY_OCCUPANCY). If the UI keeps a
+    # leftover residential LH, this same 500 m² store gets Tier 2 LH (250 gpm /
+    # 0.15 density) instead of Tier 2 OH2 (350 gpm / 0.20 density).
+    dict(name="AUDIT FP: Storage default OH2 500 m2 -> Tier 2 OH2 (not leftover LH)",
+         inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=500,
+                     plot_area_m2=2000, hazard_class=default_hazard("storage_industrial")),
+         expect_fp_branch="storage_industrial_tier2_oh2",
+         expect_fp_systems=[
+             "Automatic Sprinkler System (full coverage)",
+             "Fire Pump (Tier 2 OH2)",
+         ]),
+
     dict(name="AUDIT FP: Storage OH 4000 m2 -> Tier 4 OH (Table 9.27 B.4 - 750 gpm @ hydrant)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=4000,
                      plot_area_m2=10000, hazard_class="OH1"),
@@ -875,8 +893,52 @@ CASES = [
 ]
 
 
+def test_sync_hazard_class_for_occupancy():
+    """UI first-load is residential (LH). Changing occupancy must not leave LH stuck."""
+    reasons = []
+    state = {}
+    if sync_hazard_class_for_occupancy("residential", state) != "LH":
+        reasons.append("residential default should be LH")
+    if state.get(HAZARD_CLASS_STATE_KEY) != "LH":
+        reasons.append("state should store LH after residential sync")
+
+    # Designer override for the current occupancy is kept.
+    state[HAZARD_CLASS_STATE_KEY] = "OH1"
+    if sync_hazard_class_for_occupancy("residential", state) != "OH1":
+        reasons.append("override for the same occupancy should stick")
+
+    # Occupancy change (the Streamlit index= first-render trap) resets.
+    if sync_hazard_class_for_occupancy("storage_industrial", state) != "OH2":
+        reasons.append("storage_industrial must reset leftover LH/OH1 to OH2")
+    if sync_hazard_class_for_occupancy("motor_fuel_dispensing", state) != "HH":
+        reasons.append("motor_fuel_dispensing must reset to HH")
+    if sync_hazard_class_for_occupancy("mall_covered", state) != "OH2":
+        reasons.append("mall_covered must reset to OH2")
+    if sync_hazard_class_for_occupancy("parking_enclosed", state) != "OH2":
+        reasons.append("parking_enclosed must reset to OH2")
+    if sync_hazard_class_for_occupancy("business", state) != "LH":
+        reasons.append("business must reset to LH")
+
+    # Invalid stored value falls back to the occupancy default.
+    state[HAZARD_CLASS_STATE_KEY] = "not-a-class"
+    if sync_hazard_class_for_occupancy("business", state) != "LH":
+        reasons.append("invalid stored hazard should fall back to derived LH")
+    if state.get(HAZARD_OCC_STATE_KEY) != "business":
+        reasons.append("occupancy marker should track the last synced occupancy")
+    return reasons
+
+
 def run_all():
     passed = failed = 0
+    sync_reasons = test_sync_hazard_class_for_occupancy()
+    if sync_reasons:
+        print("[FAIL] Hazard class occupancy sync")
+        for reason in sync_reasons:
+            print(f"   - {reason}")
+        failed += 1
+    else:
+        print("[PASS] Hazard class occupancy sync")
+        passed += 1
     for case in CASES:
         b = Building(project_name=case["name"], **case["inputs"])
         r = evaluate(b)

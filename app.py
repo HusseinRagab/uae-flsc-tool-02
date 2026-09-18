@@ -24,7 +24,11 @@ from pathlib import Path
 import streamlit as st
 import yaml as _yaml
 
-from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER
+from flsc_schema import (
+    Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER,
+    HAZARD_CLASS_STATE_KEY, HAZARD_OCC_STATE_KEY,
+    sync_hazard_class_for_occupancy,
+)
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
@@ -604,6 +608,7 @@ with st.sidebar:
             "project_notes_input",
             # Hazard / occupancy
             "occupancy_chosen",
+            HAZARD_CLASS_STATE_KEY, HAZARD_OCC_STATE_KEY,
             # Parking
             "has_parking_area", "attached_parking_kind_radio", "parking_area_m2_input",
             # Special rooms / various / equipment / FE / ES / Gas / FP / SC
@@ -818,6 +823,10 @@ with st.sidebar:
         st.caption(w)
 
     derived_hazard = default_hazard(occupancy)
+    # Must run before the keyed selectbox is instantiated. Streamlit ignores a
+    # new `index=` after first render, so a residential first-load (LH) would
+    # otherwise stick when occupancy changes to storage (OH2) or fuel (HH).
+    sync_hazard_class_for_occupancy(occupancy, st.session_state)
     st.caption(f"Hazard class (auto-derived from occupancy): **{derived_hazard}**")
     with st.expander("Mixed occupancy + construction type (Ch 1)", expanded=False):
         st.selectbox(
@@ -837,8 +846,13 @@ with st.sidebar:
             key="construction_type_input",
         )
     with st.expander("Override hazard class (advanced)"):
-        hazard = st.selectbox("Hazard class", ["LH", "OH1", "OH2", "HH"],
-                              index=["LH", "OH1", "OH2", "HH"].index(derived_hazard))
+        hazard = st.selectbox(
+            "Hazard class",
+            ["LH", "OH1", "OH2", "HH"],
+            key=HAZARD_CLASS_STATE_KEY,
+            help="Resets to the occupancy default when occupancy changes. "
+                 "Override only when the commodity / use is a different NFPA 13 hazard.",
+        )
 
     # =========================================================================
     # SHARED: Special Rooms & Equipment (drives FE / FA / FP / SC / LPG / EL)
