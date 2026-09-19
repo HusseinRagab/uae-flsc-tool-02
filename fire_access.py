@@ -3,14 +3,21 @@ from __future__ import annotations
 from typing import List, Tuple
 from flsc_schema import Building, ChapterReport, FireAccessSummary, Requirement, SectionBlock
 
-def _sprinklered(b: Building, requires_wet_riser: bool = False) -> bool:
+def _sprinklered(
+    b: Building,
+    requires_wet_riser: bool = False,
+    requires_sprinkler: bool = False,
+) -> bool:
     if b.height_class in ("highrise", "super_highrise"):
         return True
     if b.occupancy.startswith("villa_"):
         return False
     if b.height_class == "midrise":
         return True
-    return requires_wet_riser or b.height_m > 15
+    # Lowrise: wet-riser is a sufficient proxy, but Table 9.21.a.2 / 9.27
+    # tiers can mandate sprinklers without a wet riser. Those buildings must
+    # still use the sprinklered access tables (2.4 / 2.7).
+    return requires_wet_riser or requires_sprinkler or b.height_m > 15
 
 def _footprint_m2(b: Building) -> float:
     if b.ground_floor_bua_m2 and b.ground_floor_bua_m2 > 0:
@@ -66,8 +73,12 @@ def _extent_industrial(volume: float, sprinklered: bool) -> Tuple[str, str]:
         return "3/4 perimeter", "Table 2.7 113,601–170,400 m³"
     return "Whole perimeter (100%)", "Table 2.7 > 170,400 m³"
 
-def compute_fire_access(b: Building, requires_wet_riser: bool = False) -> FireAccessSummary:
-    spr = _sprinklered(b, requires_wet_riser)
+def compute_fire_access(
+    b: Building,
+    requires_wet_riser: bool = False,
+    requires_sprinkler: bool = False,
+) -> FireAccessSummary:
+    spr = _sprinklered(b, requires_wet_riser, requires_sprinkler)
     fp = _footprint_m2(b)
     notes: List[str] = [
         "Accessway min width 6 m; vertical clearance 4.5 m (Table 2.2 / §2.6).",
@@ -96,8 +107,12 @@ def compute_fire_access(b: Building, requires_wet_riser: bool = False) -> FireAc
         sprinklered_assumed=spr, notes=notes,
     )
 
-def evaluate_fire_access(b: Building, requires_wet_riser: bool = False) -> ChapterReport:
-    s = compute_fire_access(b, requires_wet_riser)
+def evaluate_fire_access(
+    b: Building,
+    requires_wet_riser: bool = False,
+    requires_sprinkler: bool = False,
+) -> ChapterReport:
+    s = compute_fire_access(b, requires_wet_riser, requires_sprinkler)
     items = [
         Requirement(system="Fire vehicle accessway width + clearance", status="required",
             spec=f"Min width {s.accessway_width_m:g} m; vertical clearance {s.vertical_clearance_m:g} m",
