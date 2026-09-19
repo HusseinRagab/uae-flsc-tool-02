@@ -872,6 +872,43 @@ CASES = [
                      has_evacuation_elevator=True, has_horizontal_exits=True),
          expect_es_universal=["Evacuation Elevator Signs",
                               "Exit Signs at Horizontal Exit Doors"]),
+
+    # ---- FSA: sprinklered lowrise without a wet riser must use Table 2.4 / 2.7 ----
+    # Table 9.21.a.2 requires sprinklers + hose reel (no wet riser). Ch 2 used
+    # wet-riser as the only lowrise sprinkler signal and wrongly applied Table 2.2.
+    dict(name="FSA: Lowrise hospital 3000 m2 (sprinklered, no wet riser) -> Table 2.4 1/6 perimeter",
+         inputs=dict(occupancy="healthcare_a", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=3000, plot_area_m2=8000,
+                     has_parking_area=False),
+         expect_fp_branch="lowrise_public_501_3600",
+         expect_fsa_sprinklered=True,
+         expect_fsa_extent="Minimum 1/6 perimeter (at least 15 m)",
+         expect_fsa_ref_contains="Table 2.4"),
+
+    dict(name="FSA: Lowrise hotel 2000 m2 (sprinklered, no wet riser) -> Table 2.4",
+         inputs=dict(occupancy="hotel_a", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=2000, plot_area_m2=4000,
+                     has_parking_area=False),
+         expect_fsa_sprinklered=True,
+         expect_fsa_ref_contains="Table 2.4"),
+
+    dict(name="FSA: Lowrise residential 400 m2 (hose reel only) -> Table 2.2 unsprinklered",
+         inputs=dict(occupancy="residential", height_m=10, floors_above_grade=3,
+                     ground_floor_bua_m2=400, plot_area_m2=1000,
+                     has_parking_area=False, has_stairs=False, has_elevator=False),
+         expect_fp_branch="lowrise_residential_upto_3600",
+         expect_fsa_sprinklered=False,
+         expect_fsa_ref_contains="Table 2.2"),
+
+    dict(name="FSA: Lowrise warehouse LH 10000 m2 GFA (sprinklered, no wet riser) -> Table 2.7",
+         inputs=dict(occupancy="storage_industrial", height_m=12, floors_above_grade=1,
+                     ground_floor_bua_m2=500, gross_floor_area_m2=10000,
+                     plot_area_m2=2000, hazard_class="LH",
+                     has_parking_area=False),
+         expect_fp_branch="storage_industrial_tier2_lh",
+         expect_fsa_sprinklered=True,
+         expect_fsa_extent="Minimum 1/6 perimeter (at least 15 m)",
+         expect_fsa_ref_contains="Table 2.7"),
 ]
 
 
@@ -1091,6 +1128,30 @@ def run_all():
             if not ch or ch.selected_branch != expected_branch:
                 ok = False
                 reasons.append(f"attached parking {code} branch: expected {expected_branch}, got {ch.selected_branch if ch else None}")
+
+        # ----- FSA (Ch 2) checks -----
+        fa_sum = r.fire_access
+        if "expect_fsa_sprinklered" in case:
+            got_spr = bool(fa_sum.sprinklered_assumed) if fa_sum else None
+            if got_spr != case["expect_fsa_sprinklered"]:
+                ok = False
+                reasons.append(
+                    f"FSA sprinklered_assumed: expected {case['expect_fsa_sprinklered']}, got {got_spr}"
+                )
+        if "expect_fsa_extent" in case:
+            got_ext = fa_sum.extent if fa_sum else None
+            if got_ext != case["expect_fsa_extent"]:
+                ok = False
+                reasons.append(
+                    f"FSA extent: expected {case['expect_fsa_extent']}, got {got_ext}"
+                )
+        if "expect_fsa_ref_contains" in case:
+            got_ref = (fa_sum.extent_ref if fa_sum else "") or ""
+            if case["expect_fsa_ref_contains"] not in got_ref:
+                ok = False
+                reasons.append(
+                    f"FSA ref: expected to contain {case['expect_fsa_ref_contains']!r}, got {got_ref!r}"
+                )
 
         # ----- MOE checks -----
         moe = r.chapter("MOE")

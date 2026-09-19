@@ -553,6 +553,37 @@ def _branch_requires_wet_riser(rules: Dict[str, Any], b: Building) -> bool:
     return False
 
 
+def _entry_requires_building_sprinkler(entry: Dict[str, Any]) -> bool:
+    """True when a YAML system row mandates building-wide sprinklers.
+
+    Room-level stair/pit/aux sprinklers are not a Ch 2 sprinklered-building
+    signal; those live in various_locations / equipment and are ignored here.
+    """
+    if entry.get("required", "required") != "required":
+        return False
+    return "sprinkler" in (entry.get("name") or "").lower()
+
+
+def _branch_requires_sprinkler(rules: Dict[str, Any], b: Building) -> bool:
+    """Ch 2 access tables key off whether the building is sprinklered.
+
+    Wet-riser is not a reliable proxy: Table 9.21.a.2 (lowrise public
+    501–3600 m²) and several Table 9.27 storage tiers require sprinklers
+    with hose-reel duty only.
+    """
+    matched = _select_branches(rules.get("branches", []), b)
+    for br in matched:
+        for entry in br.get("systems", []):
+            if _entry_requires_building_sprinkler(entry):
+                return True
+    for g in rules.get("general", []) or []:
+        if _eval_when(g.get("when", {}), b):
+            for entry in g.get("systems", []):
+                if _entry_requires_building_sprinkler(entry):
+                    return True
+    return False
+
+
 def build_rule_lookup() -> Dict[str, Dict[str, Any]]:
     """Map source_rule ID -> {'file', 'kind', 'match'} for the UI 'Why triggered?'
     expander. Walks every chapter YAML and indexes general / branches /
@@ -772,7 +803,10 @@ def evaluate(b: Building) -> ComplianceReport:
     lpg_rules = load_rules("ch11_lpg.yaml")
 
     wet = _branch_requires_wet_riser(fp_rules, b)
-    chapters.append(evaluate_fire_access(b, requires_wet_riser=wet))
+    sprinklered = _branch_requires_sprinkler(fp_rules, b)
+    chapters.append(evaluate_fire_access(
+        b, requires_wet_riser=wet, requires_sprinkler=sprinklered,
+    ))
 
     # MOE -> FE -> ES -> EL -> EVC -> FA -> FP -> SC -> LPG - chapter-number order.
     if moe_rules:
@@ -820,7 +854,9 @@ def evaluate(b: Building) -> ComplianceReport:
         _ensure_chapter_not_blank(ch, b)
 
     ol = compute_occupant_load(b)
-    fa_summary = compute_fire_access(b, requires_wet_riser=wet)
+    fa_summary = compute_fire_access(
+        b, requires_wet_riser=wet, requires_sprinkler=sprinklered,
+    )
 
     return ComplianceReport(
         building=b,
