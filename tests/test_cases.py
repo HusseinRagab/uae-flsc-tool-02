@@ -840,6 +840,32 @@ CASES = [
          expect_es_branch="es_villa_private",
          expect_es_status={"Exit Signs Not Required": "not_required"}),
 
+    # Table 5.3 items 19-20 exempt commercial villas and GF-only fuel stations.
+    # Universal Table 5.1/5.2 spec rows used to occupancy_not only villa_private,
+    # so the engine unioned required letter-size / illumination / tactile specs
+    # onto the not-required exemption (contradictory Ch 5 package).
+    dict(name="ES: Commercial villa - signs not required, no universal spec stack",
+         inputs=dict(occupancy="villa_commercial", height_m=6, floors_above_grade=2,
+                     ground_floor_bua_m2=400, plot_area_m2=700),
+         expect_es_branch="es_villa_commercial",
+         expect_es_status={
+             "Exit Signs Not Required": "not_required",
+             "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)": None,
+             "Sign Illumination - External vs Internal": None,
+             "Tactile Sign at Every Exit (Braille + Raised Characters)": None,
+         }),
+
+    dict(name="ES: Ground-floor fuel station - signs not required, no universal spec stack",
+         inputs=dict(occupancy="motor_fuel_dispensing", height_m=4, floors_above_grade=1,
+                     ground_floor_bua_m2=300, plot_area_m2=2000),
+         expect_es_branch="es_motor_fuel_gf",
+         expect_es_status={
+             "Exit Signs Not Required (ground-floor-only stations)": "not_required",
+             "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)": None,
+             "Sign Illumination - External vs Internal": None,
+             "Tactile Sign at Every Exit (Braille + Raised Characters)": None,
+         }),
+
     dict(name="ES: Mall with theatre/cinema -> photoluminescent",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
                      ground_floor_bua_m2=10000, plot_area_m2=25000,
