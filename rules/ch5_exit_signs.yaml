@@ -5,12 +5,16 @@ meta:
   chapter_title: "Exit Signs"
 
 # ---------- UNIVERSAL items (Table 5.3 items 1-5) -----------------------
-# Skipped for villas and ground-floor-only fuel stations.
+# Skipped for villas and ground-floor-only fuel stations (Table 5.3 items
+# 18-20). Spec rows (letter size, illumination, tactile, mounting) must use
+# the same occupancy_not as the "exit signs at doors/stairs" rows — the
+# engine unions every match, so leaving villa_commercial / motor_fuel out
+# stacked required Table 5.1/5.2 specs onto the not-required exemption.
 general:
   # ----- Universal sign specifications (Tables 5.1.1 + 5.1.2 + 5.1.3 + 5.1.7) -----
   - id: es_g_sign_dimensions_bilingual
     when:
-      occupancy_not: [villa_private]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)"
         code_ref: "Ch 5, #2 / Table 5.1 item 1"
@@ -20,7 +24,7 @@ general:
 
   - id: es_g_illumination
     when:
-      occupancy_not: [villa_private]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Sign Illumination - External vs Internal"
         code_ref: "Ch 5, #2 / Table 5.2 item 1"
@@ -30,7 +34,7 @@ general:
 
   - id: es_g_photoluminescent
     when:
-      occupancy_not: [villa_private]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Photoluminescent Sign Specifications (UL 1994)"
         code_ref: "Ch 5, #2 / Table 5.1 item 4"
@@ -40,7 +44,7 @@ general:
 
   - id: es_g_tactile
     when:
-      occupancy_not: [villa_private]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Tactile Sign at Every Exit (Braille + Raised Characters)"
         code_ref: "Ch 5, #2 / Table 5.1 item 3"
@@ -50,7 +54,7 @@ general:
 
   - id: es_g_directional_placement
     when:
-      occupancy_not: [villa_private]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Directional Exit Sign Placement Rules"
         code_ref: "Ch 5, #2 / Table 5.2 §2 (items iii-iv) + §4"
@@ -60,7 +64,7 @@ general:
 
   - id: es_g_floor_proximity_mounting
     when:
-      occupancy_not: [villa_private]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Floor Proximity Sign Mounting (150-455 mm above floor)"
         code_ref: "Ch 5, #2 / Table 5.1 item 7 (trigger); also Table 5.2 §2.v-vi (mounting dimensions)"
@@ -70,7 +74,7 @@ general:
 
   - id: es_g_exit_sign_mounting_position
     when:
-      occupancy_not: [villa_private]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
     systems:
       - name: "Exit Sign Mounting Position Above / Beside Door"
         code_ref: "Ch 5, #2 / Table 5.2 §2.i-ii"
