@@ -372,6 +372,37 @@ CASES = [
          expect_sc_branch="sc_parking_enclosed",
          expect_sc_systems=["Mechanical Smoke Purging via Dedicated Ducting"]),
 
+    # Height-only Table 10.20 must not stack onto Table 10.23 / 10.26 packages.
+    dict(name="SC: 30 m enclosed parking -> parking package only (no highrise FF lift)",
+         inputs=dict(occupancy="parking_enclosed", height_m=30, floors_above_grade=8,
+                     ground_floor_bua_m2=4000, gross_floor_area_m2=25000,
+                     plot_area_m2=6000),
+         expect_sc_branch="sc_parking_enclosed",
+         expect_sc_systems=["Mechanical Smoke Purging via Dedicated Ducting"],
+         forbid_sc_systems=[
+             "Firefighting Lift (mandatory)",
+             "Enclosed Corridor Smoke Management (exhaust from roof only)",
+         ]),
+
+    dict(name="SC: 30 m warehouse -> roof exhaust only (no highrise FF lift)",
+         inputs=dict(occupancy="storage_industrial", height_m=30, floors_above_grade=1,
+                     ground_floor_bua_m2=8000, gross_floor_area_m2=8000,
+                     plot_area_m2=12000),
+         expect_sc_branch="sc_storage_industrial_over_2000",
+         expect_sc_systems=["Mechanical Roof Exhaust Fans (with engineering analysis if natural)"],
+         forbid_sc_systems=[
+             "Firefighting Lift (mandatory)",
+             "Enclosed Corridor Smoke Management (exhaust from roof only)",
+             "Stair Pressurization",
+         ]),
+
+    dict(name="SC: 40 m residential highrise still gets Table 10.20",
+         inputs=dict(occupancy="residential", height_m=40, floors_above_grade=12,
+                     ground_floor_bua_m2=1200, gross_floor_area_m2=12000,
+                     plot_area_m2=4000),
+         expect_sc_branch="sc_highrise",
+         expect_sc_systems=["Firefighting Lift (mandatory)"]),
+
     dict(name="SC: Open parking <=4000 m² -> no purging required",
          inputs=dict(occupancy="parking_open", height_m=10, floors_above_grade=2,
                      gross_floor_area_m2=3000, ground_floor_bua_m2=3000,
@@ -1039,6 +1070,10 @@ def run_all():
             if s not in _names(_items(r, "SC", "Smoke Control by Tier")):
                 ok = False
                 reasons.append(f"missing SC system: {s}")
+        for s in case.get("forbid_sc_systems", []):
+            if s in _names(_items(r, "SC")):
+                ok = False
+                reasons.append(f"unexpected SC system stacked: {s}")
         for s in case.get("expect_sc_aux", []):
             if s not in _names(_items(r, "SC", "Auxiliary Zones")):
                 ok = False

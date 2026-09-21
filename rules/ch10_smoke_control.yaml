@@ -8,7 +8,16 @@ meta:
 branches:
   # ---------- Table 10.19 - Super-highrise (>90m) ----------
   - id: sc_super_highrise
-    match: {height_m_gt: 90}
+    # Tables 10.19 / 10.20 are generic tower packages. Parking (Table 10.23),
+    # storage (Table 10.26), villas and fuel stations have their own rows and
+    # must not inherit firefighting-lift / corridor-SM overlays. Malls,
+    # hospitals, schools and assembly still take the height overlay on top of
+    # their occupancy extras (Tables 10.24 / 10.27).
+    match:
+      height_m_gt: 90
+      occupancy_not: [villa_private, villa_commercial,
+                      parking_enclosed, parking_open,
+                      storage_industrial, motor_fuel_dispensing]
     section: "Ch 10, #3.1 / Table 10.19"
     page: "p.855-856"
     systems:
@@ -30,7 +39,14 @@ branches:
   # edge, Ch 1 §1.7.42 + FAQ Annexure 1 treat the building as highrise (super
   # starts *more than* 90 m). Match is therefore inclusive at 90 m.
   - id: sc_highrise
-    match: {height_m_gt: 23, height_m_lte: 90}
+    # Same occupancy carve-out as sc_super_highrise — Table 10.20 must not
+    # union onto Table 10.23 (parking) or Table 10.26 (storage / industrial).
+    match:
+      height_m_gt: 23
+      height_m_lte: 90
+      occupancy_not: [villa_private, villa_commercial,
+                      parking_enclosed, parking_open,
+                      storage_industrial, motor_fuel_dispensing]
     section: "Ch 10, #3.2 / Table 10.20"
     page: "p.857"
     systems:
