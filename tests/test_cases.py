@@ -435,7 +435,30 @@ CASES = [
          inputs=dict(occupancy="business", height_m=20, floors_above_grade=5,
                      floors_below_grade=1, depth_below_grade_m=8.0,
                      ground_floor_bua_m2=800, plot_area_m2=2000),
-         expect_sc_systems=["Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"]),
+         expect_sc_systems=["Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"],
+         expect_sc_absent=[
+             "Stair Pressurization NOT Required (default)",
+             "Firefighting Lift (NOT mandatory)",
+             "Corridor Smoke Management NOT Required",
+         ]),
+
+    # Midrise / lowrise default Table 10.21 "not required" rows must not stack
+    # onto Table 10.22 when the building has more than two basements.
+    dict(name="SC: Midrise residential with 3 basements -> Table 10.22 only (no Table 10.21 not-required stack)",
+         inputs=dict(occupancy="residential", height_m=18, floors_above_grade=6,
+                     floors_below_grade=3, depth_below_grade_m=10.0,
+                     ground_floor_bua_m2=1000, basement_bua_m2=1000,
+                     plot_area_m2=3000),
+         expect_sc_systems=[
+             "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)",
+             "Firefighting Lift (deep basements - > 7 m below OR > 2 basements)",
+             "Corridor Smoke Management (basement, non-parking)",
+         ],
+         expect_sc_absent=[
+             "Stair Pressurization NOT Required (default)",
+             "Firefighting Lift (NOT mandatory)",
+             "Corridor Smoke Management NOT Required",
+         ]),
 
     # AUDIT Ch 10 Table 10.27 item 4 - lowrise corridor > 60 m
     # Audit-correction: Table 10.27 item 4 (p.866) lists ONLY mercantile, staff/labour
@@ -1049,6 +1072,10 @@ def run_all():
             if got != want:
                 ok = False
                 reasons.append(f"SC status for '{sname}': expected {want}, got {got}")
+        for s in case.get("expect_sc_absent", []):
+            if s in _names(_items(r, "SC")):
+                ok = False
+                reasons.append(f"SC system should be absent: {s}")
 
         # ----- LPG checks -----
         lpg = r.chapter("LPG")

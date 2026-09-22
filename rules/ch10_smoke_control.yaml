@@ -47,9 +47,15 @@ branches:
         detail: "Smoke exhaust only from roof (open to sky); no intermediate-level exhaust."
 
   # ---------- Table 10.21 - Midrise / Lowrise default (<23 m) ----------
+  # Table 10.22 deep-underground rows ( >2 basements OR >7 m depth ) already
+  # require stair pressurization / firefighting lift / basement corridor SM.
+  # Without the basement/depth caps the engine unions this "NOT required"
+  # default onto those packages (e.g. G+4 residential with 3 basement levels).
   - id: sc_midrise_lowrise_default
     match:
       height_m_lte: 23
+      floors_below_grade_lte: 2
+      depth_below_grade_m_lte: 7
       occupancy_not: [healthcare_a, healthcare_b,
                       mall_covered, mall_open, mall_mixed,
                       assembly_a, assembly_b, assembly_c,
@@ -255,6 +261,8 @@ branches:
   - id: sc_midrise_lowrise_lobby_lift_corridor
     match:
       height_m_lte: 23
+      floors_below_grade_lte: 2
+      depth_below_grade_m_lte: 7
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
     section: "Ch 10, #3.3 / Table 10.21 items 2-4"
     page: "p.858"
