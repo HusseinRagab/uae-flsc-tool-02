@@ -49,7 +49,10 @@ general:
 
 branches:
   - id: villa_private_base
-    match: {occupancy: villa_private}
+    # Table 9.21.d (lowrise_villa_converted) replaces Table 9.23 once the
+    # villa is converted. Without this gate the engine unions required
+    # domestic/full-coverage sprinklers onto the converted "recommended only" package.
+    match: {occupancy: villa_private, villa_converted_use_is: false}
     section: "Ch 9, #4.7.1 / Table 9.23.A"
     page: "p.716"
     systems:
@@ -58,7 +61,7 @@ branches:
         detail: "Domestic-type sprinklers with domestic water tank are acceptable. Not mandatory but highly recommended throughout private villas irrespective of BUA."
 
   - id: villa_private_ground_1500
-    match: {occupancy: villa_private, ground_floor_bua_m2_gt: 1500}
+    match: {occupancy: villa_private, ground_floor_bua_m2_gt: 1500, villa_converted_use_is: false}
     section: "Ch 9, #4.7.1 / Table 9.23.A.2"
     page: "p.716"
     systems:
@@ -74,7 +77,7 @@ branches:
         detail: "Dedicated fire-water tank with low-level detection and instantaneous refill from utility supply. Two-compartment sectional tank preferred for maintenance continuity."
 
   - id: villa_private_basement_1500
-    match: {occupancy: villa_private, basement_bua_m2_gt: 1500}
+    match: {occupancy: villa_private, basement_bua_m2_gt: 1500, villa_converted_use_is: false}
     section: "Ch 9, #4.7.1 / Table 9.23.A.3"
     page: "p.716"
     systems:
@@ -90,7 +93,7 @@ branches:
         detail: "Low water-level detection + instantaneous utility refill."
 
   - id: villa_commercial_base
-    match: {occupancy: villa_commercial}
+    match: {occupancy: villa_commercial, villa_converted_use_is: false}
     section: "Ch 9, #4.7.1 / Table 9.23.B"
     page: "p.717"
     systems:
@@ -99,7 +102,7 @@ branches:
         detail: "Domestic or residential-type sprinklers are acceptable. Not mandatory but highly recommended throughout commercial villas irrespective of BUA."
 
   - id: villa_commercial_plot_20000
-    match: {occupancy: villa_commercial, plot_area_m2_gte: 20000}
+    match: {occupancy: villa_commercial, plot_area_m2_gte: 20000, villa_converted_use_is: false}
     section: "Ch 9, #4.7.1 / Table 9.23.B.2"
     page: "p.717"
     systems:
@@ -113,7 +116,7 @@ branches:
         detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous utility refill."
 
   - id: villa_commercial_ground_1500
-    match: {occupancy: villa_commercial, ground_floor_bua_m2_gt: 1500}
+    match: {occupancy: villa_commercial, ground_floor_bua_m2_gt: 1500, villa_converted_use_is: false}
     section: "Ch 9, #4.7.1 / Table 9.23.B.3"
     page: "p.717"
     systems:
@@ -127,7 +130,7 @@ branches:
         spec: "30 minutes duration"
 
   - id: villa_commercial_basement_1500
-    match: {occupancy: villa_commercial, basement_bua_m2_gt: 1500}
+    match: {occupancy: villa_commercial, basement_bua_m2_gt: 1500, villa_converted_use_is: false}
     section: "Ch 9, #4.7.1 / Table 9.23.B.4"
     page: "p.717"
     systems:
@@ -609,9 +612,12 @@ branches:
   # boutiques. <900 m2 = extinguishers only. >900 m2 with 2 stairs = extinguishers only.
   # >900 m2 with only 1 stair = highly recommended: add external 2nd stair OR
   # sprinklers + hose reel (with 250 gpm @ 4.5 bar / 30 min tank).
+  # Occupancy is restricted to villa_* so ticking the UI flag on a clinic/office
+  # cannot union Table 9.21.d onto Table 9.21.a/b.
   - id: lowrise_villa_converted
     match:
       height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial]
       villa_converted_use_is: true
     section: "Ch 9, #4.5.4 / Table 9.21.d"
     page: "p.710"
