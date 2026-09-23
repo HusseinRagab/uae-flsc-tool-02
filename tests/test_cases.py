@@ -38,6 +38,36 @@ CASES = [
          expect_fp_systems=["Hose Reel System (basement + ground floor)",
                             "Fire Pump", "Fire Water Tank"]),
 
+    # Table 9.21.d replaces Table 9.23 once villa_converted_use is set. Without
+    # exclusivity the engine unioned required 250 gpm / full sprinklers onto the
+    # converted "recommended / extinguishers-only" package.
+    dict(name="FP: Converted large private villa stays on Table 9.21.d",
+         inputs=dict(occupancy="villa_private", height_m=8, floors_above_grade=2,
+                     ground_floor_bua_m2=1600, plot_area_m2=2200,
+                     villa_converted_use=True),
+         expect_fp_branch="lowrise_villa_converted",
+         expect_fp_systems=["Portable Fire Extinguishers (Chapter 4)"],
+         expect_fp_systems_absent=["Hose Reel System (basement + ground floor)",
+                                   "Fire Pump",
+                                   "Automatic Sprinkler System (full coverage incl. basements & podiums)"]),
+
+    dict(name="FP: Converted commercial villa large plot stays on Table 9.21.d",
+         inputs=dict(occupancy="villa_commercial", height_m=8, floors_above_grade=2,
+                     ground_floor_bua_m2=400, plot_area_m2=25000,
+                     villa_converted_use=True),
+         expect_fp_branch="lowrise_villa_converted",
+         expect_fp_systems=["Portable Fire Extinguishers (Chapter 4)"],
+         expect_fp_systems_absent=["Fire Pump"]),
+
+    # Flag on a non-villa occupancy must not pull Table 9.21.d onto the clinic tier.
+    dict(name="FP: Clinic + converted flag does not inherit Table 9.21.d",
+         inputs=dict(occupancy="healthcare_b", height_m=8, floors_above_grade=2,
+                     ground_floor_bua_m2=400, plot_area_m2=800,
+                     villa_converted_use=True),
+         expect_fp_branch="lowrise_residential_upto_3600",
+         expect_fp_systems=["Hose Reel System (throughout)", "Fire Pump"],
+         expect_fp_systems_absent=["Portable Fire Extinguishers (Chapter 4)"]),
+
     dict(name="FP: Covered Mall",
          inputs=dict(occupancy="mall_covered", height_m=18,
                      floors_above_grade=3, floors_below_grade=2,
@@ -893,6 +923,10 @@ def run_all():
             if s not in _names(_items(r, "FP", "Branch Requirements")):
                 ok = False
                 reasons.append(f"missing FP branch system: {s}")
+        for s in case.get("expect_fp_systems_absent", []):
+            if s in _names(_items(r, "FP", "Branch Requirements")):
+                ok = False
+                reasons.append(f"unexpected FP branch system: {s}")
         for s in case.get("expect_fp_aux_systems", []):
             if s not in _names(_items(r, "FP", "Auxiliary Rooms")):
                 ok = False
