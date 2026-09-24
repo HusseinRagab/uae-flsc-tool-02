@@ -269,7 +269,12 @@ branches:
 
   - id: fa_robotic_parking
     # Robotic / Mechanical Parking or Robotic Logistics (Table 8.13 item 23, p.506).
-    # Must precede fa_parking_enclosed and fa_storage_industrial.
+    # The engine collects EVERY matching branch (not first-match). Generic
+    # parking / warehouse rows below therefore exclude this flag so item 23
+    # does not stack onto item 22 (manual / no-automatic) or items 19-20
+    # (conventional smoke throughout). Overlay on a non-parking host
+    # occupancy (e.g. residential tower with robotic basement parking) is
+    # intentional and still allowed.
     match: {has_robotic_parking_is: true}
     section: "Ch 8, #5.1 / Table 8.13 item 23"
     page: "p.506"
@@ -282,7 +287,12 @@ branches:
       - name: "Main FACP at Continuously Attended Location"
 
   - id: fa_storage_industrial
-    match: {occupancy: storage_industrial}
+    # Engine unions every match. Robotic logistics is Table 8.13 item 23;
+    # without this exclusion a robotic warehouse also inherited conventional
+    # smoke-throughout + immediate-evacuation from items 19-20.
+    match:
+      occupancy: storage_industrial
+      has_robotic_parking: false
     section: "Ch 8, #5.1 / Table 8.13 items 19-20"
     page: "p.506"
     systems:
@@ -297,7 +307,11 @@ branches:
         detail: "In multi-tenant warehouses, a single main FACP at security guard house / facility management office monitors all warehouses; individual FACPs not required."
 
   - id: fa_parking_enclosed
-    match: {occupancy: parking_enclosed}
+    # Table 8.13 item 22 (manual-if-sprinklered / heat-if-not) must not stack
+    # onto item 23 aspiration when the facility itself is robotic parking.
+    match:
+      occupancy: parking_enclosed
+      has_robotic_parking: false
     section: "Ch 8, #5.1 / Table 8.13 item 22"
     page: "p.506"
     systems:
@@ -308,7 +322,9 @@ branches:
         detail: "If not silenced/reset within 120 s, evacuation alarm triggers throughout the parking."
 
   - id: fa_parking_open
-    match: {occupancy: parking_open}
+    match:
+      occupancy: parking_open
+      has_robotic_parking: false
     section: "Ch 8, #5.1 / Table 8.13 item 22"
     page: "p.506"
     systems:
