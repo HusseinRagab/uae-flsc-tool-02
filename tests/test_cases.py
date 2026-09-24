@@ -334,6 +334,46 @@ CASES = [
          expect_fa_branch="fa_parking_open",
          expect_fa_systems=["Manual Fire Detection and Alarm System"]),
 
+    dict(name="FA: Robotic enclosed parking -> aspiration, not manual-if-sprinklered item 22",
+         inputs=dict(occupancy="parking_enclosed", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=4000, plot_area_m2=6000,
+                     has_robotic_parking=True),
+         expect_fa_branch="fa_robotic_parking",
+         expect_fa_systems=["Aspiration Air Sampling (Vehicle Stacking / Storing Areas)"],
+         forbid_fa_systems=[
+             "Conditional FA System (per sprinkler presence)",
+             "Positive Alarm Sequence (PAS) - 120 s",
+         ]),
+
+    dict(name="FA: Robotic open parking -> aspiration, not manual-only item 22",
+         inputs=dict(occupancy="parking_open", height_m=10, floors_above_grade=2,
+                     ground_floor_bua_m2=5000, gross_floor_area_m2=5000,
+                     plot_area_m2=8000, has_robotic_parking=True),
+         expect_fa_branch="fa_robotic_parking",
+         expect_fa_systems=["Aspiration Air Sampling (Vehicle Stacking / Storing Areas)"],
+         forbid_fa_systems=["Manual Fire Detection and Alarm System"]),
+
+    dict(name="FA: Robotic logistics warehouse -> item 23, not conventional smoke throughout",
+         inputs=dict(occupancy="storage_industrial", height_m=12, floors_above_grade=1,
+                     ground_floor_bua_m2=3000, plot_area_m2=6000, hazard_class="OH2",
+                     has_robotic_parking=True),
+         expect_fa_branch="fa_robotic_parking",
+         expect_fa_systems=["Aspiration Air Sampling (Vehicle Stacking / Storing Areas)"],
+         forbid_fa_systems=[
+             "Smoke Detection and Alarm System (entire building)",
+             "General Fire Alarm = Evacuation Alarm",
+         ]),
+
+    dict(name="FA: Highrise residential + robotic parking still overlays host FA",
+         inputs=dict(occupancy="residential", height_m=30, floors_above_grade=8,
+                     ground_floor_bua_m2=1200, plot_area_m2=4000,
+                     has_robotic_parking=True),
+         expect_fa_branch="fa_highrise",
+         expect_fa_systems=[
+             "5-Floor Phased Evacuation Alarm",
+             "Aspiration Air Sampling (Vehicle Stacking / Storing Areas)",
+         ]),
+
     dict(name="FA: Villa -> Smoke OR Wireless RF + external A/V",
          inputs=dict(occupancy="villa_private", height_m=6, floors_above_grade=2,
                      ground_floor_bua_m2=400, plot_area_m2=800),
@@ -1020,6 +1060,10 @@ def run_all():
             if s not in _names(_items(r, "FA", "Detection & Alarm by Occupancy")):
                 ok = False
                 reasons.append(f"missing FA branch system: {s}")
+        for s in case.get("forbid_fa_systems", []):
+            if s in _names(_items(r, "FA", "Detection & Alarm by Occupancy")):
+                ok = False
+                reasons.append(f"FA branch should not emit: {s}")
         for s in case.get("expect_fa_aux", []):
             if s not in _names(_items(r, "FA", "Auxiliary Rooms")):
                 ok = False
