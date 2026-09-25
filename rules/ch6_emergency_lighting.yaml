@@ -118,7 +118,9 @@ branches:
   - id: el_super_highrise
     match:
       height_m_gt: 90
-      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
+                      mall_covered, mall_open, mall_mixed]
+      has_amusement_confounding_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 1"
     page: "p.419"
     systems:
@@ -134,7 +136,9 @@ branches:
     match:
       height_m_gt: 23
       height_m_lte: 90
-      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
+                      mall_covered, mall_open, mall_mixed]
+      has_amusement_confounding_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 2"
     page: "p.419"
     systems:
@@ -145,6 +149,9 @@ branches:
         spec: "Per Table 6.3 - centralised monitoring + computer interface"
         detail: "Equally acceptable alternative to central battery system - code Table 6.5 uses 'OR' between Central Battery and Monitored Self-Contained (no hierarchy implied)."
 
+  # Table 6.5 item 3 (malls) and item 4 (amusement) are dedicated rows.
+  # Height-tier defaults (items 1-2 / 5-6) must not also match: the engine unions
+  # every hit, which would require both Central Battery and Monitored Self-Contained.
   - id: el_mall
     match:
       occupancy_in: [mall_covered, mall_open, mall_mixed]
@@ -187,7 +194,9 @@ branches:
     match:
       height_m_gt: 15
       height_m_lte: 23
-      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
+                      mall_covered, mall_open, mall_mixed]
+      has_amusement_confounding_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 5"
     page: "p.419"
     systems:
@@ -198,7 +207,9 @@ branches:
   - id: el_lowrise_general
     match:
       height_m_lte: 15
-      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, storage_industrial]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, storage_industrial,
+                      mall_covered, mall_open, mall_mixed]
+      has_amusement_confounding_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 6"
     page: "p.419"
     systems:

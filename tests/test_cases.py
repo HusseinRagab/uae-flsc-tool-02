@@ -108,6 +108,35 @@ CASES = [
          expect_el_systems=[
              "Central Battery Emergency Lighting (Section 3.2)",
              "Monitored Self-Contained EL (Section 3.3) - alternative",
+         ],
+         expect_el_absent=[
+             "Monitored Self-Contained EL (Section 3.3)",
+         ]),
+
+    dict(name="EL: Lowrise mall stays on Table 6.5 item 3 (not item 6 monitored)",
+         inputs=dict(occupancy="mall_covered", height_m=12,
+                     floors_above_grade=2, ground_floor_bua_m2=8000,
+                     plot_area_m2=15000),
+         expect_el_branch="el_mall",
+         expect_el_systems=[
+             "Central Battery Emergency Lighting (Section 3.2)",
+             "Monitored Self-Contained EL (Section 3.3) - alternative",
+         ],
+         expect_el_absent=[
+             "Monitored Self-Contained EL (Section 3.3)",
+         ]),
+
+    dict(name="EL: Highrise mall stays on Table 6.5 item 3 (not item 2 overlay)",
+         inputs=dict(occupancy="mall_covered", height_m=30,
+                     floors_above_grade=8, ground_floor_bua_m2=10000,
+                     plot_area_m2=25000),
+         expect_el_branch="el_mall",
+         expect_el_systems=[
+             "Central Battery Emergency Lighting (Section 3.2)",
+             "Monitored Self-Contained EL (Section 3.3) - alternative",
+         ],
+         expect_el_absent=[
+             "Monitored Self-Contained EL (Section 3.3)",
          ]),
 
     dict(name="EL: Lowrise hospital -> Monitored Self-Contained",
@@ -168,7 +197,10 @@ CASES = [
                      floors_above_grade=2, ground_floor_bua_m2=2000,
                      plot_area_m2=5000, has_amusement_confounding=True),
          expect_el_branch="el_assembly_amusement",
-         expect_el_systems=["Central Battery Emergency Lighting (Section 3.2)"]),
+         expect_el_systems=["Central Battery Emergency Lighting (Section 3.2)"],
+         expect_el_absent=[
+             "Monitored Self-Contained EL (Section 3.3)",
+         ]),
 
 
     # ---- FE archetypes (Ch 4) ----
@@ -946,6 +978,10 @@ def run_all():
             if s not in _names(_items(r, "EL", "System Type Selection")):
                 ok = False
                 reasons.append(f"missing EL system: {s}")
+        for s in case.get("expect_el_absent", []):
+            if s in _names(_items(r, "EL", "System Type Selection")):
+                ok = False
+                reasons.append(f"EL system should be absent: {s}")
         for s in case.get("expect_el_general", []):
             if s not in _names(_items(r, "EL", "General Specs")):
                 ok = False
