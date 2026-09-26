@@ -644,7 +644,23 @@ CASES = [
     # ---- AUDIT MOE: Ch 3 Table 3.16 patches (7 branches gained Travel/Common-path/Dead-end) ----
     dict(name="AUDIT MOE: Mercantile -> Table 3.16 row 13 travel/commonpath/dead-end",
          inputs=dict(occupancy="mercantile_a", height_m=8, ground_floor_bua_m2=600, plot_area_m2=2000),
-         expect_moe_branch="moe_mercantile"),
+         expect_moe_branch="moe_mercantile",
+         expect_moe_systems=[
+             "Occupant Load Factor (Mercantile)",
+             "Travel / Commonpath / Dead-end (Mercantile A/B/C - Table 3.16 row 13.i)",
+         ]),
+
+    dict(name="AUDIT MOE: HH mercantile -> Table 3.16 row 13.iii only (no 76 m ordinary travel)",
+         inputs=dict(occupancy="mercantile_a", height_m=8, ground_floor_bua_m2=600,
+                     plot_area_m2=2000, hazard_class="HH"),
+         expect_moe_branch="moe_mercantile_high_hazard",
+         expect_moe_systems=[
+             "Occupant Load Factor (Mercantile)",
+             "Travel / Commonpath / Dead-end (High-Hazard Mercantile - Table 3.16 row 13.iii)",
+         ],
+         expect_moe_systems_absent=[
+             "Travel / Commonpath / Dead-end (Mercantile A/B/C - Table 3.16 row 13.i)",
+         ]),
 
     dict(name="AUDIT MOE: Mall -> Table 3.16 rows 14-15 (covered/open)",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
@@ -1098,6 +1114,15 @@ def run_all():
             if not moe or moe.selected_branch != case["expect_moe_branch"]:
                 ok = False
                 reasons.append(f"MOE branch: expected {case['expect_moe_branch']}, got {moe.selected_branch if moe else None}")
+        moe_occ_names = _names(_items(r, "MOE", "Occupancy-specific"))
+        for s in case.get("expect_moe_systems", []):
+            if s not in moe_occ_names:
+                ok = False
+                reasons.append(f"missing MOE occupancy system: {s}")
+        for s in case.get("expect_moe_systems_absent", []):
+            if s in moe_occ_names:
+                ok = False
+                reasons.append(f"MOE occupancy system should be absent: {s}")
 
         tag = "PASS" if ok else "FAIL"
         print(f"[{tag}] {case['name']}")

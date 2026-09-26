@@ -233,7 +233,11 @@ branches:
 
   # ------ Mercantile / Mall ------
   - id: moe_mercantile
-    match: {occupancy_in: [mercantile_a, mercantile_b]}
+    # Ordinary mercantile travel (Table 3.16 row 13.i) must not union onto the
+    # HH row. The engine collects every matching branch, so without this gate a
+    # fireworks / aerosol shop was given both 76 m sprinklered travel and the
+    # 23 m HH cap.
+    match: {occupancy_in: [mercantile_a, mercantile_b], hazard_class_in: [LH, OH1, OH2]}
     section: "Ch 3, #4 + #5.11 / Tables 3.13.13 + 3.16"
     page: "p.286"
     systems:
@@ -243,13 +247,17 @@ branches:
         spec: "Travel: S 76 m, NS 46 m  |  Commonpath: S 30 m, NS 23 m  |  Dead-end: S 15 m, NS 6.1 m"
         detail: "Standard retail mercantile (Class A, B, C - shops, showrooms, hypermarkets). For OPEN-AIR mercantile (row 13.ii) all distances are 0 m commonpath / 0 m dead-end / NA travel. For HIGH-HAZARD mercantile (fireworks, aerosol retail, etc.) see the moe_mercantile_high_hazard branch (row 13.iii)."
 
-  # High-hazard mercantile - matches main mercantile occupancies BUT only when hazard_class = HH.
-  # Per Table 3.16 row 13.iii the sprinkler discount is removed and travel is severely tightened.
+  # High-hazard mercantile — exclusive of moe_mercantile. Per Table 3.16 row 13.iii
+  # the sprinkler discount is removed and travel is severely tightened. OLF is
+  # repeated here so HH shops still get Table 3.13 factors after the ordinary
+  # branch is gated off.
   - id: moe_mercantile_high_hazard
     match: {occupancy_in: [mercantile_a, mercantile_b], hazard_class_is: HH}
     section: "Ch 3, #4 + #5.11 / Table 3.16 row 13.iii"
     page: "p.294"
     systems:
+      - name: "Occupant Load Factor (Mercantile)"
+        spec: "Sales below street: 2.8 m². Sales street floor: 2.8 m². Sales above street: 5.6 m². Two-or-more-street-floors: 3.7 m². Office areas only: 9.3 m². Goods areas (no public): 27.9 m²"
       - name: "Travel / Commonpath / Dead-end (High-Hazard Mercantile - Table 3.16 row 13.iii)"
         spec: "Commonpath: S 0 m, NS 0 m  |  Dead-end: S 15 m, NS 6.1 m  |  Travel: S 23 m, NS 23 m"
         detail: "Applies to High-Hazard Mercantile (e.g. fireworks retail, aerosol-can retail, flammable-liquid retail). Per Table 3.16 row 13.iii (p.294) there is ZERO commonpath both sprinklered AND non-sprinklered (every sales position must have direct exit access) and travel is capped at 23 m WITH NO sprinkler benefit (S 23 m = NS 23 m). Compare to standard mercantile S 76 / NS 46. Outswing + panic hardware (Table 3.2 §4 item i + moe_g_hazardous_area_doors) also apply."
