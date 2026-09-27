@@ -38,9 +38,19 @@ general:
         page_ref: "p.694"
         detail: "Yard hydrant loop per Section 3.11. Required because total storage/industrial built-up area across all floors > 3,600 m2 (#4.1.6, p.694). This companion trigger catches multi-storey storage buildings whose ground-floor footprint alone is below 3,600 m2."
   - id: g_storage_sprinkler_over_3floors
+    # Specialty Table 9.27 groups already encode their own suppression (or
+    # explicitly waive it). Without these gates the engine unions this
+    # generic wet-pipe "full coverage" row onto Group P dry-pipe, Group Q
+    # foam-water deluge, Group V extinguishers-only, etc.
     when:
       building_category_is: storage_industrial
       floors_above_grade_gt: 3
+      is_cold_storage: false
+      is_aircraft_hanger: false
+      is_plant_nursery: false
+      is_open_yard_storage: false
+      is_flammable_liquid_warehouse: false
+      is_flammable_liquid_industrial: false
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         code_ref: "Ch 9, #4.1.7"

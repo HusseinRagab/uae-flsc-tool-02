@@ -575,6 +575,36 @@ CASES = [
              "Portable Fire Extinguishers (only)",
          ]),
 
+    dict(name="AUDIT FP: 4-floor ordinary storage still gets §4.1.7 full sprinklers",
+         inputs=dict(occupancy="storage_industrial", height_m=14, floors_above_grade=4,
+                     ground_floor_bua_m2=200, plot_area_m2=1000, hazard_class="LH"),
+         expect_fp_branch="storage_industrial_tier1_lh",
+         expect_fp_general=["Automatic Sprinkler System (full coverage)"]),
+
+    dict(name="AUDIT FP: 4-floor plant nursery does not inherit §4.1.7 wet sprinklers",
+         inputs=dict(occupancy="storage_industrial", height_m=14, floors_above_grade=4,
+                     ground_floor_bua_m2=2000, plot_area_m2=4000, hazard_class="LH",
+                     is_plant_nursery=True),
+         expect_fp_branch="storage_plant_nursery",
+         expect_fp_systems=["Portable Fire Extinguishers (only)"],
+         forbid_fp_general=["Automatic Sprinkler System (full coverage)"]),
+
+    dict(name="AUDIT FP: 4-floor cold storage does not inherit §4.1.7 wet sprinklers",
+         inputs=dict(occupancy="storage_industrial", height_m=14, floors_above_grade=4,
+                     ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="OH2",
+                     is_cold_storage=True),
+         expect_fp_branch="storage_cold_storage",
+         expect_fp_systems=["Automatic DRY-Pipe Sprinkler System (NOT wet pipe)"],
+         forbid_fp_general=["Automatic Sprinkler System (full coverage)"]),
+
+    dict(name="AUDIT FP: 4-floor aircraft hanger does not inherit §4.1.7 wet sprinklers",
+         inputs=dict(occupancy="storage_industrial", height_m=14, floors_above_grade=4,
+                     ground_floor_bua_m2=4000, plot_area_m2=10000, hazard_class="OH2",
+                     is_aircraft_hanger=True),
+         expect_fp_branch="storage_aircraft_hanger",
+         expect_fp_systems=["Foam-Water Deluge System"],
+         forbid_fp_general=["Automatic Sprinkler System (full coverage)"]),
+
     # ---- AUDIT FA: Ch 8 patches (general + CD/HoE gating) ----
     dict(name="AUDIT FA: Universal General entries fire (Table 8.1.a + addressable FACP)",
          inputs=dict(occupancy="residential", height_m=20,
@@ -893,6 +923,14 @@ def run_all():
             if s not in _names(_items(r, "FP", "Branch Requirements")):
                 ok = False
                 reasons.append(f"missing FP branch system: {s}")
+        for s in case.get("expect_fp_general", []):
+            if s not in _names(_items(r, "FP", "General Requirements")):
+                ok = False
+                reasons.append(f"missing FP general system: {s}")
+        for s in case.get("forbid_fp_general", []):
+            if s in _names(_items(r, "FP", "General Requirements")):
+                ok = False
+                reasons.append(f"unexpected FP general system: {s}")
         for s in case.get("expect_fp_aux_systems", []):
             if s not in _names(_items(r, "FP", "Auxiliary Rooms")):
                 ok = False
