@@ -70,6 +70,13 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
             if b.building_category != expected: return False
         elif key == "building_category_not":
             if b.building_category in expected: return False
+        elif key == "not_when":
+            # Nested when: if the inner clause matches, this rule does not apply.
+            # Lets a specialty package (e.g. Table 9.20.c / 9.21.c single-exit)
+            # replace a generic height-tier row without splitting that row or
+            # dropping occupancies the specialty table does not cover.
+            if isinstance(expected, dict) and expected and _eval_when(expected, b):
+                return False
         elif key.endswith("_gt"):
             if not (getattr(b, key[:-3]) > expected): return False
         elif key.endswith("_gte"):

@@ -510,6 +510,58 @@ CASES = [
          expect_fp_branch="lowrise_residential_large_plot",
          expect_fp_systems=["Yard Fire Hydrants", "Fire Pump", "Fire Water Tank"]),
 
+    # ---- Single-exit tables replace (not stack onto) generic mid/lowrise rows ----
+    dict(name="FP: Midrise business GF<=500 single-exit -> Table 9.20.c 500 gpm only",
+         inputs=dict(occupancy="business", height_m=20, floors_above_grade=6,
+                     ground_floor_bua_m2=400, plot_area_m2=5000,
+                     hazard_class="LH", wet_riser_standpipes=2,
+                     has_single_exit_stair=True),
+         expect_fp_branch="midrise_single_exit_small",
+         expect_fp_systems=["Fire Pump (Midrise Single-Exit)"],
+         expect_fp_systems_absent=["Fire Pump"]),
+
+    dict(name="FP: Midrise business GF>500 single-exit stays on Table 9.20.b 750 gpm",
+         inputs=dict(occupancy="business", height_m=20, floors_above_grade=6,
+                     ground_floor_bua_m2=800, plot_area_m2=5000,
+                     hazard_class="LH", wet_riser_standpipes=2,
+                     has_single_exit_stair=True),
+         expect_fp_branch="midrise_residential",
+         expect_fp_systems=["Fire Pump"],
+         expect_fp_systems_absent=["Fire Pump (Midrise Single-Exit)"]),
+
+    dict(name="FP: Lowrise business GF 501-3600 single-exit -> Table 9.21.c.2 300 gpm only",
+         inputs=dict(occupancy="business", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=800, plot_area_m2=5000,
+                     hazard_class="LH", has_single_exit_stair=True),
+         expect_fp_branch="lowrise_single_exit_over_500",
+         expect_fp_systems=["Fire Pump (Lowrise Single-Exit >500 m2)",
+                            "Automatic Sprinkler System (full coverage incl. basements & podiums)"],
+         expect_fp_systems_absent=["Fire Pump"]),
+
+    dict(name="FP: Lowrise hotel GF>3600 single-exit -> Table 9.21.c.2 not 750 gpm wet riser",
+         inputs=dict(occupancy="hotel_a", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=4000, plot_area_m2=8000,
+                     hazard_class="LH", has_single_exit_stair=True),
+         expect_fp_branch="lowrise_single_exit_over_500",
+         expect_fp_systems=["Fire Pump (Lowrise Single-Exit >500 m2)"],
+         expect_fp_systems_absent=["Fire Pump", "Wet Riser System"]),
+
+    dict(name="FP: Lowrise labour GF800 single-exit stays on Table 9.21.b (not in 9.21.c)",
+         inputs=dict(occupancy="labour_accommodation", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=800, plot_area_m2=5000,
+                     has_single_exit_stair=True),
+         expect_fp_branch="lowrise_residential_upto_3600",
+         expect_fp_systems=["Fire Pump"],
+         expect_fp_systems_absent=["Fire Pump (Lowrise Single-Exit >500 m2)"]),
+
+    dict(name="FP: Lowrise hospital GF800 single-exit stays on Table 9.21.a.2",
+         inputs=dict(occupancy="healthcare_a", height_m=12, floors_above_grade=3,
+                     ground_floor_bua_m2=800, plot_area_m2=2000,
+                     has_single_exit_stair=True),
+         expect_fp_branch="lowrise_public_501_3600",
+         expect_fp_systems=["Fire Pump"],
+         expect_fp_systems_absent=["Fire Pump (Lowrise Single-Exit >500 m2)"]),
+
     # ---- AUDIT FP: Tables 9.26 + 9.27 (Infrastructure + Storage/Industrial) ----
     dict(name="AUDIT FP: Infrastructure -> dedicated 1000 gpm yard hydrant + 90-min tank (Table 9.26)",
          inputs=dict(occupancy="infrastructure", height_m=0,
@@ -893,6 +945,10 @@ def run_all():
             if s not in _names(_items(r, "FP", "Branch Requirements")):
                 ok = False
                 reasons.append(f"missing FP branch system: {s}")
+        for s in case.get("expect_fp_systems_absent", []):
+            if s in _names(_items(r, "FP", "Branch Requirements")):
+                ok = False
+                reasons.append(f"unexpected FP branch system: {s}")
         for s in case.get("expect_fp_aux_systems", []):
             if s not in _names(_items(r, "FP", "Auxiliary Rooms")):
                 ok = False

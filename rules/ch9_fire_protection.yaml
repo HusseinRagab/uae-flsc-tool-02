@@ -375,7 +375,12 @@ branches:
         detail: "Dedicated breeching inlet."
 
   - id: midrise_residential
-    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential}
+    # Table 9.20.c (midrise_single_exit_small) is the alternate package for
+    # permitted single-exit midrise with GF BUA <= 500 m2. Without this
+    # exclusion the engine unions both and emits 750 gpm (9.20.b) plus
+    # 500 gpm (9.20.c). Larger single-exit midrise stays on 9.20.b.
+    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential,
+            not_when: {has_single_exit_stair_is: true, ground_floor_bua_m2_lte: 500}}
     section: "Ch 9, #4.4.2 / Table 9.20.b"
     page: "p.701"
     systems:
@@ -444,7 +449,10 @@ branches:
         detail: "Combined yard + internal: dedicated direct breeching inlet, low-level detection, instantaneous utility refill. Internal-only configuration also 60 min."
 
   - id: lowrise_public_upto_500
-    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_lte: 500}
+    # Mercantile / hotel single-exit uses Table 9.21.c, not 9.21.a.
+    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_lte: 500,
+            not_when: {has_single_exit_stair_is: true,
+                       occupancy_in: [mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]}}
     section: "Ch 9, #4.5.1 / Table 9.21.a.1"
     page: "p.705"
     systems:
@@ -461,7 +469,9 @@ branches:
         detail: "Low-level detection + instantaneous utility refill."
 
   - id: lowrise_public_501_3600
-    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_gt: 500, ground_floor_bua_m2_lte: 3600}
+    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_gt: 500, ground_floor_bua_m2_lte: 3600,
+            not_when: {has_single_exit_stair_is: true,
+                       occupancy_in: [mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]}}
     section: "Ch 9, #4.5.1 / Table 9.21.a.2"
     page: "p.705"
     systems:
@@ -479,7 +489,9 @@ branches:
         spec: "30 minutes duration"
 
   - id: lowrise_public_over_3600
-    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_gt: 3600}
+    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_gt: 3600,
+            not_when: {has_single_exit_stair_is: true,
+                       occupancy_in: [mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]}}
     section: "Ch 9, #4.5.1 / Table 9.21.a.3"
     page: "p.705"
     systems:
@@ -497,11 +509,17 @@ branches:
 
   # ---------------- LOWRISE RESIDENTIAL (Ch 9, #4.5.2 / Table 9.21.b) ------
   - id: lowrise_residential_upto_3600
+    # Table 9.21.c covers residential / business (and mercantile / hotel on
+    # the public rows). Labour / staff / hostel / animal housing / clinics
+    # stay on 9.21.b even when the single-exit flag is set.
     match:
       height_m_lte: 15
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
       ground_floor_bua_m2_lte: 3600
       plot_area_m2_lte: 20000
+      not_when:
+        has_single_exit_stair_is: true
+        occupancy_in: [residential, business]
     section: "Ch 9, #4.5.2 / Table 9.21.b.1"
     page: "p.707"
     systems:
@@ -523,6 +541,9 @@ branches:
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
       ground_floor_bua_m2_gt: 3600
       plot_area_m2_lte: 20000
+      not_when:
+        has_single_exit_stair_is: true
+        occupancy_in: [residential, business]
     section: "Ch 9, #4.5.2 / Table 9.21.b.2"
     page: "p.707"
     systems:
@@ -543,6 +564,9 @@ branches:
       height_m_lte: 15
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
       plot_area_m2_gt: 20000
+      not_when:
+        has_single_exit_stair_is: true
+        occupancy_in: [residential, business]
     section: "Ch 9, #4.5.2 / Table 9.21.b.3"
     page: "p.708"
     systems:
