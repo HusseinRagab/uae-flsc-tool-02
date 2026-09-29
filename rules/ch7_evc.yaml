@@ -251,10 +251,14 @@ branches:
         spec: "Per Section 2.5 + Table 7.2"
 
   # ---- Explicit 'not required' branches for clarity -----------------------
+  # Amusement / theme-park (Table 7.3 item 5) is a standalone required trigger
+  # irrespective of occupancy. Gate these rows off when that flag is set so
+  # the engine does not union "EVC not required" onto the amusement package.
   - id: evc_residential_not_required
     match:
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel]
       height_m_lte: 23
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -266,6 +270,7 @@ branches:
     match:
       occupancy: business
       height_m_lte: 23
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -279,6 +284,7 @@ branches:
     match:
       occupancy_in: [healthcare_a, healthcare_b, healthcare_c]
       height_m_lte: 23
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -290,6 +296,7 @@ branches:
     match:
       occupancy_in: [mercantile_a, mercantile_b]
       height_m_lte: 23
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -301,6 +308,7 @@ branches:
     match:
       occupancy_in: [daycare_a, daycare_b, daycare_c]
       height_m_lte: 23
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -311,6 +319,7 @@ branches:
   - id: evc_villa_not_required
     match:
       occupancy_in: [villa_private, villa_commercial]
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -321,6 +330,7 @@ branches:
   - id: evc_parking_not_required
     match:
       occupancy_in: [parking_enclosed, parking_open]
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -331,6 +341,7 @@ branches:
   - id: evc_fuel_not_required
     match:
       occupancy: motor_fuel_dispensing
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -342,6 +353,7 @@ branches:
     match:
       occupancy: storage_industrial
       gross_floor_area_m2_lte: 5000
+      has_amusement_confounding_is: false
     section: "Ch 7, #3.1 / Table 7.3 item 9 (BUA threshold)"
     page: "p.439"
     systems:

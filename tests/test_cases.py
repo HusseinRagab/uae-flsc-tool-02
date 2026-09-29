@@ -269,6 +269,37 @@ CASES = [
                      ground_floor_bua_m2=300, plot_area_m2=600),
          expect_evc_branch="evc_villa_not_required"),
 
+    # Table 7.3 item 5 is a standalone amusement trigger. Without an amusement
+    # gate on the occupancy not-required rows, the engine unioned both.
+    dict(name="EVC: Lowrise residential + amusement -> required only (no not-required stack)",
+         inputs=dict(occupancy="residential", height_m=12, floors_above_grade=4,
+                     ground_floor_bua_m2=600, plot_area_m2=1500,
+                     has_amusement_confounding=True),
+         expect_evc_branch="evc_amusement",
+         expect_evc_systems=[
+             "Emergency Voice Evacuation (Amusement / Theme Parks)",
+             "Two-way Telephone Communication System",
+         ],
+         expect_evc_absent=[
+             "Emergency Voice Evacuation (EVC) - residential occupancies up to highrise threshold",
+         ]),
+
+    dict(name="EVC: Lowrise business + amusement -> required only (no not-required stack)",
+         inputs=dict(occupancy="business", height_m=10, floors_above_grade=2,
+                     ground_floor_bua_m2=400, plot_area_m2=1000,
+                     has_amusement_confounding=True),
+         expect_evc_branch="evc_amusement",
+         expect_evc_systems=["Emergency Voice Evacuation (Amusement / Theme Parks)"],
+         expect_evc_absent=["Emergency Voice Evacuation (EVC) - business under highrise"]),
+
+    dict(name="EVC: Villa + amusement -> required only (no villa not-required stack)",
+         inputs=dict(occupancy="villa_private", height_m=6, floors_above_grade=2,
+                     ground_floor_bua_m2=300, plot_area_m2=600,
+                     has_amusement_confounding=True),
+         expect_evc_branch="evc_amusement",
+         expect_evc_systems=["Emergency Voice Evacuation (Amusement / Theme Parks)"],
+         expect_evc_absent=["Emergency Voice Evacuation (EVC) - villas"]),
+
 
     # ---- FA archetypes (Ch 8) ----
     dict(name="FA: Highrise -> sub-FACPs every 45m + 5-floor PAS",
@@ -1006,6 +1037,10 @@ def run_all():
             if got != want:
                 ok = False
                 reasons.append(f"EVC status for '{sname}': expected {want}, got {got}")
+        for s in case.get("expect_evc_absent", []):
+            if s in _names(_items(r, "EVC")):
+                ok = False
+                reasons.append(f"EVC system should be absent: {s}")
         # ----- FA checks -----
         fa = r.chapter("FA")
         if "expect_fa_branch" in case:
