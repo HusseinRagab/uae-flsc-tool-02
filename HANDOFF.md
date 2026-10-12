@@ -9,6 +9,18 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 3 follow-up answers coded (5 cards, 17:07Z)
+
+- Cylinders: "new or modified / existing" is a required choice with no pre-fill (app stops,
+  report NOT EVALUATED); new without CD approval still stops (#2.2.4-#2.2.5 p.884).
+- Villa written EAP: conditional, like the villa drills (p.1233 unread).
+- Indoor flame-effect show also stops when Ch 8 does not require automatic detection (#3.2.2
+  p.923); sprinklered parking is newly stopped (Table 8.13 item 22). FA results unchanged.
+- Attached parking depth input (#1.7.45); blank = building depth, named in the report.
+- Amusement + Group C: Table 6.5 item 4 governs (cite only).
+- Tests: 273 pytest, 112 cases, structural 0. Two more cards open: flame-effect sprinkler check
+  across R13 occupancies; parking depth with 0 levels.
+
 ### 2026-10-12 — Phase 3 owner answers coded (24 cards, 16:27Z, all on the recommended option)
 
 Log: project files `uae_flsc_tool/phase3/ANSWERS_12.10.2026.md`; reports REPORT_a1/a2/a3.
@@ -245,7 +257,8 @@ the 750 gpm row of 9.24.C.2.
 | P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | answered 12.10, coded |
 | P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | answered 12.10 14:58Z, coded (F6 phase 3) |
 | P3 cards (24) | Ch 10 Q1-Q4, Ch 11 Q1-Q7, Ch 4-7 Q1-Q3, storey Q1-Q4, app Q1-Q6 | answered 12.10 16:27Z, coded (App Q4 = phase 4) |
-| P3 follow-ups (4) | cylinder new-building default, villa EAP, flame effect alarm, amusement vs Group C | open |
+| P3 follow-ups (5) | cylinder new-building default, villa EAP, flame effect alarm, amusement vs Group C, parking depth | answered 17:07Z, coded |
+| P3 follow-ups (2) | flame-effect sprinkler check across R13 occupancies; parking depth with 0 levels | open |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
