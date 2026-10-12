@@ -324,10 +324,22 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 9 - Fire Protection."""
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
+    branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    # One yard hydrant line: when the occupancy table already lists yard
+    # hydrants (with its own exemption text), the #4.1.4 / #4.1.6 general
+    # trigger is folded into that line instead of printing a second one.
+    yard = next((i for i, it in enumerate(branch_items)
+                 if it.status == "required" and it.system.startswith("Yard Fire Hydrant")), None)
+    gen_yard = [it for it in gen if it.system == "Yard Fire Hydrant System"]
+    if yard is not None and gen_yard:
+        refs = ", ".join(dict.fromkeys(f"{g.code_ref} ({g.page_ref})" for g in gen_yard))
+        y = branch_items[yard]
+        branch_items[yard] = y.model_copy(update={
+            "detail": (y.detail or "") + f" Also triggered by {refs}."})
+        gen = [it for it in gen if it not in gen_yard]
     if gen:
         blocks.append(SectionBlock(title="FP - General Requirements (Ch 9, #4.1)", items=gen))
 
-    branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
     if branch_items:
         blocks.append(SectionBlock(title="FP - Branch Requirements (Ch 9)", items=_dedupe(branch_items)))
 
