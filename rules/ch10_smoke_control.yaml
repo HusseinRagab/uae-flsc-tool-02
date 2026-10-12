@@ -30,7 +30,7 @@ branches:
   # edge, Ch 1 #1.7.42 + FAQ Annexure 1 treat the building as highrise (super
   # starts *more than* 90 m). Match is therefore inclusive at 90 m.
   - id: sc_highrise
-    match: {height_m_gt: 23, height_m_lte: 90}
+    match: {height_m_gte: 23, height_m_lte: 90}
     section: "Ch 10, #3.2 / Table 10.20"
     page: "p.857"
     systems:
@@ -49,7 +49,7 @@ branches:
   # ---------- Table 10.21 - Midrise / Lowrise default (<23 m) ----------
   - id: sc_midrise_lowrise_default
     match:
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_not: [healthcare_a, healthcare_b,
                       mall_covered, mall_open, mall_mixed,
                       assembly_a, assembly_b, assembly_c,
@@ -155,7 +155,7 @@ branches:
 
   - id: sc_lowrise_long_corridor
     match:
-      height_m_lte: 23
+      height_m_lt: 23
       corridor_length_m_gt: 60
       occupancy_in: [residential, business, mercantile_a, mercantile_b, staff_accommodation, labour_accommodation]
     section: "Ch 10, #3.9 / Table 10.27 item 4"
@@ -165,7 +165,7 @@ branches:
 
   - id: sc_lowrise_special_occupancy_stair
     match:
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_in: [healthcare_a, healthcare_b, mall_covered, mall_open, mall_mixed, assembly_a, assembly_b, assembly_c, education_a, education_b, education_c]
     section: "Ch 10, #3.3 / Table 10.21 (special occupancy)"
     page: "p.858"
@@ -257,7 +257,7 @@ branches:
         required: conditional
 
   - id: sc_business_open_plan_highrise
-    match: {occupancy: business, height_m_gt: 23}
+    match: {occupancy: business, height_m_gte: 23}
     section: "Ch 10, #3.9 / Table 10.27 item 3"
     page: "p.865"
     systems:
@@ -266,7 +266,7 @@ branches:
 
   - id: sc_midrise_lowrise_lobby_lift_corridor
     match:
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
     section: "Ch 10, #3.3 / Table 10.21 items 2 and 4"
     page: "p.858"
@@ -280,7 +280,7 @@ branches:
 
   - id: sc_midrise_lowrise_ff_lift
     match:
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
     section: "Ch 10, #3.3 / Table 10.21 item 3"
     page: "p.858"

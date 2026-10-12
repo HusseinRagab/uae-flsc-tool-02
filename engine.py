@@ -760,7 +760,7 @@ _EMPTY_CHAPTER_NOTES = {
     "SC":  ("Smoke Control Not Required",
             "Smoke control / smoke management systems are NOT required for "
             "this {tier} {occ} building. UAE FLSC Ch 10 mandates smoke control "
-            "only for: highrise and super-highrise buildings (above 23 m); "
+            "only for: highrise and super-highrise buildings (23 m and above); "
             "special occupancies (hospitals, malls, educational, assembly); "
             "deep basements and underground areas (more than 7 m below grade "
             "or more than 2 basements); enclosed parking; atria; tunnels; and "

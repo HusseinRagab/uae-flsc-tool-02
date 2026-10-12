@@ -1195,7 +1195,7 @@ with st.sidebar:
                         key="is_covered_shaded_parking",
                         help="Table 9.24.D rows are keyed on the covered/shaded parking area "
                              "(taken as the ground-floor BUA).")
-        if float(height_m) <= 23:
+        if float(height_m) < 23:
             st.checkbox("Single exit stair (Tables 9.20.c, 9.21.c, 9.21.d)",
                         key="has_single_exit_stair",
                         help="Midrise/lowrise residential, business and similar buildings with "
@@ -1365,7 +1365,7 @@ building = Building(
     exit_stairs=(int(st.session_state.get("exit_stairs_input", 2) or 2)
                  if occupancy == "parking_open" or gs("villa_converted_use") else 2),
     is_covered_shaded_parking=gs("is_covered_shaded_parking") and occupancy == "parking_open",
-    has_single_exit_stair=gs("has_single_exit_stair") and float(height_m) <= 23,
+    has_single_exit_stair=gs("has_single_exit_stair") and float(height_m) < 23,
     pump_room_at_grade=gs("pump_room_at_grade") and int(floors_below) > 0,
     gf_beyond_100m_from_hydrant=gs("gf_beyond_100m_from_hydrant") and occupancy == "storage_industrial",
 )
@@ -1616,9 +1616,9 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
             "inpatient hospitals have at least one of these."
         )
 
-    if b.height_m > 23 and not b.has_evacuation_elevator:
+    if b.height_m >= 23 and not b.has_evacuation_elevator:
         warns.append(
-            "⚠ Highrise (>23 m) without a designated `evacuation_elevator`. "
+            "⚠ Highrise (23 m or more) without a designated `evacuation_elevator`. "
             "Civil Defence often expects at least one designated firefighter / "
             "evacuation lift on highrise. Confirm with the AHJ if absent."
         )
@@ -1651,7 +1651,7 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
             "Confirm intentional."
         )
 
-    if b.has_lpg_tanks and b.height_m > 23:
+    if b.has_lpg_tanks and b.height_m >= 23:
         info.append(
             "ℹ LPG tanks declared on a highrise. Per Ch 11 #2.5.1 the tanks "
             "must be on the roof or podium only (never inside the building). "
@@ -1862,8 +1862,8 @@ _OP_SUFFIX_LABEL = {
 def _human_match(match: dict) -> str:
     """Translate a YAML match/when dict into a plain-English fragment for the
     branch-rationale caption. Examples:
-      {occupancy: hotel_a, height_m_gt: 23, height_m_lte: 90, plot_area_m2_lte: 3000}
-      -> "Hotel Group A, 23 < height ≤ 90 m (highrise), plot ≤ 3,000 m²"
+      {occupancy: hotel_a, height_m_gte: 23, height_m_lte: 90, plot_area_m2_lte: 3000}
+      -> "Hotel Group A, height ≥ 23, height ≤ 90 m (highrise), plot ≤ 3,000 m²"
     """
     if not match:
         return ""

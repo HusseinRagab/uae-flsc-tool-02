@@ -50,7 +50,7 @@ general:
     # Table 9.6 item 13.iv (p.584): measured from the fire pump, not from
     # grade. Super highrise rows already carry their upper-level pump sets.
     when:
-      height_m_gt: 23
+      height_m_gte: 23
       height_m_lte: 90
       pump_head_height_m_gte: 90
     systems:
@@ -357,7 +357,7 @@ branches:
         detail: "A fire water tank for every upper-level pump set (every 90 m interval), 30 minutes, with automatic low water level detection, instantaneous refilling, and pumping and piping to refill the tanks from lower levels (Table 9.18.B x)."
 
   - id: highrise_45_90_large_plot
-    match: {height_m_gt: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gte: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.A"
     page: "p.698"
     systems:
@@ -380,7 +380,7 @@ branches:
         detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.A ix)."
 
   - id: highrise_45_90_small_plot
-    match: {height_m_gt: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gte: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.B"
     page: "p.698"
     systems:
@@ -401,7 +401,7 @@ branches:
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.B vii)."
 
   - id: highrise_23_45_large_plot
-    match: {height_m_gt: 23, pump_head_height_m_lt: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gte: 23, pump_head_height_m_lt: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.C"
     page: "p.699"
     systems:
@@ -424,7 +424,7 @@ branches:
         detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.C viii)."
 
   - id: highrise_23_45
-    match: {height_m_gt: 23, pump_head_height_m_lt: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gte: 23, pump_head_height_m_lt: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.D"
     page: "p.699"
     systems:
@@ -451,19 +451,22 @@ branches:
     # discharge, so a #4.4.2 (residential-group) building that is high depth
     # routes here, not to Table 9.20.b (ruling 12.10.2026). Detention keeps
     # Table 9.20.d, which is at least as onerous.
+    # Ruling R2 (12.10.2026): a lowrise building with 3 or more basements also
+    # takes row H. Tables 9.21.a/b cover "2 or less basements" only (p.705), and
+    # row H is the only printed row naming 3 or more basements.
     match:
-      height_m_gt: 15
-      height_m_lte: 23
-      occupancy_not: [detention_a, detention_b, detention_c]
       any_of:
-        - {occupancy_group_is: midrise_public}
-        - {occupancy_group_is: midrise_residential, is_high_depth_is: true}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
+        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: lowrise_public}
+        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: midrise_residential}
       plot_area_m2_lte: 20000
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_public_large_plot, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_villa_converted_upto_900, lowrise_villa_converted_two_stairs, lowrise_villa_converted_single_stair]
     section: "Ch 9, #4.4.1 / Table 9.20.a.1 (plot not more than 20,000 m2)"
     page: "p.700"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.1 i). Row H of Table 9.20.a applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45: more than 7 m or more than two basements below exit discharge). Plot area exactly 20,000 m2 is taken under row 1: the table prints less than / more than 20,000 m2 and #4.1.4 triggers yard hydrants only above 20,000 m2."
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.1 i). Row H of Table 9.20.a applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45: more than 7 m or more than two basements below exit discharge). A lowrise building with 3 or more basements also takes row H (ruling R2, 12.10.2026; Tables 9.21.a/b cover 2 or less basements, p.705). Plot area exactly 20,000 m2 is taken under row 1: the table prints less than / more than 20,000 m2 and #4.1.4 triggers yard hydrants only above 20,000 m2."
       - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
         detail: "Wet risers throughout per Section 3.4, interconnected at the highest level (Table 9.20.a.1 iii-iv)."
@@ -483,19 +486,22 @@ branches:
     # discharge, so a #4.4.2 (residential-group) building that is high depth
     # routes here, not to Table 9.20.b (ruling 12.10.2026). Detention keeps
     # Table 9.20.d, which is at least as onerous.
+    # Ruling R2 (12.10.2026): a lowrise building with 3 or more basements also
+    # takes row H. Tables 9.21.a/b cover "2 or less basements" only (p.705), and
+    # row H is the only printed row naming 3 or more basements.
     match:
-      height_m_gt: 15
-      height_m_lte: 23
-      occupancy_not: [detention_a, detention_b, detention_c]
       any_of:
-        - {occupancy_group_is: midrise_public}
-        - {occupancy_group_is: midrise_residential, is_high_depth_is: true}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
+        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: lowrise_public}
+        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: midrise_residential}
       plot_area_m2_gt: 20000
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_public_large_plot, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_villa_converted_upto_900, lowrise_villa_converted_two_stairs, lowrise_villa_converted_single_stair]
     section: "Ch 9, #4.4.1 / Table 9.20.a.2 (plot more than 20,000 m2)"
     page: "p.700"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.2 i). Row H applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45)."
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.2 i). Row H applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45). A lowrise building with 3 or more basements also takes row H (ruling R2, 12.10.2026; Tables 9.21.a/b cover 2 or less basements, p.705)."
       - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4, interconnected at the highest level (Table 9.20.a.2 iii-iv)."
@@ -517,7 +523,7 @@ branches:
   - id: midrise_residential_upto_900
     match:
       height_m_gt: 15
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_group_is: midrise_residential
       is_high_depth_is: false
       ground_floor_bua_m2_lte: 900
@@ -543,7 +549,7 @@ branches:
   - id: midrise_residential_901_3600
     match:
       height_m_gt: 15
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_group_is: midrise_residential
       is_high_depth_is: false
       ground_floor_bua_m2_gt: 900
@@ -569,7 +575,7 @@ branches:
   - id: midrise_residential_over_3600
     match:
       height_m_gt: 15
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_group_is: midrise_residential
       is_high_depth_is: false
       ground_floor_bua_m2_gt: 3600
@@ -593,7 +599,7 @@ branches:
   - id: midrise_residential_large_plot
     match:
       height_m_gt: 15
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_group_is: midrise_residential
       is_high_depth_is: false
       plot_area_m2_gt: 20000
@@ -617,7 +623,7 @@ branches:
   - id: midrise_single_exit_small
     match:
       height_m_gt: 15
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
       ground_floor_bua_m2_lte: 500
       has_single_exit_stair_is: true
@@ -646,7 +652,7 @@ branches:
   - id: midrise_detention
     match:
       height_m_gt: 15
-      height_m_lte: 23
+      height_m_lt: 23
       occupancy_in: [detention_a, detention_b, detention_c]
     section: "Ch 9, #4.4.4 / Table 9.20.d"
     page: "p.704"
@@ -775,6 +781,7 @@ branches:
       height_m_lte: 15
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
       ground_floor_bua_m2_gt: 3600
+      plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.2"
     page: "p.707"
     systems:
@@ -800,8 +807,6 @@ branches:
     section: "Ch 9, #4.5.2 / Table 9.21.b.3"
     page: "p.708"
     systems:
-      - name: "Automatic Sprinklers / Hose Reels / Wet Risers (per BUA tier of Table 9.21.b.1 or 2)"
-        detail: "Sprinklers, hose reels and/or wet risers shall be provided per the BUA tier in Table 9.21.b.1 or .b.2 (i.e., follow the appropriate sub-branch). The plot-area trigger upgrades the pump and tank capacities below."
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrant network around plot per Section 3.11. Not required if infrastructure hydrants available within 60 m of building."
       - name: "Fire Pump"
@@ -812,6 +817,44 @@ branches:
         duty: tank
         spec: "60 minutes duration"
         detail: "Combined yard + internal tank with dedicated breeching inlet, low-level detection, instantaneous refill."
+
+  # Ruling R4 (12.10.2026): Table 9.21.b.3.i (p.708) gives the building systems
+  # "in accordance with Table 9.21.a. 1., 2., or 3., as applicable". The pump and
+  # tank stay with lowrise_residential_large_plot (combined 1000 gpm, 60 min).
+  - id: lowrise_residential_large_plot_tier1
+    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_lte: 500}
+    section: "Ch 9, #4.5.2 / Table 9.21.b.3.i with Table 9.21.a.1 (GF BUA up to 500 m2)"
+    page: "p.708, p.705"
+    systems:
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reels throughout per Section 3.3 (Table 9.21.a.1 i). Table 9.21.b.3.i (p.708) refers to Table 9.21.a items 1, 2 or 3, not Table 9.21.b, so the building systems follow the Table 9.21.a ground-floor tiers (ruling R4, 12.10.2026). Table 9.21.b alone would start sprinklers above 3,600 m2."
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required (Table 9.21.a.1 ii)."
+
+  - id: lowrise_residential_large_plot_tier2
+    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_gt: 500, ground_floor_bua_m2_lte: 3600}
+    section: "Ch 9, #4.5.2 / Table 9.21.b.3.i with Table 9.21.a.2 (GF BUA 501 to 3,600 m2)"
+    page: "p.708, p.705"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.21.a.2 i). Table 9.21.b.3.i (p.708) refers to Table 9.21.a items 1, 2 or 3, not Table 9.21.b, so the building systems follow the Table 9.21.a ground-floor tiers (ruling R4, 12.10.2026). Table 9.21.b alone would start sprinklers above 3,600 m2."
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reels throughout per Section 3.3 (Table 9.21.a.2 iii)."
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required (Table 9.21.a.2 iv)."
+
+  - id: lowrise_residential_large_plot_tier3
+    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_gt: 3600}
+    section: "Ch 9, #4.5.2 / Table 9.21.b.3.i with Table 9.21.a.3 (GF BUA more than 3,600 m2)"
+    page: "p.708, p.705"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.21.a.3 i). Table 9.21.b.3.i (p.708) refers to Table 9.21.a items 1, 2 or 3, not Table 9.21.b, so the building systems follow the Table 9.21.a ground-floor tiers (ruling R4, 12.10.2026). Table 9.21.b alone would start sprinklers above 3,600 m2."
+      - name: "Wet Riser System (interconnected at highest level)"
+        requires_wet_riser: true
+        detail: "Wet risers throughout per Section 3.4, interconnected at the highest level (Table 9.21.a.3 iii-iv)."
 
   # ---------------- LOWRISE SINGLE-EXIT (Ch 9, #4.5.3 / Table 9.21.c) ----
   # Residential / Business / Mercantile / Hotel lowrise (<=15 m) with single exit stair.
@@ -879,7 +922,7 @@ branches:
       floors_above_grade_lte: 2
       villa_converted_use_is: true
       ground_floor_bua_m2_lte: 900
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.4 / Table 9.21.d.1 (GF BUA less than 900 m2, irrespective of stairs)"
     page: "p.710"
     systems:
@@ -903,7 +946,7 @@ branches:
       ground_floor_bua_m2_gt: 900
       has_single_exit_stair_is: false
       exit_stairs_gte: 2
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.4 / Table 9.21.d.2 (GF BUA more than 900 m2, two exit stairs)"
     page: "p.710"
     systems:
@@ -928,7 +971,7 @@ branches:
       any_of:
         - {has_single_exit_stair_is: true}
         - {exit_stairs_lt: 2}
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.4 / Table 9.21.d.3 (GF BUA more than 900 m2, second exit stair not available)"
     page: "p.710"
     systems:
@@ -1993,7 +2036,7 @@ branches:
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: standpipe_dependent
-        detail: "Table 9.24.A.3 v prints 750 gpm for 2 standpipes and 1000 gpm for more than 3 standpipes; 3 standpipes is not printed. The tool takes 1000 gpm for 3 standpipes (ruling R3 pending)."
+        detail: "Table 9.24.A.3 v prints 750 gpm for 2 standpipes and 1000 gpm for more than 3 standpipes; 3 standpipes is not printed. Exactly 3 standpipes takes 1000 gpm: every other table switches above 2, so the printed more than 3 is read as a typo (ruling R3, 12.10.2026)."
       - name: "Fire Water Tank"
         duty: tank
         spec: "60 minutes duration"
