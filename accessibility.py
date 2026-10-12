@@ -81,7 +81,7 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
                 system="Area of refuge / evacuation elevator access",
                 status="conditional",
                 spec="Area of refuge is not mandated by Civil Defence; where the overall fire strategy provides one (super highrise above 90 m or large complex buildings), it complies with Ch 3 #3.8 and Table 3.10 (#3.8.1)",
-                detail="Table 3.10: 1-hr fire barrier; 45 minute doors; protected stair access; area on a clear fire strategy or the occupants of 3 floors; one 760 mm x 1220 mm wheelchair space for every 200 occupants or portion thereof; Arabic and English \"AREA OF REFUGE\" sign.",
+                detail="Table 3.10: 1-hr fire barrier; 45 minute doors; protected stair access, stair width for the occupant load served and never less than 1200 mm; area on a clear fire strategy or the occupants of 3 floors; one 760 mm x 1220 mm wheelchair space for every 200 occupants or portion thereof; Arabic and English \"AREA OF REFUGE\" sign.",
                 code_ref="Ch 3, #3.8.1 / Table 3.10",
                 page_ref="p.279",
                 source_rule="acc_refuge",

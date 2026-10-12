@@ -287,6 +287,8 @@ def test_CH10_24_area_of_refuge_conditional_per_ch3_3_8_1():
     ref = get(r, "ACC", "Area of refuge")
     assert ref.status == "conditional" and ref.code_ref.startswith("Ch 3, #3.8.1")
     assert "760 mm x 1220 mm" in ref.detail and "0.28" not in ref.detail
+    assert "45 minute doors" in ref.detail and "1-hr fire barrier" in ref.detail and "1200 mm" in ref.detail
+    assert "#3.5" not in ref.code_ref and "occupants of 3 floors" in ref.detail
 
 
 def test_CH10_33_ch15_citations_and_stair_content():
