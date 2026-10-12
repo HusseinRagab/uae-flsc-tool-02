@@ -469,20 +469,22 @@ branches:
     # Table 9.20.d, which is at least as onerous.
     # Ruling R2 (12.10.2026): a lowrise building with 3 or more basements also
     # takes row H. Tables 9.21.a/b cover "2 or less basements" only (p.705), and
-    # row H is the only printed row naming 3 or more basements.
+    # row H is the only printed row naming 3 or more basements. Ruling R2b
+    # (12.10.2026): any high-depth lowrise (#1.7.45: deeper than 7 m, even with 2 or
+    # fewer basements) also takes row H.
     match:
       any_of:
         - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
         - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
-        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: lowrise_public}
-        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: midrise_residential}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
       plot_area_m2_lte: 20000
     suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_public_large_plot, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_villa_converted_upto_900, lowrise_villa_converted_two_stairs, lowrise_villa_converted_single_stair]
     section: "Ch 9, #4.4.1 / Table 9.20.a.1 (plot not more than 20,000 m2)"
     page: "p.700"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.1 i). Row H of Table 9.20.a applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45: more than 7 m or more than two basements below exit discharge). A lowrise building with 3 or more basements also takes row H (ruling R2, 12.10.2026; Tables 9.21.a/b cover 2 or less basements, p.705). Plot area exactly 20,000 m2 is taken under row 1: the table prints less than / more than 20,000 m2 and #4.1.4 triggers yard hydrants only above 20,000 m2."
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.1 i). Row H of Table 9.20.a applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45: more than 7 m or more than two basements below exit discharge). A lowrise building with 3 or more basements (ruling R2) or deeper than 7 m (ruling R2b) also takes row H (12.10.2026; Tables 9.21.a/b cover 2 or less basements, p.705). Plot area exactly 20,000 m2 is taken under row 1: the table prints less than / more than 20,000 m2 and #4.1.4 triggers yard hydrants only above 20,000 m2."
       - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
         detail: "Wet risers throughout per Section 3.4, interconnected at the highest level (Table 9.20.a.1 iii-iv)."
@@ -504,20 +506,22 @@ branches:
     # Table 9.20.d, which is at least as onerous.
     # Ruling R2 (12.10.2026): a lowrise building with 3 or more basements also
     # takes row H. Tables 9.21.a/b cover "2 or less basements" only (p.705), and
-    # row H is the only printed row naming 3 or more basements.
+    # row H is the only printed row naming 3 or more basements. Ruling R2b
+    # (12.10.2026): any high-depth lowrise (#1.7.45: deeper than 7 m, even with 2 or
+    # fewer basements) also takes row H.
     match:
       any_of:
         - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
         - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
-        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: lowrise_public}
-        - {height_m_lte: 15, floors_below_grade_gte: 3, occupancy_group_is: midrise_residential}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
       plot_area_m2_gt: 20000
     suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_public_large_plot, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_villa_converted_upto_900, lowrise_villa_converted_two_stairs, lowrise_villa_converted_single_stair]
     section: "Ch 9, #4.4.1 / Table 9.20.a.2 (plot more than 20,000 m2)"
     page: "p.700"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.2 i). Row H applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45). A lowrise building with 3 or more basements also takes row H (ruling R2, 12.10.2026; Tables 9.21.a/b cover 2 or less basements, p.705)."
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.2 i). Row H applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45). A lowrise building with 3 or more basements (ruling R2) or deeper than 7 m (ruling R2b) also takes row H (12.10.2026; Tables 9.21.a/b cover 2 or less basements, p.705)."
       - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4, interconnected at the highest level (Table 9.20.a.2 iii-iv)."
