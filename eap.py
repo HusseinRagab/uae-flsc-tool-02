@@ -4,8 +4,9 @@ Every non-villa building gets the Table 19.1 item 8 assembly point and the
 Table 19.2 drills (audit CH10-12, 12.10.2026), and the written EAP document
 (Table 19.2 #3.1.i, p.1246; owner ruling 12.10.2026, P3 Ch11 Q1). The
 evacuation strategy and response team lines stay with midrise+ and high-risk
-occupancies. Villas: assembly point and drills conditional until the Ch 19
-scope page p.1233 is read (owner ruling 12.10.2026, P3 Ch11 Q2). Pages:
+occupancies. Villas: written EAP, assembly point and drills conditional until
+the Ch 19 scope page p.1233 is read (owner ruling 12.10.2026, P3 Ch11 Q2 and
+follow-up F-a1-2). Pages:
 Table 19.1 items 1-4 p.1234-1237, item 8 p.1243; Table 19.2 p.1245-1248
 (drills read on p.1246).
 """
@@ -33,6 +34,14 @@ _VILLA_SCOPE_NOTE = (
     "assembly point' and Table 19.2 #3.1.ii (p.1246) the facility management team of 'every "
     "building'; the Ch 19 scope page (p.1233) is not yet read, so whether private / "
     "commercial villas fall in scope is not confirmed (owner ruling 12.10.2026, P3 Ch11 Q2). ")
+
+
+_VILLA_EAP_NOTE = (
+    "Villa: conditional. Table 19.2 #3.1.i (p.1246) reads 'Facility management shall have "
+    "emergency action plan in accordance with Chapter 19' and #3.1.ii names the facility "
+    "management team of 'every building'; the Ch 19 scope page (p.1233) is not yet read, so "
+    "whether private / commercial villas fall in scope is not confirmed (owner ruling "
+    "12.10.2026, P3 follow-up F-a1-2, as P3 Ch11 Q2 for the assembly point and drills). ")
 
 
 def _written_eap(b: Building) -> Requirement:
@@ -101,14 +110,14 @@ def evaluate_eap(b: Building) -> ChapterReport:
         or b.occupancy in ("labour_accommodation", "detention_a", "detention_b", "detention_c")
     )
     if not needs and b.occupancy.startswith("villa_"):
-        items.append(Requirement(
-            system="Emergency Action Plan",
-            status="not_required",
-            spec="Private villa: formal EAP documentation not typically mandated at this scale",
-            code_ref="Ch 19, #2",
-            page_ref="p.1233",
-            source_rule="eap_villa_na",
-        ))
+        # Owner ruling 12.10.2026, P3 follow-up F-a1-2: the written EAP is conditional for
+        # villas, like the assembly point and drills, until p.1233 is read.
+        items.append(_written_eap(b).model_copy(update={
+            "status": "conditional",
+            "detail": (_VILLA_EAP_NOTE + "Include approved floor plans with electrical "
+                       "switchboard, FF equipment, and BMS/control locations."),
+            "source_rule": "eap_villa_written",
+        }))
         items.extend(_assembly_and_drills(b))
     elif not needs:
         items.append(_written_eap(b))
