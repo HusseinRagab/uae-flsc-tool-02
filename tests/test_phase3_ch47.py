@@ -204,3 +204,45 @@ def test_CH47_19_villa_basement_from_basement_count():
     assert len(b) == 1 and b[0].status == "required"
     none = report(occupancy="villa_private", height_m=6, floors_below_grade=0, basement_bua_m2=0)
     assert not named(none, "EL", "Stand-alone Self-Contained EL (basement only)")
+
+
+# ------------------------------------------------------------------ Ch 7
+def test_CH47_04_sleeping_area_audibility_wherever_evc_required():
+    """Table 7.1 #4.4 p.434: 'Voice messages in sleeping areas shall be 75 dB measured at
+    the pillow level ... (dBA)'."""
+    name = "Sleeping Area Audibility (75 dB at pillow level)"
+    for occ in ("residential", "hostel", "healthcare_a"):
+        r = report(occupancy=occ, height_m=40)
+        s = named(r, "EVC", name)
+        assert len(s) == 1 and s[0].status == "required" and "pillow level" in s[0].spec, occ
+    det = report(occupancy="detention_a", height_m=10)
+    assert [x.status for x in named(det, "EVC", name)] == ["required"]
+    office = report(occupancy="business", height_m=40)
+    assert [x.status for x in named(office, "EVC", name)] == ["conditional"]
+    assert not named(report(occupancy="business", height_m=10), "EVC", name)
+
+
+def test_CH47_05_strobes_speakers_zones_two_way_wiring_and_heights():
+    """Table 7.1 #5-#6 p.434; Table 7.2 #4-#5 p.438."""
+    r = report(occupancy="hotel_a", height_m=10)
+    req = {it.system: it for it in items(r, "EVC", required_only=True)}
+    assert "flashers or strobe light" in req[
+        "Speakers with Flashers / Strobe Light (basements, plant rooms, noisy industrial areas)"].spec
+    assert "dedicated, listed, approved and tested" in req["EVC Speakers - Dedicated, Listed, Approved"].spec
+    assert "Table 7.1 item 6" in req["Voice Evacuation Signalling Zones"].code_ref
+    assert "2 hour fire rated" in req["Two-way Telephone Circuits + Wiring (2 hour fire rated)"].spec
+    h = req["Two-way Telephone Appliance / Jack Mounting Heights"].spec
+    for v in ("910-1680 mm", "760 mm", "1220 mm"):
+        assert v in h, v
+
+
+def test_CH47_16_evc_labels_as_printed():
+    """Table 7.1 #4.4 p.434 (no 'door closed'); Table 8.1 #14.2 p.459 15 s / 180 s;
+    Table 8.13 p.502 240 s; ambient levels are 'for information'."""
+    hotel = all_text(report(occupancy="hotel_a", height_m=10), "EVC")
+    assert "door closed" not in hotel and "hotel override 120 s" not in hotel
+    assert "within 15 seconds" in hotel and "180 seconds" in hotel and "240 seconds" in hotel
+    asm = all_text(report(occupancy="assembly_b", height_m=10), "EVC")
+    edu = all_text(report(occupancy="education_b", height_m=10), "EVC")
+    assert "ambient design level" not in asm + edu
+    assert "for information" in asm and "for information" in edu

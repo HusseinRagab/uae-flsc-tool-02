@@ -42,7 +42,7 @@ general:
         code_ref: "Table 7.1 #3 + Ch 8 Table 8.1 #14"
         page_ref: "p.433"
         spec: "PAS permitted per Ch 8 Table 8.1.14.2; numeric timings live in Ch 8 (not Ch 7)"
-        detail: "Ch 7 Table 7.1 #3 only states that PAS (Delayed Alarm sequence) per Ch 8 Table 8.1.14.2 shall be permitted - it is NOT mandatory. The actual numeric timings (Stage 1 acknowledge 15 s; Stage 2 multi-zone expansion 180 s; Stage 3 building-wide 240 s; hotel override 120 s) are defined in Ch 8, not in Ch 7. Backup duration is also not specified in Ch 7 - defer to Ch 8 / NFPA 72 for minutes of standby."
+        detail: "Ch 7 Table 7.1 #3 only states that PAS (Delayed Alarm sequence) per Ch 8 Table 8.1.14.2 shall be permitted - it is NOT mandatory. The timings are in Ch 8: acknowledged at the fire alarm control unit within 15 seconds of annunciation, and up to 180 seconds during the alarm investigation phase (Table 8.1 #14.2.i and iii, p.459); staged evacuation timings follow the building's Table 8.13 row (for super highrise and highrise buildings, items 1-2 vi-vii, p.502: 15 s / 180 s, then the entire building within 240 seconds). Backup duration is also not specified in Ch 7 - defer to Ch 8."
 
   - id: evc_general_sleeping_risk_tone
     when: {}
@@ -116,6 +116,76 @@ general:
         spec: "Combined FACP+EVC control unit preferred; if separate, fully interfaced + connected to Civil Defence 24x7 monitoring"
         detail: "Per Table 7.1 #11: (a) a combined FACP+EVC control unit is preferred by Civil Defence; (b) a single dedicated EVC control panel is permitted if interfaced to the FACP; (c) the interface shall indicate failure at the impaired control unit, give audible + distinctive visible 'ECV active' indication at the affected FACP, cause the FA system to deactivate audible/visible appliances that could interfere with EVC intelligibility, NOT permit the FA system to turn off appliances used for special-suppression pre-discharge notification, and (d) the system shall be CONNECTED TO CIVIL DEFENCE 24x7 MONITORING for activation and trouble indication."
 
+  - id: evc_general_sleeping_area_audibility
+    when:
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel,
+                     hotel_a, hotel_b, hotel_c, healthcare_a,
+                     detention_a, detention_b, detention_c]
+    systems:
+      - name: "Sleeping Area Audibility (75 dB at pillow level)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 4.4"
+        page_ref: "p.434"
+        spec: "Voice messages in sleeping areas: 75 dB measured at the pillow level, A-weighted scale (dBA)"
+        detail: "Table 7.1 #4.4 (p.434): voice messages in sleeping areas shall be 75 dB measured at the pillow level in the area required to be served using A-weighted scale (dBA). This occupancy has sleeping areas (apartments, guest rooms, dormitories, patient rooms or cells)."
+
+  - id: evc_general_sleeping_area_audibility_other
+    when:
+      occupancy_not: [residential, labour_accommodation, staff_accommodation, hostel,
+                      hotel_a, hotel_b, hotel_c, healthcare_a,
+                      detention_a, detention_b, detention_c]
+    systems:
+      - name: "Sleeping Area Audibility (75 dB at pillow level)"
+        required: conditional
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 4.4"
+        page_ref: "p.434"
+        spec: "Where the building has sleeping areas: voice messages 75 dB measured at the pillow level, A-weighted scale (dBA)"
+        detail: "Table 7.1 #4.4 (p.434): voice messages in sleeping areas shall be 75 dB measured at the pillow level in the area required to be served using A-weighted scale (dBA). Applies to any sleeping area in this building."
+
+  - id: evc_general_speakers
+    when: {}
+    systems:
+      - name: "EVC Speakers - Dedicated, Listed, Approved"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 5.i-iii"
+        page_ref: "p.434"
+        spec: "Speakers dedicated, listed, approved and tested for the emergency voice evacuation system; FA notification speakers or building ancillary speakers permitted only where they comply with Section 2.4"
+        detail: "Table 7.1 #5 (p.434): i. speakers for the voice evacuation system shall be dedicated, listed, approved and tested for the emergency voice evacuation systems; ii. speakers used as Fire Alarm notification in accordance with Ch 8 Table 8.1.16 shall be permitted to be used as voice evacuation speakers, provided they comply with Ch 7 Section 2.4; iii. where speakers are not dedicated, building ancillary function speakers shall be permitted to be part of the voice evacuation system provided they comply with voice message intelligibility, circuit integrity, wiring requirements, addressable etc. as per Section 2.4."
+
+  - id: evc_general_speaker_strobes
+    when: {}
+    systems:
+      - name: "Speakers with Flashers / Strobe Light (basements, plant rooms, noisy industrial areas)"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 5.iv"
+        page_ref: "p.434"
+        spec: "Speakers shall be with flashers or strobe light where installed at basements, plant rooms and noisy industrial areas"
+        detail: "Table 7.1 #5.iv (p.434), verbatim: 'Speakers shall be with flashers or strobe light where installed at basements, plant rooms and noisy industrial areas.'"
+
+  - id: evc_general_zones
+    when: {}
+    systems:
+      - name: "Voice Evacuation Signalling Zones"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 6"
+        page_ref: "p.434"
+        spec: "Undivided, non-compartmentalized fire or smoke zones not divided into multiple voice evacuation zones; all appliances of one zone activate together; fire in one zone shall not impair the appliances outside it"
+        detail: "Table 7.1 #6 (p.434): i. if acceptable to the authority having jurisdiction, the system shall permit the application of an automatic evacuation signal to one or more signalling zones and at the same time permit manual voice paging to the other signalling zones selectively or in any combination; ii. undivided, non-compartmentalized fire or smoke zones of the building shall not be divided into multiple voice evacuation signalling zones; iii. if multiple notification appliance circuits are provided within a single zone, all of the notification appliances within the zone shall be arranged to activate or deactivate simultaneously; iv. fire alarm systems used for partial evacuation and relocation shall be designed and installed such that attack by fire within an evacuation signalling zone shall not impair control and operation of the notification appliances outside the evacuation signalling zone."
+
+  - id: evc_general_two_way_wiring
+    when: {}
+    systems:
+      - name: "Two-way Telephone Circuits + Wiring (2 hour fire rated)"
+        code_ref: "Ch 7, #2.5 / Table 7.2 item 4"
+        page_ref: "p.438"
+        spec: "All circuits and wiring necessary for the operation of two-way telephone communication systems shall be 2 hour fire rated"
+        detail: "Table 7.2 #4.i (p.438), verbatim: 'All circuits and wiring necessary for the operation of two-way telephone communication systems shall be 2 hour fire rated.'"
+
+  - id: evc_general_two_way_installation
+    when: {}
+    systems:
+      - name: "Two-way Telephone Appliance / Jack Mounting Heights"
+        code_ref: "Ch 7, #2.5 / Table 7.2 item 5"
+        page_ref: "p.438"
+        spec: "Wall-mounted telephone appliances or jacks 910-1680 mm above floor level with clear access at least 760 mm wide; where accessible to the general public, one telephone appliance per location not more than 1220 mm above floor level"
+        detail: "Table 7.2 #5 (p.438): i. wall-mounted telephone appliances or related jacks shall be not less than 910 mm and not more than 1680 mm above floor level with clear access to the appliance that is at least 760 mm wide; ii. if accessible to the general public, one telephone appliance per location shall be not more than 1220 mm above floor level."
+
   - id: evc_general_two_way_phone_jacks
     when: {}
     systems:
@@ -182,7 +252,7 @@ branches:
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
-        spec: "Per Section 2.4 + Table 7.1 - 55 dBA assembly ambient design level"
+        spec: "Per Section 2.4 + Table 7.1 - public-mode audibility 15 dB above ambient (Table 7.1 #4.3); 55 dBA is the assembly average ambient sound level for information (Ch 7 #2.3, p.432), not a design level"
         detail: "EVC required for assembly occupancies (concert halls, cinemas, theatres, auditoriums, banquet halls, mosques, restaurants, nightclubs)."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
@@ -207,7 +277,7 @@ branches:
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
-        spec: "Per Section 2.4 + Table 7.1 - 45 dBA educational ambient design level"
+        spec: "Per Section 2.4 + Table 7.1 - public-mode audibility 15 dB above ambient (Table 7.1 #4.3); 45 dBA is the educational average ambient sound level for information (Ch 7 #2.3, p.432), not a design level"
         detail: "EVC required for educational occupancies (universities, schools, kindergartens). Class A circuits; survivable speakers."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
@@ -219,8 +289,8 @@ branches:
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
-        spec: "Per Section 2.4 + Table 7.1 - sleeping-area audibility 75 dBA at pillow"
-        detail: "EVC required for hotel occupancies. Per Table 7.1.4 sleeping-area audibility, alarm signal shall be 75 dBA measured at the pillow with door closed - dedicated guest-room speakers."
+        spec: "Per Section 2.4 + Table 7.1 - sleeping-area audibility 75 dB at the pillow level (dBA)"
+        detail: "EVC required for hotel occupancies. Table 7.1 #4.4 (p.434): voice messages in sleeping areas shall be 75 dB measured at the pillow level in the area required to be served using A-weighted scale (dBA)."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
         detail: "Two-way telephone jacks at stair landings, lift lobbies, fire command centre."
