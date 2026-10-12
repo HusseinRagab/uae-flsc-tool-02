@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 # Mandatory liability / scope disclaimer shown in the UI footer and every export.
@@ -142,17 +142,20 @@ class Building(BaseModel):
     secondary_occupancies: List[Occupancy] = Field(default_factory=list)
     mixed_occupancy_mode: Literal["none", "most_restrictive", "separated"] = "none"
 
-    height_m: float = 0.0
+    # Impossible values are refused, never clamped: areas, depths and counts
+    # cannot be negative, and a building height of 0 m is refused (see
+    # _height_stated) except for infrastructure, which has no building.
+    height_m: float = Field(0.0, ge=0)
     height_datum: Literal["grade", "occupiable_ceiling"] = "grade"
-    floors_above_grade: int = 1
-    floors_below_grade: int = 0
-    depth_below_grade_m: float = 0.0   # SC Ch 10 - >7 m underground trigger (Table 10.22)
-    gross_floor_area_m2: float = 0.0
-    ground_floor_bua_m2: float = 0.0
-    basement_bua_m2: float = 0.0
-    plot_area_m2: float = 0.0
-    corridor_length_m: float = 0.0     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
-    assembly_area_m2: float = 0.0      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
+    floors_above_grade: int = Field(1, ge=1)
+    floors_below_grade: int = Field(0, ge=0)
+    depth_below_grade_m: float = Field(0.0, ge=0)   # SC Ch 10 - >7 m underground trigger (Table 10.22)
+    gross_floor_area_m2: float = Field(0.0, ge=0)
+    ground_floor_bua_m2: float = Field(0.0, ge=0)
+    basement_bua_m2: float = Field(0.0, ge=0)
+    plot_area_m2: float = Field(0.0, ge=0)
+    corridor_length_m: float = Field(0.0, ge=0)     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
+    assembly_area_m2: float = Field(0.0, ge=0)      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
 
     construction_type: Literal[
         "unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"
@@ -163,7 +166,11 @@ class Building(BaseModel):
     # --- FP (Ch 9) - High Ceiling
     has_high_ceiling: bool = False
     ceiling_height_m: float = 0.0
-    wet_riser_standpipes: int = 2
+    wet_riser_standpipes: int = Field(2, ge=1)
+    exit_stairs: int = Field(2, ge=1)            # Table 9.24.C.2 open parking pump: 750 gpm (2 stairs) / 1000 gpm (3 or more)
+    pump_room_at_grade: bool = False             # False = fire pump room at the lowest basement (Table 9.6 item 13 measures from the pump)
+    gf_beyond_100m_from_hydrant: bool = False    # Ch 9 #4.1.6 second trigger (storage / industrial)
+    is_covered_shaded_parking: bool = False      # Table 9.24.D - covered / shaded parking having one level only
 
     # --- FP (Ch 9) - Auxiliary Rooms (Table 9.30)
     has_anesthetizing_room: bool = False
@@ -304,6 +311,27 @@ class Building(BaseModel):
         if self.occupancy == "motor_fuel_dispensing":
             return "fuel_dispensing"
         return "general"
+
+    @model_validator(mode="after")
+    def _height_stated(self):
+        if self.height_m <= 0 and "height_m" in self.model_fields_set \
+                and self.occupancy != "infrastructure":
+            raise ValueError("Building height must be more than 0 m.")
+        return self
+
+    @property
+    def is_high_depth(self) -> bool:
+        """Ch 1 #1.7.45 (p.45): High Depth = more than 7 m below, or more than
+        two basements below, the level of exit discharge."""
+        return (self.occupancy == "high_depth_underground"
+                or self.floors_below_grade >= 3 or self.depth_below_grade_m > 7)
+
+    @property
+    def pump_head_height_m(self) -> float:
+        """Height of the most remote landing valve above the fire pump
+        (Table 9.6 item 13; Table 9.19 rows A/B "from lowest pump set level").
+        The pump room is taken at the lowest basement unless pump_room_at_grade."""
+        return self.height_m + (0.0 if self.pump_room_at_grade else self.depth_below_grade_m)
 
     @property
     def height_class(self) -> str:
