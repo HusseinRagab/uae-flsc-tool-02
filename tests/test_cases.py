@@ -713,14 +713,16 @@ CASES = [
     dict(name="AUDIT Parking: Hotel + enclosed attached parking -> 7 parking sub-chapters",
          inputs=dict(occupancy="hotel_a", height_m=18, floors_above_grade=5,
                      ground_floor_bua_m2=1000, plot_area_m2=2000,
-                     has_parking_area=True, attached_parking_kind="enclosed"),
+                     has_parking_area=True, attached_parking_kind="enclosed",
+                     parking_area_m2=1000),   # phase 3 (ENG-11): area required, no fallback
          expect_attached_parking_count=7,
          expect_attached_parking_branch_for=("FP", "parking_enclosed_a3")),
 
     dict(name="AUDIT Parking: Residential + open attached parking -> sub-evaluation parking_open",
          inputs=dict(occupancy="residential", height_m=20, floors_above_grade=6,
                      ground_floor_bua_m2=600, plot_area_m2=2000,
-                     has_parking_area=True, attached_parking_kind="open"),
+                     has_parking_area=True, attached_parking_kind="open",
+                     parking_area_m2=600),    # phase 3 (ENG-11): area required, no fallback
          expect_attached_parking_count=7,
          expect_attached_parking_branch_for=("MOE", "moe_parking_open")),
 

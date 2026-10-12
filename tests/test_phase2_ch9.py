@@ -372,7 +372,7 @@ def test_CH9D_10_diesel_generator_foam_sprinkler_listed_once():
     assert len(dg) == 1 and "Table 9.31.E" in dg[0].code_ref
     assert "de-duplication" not in (dg[0].detail or "")
     src = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert '("has_diesel_generator_room", False)' in src
+    assert '"has_diesel_generator_room": False' in src   # phase 3: FIRST_LOAD_DEFAULTS dict
 
 
 def test_CH9D_11_no_added_preferences_and_msds_note():

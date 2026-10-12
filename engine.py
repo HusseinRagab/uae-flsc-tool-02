@@ -436,6 +436,31 @@ def _storage_hazard_not_evaluated(ch: ChapterReport) -> ChapterReport:
         "selected_branch": None, "selected_branch_section": None})
 
 
+_WATER_REACTIVE_LINE = Requirement(
+    system="No Water-Based System Where Water-Reactive Materials Are Stored / Handled",
+    status="required",
+    spec="#4.1.2: water based fire protection systems shall not be installed or used there",
+    detail=("Ch 9 #4.1.2 (p.694): 'Water based fire protection systems shall not be installed "
+            "or used where water reactive materials are stored and handled.' The water-based "
+            "lines in this report do not apply in those areas; choose their protection from "
+            "a detailed analysis of the Material Safety Data Sheet (MSDS) of the materials "
+            "(#4.1.1)."),
+    code_ref="Ch 9, #4.1.2 / #4.1.1", page_ref="p.694", source_rule="ch9_4_1_2_water_reactive")
+
+_FOAM_PROHIBITED_LINE = Requirement(
+    system="Medium- / High-Expansion Foam Not Used on the #4.1.3 Hazards",
+    status="required",
+    spec="#4.1.3 a-e: no medium- or high-expansion foam on these hazards",
+    detail=("Ch 9 #4.1.3 (p.694): 'Medium- and high-expansion foam systems shall not be used "
+            "on fires in the following hazards: a. Chemicals, such as cellulose nitrate, that "
+            "release sufficient oxygen or other oxidizing agents to sustain combustion. "
+            "b. Energized unenclosed electrical equipment c. Water-reactive metals such as "
+            "sodium, potassium, and NaK (sodium-potassium alloys) d. Hazardous water-reactive "
+            "materials, such as triethyl-aluminum and phosphorus pentoxide e. Liquefied "
+            "flammable gas'. Printed because a foam system appears in this report."),
+    code_ref="Ch 9, #4.1.3", page_ref="p.694", source_rule="ch9_4_1_3_foam")
+
+
 def _with_robotic_eh2(b: Building) -> Building:
     """Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking evaluates at HH with
     Extra Hazard Group 2 (#1.1.13.5.b, p.530)."""
@@ -536,6 +561,16 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     eq_items = [it for it in eq_items if it.system not in aux_required]
     if eq_items:
         blocks.append(SectionBlock(title="FP - Equipment (Table 9.31)", items=eq_items))
+
+    # Audit CH9A-20: #4.1.2 / #4.1.3 prohibitions (p.694).
+    prohib = []
+    if b.has_water_reactive_materials:
+        prohib.append(_WATER_REACTIVE_LINE)
+    if any("foam" in f"{it.system} {it.spec or ''}".lower()
+           for blk in blocks for it in blk.items if it.status != "not_required"):
+        prohib.append(_FOAM_PROHIBITED_LINE)
+    if prohib:
+        blocks.append(SectionBlock(title="FP - Prohibitions (Ch 9, #4.1.2 / #4.1.3)", items=prohib))
 
     return ChapterReport(
         chapter_code="FP", chapter_title="Fire Protection (Ch 9)",
@@ -855,6 +890,22 @@ CHAPTER_ORDER = [
 ]
 
 
+def _parking_area_not_evaluated() -> ChapterReport:
+    """Audit ENG-11: a blank parking area is named, never filled from the basement or
+    ground-floor BUA."""
+    return ChapterReport(
+        chapter_code="PARK", chapter_title="Attached parking (all chapters)",
+        blocks=[SectionBlock(title="Attached parking - NOT EVALUATED", items=[Requirement(
+            system="Attached Parking Area - NOT EVALUATED",
+            status="required",
+            spec="Not evaluated: enter the parking footprint area (m2)",
+            detail=("'Building has parking' is ticked but the parking footprint area was not "
+                    "entered. The parking area sets the Table 9.24 tier and the Ch 10 parking "
+                    "area thresholds, so the attached parking is not evaluated until it is "
+                    "entered (audit ENG-11: no fallback to the basement or ground-floor BUA)."),
+            source_rule="audit_eng_11_parking_area")])])
+
+
 def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
     """Build a synthetic parking Building (preserving height / parking area) and run every
     chapter against it, returning a per-chapter list. Used to surface parking sub-occupancy
@@ -862,13 +913,27 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
 
     The PARKING AREA (parking_area_m2) drives Ch 10 SC area-based thresholds (e.g. 3600 m^2
     make-up-air exception for enclosed parking; 4000 m^2 small-vs-large open parking split).
-    Falls back to basement BUA or ground-floor BUA when not set explicitly.
+    Audit ENG-11: a blank parking area is NOT EVALUATED (no fallback), and every yes/no
+    flag the user set carries over, so an unticked room is never brought back by a schema
+    default.
     """
+    if b.parking_area_m2 <= 0:
+        return [_parking_area_not_evaluated()]
     synth_occ = "parking_open" if b.attached_parking_kind == "open" else "parking_enclosed"
-    parking_area = b.parking_area_m2 or b.basement_bua_m2 or b.ground_floor_bua_m2 or 0.0
-    # Re-create a minimal Building with parking occupancy + parking-specific area; carry over
-    # flags that affect parking outputs (high ceiling, fire pump room, etc.)
+    parking_area = b.parking_area_m2
+    # Every user flag (bool) carries over (audit ENG-11); areas, uses and mixed-occupancy
+    # inputs are the parking's own.
+    flags = {k: v for k, v in b.model_dump().items()
+             if isinstance(v, bool) and k in Building.model_fields}
+    flags.update(
+        # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking = HH + EH2 (#1.1.13.5.b).
+        is_extra_hazard_2=b.has_robotic_parking,
+        # Only the parent building's own flags that make it a different occupancy are off.
+        mercantile_multi_tenant=False, villa_converted_use=False,
+        has_water_reactive_materials=False,
+    )
     synth = Building(
+        **flags,
         project_name=b.project_name + " (parking sub-occupancy)" if b.project_name else "",
         occupancy=synth_occ,
         height_m=b.height_m,
@@ -880,20 +945,12 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
         basement_bua_m2=parking_area if b.basement_bua_m2 > 0 else 0.0,
         plot_area_m2=b.plot_area_m2,
         hazard_class="HH" if b.has_robotic_parking else "OH1",   # #1.1.13.2 (p.528): parking garages, open or enclosed
-        # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking = HH + EH2 (#1.1.13.5.b).
-        is_extra_hazard_2=b.has_robotic_parking,
-        has_high_ceiling=b.has_high_ceiling,
         ceiling_height_m=b.ceiling_height_m,
-        has_diesel_generator_room=b.has_diesel_generator_room,
-        has_fire_pump_room=b.has_fire_pump_room,
-        has_main_electrical_room=b.has_main_electrical_room,
         # Table 9.24 inputs: standpipes (A.3), exit stairs (C.2), robotic (B),
         # covered/shaded (D); pump level for Table 9.19 zoning.
         wet_riser_standpipes=b.wet_riser_standpipes,
         exit_stairs=b.exit_stairs,
-        has_robotic_parking=b.has_robotic_parking,
-        is_covered_shaded_parking=b.is_covered_shaded_parking,
-        pump_room_at_grade=b.pump_room_at_grade,
+        tunnel_kind=b.tunnel_kind, tunnel_length_m=b.tunnel_length_m,
     )
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
@@ -1194,8 +1251,14 @@ def _evaluate_single(b: Building) -> ComplianceReport:
     if b.has_parking_area and b.occupancy not in ("parking_enclosed", "parking_open", "infrastructure"):
         try:
             attached = evaluate_attached_parking(b)
-        except Exception:
-            attached = []
+        except ValueError as e:
+            # Never dropped silently: the refusal is named (audit ENG-11).
+            nev = _parking_area_not_evaluated()
+            it = nev.blocks[0].items[0]
+            nev.blocks[0].items[0] = it.model_copy(update={
+                "spec": "Not evaluated: the parking inputs were refused",
+                "detail": f"The attached parking could not be evaluated: {e}"})
+            attached = [nev]
 
     # Never leave a report section silently blank — append an explanatory
     # "not required" note to any chapter that produced zero requirements.

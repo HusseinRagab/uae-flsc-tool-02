@@ -149,7 +149,9 @@ def test_CH9_Q7_robotic_parking_forces_HH_with_extra_hazard_group_2():
     assert plain.building.hazard_class == "OH1" and not fp_line(plain, "Hazard Classification")
     # Attached robotic parking: the parking sub-evaluation is HH + EH2, the building keeps LH.
     res = report(occupancy="residential", height_m=8, ground_floor_bua_m2=1000,
-                 plot_area_m2=5000, hazard_class="LH", has_robotic_parking=True)
+                 plot_area_m2=5000, hazard_class="LH", has_robotic_parking=True,
+                 # phase 3 (ENG-11): parking is ticked and its area entered, no defaults
+                 has_parking_area=True, parking_area_m2=1000)
     assert res.building.hazard_class == "LH"
     sub = [it for c in res.attached_parking_chapters if c.chapter_code == "FP"
            for b in c.blocks for it in b.items]

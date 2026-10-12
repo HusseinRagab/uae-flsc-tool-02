@@ -409,7 +409,8 @@ def test_CH10_37_one_tunnel_line():
 # ------------------------------------------------- attached parking
 def test_attached_parking_carries_routing_inputs():
     r = report(occupancy="hotel_a", height_m=18, ground_floor_bua_m2=1000, plot_area_m2=2000,
-               has_parking_area=True, attached_parking_kind="open", exit_stairs=3)
+               has_parking_area=True, attached_parking_kind="open", exit_stairs=3,
+               parking_area_m2=1000)  # phase 3 (ENG-11): the parking area is required
     ch = next(c for c in r.attached_parking_chapters if c.chapter_code == "FP")
     p = [it for b in ch.blocks for it in b.items
          if it.system.startswith("Fire Pump") and it.status == "required"]
