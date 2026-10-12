@@ -112,7 +112,7 @@ branches:
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_1000
-        detail: "Electric or diesel driven UL/FM listed pump set for yard hydrant network."
+        detail: "Electric or diesel driven UL/FM listed pump set for yard hydrant network. Table 9.23.B.3 vii (p.717): where infrastructure yard hydrants are provided, the required villa sprinkler system is permitted to be fed by the yard hydrant pumpset and water."
       - name: "Fire Water Tank"
         duty: tank
         spec: "60 minutes duration"
@@ -130,6 +130,7 @@ branches:
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_250
+        detail: "Table 9.23.B.3 v. Table 9.23.B.3 vii (p.717): where infrastructure yard hydrants are provided, the required villa sprinkler system is permitted to be fed by the yard hydrant pumpset and water."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
@@ -145,6 +146,7 @@ branches:
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_250
+        detail: "Table 9.23.B.4 v."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
@@ -178,54 +180,74 @@ branches:
 
   - id: mall_open_small
     match: {occupancy: mall_open, plot_area_m2_lte: 900}
-    section: "Ch 9, #4.6.1 / Table 9.22.B.1"
+    section: "Ch 9, #4.6.1 / Table 9.22.B.1 (total plot area up to 900 m2)"
     page: "p.714"
     systems:
       - name: "Hose Reel System (exterior type, open circulation)"
-        detail: "Exterior-type hose reels along the fire access road serving the open circulation area per Section 3.3. Triggered because open mall plot area <= 900 m2."
+        detail: "Exterior-type hose reel system throughout the open circulation area along the fire access road per Section 3.3 (Table 9.22.B.1 i)."
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required (Table 9.22.B.1 ii)."
+      - name: "Tenant Buildings - evaluate separately by their own occupancy"
+        detail: "Table 9.22.B covers only the open circulation area, not the tenant spaces: tenant spaces comply with the other applicable sections for their occupancy type (Table 9.22.B, p.714). Run the tool again for each tenant building. A combined fire pump set and fire water tank serving both the open circulation area and the tenant building internal systems is permitted."
       - name: "Fire Pump"
         duty: pump
-        spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
-        detail: "Small pump set sized for hose-reel duty only."
+        spec: "50 gpm @ 4.5 bar at most remote hose reel outlet valve"
+        detail: "Table 9.22.B.1 iii."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
-        detail: "Low-level detection + instantaneous utility refill."
+        detail: "Low water level detection and instantaneous refilling (Table 9.22.B.1 iv)."
 
   - id: mall_open_mid
     match: {occupancy: mall_open, plot_area_m2_gt: 900, plot_area_m2_lte: 2000}
-    section: "Ch 9, #4.6.1 / Table 9.22.B.2"
+    section: "Ch 9, #4.6.1 / Table 9.22.B.2 (total plot area more than 900 m2 up to 2,000 m2)"
     page: "p.714"
     systems:
-      - name: "Exterior Wet Riser (along fire access road)"
-        detail: "Exterior wet riser along fire access road, every tenant building within 30 m of a hose outlet per Section 3.4. Triggered by open mall plot area 900-2,000 m2."
+      - name: "Exterior Wet Riser (open circulation, along fire access road)"
+        detail: "Exterior wet riser system throughout the open circulation area along the fire access road so that all tenant buildings are within 30 m of a hose outlet, per Section 3.4 (Table 9.22.B.2 i). OR (alternative): yard fire hydrants per Table 9.22.B.3, in which case wet risers are not required (items i-ii after OR). Yard hydrants, wet risers or hose reels are not required where infrastructure yard hydrants are available within 120 m of every exterior part of the tenant buildings; tapping from the existing yard hydrant network is permitted to extend coverage (item iii after OR)."
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required (Table 9.22.B.2 ii)."
       - name: "Breeching Inlets (min 2)"
-        detail: "Two breeching inlets at separate locations along fire access road."
+        detail: "Minimum of 2 breeching inlets at two separate locations along the fire access road (Table 9.22.B.2 iii)."
+      - name: "Tenant Buildings - evaluate separately by their own occupancy"
+        detail: "Table 9.22.B covers only the open circulation area, not the tenant spaces: tenant spaces comply with the other applicable sections for their occupancy type (Table 9.22.B, p.714). Run the tool again for each tenant building. A combined fire pump set and fire water tank serving both the open circulation area and the tenant building internal systems is permitted."
       - name: "Fire Pump"
         duty: pump
-        spec: "750 gpm @ 6.9 bar (or 1000 gpm where yard hydrants are included)"
-        detail: "Electric/diesel UL/FM listed."
+        spec: "750 gpm @ 6.9 bar at most remote landing valve"
+        detail: "Table 9.22.B.2 iv (exterior wet riser option)."
+      - name: "Fire Pump (where yard hydrants are provided instead)"
+        required: conditional
+        spec: "1000 gpm @ 6.9 bar at most remote hydrant outlet"
+        detail: "Table 9.22.B.2 vi: where yard hydrants are considered."
       - name: "Fire Water Tank"
         duty: tank
         spec: "60 minutes duration"
-        detail: "Dedicated breeching inlet, instantaneous refill."
+        detail: "Low water level detection, dedicated direct breeching inlet and instantaneous refilling (Table 9.22.B.2 v and vii)."
 
   - id: mall_open_large
     match: {occupancy: mall_open, plot_area_m2_gt: 2000}
-    section: "Ch 9, #4.6.1 / Table 9.22.B.3"
+    section: "Ch 9, #4.6.1 / Table 9.22.B.3 (plot area more than 2,000 m2)"
     page: "p.714"
     systems:
       - name: "Yard Fire Hydrants"
-        detail: "Yard hydrant network per Section 3.11. Tenant buildings shall be within 60 m of hydrants."
+        detail: "Yard fire hydrants per Section 3.11 (Table 9.22.B.3 i). Yard hydrants or wet risers are not required where infrastructure yard hydrants are available within 120 m of every exterior part of the tenant buildings (item ii)."
       - name: "Breeching Inlets (min 2)"
-        detail: "Two breeching inlets along fire access road."
+        detail: "Minimum of 2 breeching inlets at two separate locations along the fire access road (Table 9.22.B.3 iii)."
+      - name: "Wet Risers and Dry Landing Valves"
+        required: not_required
+        detail: "Not required (Table 9.22.B.3 iv)."
+      - name: "Tenant Buildings - evaluate separately by their own occupancy"
+        detail: "Table 9.22.B covers only the open circulation area, not the tenant spaces: tenant spaces comply with the other applicable sections for their occupancy type (Table 9.22.B, p.714). Run the tool again for each tenant building. A combined fire pump set and fire water tank serving both the open circulation area and the tenant building internal systems is permitted."
       - name: "Fire Pump"
         duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve"
-        detail: "Electric/diesel UL/FM listed."
+        detail: "Table 9.22.B.3 v."
       - name: "Fire Water Tank"
         duty: tank
         spec: "60 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet and instantaneous refilling (Table 9.22.B.3 vi)."
 
   - id: mall_mixed
     match: {occupancy: mall_mixed}

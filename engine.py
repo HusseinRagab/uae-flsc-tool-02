@@ -172,7 +172,10 @@ def _as_req(entry: Dict[str, Any], branch: Optional[Dict[str, Any]] = None,
         if rspec:
             spec = rspec
         if rdetail:
-            detail = f"{detail} {rdetail}" if detail else rdetail
+            if not detail:
+                detail = rdetail
+            elif rdetail not in detail:
+                detail = f"{detail} {rdetail}"
     return Requirement(
         system=entry["name"], status=status, spec=spec, detail=detail,
         code_ref=entry.get("code_ref") or (branch.get("section") if branch else None),
