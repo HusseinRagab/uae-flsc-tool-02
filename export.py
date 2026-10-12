@@ -124,7 +124,7 @@ def _profile_rows(r: ComplianceReport, detailed: bool = False) -> list:
         if r.occupant_load and r.occupant_load.occupant_load:
             rows.append(("Occupant load",
                          f"{r.occupant_load.occupant_load:,} persons  ->  "
-                         f">= {r.occupant_load.min_exits} exits (Table 3.14)"))
+                         f">= {r.occupant_load.min_exits} exits per storey (Table 3.14)"))
         if r.fire_access:
             rows.append(("Fire service access",
                          f"{r.fire_access.extent}  |  {r.fire_access.extent_ref}"))
@@ -152,7 +152,7 @@ def _profile_rows_exec(r: ComplianceReport) -> list:
     if r.occupant_load and r.occupant_load.occupant_load:
         rows.append(("Occupant load",
                      f"{r.occupant_load.occupant_load:,} persons  ->  "
-                     f">= {r.occupant_load.min_exits} exits (Table 3.14)"))
+                     f">= {r.occupant_load.min_exits} exits per storey (Table 3.14)"))
     if r.fire_access:
         rows.append(("Fire service access", r.fire_access.extent))
     return rows
@@ -1132,7 +1132,7 @@ def report_to_xlsx_bytes(r):
         wp.append([k, v])
     if r.occupant_load:
         wp.append(["Occupant load", r.occupant_load.occupant_load])
-        wp.append(["Min exits", r.occupant_load.min_exits])
+        wp.append(["Min exits per storey", r.occupant_load.min_exits])
     if r.fire_access:
         wp.append(["Fire access", r.fire_access.extent])
 
