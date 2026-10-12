@@ -54,12 +54,44 @@ general:
         spec: "Listed barrier gateway required at each FACP / group of control units"
         detail: "A listed barrier gateway, integral with or attached to each control unit or group of control units, shall be provided between the FACP and other systems (BMS, HVAC, security, building automation) to prevent the other systems from interfering with or controlling the fire alarm system. All non-fire-alarm components interfaced via the gateway shall be listed for fire alarm use or for fire conditions."
 
+  # Ruling R7 (12.10.2026): the height-driven items of Table 8.13 items 1-2 apply
+  # to every building of 23 m or more, whatever its occupancy row; the alarm
+  # protocol comes from one row only (the occupancy row where Table 8.13 has one).
+  - id: fa_general_highrise_height_items
+    when: {height_m_gte: 23}
+    systems:
+      - name: "Sub-FACPs / Annunciators every 45 m"
+        code_ref: "Ch 8, #5.1 / Table 8.13 items 1-2 (iv)"
+        page_ref: "p.502"
+        spec: "At every 45 m height of the building, networked to main FACP"
+        detail: "Additional Sub FACPs or annunciators complete with all functional features at the elevator lobby of the floor or the mechanical floor at every 45 m height of the building, connected to the main FACP in a network. Applied to every occupancy of 23 m or more (ruling R7, 12.10.2026)."
+      - name: "Highrise Main FACP - Redundancy and Hot-Swap"
+        code_ref: "Ch 8, #3 / Table 8.1 item 14.1 (ii)"
+        page_ref: "p.458"
+        spec: "High performance and stability, tested for redundancy (CPU, I/O cards, display); hot-swap"
+        detail: "The Fire Alarm Main Control Panel in every highrise building shall have high performance and stability, tested for redundancy (CPU, I/O cards, display etc. with redundancy features to keep operating if any of these fails), and hot-swap features to repair and replace these components without turning off the main power supply and without compromising the panel's performance."
+  - id: fa_general_highrise_protocol_note
+    when:
+      height_m_gte: 23
+      occupancy_in: [hotel_a, hotel_b, hotel_c,
+                     healthcare_a, healthcare_b, healthcare_c,
+                     detention_a, detention_b, detention_c,
+                     education_a, education_b, education_c,
+                     mall_covered, mall_mixed]
+    systems:
+      - name: "Highrise 5-Floor Phased Evacuation and PAS 15/180/240 s - not applied"
+        required: not_required
+        code_ref: "Ch 8, #5.1 / Table 8.13 items 1-2 (v)-(vii)"
+        page_ref: "p.502"
+        detail: "Not applied: this occupancy has its own Table 8.13 row and its evacuation protocol governs, so the building has one alarm protocol (ruling R7, 12.10.2026). The highrise height items (Sub-FACP every 45 m, FACP redundancy) still apply."
+
 branches:
   - id: fa_super_highrise
     # Super-highrise (> 90 m) per Ch 3 Definitions. Specific-occupancy branches
     # excluded (mall, education, healthcare, detention, parking, villa,
-    # storage_industrial, motor_fuel_dispensing); hotel_a/b/c not excluded so a
-    # tall hotel still picks the super-highrise overlay.
+    # storage_industrial, motor_fuel_dispensing, hotel). Ruling R7 (12.10.2026):
+    # those rows keep their own evacuation protocol; the height items (Sub-FACP
+    # every 45 m, FACP redundancy) come from fa_general_highrise_height_items.
     match:
       height_m_gt: 90
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
@@ -68,16 +100,14 @@ branches:
                       storage_industrial,
                       detention_a, detention_b, detention_c,
                       healthcare_a, healthcare_b, healthcare_c,
-                      education_a, education_b, education_c]
+                      education_a, education_b, education_c,
+                      hotel_a, hotel_b, hotel_c]
     section: "Ch 8, #5.1 / Table 8.13 item 1"
     page: "p.502"
     systems:
       - name: "Smoke Detection and Alarm System (entire building)"
         spec: "Addressable, per Section 4.3"
         detail: "Throughout super-highrise (>90 m). All addressable detectors monitored by main FACP."
-      - name: "Sub-FACPs / Annunciators every 45 m"
-        spec: "Networked to main FACP"
-        detail: "Additional Sub-FACPs or annunciators with full functional features at the elevator lobby of the floor or the mechanical floor at every 45 m of building height, networked to main FACP."
       - name: "5-Floor Phased Evacuation Alarm"
         spec: "Fire floor + 3 floors above + 1 floor below"
         detail: "Activation triggers evacuation alarm only on fire floor + 3 above + 1 below. General alarm shall NOT trigger entire-building evacuation. Voice / PA system used for occupant communication."
@@ -93,9 +123,9 @@ branches:
     # Highrise = more than 23 m up to 90 m (Ch 1 #1.7.41, p.45; FAQ Q3, p.1273).
     # Table 8.13 items 1-2 use the defined terms and print no height numbers.
     # Specific-occupancy branches (mall, education, healthcare, detention, parking,
-    # villa, storage_industrial, motor_fuel_dispensing) are excluded so they pick
-    # their dedicated Table 8.13 row; hotel_a/b/c intentionally NOT excluded so a
-    # tall hotel still picks up the highrise overlay (per Table 8.13 item 2).
+    # villa, storage_industrial, motor_fuel_dispensing, hotel) are excluded so they
+    # pick their dedicated Table 8.13 row and its evacuation protocol (ruling R7,
+    # 12.10.2026); the height items come from fa_general_highrise_height_items.
     match:
       height_m_gte: 23
       height_m_lte: 90
@@ -105,16 +135,14 @@ branches:
                       storage_industrial,
                       detention_a, detention_b, detention_c,
                       healthcare_a, healthcare_b, healthcare_c,
-                      education_a, education_b, education_c]
+                      education_a, education_b, education_c,
+                      hotel_a, hotel_b, hotel_c]
     section: "Ch 8, #5.1 / Table 8.13 item 2"
     page: "p.502"
     systems:
       - name: "Smoke Detection and Alarm System (entire building)"
         spec: "Addressable, per Section 4.3"
         detail: "Highrise = more than 23 m up to 90 m (Ch 1 #1.7.41, p.45; FAQ Q3, p.1273). Table 8.13 item 2 applies the highrise row to these buildings."
-      - name: "Sub-FACPs / Annunciators every 45 m"
-        spec: "Networked to main FACP"
-        detail: "At elevator lobby or mechanical floor every 45 m, networked to main FACP."
       - name: "5-Floor Phased Evacuation Alarm"
         spec: "Fire floor + 3 above + 1 below"
       - name: "Positive Alarm Sequence (PAS) - 15/180/240 s"

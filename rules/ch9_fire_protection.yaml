@@ -2234,12 +2234,19 @@ branches:
         detail: "Low water level detection, dedicated direct breeching inlet and instantaneous refilling (Table 9.24.D.2 iv)."
 
 various_locations:
+  # #4.13.1 (p.749): "The building sprinkler system shall be extended to comply with
+  # requirements of Table 9.29." Ruling R8 (12.10.2026): every sprinkler row carries
+  # requires_sprinkler_system; the engine prints a #4.13.1 not_required note instead
+  # when the building's table row gives no automatic sprinkler system. 9.29.K (wet
+  # riser extended to the roof) is a wet riser item, not a sprinkler extension, so it
+  # is not gated. 9.29.M (ceilings over 10 m, Table 9.29.A) is gated in the engine.
   # NOTE: Exterior balcony sprinklers (Table 9.29.B, p.749) not encoded - user explicitly
   # skipped to avoid UI bloat. The code requires sidewall/pendent sprinklers on exterior
   # balconies of sprinklered buildings (max 12 m2 per head, 79 °C rating). Designers
   # checking balcony coverage should consult Table 9.29.B directly.
   - id: var_atrium
     flag: has_atrium
+    requires_sprinkler_system: true
     systems:
       - name: "Atrium Sprinklers (ceiling + adjacent to opening)"
         required: recommended
@@ -2248,6 +2255,7 @@ various_locations:
         detail: "Atriums SHOULD be provided with sprinklers at the atrium ceiling and immediately adjacent to every atrium opening (code uses 'should', not 'shall' - Table 9.29.A is the only 'should' entry). Non-combustible draft stops 450 mm deep. See Ch 10 for atrium smoke control."
   - id: var_rain_screen
     flag: has_rain_screen_glazing
+    requires_sprinkler_system: true
     systems:
       - name: "Glazing / Rain-screen Sprinkler Protection"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.C"
@@ -2260,7 +2268,7 @@ various_locations:
       - name: "Stair Shaft Sprinklers (top + first landing above bottom)"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.D"
         page_ref: "p.749"
-        detail: "Sprinkler at top of shaft and at first accessible landing above the bottom of the shaft per Section 3.5. Suppressed automatically when the building's matched FP branch does not require an automatic sprinkler system."
+        detail: "Sprinkler at top of shaft and at first accessible landing above the bottom of the shaft per Section 3.5."
   - id: var_elevator_shaft
     flag: has_elevator
     requires_sprinkler_system: true
@@ -2268,9 +2276,10 @@ various_locations:
       - name: "Elevator Pit Sidewall Spray Sprinklers"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.E"
         page_ref: "p.749"
-        detail: "Sidewall spray sprinklers at the bottom of each elevator hoistway, not more than 600 mm above the pit floor per Section 3.5. Suppressed automatically when the building's matched FP branch does not require an automatic sprinkler system."
+        detail: "Sidewall spray sprinklers at the bottom of each elevator hoistway, not more than 600 mm above the pit floor per Section 3.5."
   - id: var_bathroom_heaters
     flag: has_bathrooms_with_heaters
+    requires_sprinkler_system: true
     systems:
       - name: "Bathroom Sprinklers (where electric water-heaters are installed)"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.G"
@@ -2278,6 +2287,7 @@ various_locations:
         detail: "Bathrooms equipped with electric water-heaters shall be sprinklered per Section 3.5 (Table 9.29.G - BATHROOMS). Public washrooms in commercial buildings are also sprinklered; private residential/hotel/apartment guest washrooms WITHOUT heaters are exempt. (NOTE: Table 9.29.F covers the separate 'above false ceiling' provision - that requires sprinklers in concealed combustible-construction spaces and is a different trigger - flag a designer review where both conditions apply.)"
   - id: var_laundry_storage
     flag: has_laundry_storage_rooms
+    requires_sprinkler_system: true
     systems:
       - name: "Laundry / Storage Room Sprinklers"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.H"
@@ -2285,6 +2295,7 @@ various_locations:
         detail: "Residential / apartment / hotel-apartment laundry and storage rooms protected with sprinklers per Section 3.5."
   - id: var_pantries
     flag: has_pantries
+    requires_sprinkler_system: true
     systems:
       - name: "Pantry Sprinklers (business/commercial)"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.I"
@@ -2292,6 +2303,7 @@ various_locations:
         detail: "Pantries in offices and commercial buildings sprinklered per Section 3.5."
   - id: var_stages
     flag: has_permanent_stages
+    requires_sprinkler_system: true
     systems:
       - name: "Stage Sprinklers (under stages, dressing rooms, storerooms, workshops)"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.J"
@@ -2306,6 +2318,7 @@ various_locations:
         detail: "Building wet riser extended to roofs with LPG tanks, restaurant seating, assembly, or sheesha bars. Hose reels provided at roof level."
   - id: var_garbage_chute
     flag: has_garbage_chute
+    requires_sprinkler_system: true
     systems:
       - name: "Garbage Chute Sprinklers (top + alternating floors + lowest)"
         code_ref: "Ch 9, #4.13.1 / Table 9.29.L"

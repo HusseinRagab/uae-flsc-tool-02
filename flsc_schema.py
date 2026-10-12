@@ -363,6 +363,7 @@ class Requirement(BaseModel):
 
 class HighCeilingSpec(BaseModel):
     applies: bool
+    not_required: bool = False      # ruling R8: building has no sprinkler system
     ceiling_height_m: float
     hazard_class: str
     height_range: Optional[str] = None

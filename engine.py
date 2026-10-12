@@ -302,16 +302,37 @@ def _dedupe(items: List[Requirement]) -> List[Requirement]:
 # ---------------------------- High-ceiling (FP-specific) ---------------------
 
 def _pick_band(h: float) -> Optional[str]:
-    if 10 <= h <= 13.5: return "band_10_13_5"
-    if 13.5 < h <= 18: return "band_13_5_18"
-    if 18 < h <= 30: return "band_18_30"
+    # Table 9.29.A prints "10 m TO 13.5 m", "13.5 m TO 18 m", "18 m TO 30 m": the
+    # shared edges 13.5 m and 18 m take the higher band (ruling R11, 12.10.2026).
+    if 10 <= h < 13.5: return "band_10_13_5"
+    if 13.5 <= h < 18: return "band_13_5_18"
+    if 18 <= h <= 30: return "band_18_30"
     return None
+
+
+def _sprinkler_required(items: List[Requirement]) -> bool:
+    """True when the building's Ch 9 general rules or table row require an
+    automatic sprinkler system (the #4.1.5 / #4.13.1 'fully protected' test)."""
+    return any("sprinkler" in (it.system or "").lower() and it.status == "required"
+               for it in items)
 
 
 def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeilingSpec]:
     hc = rules.get("high_ceiling")
     if not hc: return None
     if not _eval_when(hc.get("trigger", {}), b): return None
+    gen = _collect_general(rules, b)
+    branch_items = _collect_branch(rules.get("branches", []), b)[0]
+    if not _sprinkler_required(list(gen) + list(branch_items)):
+        # Table 9.29.M is a Table 9.29 row: ruling R8 (12.10.2026).
+        return HighCeilingSpec(
+            applies=True, not_required=True, ceiling_height_m=b.ceiling_height_m,
+            hazard_class=b.hazard_class,
+            note=("Not required: Table 9.29.M / Table 9.29.A high-ceiling sprinklers extend the "
+                  "building sprinkler system (#4.13.1), and this building's table row gives no "
+                  "automatic sprinkler system (ruling R8, 12.10.2026)."),
+            code_ref="Ch 9, #4.13.1 / Table 9.29.M", page_ref="p.749-750",
+        )
     band = _pick_band(b.ceiling_height_m)
     matrix = hc.get("matrix", {}).get(b.hazard_class, {})
     if not band or band not in matrix:
@@ -321,6 +342,11 @@ def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeili
             code_ref=hc.get("code_ref"), page_ref=hc.get("page_ref"),
         )
     p = matrix[band]
+    note = hc.get("note")
+    if b.ceiling_height_m in (13.5, 18):
+        note = (f"{note} " if note else "") + (
+            f"A ceiling of exactly {b.ceiling_height_m:g} m sits on a printed band edge; "
+            f"the higher band ({p.get('height_range')}) is used (ruling R11, 12.10.2026).")
     return HighCeilingSpec(
         applies=True, ceiling_height_m=b.ceiling_height_m, hazard_class=b.hazard_class,
         height_range=p.get("height_range"), k_factor=p.get("k_factor"),
@@ -328,7 +354,7 @@ def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeili
         density=p.get("density"), design_area=p.get("design_area"),
         pump_without_hydrant_gpm=p.get("pump_without_hydrant_gpm"),
         pump_with_hydrant_gpm=p.get("pump_with_hydrant_gpm"),
-        code_ref=hc.get("code_ref"), page_ref=hc.get("page_ref"), note=hc.get("note"),
+        code_ref=hc.get("code_ref"), page_ref=hc.get("page_ref"), note=note,
     )
 
 
@@ -361,17 +387,23 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     # Various-locations items annotated with `requires_sprinkler_system: true` are suppressed
     # when the building's branch does not mandate sprinklers (e.g. small villas where
     # sprinklers are only "recommended").
-    _all_items = list(gen) + list(branch_items)
-    sprinkler_required = any(
-        ("sprinkler" in (it.system or "").lower())
-        and it.status == "required"
-        for it in _all_items
-    )
-    var_rules_filtered = [
-        rule for rule in (rules.get("various_locations") or [])
-        if (not rule.get("requires_sprinkler_system")) or sprinkler_required
-    ]
-    var_items = _dedupe(_collect_flag(var_rules_filtered, b))
+    sprinkler_required = _sprinkler_required(list(gen) + list(branch_items))
+    # #4.13.1 (p.749): Table 9.29 extends the building sprinkler system. Ruling R8
+    # (12.10.2026): gated rows print a #4.13.1 not_required note in a building whose
+    # table row gives no automatic sprinkler system.
+    var_rules = rules.get("various_locations") or []
+    var_items = _collect_flag(
+        [r for r in var_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
+    if not sprinkler_required:
+        for it in _collect_flag([r for r in var_rules if r.get("requires_sprinkler_system")], b):
+            var_items.append(Requirement(
+                system=it.system, status="not_required",
+                detail=("Not required: #4.13.1 extends the building sprinkler system to the "
+                        "Table 9.29 locations, and this building's table row gives no automatic "
+                        "sprinkler system (ruling R8, 12.10.2026)."),
+                code_ref="Ch 9, #4.13.1 / " + (it.code_ref or "").replace("Ch 9, #4.13.1 / ", ""),
+                page_ref=it.page_ref, source_rule=it.source_rule))
+    var_items = _dedupe(var_items)
     if var_items:
         blocks.append(SectionBlock(title="FP - Various Locations & Extensions (Table 9.29)", items=var_items))
 
@@ -969,7 +1001,8 @@ def report_to_markdown(r: ComplianceReport) -> str:
     if r.high_ceiling and r.high_ceiling.applies:
         hc = r.high_ceiling
         L.append("## FP - High Ceiling Sprinkler Protection (Table 9.29.A)")
-        L.append(f"- Ceiling height: **{hc.ceiling_height_m} m** | Hazard: **{hc.hazard_class}** | Band: {hc.height_range or 'out of range'}")
+        band_txt = "not applied" if hc.not_required else (hc.height_range or "out of range")
+        L.append(f"- Ceiling height: **{hc.ceiling_height_m} m** | Hazard: **{hc.hazard_class}** | Band: {band_txt}")
         if hc.k_factor:
             L.append(f"- K-factor: {hc.k_factor} | Pressure: {hc.min_pressure} | Sprinklers: {hc.min_sprinklers}")
             if hc.density: L.append(f"- Density: {hc.density}")
