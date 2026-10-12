@@ -375,7 +375,22 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     if var_items:
         blocks.append(SectionBlock(title="FP - Various Locations & Extensions (Table 9.29)", items=var_items))
 
-    aux_items = _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
+    # #4.1.5 (p.694): Table 9.30 systems apply only when the main building is fully
+    # protected. Rooms marked `requires_sprinkler_system` (ruling R14, 12.10.2026) are
+    # gated on the same test as Table 9.29 and replaced by a #4.1.5 note otherwise.
+    aux_rules = rules.get("auxiliary_rooms", []) or []
+    aux_items = _collect_flag(
+        [r for r in aux_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
+    if not sprinkler_required:
+        for it in _collect_flag([r for r in aux_rules if r.get("requires_sprinkler_system")], b):
+            aux_items.append(Requirement(
+                system=it.system, status="not_required",
+                detail=("Not required: Table 9.30 systems apply only when the main building is "
+                        "fully protected per Tables 9.18 to 9.28 (#4.1.5), and this building's "
+                        "table row gives no automatic sprinkler system."),
+                code_ref="Ch 9, #4.1.5 / " + (it.code_ref or "").replace("Ch 9, ", ""),
+                page_ref="p.694", source_rule=it.source_rule))
+    aux_items = _dedupe(aux_items)
     if aux_items:
         blocks.append(SectionBlock(title="FP - Auxiliary Rooms (Table 9.30)", items=aux_items))
 

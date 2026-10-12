@@ -9,6 +9,16 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — R14 ruled (#4.1.5) — Lift Machine Room sprinkler in sprinklered buildings only
+
+Hussein chose "Sprinklered only" (07:24Z). `aux_M_lift_machine` carries
+`requires_sprinkler_system: true`; `evaluate_fp` gates it on the same sprinkler test as
+Table 9.29 and prints a not_required line citing #4.1.5 (p.694) otherwise. Snapshot vs
+the previous commit: 940 of 6552 cases change, every one only this line. Test
+`test_R14_lift_machine_room_sprinkler_only_in_sprinklered_buildings`. The other Table 9.30
+rooms are not gated yet: #4.1.5 prints the same rule for every Table 9.30 system, asked
+as a separate ruling.
+
 ### 2026-10-12 — Phase 1 (engine core + Ch 9 pumps and tables) — draft PR, NOT merged
 
 Branch `claude/project-thread-0zjltx` off master `fc479a1`. Results change for many
@@ -39,7 +49,7 @@ building types; issued reports made with the live app may need a re-run once mer
   grade, storage GF beyond 100 m from hydrant), saved and shown as chips; height 0 stops
   with an error; Load refuses impossible values by name and loads nothing.
 - **Text:** "#" replaces the section sign in rules and UI.
-- **Tests:** `tests/test_phase1_findings.py` (48, one per finding) + `tests/test_cases.py`
+- **Tests:** `tests/test_phase1_findings.py` (49, one per finding) + `tests/test_cases.py`
   (112) + `_structural_check.py` (0 errors). ALTA case (midrise, 3 basements) stays
   750 gpm @ 6.9 bar, 45 min, per Table 9.20.a row H (ruling 12.10.2026).
 
@@ -59,7 +69,8 @@ the 750 gpm row of 9.24.C.2.
 | R6 | Malls above 23 m (CH9A-18) | waiting |
 | R7 | FA protocol above 23 m for hotels/healthcare/detention (CH8-11) | waiting |
 | R8-R13 | see audit | waiting (later phases) |
-| R14 (new) | #4.1.5 Lift Machine Room sprinkler printed for buildings with no sprinkler system (9.20.b row 1, 9.21.d) (CH9A-09) | waiting |
+| R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
+| R14b | #4.1.5 for the other Table 9.30 rooms (electrical, generator, telephone, server and so on) | asked 12.10 |
 
 ## Known, not fixed in phase 1
 

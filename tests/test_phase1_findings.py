@@ -239,9 +239,7 @@ def test_CH9B_06_lowrise_residential_large_plot_keeps_tier_systems():
 def test_CH9B_09_converted_villa_tiers():
     r = report(occupancy="assembly_c", height_m=7, floors_above_grade=2, ground_floor_bua_m2=600,
                villa_converted_use=True)
-    # The #4.1.5 Lift Machine Room line is ruling R14 (open), not a 9.21.d row.
     assert not [it for it in fp(r) if it.status == "required"
-                and not it.system.startswith("Lift Machine Room")
                 and ("Sprinkler" in it.system or it.system.startswith("Fire Pump"))]
     r = report(occupancy="business", height_m=7, floors_above_grade=2, ground_floor_bua_m2=1000,
                villa_converted_use=True, has_single_exit_stair=True)
@@ -413,3 +411,18 @@ def test_attached_parking_carries_routing_inputs():
     p = [it for b in ch.blocks for it in b.items
          if it.system.startswith("Fire Pump") and it.status == "required"]
     assert len(p) == 1 and p[0].spec.startswith("1000 gpm")
+
+
+# ------------------------------------------- R14 / CH9A-09 (#4.1.5, p.694)
+def test_R14_lift_machine_room_sprinkler_only_in_sprinklered_buildings():
+    """Ruling R14 12.10.2026: Table 9.30.M only when the building is sprinklered."""
+    r = report(occupancy="assembly_c", height_m=7, floors_above_grade=2, ground_floor_bua_m2=600,
+               villa_converted_use=True)
+    assert not lines(r, "FP", "Lift Machine Room")
+    lmr = lines(r, "FP", "Lift Machine Room", status="not_required")
+    assert lmr
+    assert "#4.1.5" in lmr[0].code_ref and lmr[0].page_ref == "p.694"
+    r = report(occupancy="business", height_m=21, floors_above_grade=6, floors_below_grade=3,
+               depth_below_grade_m=10.5, ground_floor_bua_m2=1000, plot_area_m2=5000)
+    lmr = lines(r, "FP", "Lift Machine Room")
+    assert lmr and lmr[0].status == "required" and "Table 9.30.M" in lmr[0].code_ref
