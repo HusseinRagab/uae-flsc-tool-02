@@ -426,3 +426,21 @@ def test_R14_lift_machine_room_sprinkler_only_in_sprinklered_buildings():
                depth_below_grade_m=10.5, ground_floor_bua_m2=1000, plot_area_m2=5000)
     lmr = lines(r, "FP", "Lift Machine Room")
     assert lmr and lmr[0].status == "required" and "Table 9.30.M" in lmr[0].code_ref
+
+
+def test_R14b_every_table_9_30_room_gated_by_4_1_5():
+    """Ruling R14b 12.10.2026: #4.1.5 applies to every Table 9.30 room."""
+    kw = dict(has_main_electrical_room=True, has_diesel_generator_room=True,
+              has_main_server_room=True, has_battery_room=True)
+    r = report(occupancy="residential", height_m=10, ground_floor_bua_m2=300, **kw)
+    assert not [it for it in items(r, "FP")
+                if "Table 9.30" in (it.code_ref or "") and it.status != "not_required"]
+    notes = [it for it in items(r, "FP") if "#4.1.5" in (it.code_ref or "")]
+    assert {n.system.split(" - ")[0] for n in notes} >= {
+        "Main Electrical Room", "Diesel Generator Room", "Main Server Room"}
+    assert lines(r, "FP", "Battery Room", status="not_required")      # 9.30.D "None", ungated
+    r = report(occupancy="business", height_m=21, floors_above_grade=6, floors_below_grade=3,
+               depth_below_grade_m=10.5, ground_floor_bua_m2=1000, plot_area_m2=5000, **kw)
+    for room in ("Main Electrical Room", "Diesel Generator Room", "Main Server Room"):
+        assert lines(r, "FP", room), room
+    assert not [it for it in items(r, "FP") if "#4.1.5" in (it.code_ref or "")]

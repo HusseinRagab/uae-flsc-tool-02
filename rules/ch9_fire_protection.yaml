@@ -2277,9 +2277,15 @@ high_ceiling:
       band_13_5_18: {height_range: "13.5 m to 18 m", k_factor: "K25.2 (K360)", min_pressure: "7 psi (0.5 bar)", min_sprinklers: 12, pump_without_hydrant_gpm: 1000, pump_with_hydrant_gpm: 1250}
       band_18_30: {height_range: "18 m to 30 m", k_factor: "K25.2 (K360)", min_pressure: "7 psi (0.5 bar)", min_sprinklers: 12, pump_without_hydrant_gpm: 1000, pump_with_hydrant_gpm: 1250}
 
+# #4.1.5 (p.694): Table 9.30 systems are installed only when the main building is fully
+# protected per Tables 9.18 to 9.28. Rulings R14 / R14b (12.10.2026): every row that
+# requires a system carries requires_sprinkler_system; the engine prints a #4.1.5 note
+# instead when the building's table row gives no automatic sprinkler system.
+# 9.30.D (battery room) requires nothing, so it is not gated.
 auxiliary_rooms:
   - id: aux_A_anesthetizing
     flag: has_anesthetizing_room
+    requires_sprinkler_system: true
     systems:
       - name: "Anesthetizing Room - Automatic Sprinkler (Section 3.5) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.A"
@@ -2288,6 +2294,7 @@ auxiliary_rooms:
 
   - id: aux_B_battery_charger
     flag: has_battery_charger_room
+    requires_sprinkler_system: true
     systems:
       - name: "Battery Charger Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.B"
@@ -2296,6 +2303,7 @@ auxiliary_rooms:
 
   - id: aux_C_bms
     flag: has_bms_room
+    requires_sprinkler_system: true
     systems:
       - name: "BMS Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.C"
@@ -2313,6 +2321,7 @@ auxiliary_rooms:
 
   - id: aux_E_computer
     flag: has_computer_room
+    requires_sprinkler_system: true
     systems:
       - name: "Computer Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.E"
@@ -2321,6 +2330,7 @@ auxiliary_rooms:
 
   - id: aux_F_control
     flag: has_control_room
+    requires_sprinkler_system: true
     systems:
       - name: "Control Room / Fire Command Centre - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.F"
@@ -2329,6 +2339,7 @@ auxiliary_rooms:
 
   - id: aux_G_diesel_generator
     flag: has_diesel_generator_room
+    requires_sprinkler_system: true
     systems:
       - name: "Diesel Generator Room - Foam Sprinkler System (Section 3.9)"
         code_ref: "Ch 9, #4.14 / Table 9.30.G"
@@ -2337,6 +2348,7 @@ auxiliary_rooms:
 
   - id: aux_H_main_electrical
     flag: has_main_electrical_room
+    requires_sprinkler_system: true
     systems:
       - name: "Main Electrical Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.H"
@@ -2345,6 +2357,7 @@ auxiliary_rooms:
 
   - id: aux_I_ahu
     flag: has_ahu_room
+    requires_sprinkler_system: true
     systems:
       - name: "AHU Room - Automatic Sprinkler System (Section 3.5)"
         code_ref: "Ch 9, #4.14 / Table 9.30.I"
@@ -2353,6 +2366,7 @@ auxiliary_rooms:
 
   - id: aux_J_lv_mv
     flag: has_lv_mv_room
+    requires_sprinkler_system: true
     systems:
       - name: "LV / MV Room - Clean Agent (Section 3.14) with motorized louvers closing on discharge"
         code_ref: "Ch 9, #4.14 / Table 9.30.J"
@@ -2361,6 +2375,7 @@ auxiliary_rooms:
 
   - id: aux_K_transformer_utility
     flag: has_transformer_room_utility
+    requires_sprinkler_system: true
     systems:
       - name: "Transformer Room (utility) - No protection unless specified by utility; if required: Clean Agent OR Deluge Water Spray OR Water Mist"
         required: conditional
@@ -2370,6 +2385,7 @@ auxiliary_rooms:
 
   - id: aux_L_transformer_private
     flag: has_transformer_room_private
+    requires_sprinkler_system: true
     systems:
       - name: "Transformer Room (private) - Clean Agent (3.14) OR Deluge Water Spray (3.8) OR Water Mist (3.10) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.L"
@@ -2378,7 +2394,7 @@ auxiliary_rooms:
 
   - id: aux_M_lift_machine
     flag: has_lift_machine_room
-    requires_sprinkler_system: true   # #4.1.5, ruling R14 (12.10.2026)
+    requires_sprinkler_system: true
     systems:
       - name: "Lift Machine Room - Automatic Sprinkler System (Section 3.5)"
         code_ref: "Ch 9, #4.14 / Table 9.30.M"
@@ -2387,6 +2403,7 @@ auxiliary_rooms:
 
   - id: aux_N_main_telephone
     flag: has_main_telephone_room
+    requires_sprinkler_system: true
     systems:
       - name: "Main Telephone Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.N"
@@ -2395,6 +2412,7 @@ auxiliary_rooms:
 
   - id: aux_O_main_server
     flag: has_main_server_room
+    requires_sprinkler_system: true
     systems:
       - name: "Main Server Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.O"
@@ -2403,6 +2421,7 @@ auxiliary_rooms:
 
   - id: aux_P_rmu_idf_mdf
     flag: has_rmu_idf_mdf_room
+    requires_sprinkler_system: true
     systems:
       - name: "RMU / IDF / MDF / CDF / MMR Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.P"
@@ -2411,6 +2430,7 @@ auxiliary_rooms:
 
   - id: aux_Q_gsm
     flag: has_gsm_room
+    requires_sprinkler_system: true
     systems:
       - name: "GSM Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.Q"
@@ -2419,6 +2439,7 @@ auxiliary_rooms:
 
   - id: aux_R_operation_theater
     flag: has_operation_theater
+    requires_sprinkler_system: true
     systems:
       - name: "Operation Theatre - Double-Interlocked Pre-action (Section 3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.R"
@@ -2427,6 +2448,7 @@ auxiliary_rooms:
 
   - id: aux_S_mri_scanning
     flag: has_mri_scanning_room
+    requires_sprinkler_system: true
     systems:
       - name: "MRI / Scanning Room - Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.S"
@@ -2435,6 +2457,7 @@ auxiliary_rooms:
 
   - id: aux_T_records
     flag: has_records_room
+    requires_sprinkler_system: true
     systems:
       - name: "Records Room - Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR Clean Agent (3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.T"
@@ -2443,6 +2466,7 @@ auxiliary_rooms:
 
   - id: aux_U_ups
     flag: has_ups_room
+    requires_sprinkler_system: true
     systems:
       - name: "UPS Room - Clean Agent (3.14) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.U"
@@ -2451,6 +2475,7 @@ auxiliary_rooms:
 
   - id: aux_V_cold_freezer
     flag: has_cold_freezer_room
+    requires_sprinkler_system: true
     systems:
       - name: "Cold / Freezer Room - Dry Sprinklers OR Dry Pre-action System"
         code_ref: "Ch 9, #4.14 / Table 9.30.V"
