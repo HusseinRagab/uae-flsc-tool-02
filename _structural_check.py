@@ -19,8 +19,8 @@ from flsc_schema import Building, Occupancy  # noqa: E402
 
 RULES_DIR = "rules"
 BUILDING_FIELDS = set(Building.model_fields.keys())
-# height_class / building_category are @property — also valid match targets
-BUILDING_PROPS = {"height_class", "building_category"}
+# @property values are also valid match targets
+BUILDING_PROPS = {name for name, obj in vars(Building).items() if isinstance(obj, property)}
 VALID_TARGETS = BUILDING_FIELDS | BUILDING_PROPS
 VALID_OCC = set(typing.get_args(Occupancy))
 VALID_STATUS = {"required", "recommended", "conditional", "not_required"}
@@ -70,6 +70,13 @@ for yf in sorted(glob.glob(os.path.join(RULES_DIR, "ch*.yaml"))):
         if not match:
             return
         for k, v in match.items():
+            if k == "any_of":
+                for sub in v:
+                    check_match(sub, ctx)
+                continue
+            if k == "not":
+                check_match(v, ctx)
+                continue
             tgt = resolve_target(k)
             if k in ("occupancy", "occupancy_not", "occupancy_in"):
                 vals = v if isinstance(v, list) else [v]
@@ -91,6 +98,8 @@ for yf in sorted(glob.glob(os.path.join(RULES_DIR, "ch*.yaml"))):
             status = e.get("required", "required")
             if status not in VALID_STATUS:
                 errors.append(f"{fname} [{ctx}]: invalid status '{status}'")
+            if e.get("duty") not in (None, "pump", "tank"):
+                errors.append(f"{fname} [{ctx}]: invalid duty '{e.get('duty')}'")
             pst = e.get("pump_spec_type")
             if pst and pst not in KNOWN_PUMP_TYPES:
                 errors.append(f"{fname} [{ctx}]: unknown pump_spec_type '{pst}'")
@@ -120,6 +129,14 @@ for yf in sorted(glob.glob(os.path.join(RULES_DIR, "ch*.yaml"))):
         all_ids[rid] = fname
         check_match(br.get("match", {}), f"branch:{rid}")
         check_systems(br.get("systems", []), f"branch:{rid}")
+
+    # every `suppresses:` id must name a branch of the same file
+    branch_ids = {br.get("id") for br in doc.get("branches", []) or []}
+    for br in doc.get("branches", []) or []:
+        for sid in br.get("suppresses") or []:
+            if sid not in branch_ids:
+                errors.append(f"{fname} [branch:{br.get('id')}]: suppresses unknown "
+                              f"branch '{sid}'")
 
     # flag-driven sections
     for sec in ("auxiliary_rooms", "equipment", "addons", "various_locations"):
