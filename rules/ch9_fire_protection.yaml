@@ -276,7 +276,7 @@ branches:
         spec: "60 minutes duration"
 
   - id: highrise_45_90_large_plot
-    match: {height_m_gt: 45, height_m_lt: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gt: 45, height_m_lte: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.A"
     page: "p.697"
     systems:
@@ -296,7 +296,7 @@ branches:
         detail: "Dedicated breeching inlet + instantaneous refill."
 
   - id: highrise_45_90_small_plot
-    match: {height_m_gt: 45, height_m_lt: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    match: {height_m_gt: 45, height_m_lte: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.B"
     page: "p.697"
     systems:
@@ -334,7 +334,7 @@ branches:
     # Detention excluded — midrise detention has its own dedicated branch
     # (midrise_detention, Table 9.20.d). Without this exclusion a 15-23 m
     # detention building matched BOTH and produced duplicate Fire Pump lines.
-    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_public,
+    match: {height_m_gt: 15, height_m_lte: 23, occupancy_group_is: midrise_public,
             occupancy_not: [detention_a, detention_b, detention_c],
             plot_area_m2_lt: 20000}
     section: "Ch 9, #4.4.1 / Table 9.20.a (plot < 20,000 m2)"
@@ -354,7 +354,7 @@ branches:
 
   - id: midrise_public_large_plot
     # Detention excluded — see midrise_public_small_plot note above.
-    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_public,
+    match: {height_m_gt: 15, height_m_lte: 23, occupancy_group_is: midrise_public,
             occupancy_not: [detention_a, detention_b, detention_c],
             plot_area_m2_gte: 20000}
     section: "Ch 9, #4.4.1 / Table 9.20.a (plot >= 20,000 m2)"
@@ -375,7 +375,7 @@ branches:
         detail: "Dedicated breeching inlet."
 
   - id: midrise_residential
-    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential}
+    match: {height_m_gt: 15, height_m_lte: 23, occupancy_group_is: midrise_residential}
     section: "Ch 9, #4.4.2 / Table 9.20.b"
     page: "p.701"
     systems:
@@ -396,7 +396,7 @@ branches:
   - id: midrise_single_exit_small
     match:
       height_m_gt: 15
-      height_m_lt: 23
+      height_m_lte: 23
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
       ground_floor_bua_m2_lte: 500
       has_single_exit_stair_is: true
@@ -421,7 +421,7 @@ branches:
   - id: midrise_detention
     match:
       height_m_gt: 15
-      height_m_lt: 23
+      height_m_lte: 23
       occupancy_in: [detention_a, detention_b, detention_c]
     section: "Ch 9, #4.4.4 / Table 9.20.d"
     page: "p.704"
@@ -499,7 +499,7 @@ branches:
   - id: lowrise_residential_upto_3600
     match:
       height_m_lte: 15
-      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
       ground_floor_bua_m2_lte: 3600
       plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.1"
@@ -520,7 +520,7 @@ branches:
   - id: lowrise_residential_over_3600
     match:
       height_m_lte: 15
-      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
       ground_floor_bua_m2_gt: 3600
       plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.2"
@@ -541,7 +541,7 @@ branches:
   - id: lowrise_residential_large_plot
     match:
       height_m_lte: 15
-      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
       plot_area_m2_gt: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.3"
     page: "p.708"
@@ -1676,7 +1676,7 @@ auxiliary_rooms:
   - id: aux_A_anesthetizing
     flag: has_anesthetizing_room
     systems:
-      - name: "Automatic Sprinkler (Section 3.5) OR Double-Interlocked Pre-action (Section 3.7)"
+      - name: "Anesthetizing Room - Automatic Sprinkler (Section 3.5) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.A"
         page_ref: "p.752"
         detail: "Anesthetizing room: either wet-pipe sprinkler per Section 3.5 or double-interlocked pre-action per Section 3.7."
@@ -1684,7 +1684,7 @@ auxiliary_rooms:
   - id: aux_B_battery_charger
     flag: has_battery_charger_room
     systems:
-      - name: "Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
+      - name: "Battery Charger Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.B"
         page_ref: "p.752"
         detail: "Battery charger room: clean agent (FM-200 / Novec 1230 / Inergen) per Section 3.14 is preferred to avoid water damage to DC equipment; double-interlocked pre-action is also acceptable."
@@ -1692,7 +1692,7 @@ auxiliary_rooms:
   - id: aux_C_bms
     flag: has_bms_room
     systems:
-      - name: "Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
+      - name: "BMS Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.C"
         page_ref: "p.752"
         detail: "BMS room: clean agent preferred to protect controls. Rooms < 10 m2 and not critical to building monitoring are exempt."
@@ -1700,7 +1700,7 @@ auxiliary_rooms:
   - id: aux_D_battery
     flag: has_battery_room
     systems:
-      - name: "No fire protection system required"
+      - name: "Battery Room - No fire protection system required"
         required: not_required
         code_ref: "Ch 9, #4.14 / Table 9.30.D"
         page_ref: "p.752"
@@ -1709,7 +1709,7 @@ auxiliary_rooms:
   - id: aux_E_computer
     flag: has_computer_room
     systems:
-      - name: "Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
+      - name: "Computer Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.E"
         page_ref: "p.752"
         detail: "Computer room: clean agent preferred to avoid water damage. Rooms < 10 m2 and non-critical are exempt."
@@ -1717,7 +1717,7 @@ auxiliary_rooms:
   - id: aux_F_control
     flag: has_control_room
     systems:
-      - name: "Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
+      - name: "Control Room / Fire Command Centre - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.F"
         page_ref: "p.752"
         detail: "Control / Fire Command Centre: clean agent preferred. Rooms < 10 m2 and separated service blocks with 3 m detachment from predominant occupancy are exempt."
@@ -1725,7 +1725,7 @@ auxiliary_rooms:
   - id: aux_G_diesel_generator
     flag: has_diesel_generator_room
     systems:
-      - name: "Foam Sprinkler System (Section 3.9)"
+      - name: "Diesel Generator Room - Foam Sprinkler System (Section 3.9)"
         code_ref: "Ch 9, #4.14 / Table 9.30.G"
         page_ref: "p.752"
         detail: "DIESEL GENERATOR ROOMS REQUIRE FOAM SPRINKLERS - NOT water sprinklers. Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from predominant occupancy are exempt."
@@ -1733,7 +1733,7 @@ auxiliary_rooms:
   - id: aux_H_main_electrical
     flag: has_main_electrical_room
     systems:
-      - name: "Clean Agent (Section 3.14)"
+      - name: "Main Electrical Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.H"
         page_ref: "p.753"
         detail: "Main electrical room: clean agent per Section 3.14. Exempt when room is < 10 m2 OR on a typical floor (must be 1-hour fire-rated enclosure, limited to distribution boards + junction boxes, with full penetration firestopping). Also exempt if located in separated service block with 3 m detachment."
@@ -1741,7 +1741,7 @@ auxiliary_rooms:
   - id: aux_I_ahu
     flag: has_ahu_room
     systems:
-      - name: "Automatic Sprinkler System (Section 3.5)"
+      - name: "AHU Room - Automatic Sprinkler System (Section 3.5)"
         code_ref: "Ch 9, #4.14 / Table 9.30.I"
         page_ref: "p.753"
         detail: "AHU room sprinklered per Section 3.5."
@@ -1749,7 +1749,7 @@ auxiliary_rooms:
   - id: aux_J_lv_mv
     flag: has_lv_mv_room
     systems:
-      - name: "Clean Agent (Section 3.14) with motorized louvers closing on discharge"
+      - name: "LV / MV Room - Clean Agent (Section 3.14) with motorized louvers closing on discharge"
         code_ref: "Ch 9, #4.14 / Table 9.30.J"
         page_ref: "p.753"
         detail: "LV / MV room: clean agent per Section 3.14. Where louvers are provided they must be motorized and close automatically on clean-agent discharge to maintain room tightness. Rooms < 10 m2 or typical-floor rooms exempt if 1-hr fire rated with distribution boards only."
@@ -1757,7 +1757,7 @@ auxiliary_rooms:
   - id: aux_K_transformer_utility
     flag: has_transformer_room_utility
     systems:
-      - name: "No protection unless specified by utility; if required: Clean Agent OR Deluge Water Spray OR Water Mist"
+      - name: "Transformer Room (utility) - No protection unless specified by utility; if required: Clean Agent OR Deluge Water Spray OR Water Mist"
         required: conditional
         code_ref: "Ch 9, #4.14 / Table 9.30.K"
         page_ref: "p.753"
@@ -1766,7 +1766,7 @@ auxiliary_rooms:
   - id: aux_L_transformer_private
     flag: has_transformer_room_private
     systems:
-      - name: "Clean Agent (3.14) OR Deluge Water Spray (3.8) OR Water Mist (3.10) OR 2-hr Fire-Rated Enclosure"
+      - name: "Transformer Room (private) - Clean Agent (3.14) OR Deluge Water Spray (3.8) OR Water Mist (3.10) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.L"
         page_ref: "p.753"
         detail: "Privately-owned enclosed transformer rooms outside substations. Four acceptable options: (1) Clean Agent per Section 3.14, (2) Deluge Water Spray per Section 3.8 (typical for oil-filled), (3) Water Mist per Section 3.10, or (4) 2-hour fire-rated enclosure with 90-min fire doors or motorized fire-rated louvers - this last option requires exclusively dry-type equipment and no other storage in the room."
@@ -1774,7 +1774,7 @@ auxiliary_rooms:
   - id: aux_M_lift_machine
     flag: has_lift_machine_room
     systems:
-      - name: "Automatic Sprinkler System (Section 3.5)"
+      - name: "Lift Machine Room - Automatic Sprinkler System (Section 3.5)"
         code_ref: "Ch 9, #4.14 / Table 9.30.M"
         page_ref: "p.754"
         detail: "Lift machine room sprinklered per Section 3.5. Machine-room-less (MRL) elevators without control / mechanical equipment in a dedicated room are exempt."
@@ -1782,7 +1782,7 @@ auxiliary_rooms:
   - id: aux_N_main_telephone
     flag: has_main_telephone_room
     systems:
-      - name: "Clean Agent (Section 3.14)"
+      - name: "Main Telephone Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.N"
         page_ref: "p.754"
         detail: "Main telephone room: clean agent per Section 3.14. < 10 m2 or typical-floor rooms exempt if limited to distribution boards with firestopping. Separated service-block rooms with 3 m detachment also exempt."
@@ -1790,7 +1790,7 @@ auxiliary_rooms:
   - id: aux_O_main_server
     flag: has_main_server_room
     systems:
-      - name: "Clean Agent (Section 3.14)"
+      - name: "Main Server Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.O"
         page_ref: "p.754"
         detail: "Main server room: clean agent per Section 3.14, typically with VESDA aspirating smoke detection. < 10 m2 or typical-floor rooms exempt if compartmented with firestopping. Server cabinets exposed within occupied sprinklered rooms exempt."
@@ -1798,7 +1798,7 @@ auxiliary_rooms:
   - id: aux_P_rmu_idf_mdf
     flag: has_rmu_idf_mdf_room
     systems:
-      - name: "Clean Agent (Section 3.14)"
+      - name: "RMU / IDF / MDF / CDF / MMR Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.P"
         page_ref: "p.754"
         detail: "RMU / IDF / MDF / CDF / MMR rooms protected with clean agent per Section 3.14."
@@ -1806,7 +1806,7 @@ auxiliary_rooms:
   - id: aux_Q_gsm
     flag: has_gsm_room
     systems:
-      - name: "Clean Agent (Section 3.14)"
+      - name: "GSM Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.Q"
         page_ref: "p.754"
         detail: "GSM / telecoms equipment room: clean agent per Section 3.14."
@@ -1814,7 +1814,7 @@ auxiliary_rooms:
   - id: aux_R_operation_theater
     flag: has_operation_theater
     systems:
-      - name: "Double-Interlocked Pre-action (Section 3.7) OR 2-hr Fire-Rated Enclosure"
+      - name: "Operation Theatre - Double-Interlocked Pre-action (Section 3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.R"
         page_ref: "p.755"
         detail: "Operation theatre: double-interlocked pre-action sprinkler per Section 3.7, OR 2-hour fire-rated enclosure with 90-minute fire doors housing exclusively dry-type medical + electrical equipment with no other storage."
@@ -1822,7 +1822,7 @@ auxiliary_rooms:
   - id: aux_S_mri_scanning
     flag: has_mri_scanning_room
     systems:
-      - name: "Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
+      - name: "MRI / Scanning Room - Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.S"
         page_ref: "p.755"
         detail: "MRI / scanning room: three options - (1) wet sprinkler per Section 3.5, (2) double-interlocked pre-action per Section 3.7, or (3) 2-hr fire-rated enclosure with 90-min fire doors housing only dry-type equipment."
@@ -1830,7 +1830,7 @@ auxiliary_rooms:
   - id: aux_T_records
     flag: has_records_room
     systems:
-      - name: "Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR Clean Agent (3.14)"
+      - name: "Records Room - Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR Clean Agent (3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.T"
         page_ref: "p.755"
         detail: "Records room: three options - wet sprinkler, double-interlocked pre-action, or clean agent. Clean agent preferred where paper records are valuable."
@@ -1838,7 +1838,7 @@ auxiliary_rooms:
   - id: aux_U_ups
     flag: has_ups_room
     systems:
-      - name: "Clean Agent (3.14) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
+      - name: "UPS Room - Clean Agent (3.14) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.U"
         page_ref: "p.755"
         detail: "UPS room: three options - clean agent (preferred to avoid water damage to batteries), pre-action, or 2-hr fire-rated enclosure housing only dry batteries + dry electrical equipment."
@@ -1846,7 +1846,7 @@ auxiliary_rooms:
   - id: aux_V_cold_freezer
     flag: has_cold_freezer_room
     systems:
-      - name: "Dry Sprinklers OR Dry Pre-action System"
+      - name: "Cold / Freezer Room - Dry Sprinklers OR Dry Pre-action System"
         code_ref: "Ch 9, #4.14 / Table 9.30.V"
         page_ref: "p.755"
         detail: "Cold / freezer room: dry sprinklers or dry pre-action (to avoid freezing of wet pipe). Rooms < 20 m2 exempt if compartmented with firestopping. Modular cold rooms in occupied sprinklered rooms exempt."
@@ -1855,7 +1855,7 @@ equipment:
   - id: eq_A_kitchen_hood
     flag: has_commercial_kitchen
     systems:
-      - name: "Automatic Wet Chemical System (Section 3.12) + Grease Filters"
+      - name: "Commercial Kitchen Hood - Automatic Wet Chemical System (Section 3.12) + Grease Filters"
         code_ref: "Ch 9, #4.15 / Table 9.31.A"
         page_ref: "p.756"
         detail: "UL-300 listed wet-chemical extinguishing system over cooking surfaces, hoods and ductwork with fuel/gas shut-off interlock. Grease filters in the hood. Required for commercial kitchens with 3 or more burners."
@@ -1863,7 +1863,7 @@ equipment:
   - id: eq_B_lpg_tanks
     flag: has_lpg_tanks
     systems:
-      - name: "Water Deluge Spray (Section 3.8) if building sprinklered; Dry-Type Deluge Spray with breeching inlet otherwise"
+      - name: "LPG Tanks - Water Deluge Spray (Section 3.8) if building sprinklered; Dry-Type Deluge Spray with breeching inlet otherwise"
         code_ref: "Ch 9, #4.15 / Table 9.31.B"
         page_ref: "p.756"
         detail: "Aboveground / rooftop / podium LPG tanks: if the building is sprinklered, provide an AUTOMATIC water deluge spray system cooling the tank shell (Section 3.8). If the building is NOT sprinklered, provide a DRY-type deluge spray system with a Civil Defence breeching inlet (charged by the fire truck on arrival). Exception: no protection required where aboveground tanks are > 6 m from any point of structure."
@@ -1871,7 +1871,7 @@ equipment:
   - id: eq_C_flammable_liquid_tanks
     flag: has_flammable_liquid_tanks
     systems:
-      - name: "Automatic Foam System (Section 3.9)"
+      - name: "Flammable Liquid Tanks - Automatic Foam System (Section 3.9)"
         code_ref: "Ch 9, #4.15 / Table 9.31.C; Ch 13"
         page_ref: "p.756"
         detail: "Flammable-liquid tanks: automatic foam system per Section 3.9. Foam type (AFFF / AR-AFFF / protein) selected by liquid flash point and solubility - refer Chapter 13 Flammable Liquids."
@@ -1879,7 +1879,7 @@ equipment:
   - id: eq_D_cable_spread
     flag: has_cable_spread_areas
     systems:
-      - name: "Automatic Water Deluge Spray (Table 3.8) OR Water Mist (Table 3.10)"
+      - name: "Cable Spread Areas - Automatic Water Deluge Spray (Table 3.8) OR Water Mist (Table 3.10)"
         code_ref: "Ch 9, #4.15 / Table 9.31.D"
         page_ref: "p.756"
         detail: "Cable spread / cable tray galleries: water deluge spray per Table 3.8 or water mist per Table 3.10. Water mist preferred where water damage is a concern."
@@ -1887,15 +1887,15 @@ equipment:
   - id: eq_E_diesel_generator
     flag: has_diesel_generator_room
     systems:
-      - name: "Foam Sprinkler System (Section 3.9)"
+      - name: "Diesel Generator - Foam Sprinkler System (Section 3.9)"
         code_ref: "Ch 9, #4.15 / Table 9.31.E"
         page_ref: "p.756"
-        detail: "Diesel Generator Room - Foam sprinkler system per Section 3.9 (Table 9.31.E). Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from the predominant occupancy are exempt. NOTE: The same physical system is also cited under Table 9.30.G (Auxiliary Rooms block) - both citations are valid. The two entries appear in different report blocks (FP Equipment vs FP Auxiliary Rooms); engine de-duplication is per-block, so the requirement is intentionally shown once in each block for full traceability."
+        detail: "Diesel Generator Room - Foam sprinkler system per Section 3.9 (Table 9.31.E). Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from the predominant occupancy are exempt. This is the same single foam sprinkler system as Table 9.30.G (Auxiliary Rooms block): both tables require it, and one system satisfies both."
 
   - id: eq_F_boilers
     flag: has_boilers
     systems:
-      - name: "Automatic Sprinkler System (Section 3.5)"
+      - name: "Boilers - Automatic Sprinkler System (Section 3.5)"
         code_ref: "Ch 9, #4.15 / Table 9.31.F"
         page_ref: "p.756"
         detail: "Boiler rooms: wet-pipe sprinklers per Section 3.5."
@@ -1903,7 +1903,7 @@ equipment:
   - id: eq_G_cooling_towers
     flag: has_cooling_towers
     systems:
-      - name: "Automatic Water Deluge Spray (Table 3.8)"
+      - name: "Cooling Towers - Automatic Water Deluge Spray (Table 3.8)"
         required: conditional
         code_ref: "Ch 9, #4.15 / Table 9.31.G"
         page_ref: "p.756"
@@ -1912,7 +1912,7 @@ equipment:
   - id: eq_H_oil_filled_transformers
     flag: has_oil_filled_transformers
     systems:
-      - name: "Automatic Water Deluge Spray (Table 3.8)"
+      - name: "Oil-filled Transformers - Automatic Water Deluge Spray (Table 3.8)"
         code_ref: "Ch 9, #4.15 / Table 9.31.H"
         page_ref: "p.756"
         detail: "Oil-filled transformers: water deluge spray on the transformer enclosure per Table 3.8."
@@ -1920,7 +1920,7 @@ equipment:
   - id: eq_I_bulk_oil_storage
     flag: has_bulk_oil_storage
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "Bulk Oil Storage - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.I; Ch 13"
         page_ref: "p.756"
         detail: "Comprehensive risk assessment required; suppression proposal prepared and stamped by a CD-approved House of Expertise. Refer Chapter 13 Flammable Liquids."
@@ -1928,7 +1928,7 @@ equipment:
   - id: eq_J_bulk_flammable_liquid
     flag: has_bulk_flammable_liquid_storage
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "Bulk Flammable Liquid Storage - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.J; Ch 13"
         page_ref: "p.756"
         detail: "Risk assessment + House-of-Expertise proposal. Refer Chapter 13 Flammable Liquids and Chapter 9 Fire Protection."
@@ -1936,7 +1936,7 @@ equipment:
   - id: eq_K_bulk_flammable_gas
     flag: has_bulk_flammable_gas_storage
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "Bulk Flammable Gas Storage - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.K"
         page_ref: "p.757"
         detail: "Risk assessment + House-of-Expertise proposal."
@@ -1944,7 +1944,7 @@ equipment:
   - id: eq_L_bulk_flammable_solid
     flag: has_bulk_flammable_solid_storage
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "Bulk Flammable Solid Storage - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.L"
         page_ref: "p.757"
         detail: "Risk assessment + House-of-Expertise proposal."
@@ -1952,7 +1952,7 @@ equipment:
   - id: eq_M_high_hazard_logistics
     flag: has_high_hazard_logistics
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "High-hazard Logistics - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.M"
         page_ref: "p.757"
         detail: "Risk assessment + House-of-Expertise proposal."
@@ -1960,7 +1960,7 @@ equipment:
   - id: eq_N_chemical_warehouse
     flag: has_chemical_warehouse
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "Chemical Warehouse - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.N"
         page_ref: "p.757"
         detail: "Risk assessment + House-of-Expertise proposal."
@@ -1968,7 +1968,7 @@ equipment:
   - id: eq_O_explosives
     flag: has_explosives
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "Arms / Ammunition / Explosives - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.O"
         page_ref: "p.757"
         detail: "Arms / ammunition / explosives: risk assessment + House-of-Expertise proposal."
@@ -1976,7 +1976,7 @@ equipment:
   - id: eq_P_processing_plants
     flag: has_processing_plant
     systems:
-      - name: "Risk-Assessment-Based Suppression (House of Expertise)"
+      - name: "Processing / Generating Plant - Risk-Assessment-Based Suppression (House of Expertise)"
         code_ref: "Ch 9, #4.15 / Table 9.31.P"
         page_ref: "p.757"
         detail: "Processing / generating plants: risk assessment + House-of-Expertise proposal."

@@ -90,14 +90,14 @@ branches:
         detail: "Fire pump, all suppression systems, Fire Water Level, LP Gas detection, CO Monitoring, door release, Elevator recall, Smoke Control - all interfaced with FACP per Section 4.1."
 
   - id: fa_highrise
-    # Highrise threshold = > 15 m per UAE FLSC Ch 3 (line 1014: "Mid rise, having
-    # height more than 15 m, High rise buildings and superhighrise buildings...").
+    # Highrise = more than 23 m up to 90 m (Ch 1 #1.7.41, p.45; FAQ Q3, p.1273).
+    # Table 8.13 items 1-2 use the defined terms and print no height numbers.
     # Specific-occupancy branches (mall, education, healthcare, detention, parking,
     # villa, storage_industrial, motor_fuel_dispensing) are excluded so they pick
     # their dedicated Table 8.13 row; hotel_a/b/c intentionally NOT excluded so a
     # tall hotel still picks up the highrise overlay (per Table 8.13 item 2).
     match:
-      height_m_gt: 15
+      height_m_gt: 23
       height_m_lte: 90
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
                       mall_covered, mall_open, mall_mixed,
@@ -111,7 +111,7 @@ branches:
     systems:
       - name: "Smoke Detection and Alarm System (entire building)"
         spec: "Addressable, per Section 4.3"
-        detail: "Highrise threshold (> 15 m) per Ch 3 Definitions (p.259 line 1014). Code uses 'more than 15 m' for High-rise / Mid-rise above 15 m; the 23 m figures inside Ch 8 itself refer to smoke-detector spacing in stair / elevator shafts, NOT to the highrise threshold."
+        detail: "Highrise = more than 23 m up to 90 m (Ch 1 #1.7.41, p.45; FAQ Q3, p.1273). Table 8.13 item 2 applies the highrise row to these buildings."
       - name: "Sub-FACPs / Annunciators every 45 m"
         spec: "Networked to main FACP"
         detail: "At elevator lobby or mechanical floor every 45 m, networked to main FACP."
@@ -123,11 +123,10 @@ branches:
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
 
   - id: fa_midrise_lowrise
-    # Midrise / Lowrise threshold = <= 15 m per UAE FLSC Ch 3 line 1010-1014
-    # ("Low rise buildings having height up to 15 m"). Buildings up to 15 m fall
-    # under this generic branch; > 15 m branches up to fa_highrise.
+    # Midrise / Lowrise = up to 23 m (Ch 1 #1.7.39-#1.7.40, p.44). Table 8.13
+    # items 3-4 use the defined terms; above 23 m the building takes fa_highrise.
     match:
-      height_m_lte: 15
+      height_m_lte: 23
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
                       mall_covered, mall_open, mall_mixed,
                       parking_enclosed, parking_open,
@@ -141,7 +140,7 @@ branches:
     systems:
       - name: "Smoke Detection and Alarm System (entire building)"
         spec: "Addressable, per Section 4.3"
-        detail: "Throughout midrise / lowrise (height <= 15 m per Ch 3 Definitions, p.259 line 1010). Detectors at all rooms, halls, storage areas, basements (unless sprinklered), attics, lofts, enclosed usable spaces."
+        detail: "Throughout midrise / lowrise (midrise / lowrise = up to 23 m, Ch 1 #1.7.39-#1.7.40, p.44). Detectors at all rooms, halls, storage areas, basements (unless sprinklered), attics, lofts, enclosed usable spaces."
       - name: "Single Main FACP"
         detail: "At Emergency Command Centre / Reception / Security guard house per fire strategy."
       - name: "Positive Alarm Sequence (PAS) - 180 s"

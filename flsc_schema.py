@@ -331,6 +331,7 @@ class Requirement(BaseModel):
     code_ref: Optional[str] = None
     page_ref: Optional[str] = None
     source_rule: Optional[str] = None
+    duty: Optional[str] = None   # "pump" / "tank": one governing line per building (engine._merge_duties)
 
 
 class HighCeilingSpec(BaseModel):
