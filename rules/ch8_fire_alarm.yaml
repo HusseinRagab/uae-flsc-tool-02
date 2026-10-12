@@ -334,7 +334,7 @@ branches:
     systems:
       - name: "Fire Detection and Alarm System NOT REQUIRED (Plant / Vegetation Nursery)"
         required: not_required
-        detail: "Per Table 8.13 item 28 (p.508): 'Fire Detection and Alarm System shall not be required' for plant and vegetation nurseries. Row 28 lists no Table 8.14 / 8.15 item; the general Table 8.14 reminders are not shown for a nursery. A Table 8.14 / 8.15 line below appears only for a room or equipment ticked in the inputs: confirm with Civil Defence whether it applies."
+        detail: "Per Table 8.13 item 28 (p.508): 'Fire Detection and Alarm System shall not be required' for plant and vegetation nurseries. Row 28 lists no Table 8.14 / 8.15 item, so a nursery prints no auxiliary room or equipment lines, even for rooms ticked in the inputs (owner ruling 12.10.2026, Ch8 Q4)."
 
   - id: fa_cold_storage
     # Cold-storage warehouse (Table 8.13 item 21, p.506).
@@ -420,6 +420,8 @@ branches:
       - name: "Audio-Visual Notification (throughout parking areas)"
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
         detail: "Table 8.13 item 22 (v), p.506: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1."
+      - name: "General Fire Alarm Does NOT Trigger Evacuation"
+        detail: "Table 8.13 item 22 (vii), p.506, printed 'General Fire Alarm shall not trigger be the evacuation alarm.' Read as 'shall not trigger the evacuation alarm' (owner ruling 12.10.2026, Ch8 Q6): the general fire alarm does not evacuate; the 120 s PAS of item (viii) governs evacuation."
       - name: "Positive Alarm Sequence (PAS) - 120 s"
         detail: "Table 8.13 item 22 (viii), p.506: if the general fire alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 120 s, evacuation alarm is triggered throughout."
 
@@ -450,6 +452,8 @@ branches:
         detail: "Table 8.13 item 22 (iv), applied by analogy."
       - name: "System Interfaces - by analogy with item 22"
         detail: "Table 8.13 item 22 (v), applied by analogy: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1."
+      - name: "General Fire Alarm Does NOT Trigger Evacuation - by analogy with item 22"
+        detail: "Table 8.13 item 22 (vii), p.506, applied by analogy, read as 'shall not trigger the evacuation alarm' (owner ruling 12.10.2026, Ch8 Q6): the general fire alarm does not evacuate; the 120 s PAS governs evacuation."
       - name: "Positive Alarm Sequence (PAS) - 120 s - by analogy with item 22"
         detail: "Table 8.13 item 22 (viii), applied by analogy: if the general fire alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 120 s, evacuation alarm is triggered throughout the parking."
 
@@ -658,27 +662,26 @@ auxiliary_rooms:
         detail: "Enclosed spaces having height more than 20 m from finished floor level shall be provided with an Aspiration Type Air Sampling Detection System per Section 4.5 (Table 8.14 item 19, p.510)."
 
   # Exactly 20 m and exactly 10 m sit in neither Table 8.14 row (item 18 "more than
-  # 10 m to less than 20 m", item 19 "more than 20 m"). Code gap: the next row up
-  # is shown and the gap is named, pending an owner ruling.
+  # 10 m to less than 20 m", item 19 "more than 20 m"). Owner ruling 12.10.2026
+  # (Ch8 Q3, same rule as R11): the edge takes the higher row, required, gap named.
   - id: fa_aux_high_ceiling_edge_20
     flag: has_high_ceiling
     when: {ceiling_height_m_is: 20.0}
     systems:
-      - name: "Aspiration Air Sampling (High-Ceiling Space exactly 20 m - code gap)"
+      - name: "Aspiration Air Sampling (High-Ceiling Space exactly 20 m - higher row)"
         code_ref: "Ch 8, #5.2 / Table 8.14 items 18-19"
         page_ref: "p.510"
         spec: "Per Section 4.5 (item 19 applied at the code gap)"
-        detail: "Code gap at exactly 20 m: Table 8.14 item 18 is 'height more than 10 m to less than 20 m' (projected beam, Section 4.4) and item 19 is 'height more than 20 m' (aspiration, Section 4.5), p.510; exactly 20 m is in neither row. Item 19 (the more onerous row) is shown pending an owner ruling; confirm with Civil Defence."
+        detail: "Code gap at exactly 20 m: Table 8.14 item 18 is 'height more than 10 m to less than 20 m' (projected beam, Section 4.4) and item 19 is 'height more than 20 m' (aspiration, Section 4.5), p.510; exactly 20 m is in neither row. Item 19, the higher row, applies (owner ruling 12.10.2026, Ch8 Q3)."
   - id: fa_aux_high_ceiling_edge_10
     flag: has_high_ceiling
     when: {ceiling_height_m_is: 10.0}
     systems:
-      - name: "Beam Smoke Detection (High-Ceiling Space exactly 10 m - code gap)"
-        required: conditional
+      - name: "Beam Smoke Detection (High-Ceiling Space exactly 10 m - higher row)"
         code_ref: "Ch 8, #5.2 / Table 8.14 item 18"
         page_ref: "p.510"
-        spec: "Per Section 4.4 (item 18 shown at the code gap)"
-        detail: "Code gap at exactly 10 m: Table 8.14 item 18 starts at 'height more than 10 m' (p.510); a space of exactly 10 m is in no Table 8.14 height row. Item 18 projected beam detection is shown as conditional pending an owner ruling; confirm with Civil Defence."
+        spec: "Per Section 4.4 (item 18 applied at the code gap)"
+        detail: "Code gap at exactly 10 m: Table 8.14 item 18 starts at 'height more than 10 m' (p.510); a space of exactly 10 m is in no Table 8.14 height row. Item 18 projected beam detection, the higher row, applies (owner ruling 12.10.2026, Ch8 Q3)."
 
   - id: fa_aux_garbage_chute
     flag: has_garbage_chute

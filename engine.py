@@ -586,11 +586,14 @@ def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     if branch_items:
         blocks.append(SectionBlock(title="FA - Detection & Alarm by Occupancy / Height (Ch 8, Table 8.13)", items=_dedupe(branch_items)))
 
-    aux = _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
+    # Table 8.13 item 28 PLANT NURSERY (p.508) lists no Table 8.14 / 8.15 item:
+    # a nursery prints no room or equipment lines (owner ruling 12.10.2026, Ch8 Q4).
+    nursery = b.occupancy == "storage_industrial" and b.is_plant_nursery
+    aux = [] if nursery else _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
     if aux:
         blocks.append(SectionBlock(title="FA - Auxiliary Rooms (Ch 8, Table 8.14)", items=aux))
 
-    eq = _dedupe(_collect_flag(rules.get("equipment", []), b))
+    eq = [] if nursery else _dedupe(_collect_flag(rules.get("equipment", []), b))
     if eq:
         blocks.append(SectionBlock(title="FA - Equipment (Ch 8, Table 8.15)", items=eq))
 

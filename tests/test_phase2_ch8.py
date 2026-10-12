@@ -230,17 +230,17 @@ def test_CH8_20_item_9_electrical_room_not_narrowed_to_main():
 def test_CH8_21_ceiling_10_and_20_m_code_gap_named():
     kw = dict(occupancy="business", height_m=30, ground_floor_bua_m2=1500, has_high_ceiling=True)
     at20 = report(ceiling_height_m=20.0, **kw)
-    a = one(at20, "Aspiration Air Sampling (High-Ceiling Space exactly 20 m - code gap)")
+    a = one(at20, "Aspiration Air Sampling (High-Ceiling Space exactly 20 m - higher row)")
     assert "Code gap at exactly 20 m" in a.detail
     assert not [it for it in fa(at20) if it.system.startswith("Aspiration Air Sampling (High-Ceiling Spaces more")]
     above = report(ceiling_height_m=25.0, **kw)
     a = one(above, "Aspiration Air Sampling (High-Ceiling Spaces more than 20 m)")
     assert "more than 20 m" in a.detail and ">=" not in text(a)
     at10 = report(ceiling_height_m=10.0, **kw)
-    b = one(at10, "Beam Smoke Detection (High-Ceiling Space exactly 10 m - code gap)")
-    assert b.status == "conditional" and "Code gap at exactly 10 m" in b.detail
+    b = one(at10, "Beam Smoke Detection (High-Ceiling Space exactly 10 m - higher row)")
+    assert "Code gap at exactly 10 m" in b.detail  # status: see test_phase2_ch8_answers Q3
     mid = report(ceiling_height_m=15.0, **kw)
-    assert not [it for it in fa(mid) if "code gap" in it.system]
+    assert not [it for it in fa(mid) if "exactly" in it.system]
 
 
 # ------------------------------------------------------------------ CH8-22
