@@ -368,10 +368,11 @@ CASES = [
          expect_sc_branch="sc_midrise_lowrise_default",
          expect_sc_status={"Stair Pressurization NOT Required (default)": "not_required"}),
 
-    dict(name="SC: Lowrise hospital -> special-occupancy stair pressurization required",
+    # Phase 3 CH10-14: the hospital stair is Table 10.27 item 1.vi (one line).
+    dict(name="SC: Lowrise hospital -> hospital stair pressurization required",
          inputs=dict(occupancy="healthcare_a", height_m=12, floors_above_grade=3,
                      ground_floor_bua_m2=3000, plot_area_m2=8000),
-         expect_sc_systems=["Stair Pressurization (special occupancy override)"]),
+         expect_sc_systems=["Stair Pressurization (hospital)"]),
 
     dict(name="SC: Enclosed parking -> mechanical purging via dedicated ducting",
          inputs=dict(occupancy="parking_enclosed", height_m=12, floors_above_grade=3,
@@ -425,17 +426,19 @@ CASES = [
              "Kitchen Cooking Operation Ventilation",
          ]),
 
-    dict(name="SC: Tunnel flag -> tunnel smoke management (one line, Table 10.25)",
+    # Phase 3 CH10-17: Table 10.25 tiers on length; no length -> NOT EVALUATED.
+    dict(name="SC: Tunnel flag, no length -> tunnel smoke management not evaluated (one line, Table 10.25)",
          inputs=dict(occupancy="business", height_m=10, floors_above_grade=2,
                      ground_floor_bua_m2=2000, plot_area_m2=5000,
                      has_tunnel=True),
-         expect_sc_systems=["Tunnel Smoke Management - Road / Rail"]),
+         expect_sc_systems=["Tunnel Smoke Management - Road / Rail: NOT EVALUATED (tunnel length not entered)"]),
 
+    # Phase 3 CH10-27: 4 levels with no depth -> FAQ #29.i row (more than 2 levels).
     dict(name="SC: Deep basement (4 levels below) -> underground stair pressurization",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
                      floors_below_grade=4, ground_floor_bua_m2=8000,
                      basement_bua_m2=8000, plot_area_m2=15000),
-         expect_sc_systems=["Stair Pressurization (basement stairs, depth more than 7 m)"]),
+         expect_sc_systems=["Stair Pressurization (basement stairs, more than 2 basement levels)"]),
 
     # AUDIT Ch 10 Table 10.22 - depth-only trigger (1 basement, 8 m deep)
     dict(name="AUDIT SC: Single deep basement (8m, 1 level) -> Table 10.22 by depth",
@@ -445,9 +448,8 @@ CASES = [
          expect_sc_systems=["Stair Pressurization (basement stairs, depth more than 7 m)"]),
 
     # AUDIT Ch 10 Table 10.27 item 4 - lowrise corridor > 60 m
-    # Audit-correction: Table 10.27 item 4 (p.866) lists ONLY mercantile, staff/labour
-    # accommodation, residential, office. Hotels and hostel are NOT in the code text,
-    # so the trigger was scoped down. Test switched from hotel_b to residential.
+    # Phase 3 CH10-05: the item 4 list reads "such as" (examples), so hotels and other
+    # occupancies are covered too (tests/test_phase3_ch10.py); residential kept here.
     dict(name="AUDIT SC: Residential lowrise corridor 80m -> long-corridor natural ventilation (Table 10.27 item 4)",
          inputs=dict(occupancy="residential", height_m=18, floors_above_grade=5,
                      corridor_length_m=80, ground_floor_bua_m2=800, plot_area_m2=2000),
