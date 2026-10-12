@@ -163,6 +163,44 @@ def _occ_label(code: str) -> str:
     return defn.split(" - ", 1)[0].strip() if " - " in defn else code
 
 
+# ---------------- Scenario load guard ----------------------------------------
+# A loaded value outside the widget's range would be clamped silently by
+# st.number_input (e.g. a height of -5 m shown as 0). Refuse the file instead
+# and name every bad value.
+_SCENARIO_LIMITS = {
+    # key: (label, minimum, whole number?)
+    "height_m_input": ("Building height", 0.0, False),
+    "floors_above_input": ("Floors above grade", 1, True),
+    "floors_below_input": ("Basements", 0, True),
+    "ground_bua_input": ("Ground-floor BUA", 0.0, False),
+    "basement_bua_input": ("Basement BUA", 0.0, False),
+    "gfa_input": ("Total GFA", 0.0, False),
+    "plot_area_input": ("Plot area", 0.0, False),
+    "depth_below_grade_input": ("Depth below grade", 0.0, False),
+    "parking_area_m2_input": ("Parking area", 0.0, False),
+    "ceiling_height_m_input": ("Ceiling height", 0.0, False),
+    "corridor_length_m": ("Corridor length", 0.0, False),
+    "assembly_area_m2_input": ("Assembly-hall area", 0.0, False),
+    "tunnel_length_m_input": ("Tunnel length", 0.0, False),
+    "exit_stairs_input": ("Exit stairs", 1, True),
+}
+
+
+def _invalid_scenario_values(data: dict) -> list:
+    bad = []
+    for key, (label, lo, whole) in _SCENARIO_LIMITS.items():
+        if key not in data or data[key] is None:
+            continue
+        v = data[key]
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            bad.append(f"{label} = {v!r} (not a number)")
+        elif whole and float(v) != int(v):
+            bad.append(f"{label} = {v} (must be a whole number)")
+        elif v < lo:
+            bad.append(f"{label} = {v} (minimum {lo})")
+    return bad
+
+
 # ---------------- Master 'Check all' helper ----------------------------------
 def _register_master(master_key: str, child_keys: list[str]):
     if master_key not in st.session_state:
@@ -620,6 +658,9 @@ with st.sidebar:
             "is_flammable_liquid_warehouse", "is_flammable_liquid_industrial",
             "is_open_yard_storage", "is_plant_nursery",
             "tunnel_kind_radio", "tunnel_length_m_input",
+            # Ch 9 routing inputs (phase 1)
+            "exit_stairs_input", "is_covered_shaded_parking", "pump_room_at_grade",
+            "gf_beyond_100m_from_hydrant", "has_single_exit_stair",
         ]
         def _serializable(v):
             # Convert tuple to list for JSON; passthrough rest
@@ -657,6 +698,10 @@ with st.sidebar:
         if _uploaded is not None and not st.session_state.get("_scenario_loaded_marker"):
             try:
                 _data = _json.loads(_uploaded.read().decode("utf-8"))
+                _bad = _invalid_scenario_values(_data)
+                if _bad:
+                    raise ValueError("refused, impossible value(s): " + "; ".join(_bad)
+                                     + ". Nothing was loaded.")
                 for k, v in _data.items():
                     # occupancy_chosen was serialised as list (from tuple); restore tuple
                     if k == "occupancy_chosen" and isinstance(v, list) and len(v) == 2:
@@ -1057,6 +1102,18 @@ with st.sidebar:
                 "Equipment flags above (Tables 8.13 / 8.14 / 8.15). No FA-specific inputs needed.")
 
 
+def gs_early(k):
+    return bool(st.session_state.get(k, False))
+
+
+# ---------- Height must be stated ------------------------------------------
+# Every table routes on height (Ch 1 #1.7.39-#1.7.42); 0 m would silently be
+# taken as lowrise. Only infrastructure (no building height) may stay at 0.
+if float(height_m) <= 0 and occupancy != "infrastructure":
+    st.error("Building height must be more than 0 m. Enter the height in the sidebar "
+             "(Geometry) to evaluate the building.")
+    st.stop()
+
 # ---------- Pre-evaluate to detect wet riser requirement ---------------------
 prelim = _cached_evaluate(Building(
     project_name=project_name, occupancy=occupancy, height_m=height_m,
@@ -1125,6 +1182,33 @@ with st.sidebar:
         else:
             tunnel_kind_val = "road_rail"
             tunnel_length_m_val = 0.0
+
+        # Routing inputs that change which Table 9.18-9.24 row applies.
+        if occupancy == "parking_open" or gs_early("villa_converted_use"):
+            st.number_input(
+                "Number of exit stairs", min_value=1, value=2, step=1, key="exit_stairs_input",
+                help="Table 9.24.C.2 (open parking 15 m to less than 23 m): 750 gpm for 2 stairs, "
+                     "1000 gpm for 3 or more. Table 9.21.d: converted villa with one stair.",
+            )
+        if occupancy == "parking_open":
+            st.checkbox("Covered / shaded parking, one level only (Table 9.24.D)",
+                        key="is_covered_shaded_parking",
+                        help="Table 9.24.D rows are keyed on the covered/shaded parking area "
+                             "(taken as the ground-floor BUA).")
+        if float(height_m) <= 23:
+            st.checkbox("Single exit stair (Tables 9.20.c, 9.21.c, 9.21.d)",
+                        key="has_single_exit_stair",
+                        help="Midrise/lowrise residential, business and similar buildings with "
+                             "only one exit stair have their own rows.")
+        if int(floors_below) > 0:
+            st.checkbox("Fire pump room at grade (not in the lowest basement)",
+                        key="pump_room_at_grade",
+                        help="Table 9.19 rows and Table 9.6 item 13 zoning are measured from the "
+                             "lowest fire pump set level. Unticked, the tool takes the pump room "
+                             "at the lowest basement (height + depth below grade).")
+        if occupancy == "storage_industrial":
+            st.checkbox("Ground floor more than 100 m from an existing functional hydrant (#4.1.6)",
+                        key="gf_beyond_100m_from_hydrant")
 
         if prelim.requires_wet_riser:
             st.markdown("**Wet riser sizing** — required because the matched FP branch emits a wet-riser system.")
@@ -1277,6 +1361,13 @@ building = Building(
     has_robotic_parking=gs("has_robotic_parking"),
     villa_converted_use=gs("villa_converted_use"),
     fuel_dispensing_multistorey=gs("fuel_dispensing_multistorey"),
+    # Ch 9 routing inputs (shown only where they apply; hidden ones stay off)
+    exit_stairs=(int(st.session_state.get("exit_stairs_input", 2) or 2)
+                 if occupancy == "parking_open" or gs("villa_converted_use") else 2),
+    is_covered_shaded_parking=gs("is_covered_shaded_parking") and occupancy == "parking_open",
+    has_single_exit_stair=gs("has_single_exit_stair") and float(height_m) <= 23,
+    pump_room_at_grade=gs("pump_room_at_grade") and int(floors_below) > 0,
+    gf_beyond_100m_from_hydrant=gs("gf_beyond_100m_from_hydrant") and occupancy == "storage_industrial",
 )
 report = _cached_evaluate(building.model_dump_json())
 
@@ -1351,7 +1442,10 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
                              key="scenario_b_occ")
         b_h = st.number_input("B height (m)", min_value=0.0, value=float(building.height_m),
                               step=1.0, key="scenario_b_height")
-        if st.button("Run comparison", key="run_scenario_compare"):
+        if st.button("Run comparison", key="run_scenario_compare") and float(b_h) <= 0 \
+                and b_occ != "infrastructure":
+            st.error("Scenario B height must be more than 0 m.")
+        elif st.session_state.get("run_scenario_compare"):
             b_building = building.model_copy(update={
                 "occupancy": b_occ,
                 "height_m": float(b_h),
@@ -1452,6 +1546,10 @@ def _ticked_chips(building_obj: Building) -> str:
         "has_robotic_parking": "Robotic parking",
         "villa_converted_use": "Villa converted",
         "fuel_dispensing_multistorey": "Fuel multi-storey",
+        "is_covered_shaded_parking": "Covered/shaded parking",
+        "has_single_exit_stair": "Single exit stair",
+        "pump_room_at_grade": "Pump room at grade",
+        "gf_beyond_100m_from_hydrant": "GF > 100 m from hydrant",
         # FE-specific
         "has_class_b_storage_zones": "Class B storage",
         "has_combustible_metals": "Combustible metals",
