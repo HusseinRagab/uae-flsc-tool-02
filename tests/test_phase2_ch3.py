@@ -33,26 +33,30 @@ def extent_item(r):
 
 # ------------------------------------------------------------------ CH3-01
 def test_CH3_01_occupant_load_rounds_up_to_table_3_14_tier():
-    """#4.1.2 p.283 'not less than': 4,649 / 9.3 = 499.89 -> 500 -> Table 3.14 row iii."""
+    """#4.1.2 p.283 'not less than': 4,649 / 9.3 = 499.89 -> 500 -> Table 3.14 row iii.
+    Re-pointed for owner ruling 12.10.2026 Ch3 Q2: the 9.3 m2 office row is now entered
+    as a per-use area (blank per-use areas take the densest business row, 3.7 m2)."""
     r = report(occupancy="business", height_m=4, floors_above_grade=1,
-               gross_floor_area_m2=4649, ground_floor_bua_m2=4649)
+               gross_floor_area_m2=4649, ground_floor_bua_m2=4649,
+               use_areas=[{"row": "2.i", "area_m2": 4649}])
     assert r.occupant_load.occupant_load == 500
     assert r.occupant_load.min_exits == 3
 
 
 # ------------------------------------------------------------------ CH3-02
-def test_CH3_02_denser_table_3_13_row_reported_beside_primary():
-    """Table 3.13 p.287 rows 17.i / 18.i industrial 9.3 m2; p.286 row 4.ii sleeping 11.1 m2."""
+def test_CH3_02_densest_table_3_13_row_when_no_per_use_areas():
+    """Table 3.13 p.287 row 18.i industrial 9.3 m2; p.286 rows 4.iii-v 9.3 m2.
+    Re-pointed for owner ruling 12.10.2026 Ch3 Q2: the densest row is now the factor
+    (the phase 2 draft kept the least dense row and reported the denser one beside it)."""
     r = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
                gross_floor_area_m2=14000, ground_floor_bua_m2=14000, hazard_class="OH1")
     ol = r.occupant_load
-    assert ol.occupant_load == 502 and ol.factor_m2_per_person == 27.9
-    assert "9.3 m2" in ol.note and "total OL 1,506" in ol.note and "at least 4 exits" in ol.note
+    assert ol.occupant_load == 1506 and ol.factor_m2_per_person == 9.3 and ol.min_exits == 4
+    assert "row 18.i" in ol.factor_ref and "densest" in ol.factor_ref
     r = report(occupancy="healthcare_a", height_m=4, floors_above_grade=1,
                gross_floor_area_m2=6000, ground_floor_bua_m2=6000)
     ol = r.occupant_load
-    assert ol.occupant_load == 270
-    assert "11.1 m2" in ol.note and "total OL 541" in ol.note and "at least 3 exits" in ol.note
+    assert ol.occupant_load == 646 and ol.factor_m2_per_person == 9.3 and ol.min_exits == 3
 
 
 # ------------------------------------------------------------------ CH3-03
@@ -179,36 +183,40 @@ def test_CH3_11_table_2_1_and_tower_setback_items():
     for v in ("41,000 kg", "81,000 kg", "Maximum dead end 45 m", "gateways 4.5 m",
               "radius 12 m", "50 mm"):
         assert v in spec, v
+    # Re-pointed for owner ruling 12.10.2026 Ch3 Q6: the tower line needs its checkbox.
+    assert not fsa(r, "Tower set back more than 30 m")
+    r = report(occupancy="business", height_m=40, floors_above_grade=10,
+               gross_floor_area_m2=10000, ground_floor_bua_m2=1000, tower_setback_over_30m=True)
     (tower,) = fsa(r, "Tower set back more than 30 m")
-    assert tower.status == "conditional" and "1/4 (25 percent)" in tower.spec
+    assert tower.status == "required" and "1/4 (25 percent)" in tower.spec
     assert tower.code_ref == "Ch 2, #2.8.6.b" and tower.page_ref == "p.213"
 
 
 # ------------------------------------------------------------------ CH3-12
 def test_CH3_12_table_3_14_is_per_storey():
-    """#4.3.1 p.288 / #4.1.3 p.283: the exit count is per storey. 10 floors x 1,000 m2:
-    largest storey OL at least 1,000 / 9.3 -> 108 -> 2 exits; the total 1,076 is not used."""
-    r = report(occupancy="business", height_m=40, floors_above_grade=10,
-               gross_floor_area_m2=10000, ground_floor_bua_m2=1000)
-    ol = r.occupant_load
-    assert ol.occupant_load == 1076 and ol.min_exits == 2
-    assert "at least 2 exits" in ol.exit_ref and "up to 4" in ol.exit_ref
-    assert "not used for Table 3.14" in ol.note
-    # Total OL 2,000 / 18.6 -> 108 is under 500, so every storey takes 2 exits (exact).
-    r = report(occupancy="residential", height_m=12, floors_above_grade=4,
-               gross_floor_area_m2=2000, ground_floor_bua_m2=500)
-    ol = r.occupant_load
-    assert ol.min_exits == 2 and "for every storey" in ol.exit_ref
+    """#4.3.1 p.288 / #4.1.3 p.283: the exit count is per storey.
+    Re-pointed for owner ruling 12.10.2026 Ch3 Q1: the interim 'at least k, up to n' bound
+    is gone. Largest storey entered (1,000 m2 / 9.3 -> 108 -> 2 exits); blank -> whole GFA."""
+    kw = dict(occupancy="business", height_m=40, floors_above_grade=10,
+              gross_floor_area_m2=10000, ground_floor_bua_m2=1000,
+              use_areas=[{"row": "2.i", "area_m2": 10000}])
+    ol = report(largest_storey_area_m2=1000, **kw).occupant_load
+    assert ol.occupant_load == 1076 and ol.storey_occupant_load == 108 and ol.min_exits == 2
+    assert "at least" not in ol.exit_ref and "up to" not in ol.exit_ref
+    ol = report(**kw).occupant_load
+    assert ol.storey_occupant_load == 1076 and ol.min_exits == 4
 
 
 # ------------------------------------------------------------------ CH3-13
-def test_CH3_13_mall_factor_needs_gla_at_14000_m2_or_more():
+def test_CH3_13_mall_factor_from_gla():
     """Table 3.13 row 14 p.287: GLA less than 14,000 m2 -> 2.8 m2; 14,000 m2 -> 3.3 m2,
-    +0.1 m2 per 1,290 m2, max 5.1 m2. GFA under 14,000 m2 proves GLA under 14,000 m2."""
+    +0.1 m2 per 1,290 m2, max 5.1 m2. Re-pointed for owner ruling 12.10.2026 Ch3 Q3: a big
+    mall is evaluated (blank GLA = GFA, labelled), no longer 'not evaluated'."""
     r = report(occupancy="mall_covered", height_m=10, floors_above_grade=2,
                gross_floor_area_m2=80000, ground_floor_bua_m2=40000)
     ol = r.occupant_load
-    assert ol.occupant_load == 0 and "gross leasable area" in ol.note and "5.1 m2" in ol.note
+    assert ol.evaluated and ol.factor_m2_per_person == 5.1 and ol.occupant_load == 15687
+    assert "GFA used as the GLA" in ol.factor_ref
     r = report(occupancy="mall_covered", height_m=5, floors_above_grade=1,
                gross_floor_area_m2=10000, ground_floor_bua_m2=10000)
     assert r.occupant_load.factor_m2_per_person == 2.8
@@ -222,12 +230,17 @@ def test_CH3_14_staff_labour_hostel_use_table_3_16_row_7():
         r = report(occupancy=occ, height_m=12, floors_above_grade=4,
                    gross_floor_area_m2=4000, ground_floor_bua_m2=1000)
         (t,) = moe(r, "Travel")
-        assert "Travel S 76 m, NS 61 m" in t.spec and "row 7" in t.system, occ
+        # Re-pointed for owner ruling 12.10.2026 Ch3 Q8: one column, named.
+        want = "Travel 76 m" if engine.building_sprinklered(r.building) else "Travel 61 m"
+        assert want in t.spec and "row 7" in t.system, occ
         assert "Apartment" not in t.spec
     r = report(occupancy="residential", height_m=12, floors_above_grade=4,
                gross_floor_area_m2=4000, ground_floor_bua_m2=1000)
     (t,) = moe(r, "Travel")
-    assert "Travel sprinklered 61 m / non 30 m" in t.spec
+    want = ("Apartment main door to exit (6.i): commonpath 15 m, dead end 15 m, travel 61 m"
+            if engine.building_sprinklered(r.building) else
+            "Apartment main door to exit (6.i): commonpath 10.7 m, dead end 10.7 m, travel 30 m")
+    assert want in t.spec
 
 
 # ------------------------------------------------------------------ CH3-15
@@ -324,11 +337,12 @@ def test_CH3_21_sprinkler_status_from_ch9_table_2_3_reachable():
         bb = Building(occupancy=occ, height_m=h, floors_above_grade=max(1, int(h // 3.5)),
                       gross_floor_area_m2=6000, ground_floor_bua_m2=3000)
         assert engine.evaluate(bb).fire_access.sprinklered_assumed == engine.building_sprinklered(bb)
-    # Table 2.7 printed overlap 113,001 - 113,600 m3 is flagged.
+    # Table 2.7 printed overlap 113,001 - 113,600 m3: re-pointed for owner ruling
+    # 12.10.2026 Ch3 Q4, the higher band (3/4) is taken and stated.
     b = Building(occupancy="storage_industrial", height_m=10, floors_above_grade=1,
                  ground_floor_bua_m2=11330)
     s = compute_fire_access(b, sprinklered=True)
-    assert "overlap" in " ".join(s.notes)
+    assert s.extent == "3/4 perimeter" and "Ch3 Q4" in s.extent_ref
 
 
 # ------------------------------------------------------------------ CH3-22
