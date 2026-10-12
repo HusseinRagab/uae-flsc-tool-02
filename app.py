@@ -102,7 +102,7 @@ GLOSSARY = [
     ("LEL", "Lower Explosive Limit — minimum gas concentration in air that will ignite. UAE LPG code sets gas-leak alarm at 15% LEL (low) / 30% LEL (high)."),
     ("LH", "Light Hazard — sprinkler hazard classification with limited combustibles (offices, residential, schools)."),
     ("LPG", "Liquefied Petroleum Gas (Ch 11)."),
-    ("LV / MV", "Low Voltage / Medium Voltage electrical rooms."),
+    ("LV / MV", "Low Voltage / Medium Voltage electrical rooms. The code names LV and HV rooms only; this tool treats an MV room as HV (ruling R12)."),
     ("MCP", "Manual Call Point — wall-mounted manual fire-alarm push station, 1.2 m AFFL, every 61 m."),
     ("MOE", "Means of Egress (Ch 3)."),
     ("MRI", "Magnetic Resonance Imaging room (healthcare auxiliary, Table 9.30.S)."),
@@ -220,7 +220,7 @@ SPECIAL_ROOMS_KEYS = [
     "has_anesthetizing_room", "has_battery_charger_room", "has_bms_room",
     "has_battery_room", "has_computer_room", "has_control_room",
     "has_diesel_generator_room", "has_main_electrical_room", "has_ahu_room",
-    "has_lv_mv_room", "has_transformer_room_utility",
+    "has_lv_mv_room", "has_mv_room", "has_transformer_room_utility",
     "has_transformer_room_private", "has_lift_machine_room",
     "has_main_telephone_room", "has_main_server_room", "has_rmu_idf_mdf_room",
     "has_gsm_room", "has_operation_theater", "has_mri_scanning_room",
@@ -292,7 +292,7 @@ VILLA_INCOMPATIBLE_FLAGS = [
     "has_anesthetizing_room", "has_battery_charger_room", "has_bms_room",
     "has_battery_room", "has_computer_room", "has_control_room",
     "has_diesel_generator_room", "has_main_electrical_room", "has_ahu_room",
-    "has_lv_mv_room", "has_transformer_room_utility",
+    "has_lv_mv_room", "has_mv_room", "has_transformer_room_utility",
     "has_transformer_room_private", "has_lift_machine_room",
     "has_main_telephone_room", "has_main_server_room", "has_rmu_idf_mdf_room",
     "has_gsm_room", "has_operation_theater", "has_mri_scanning_room",
@@ -366,7 +366,7 @@ PETROL_STATION_INCOMPATIBLE_FLAGS = [
     "has_atrium", "has_garbage_chute", "has_pantries",
     "has_anesthetizing_room", "has_battery_charger_room", "has_bms_room",
     "has_battery_room", "has_computer_room",
-    "has_lv_mv_room", "has_transformer_room_utility",
+    "has_lv_mv_room", "has_mv_room", "has_transformer_room_utility",
     "has_transformer_room_private",
     "has_main_server_room", "has_rmu_idf_mdf_room", "has_gsm_room",
     "has_operation_theater", "has_mri_scanning_room",
@@ -931,7 +931,11 @@ with st.sidebar:
             st.checkbox("Diesel generator [FOAM] (G)", key="has_diesel_generator_room")
             st.checkbox("Main electrical room (H)", key="has_main_electrical_room")
             st.checkbox("AHU room (I)", key="has_ahu_room")
-            st.checkbox("LV / MV room (J)", key="has_lv_mv_room")
+            st.checkbox("LV room (J)", key="has_lv_mv_room")
+            st.checkbox("MV room (treated as HV, ruling R12)", key="has_mv_room",
+                        help="Table 4.3 lists LV and HV rooms only: an MV room takes the HV "
+                             "extinguisher (wheeled CO2 12 kg), an engineering decision. "
+                             "Table 9.30.J covers LV and MV rooms as printed.")
             st.checkbox("Transformer - utility (K)", key="has_transformer_room_utility")
             st.checkbox("Fire pump room", key="has_fire_pump_room")
         with cb:
@@ -1296,6 +1300,7 @@ building = Building(
     has_diesel_generator_room=gs("has_diesel_generator_room"),
     has_main_electrical_room=gs("has_main_electrical_room"),
     has_ahu_room=gs("has_ahu_room"), has_lv_mv_room=gs("has_lv_mv_room"),
+    has_mv_room=gs("has_mv_room"),
     has_transformer_room_utility=gs("has_transformer_room_utility"),
     has_transformer_room_private=gs("has_transformer_room_private"),
     has_lift_machine_room=gs("has_lift_machine_room"),
@@ -1481,7 +1486,8 @@ def _ticked_chips(building_obj: Building) -> str:
         "has_diesel_generator_room": "Diesel gen",
         "has_main_electrical_room": "Main electrical",
         "has_ahu_room": "AHU",
-        "has_lv_mv_room": "LV/MV",
+        "has_lv_mv_room": "LV",
+        "has_mv_room": "MV (as HV)",
         "has_transformer_room_utility": "Transformer (utility)",
         "has_transformer_room_private": "Transformer (private)",
         "has_lift_machine_room": "Lift machine",

@@ -332,11 +332,13 @@ CASES = [
          expect_fa_eq=["Fusible-Link Heat Detection (Kitchen Hood)",
                        "Heat Detection (Diesel Generator Area)"]),
 
-    dict(name="FA: Open parking -> Manual only",
+    # Ruling R10 (12.10.2026): no open-parking row; item 22 applied by analogy.
+    dict(name="FA: Open parking -> item 22 by analogy, labelled",
          inputs=dict(occupancy="parking_open", height_m=12, floors_above_grade=3,
                      ground_floor_bua_m2=3000, plot_area_m2=5000),
          expect_fa_branch="fa_parking_open",
-         expect_fa_systems=["Manual Fire Detection and Alarm System"]),
+         expect_fa_systems=["Open Parking - not in Table 8.13; item 22 (Enclosed Parking) applied by analogy",
+                            "Conditional FA System (per sprinkler presence) - by analogy with item 22"]),
 
     dict(name="FA: Villa -> Smoke OR Wireless RF + external A/V",
          inputs=dict(occupancy="villa_private", height_m=6, floors_above_grade=2,

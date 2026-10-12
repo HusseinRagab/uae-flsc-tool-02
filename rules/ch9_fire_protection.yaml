@@ -2437,7 +2437,10 @@ auxiliary_rooms:
         detail: "AHU room sprinklered per Section 3.5."
 
   - id: aux_J_lv_mv
-    flag: has_lv_mv_room
+    # Table 9.30.J is printed "LV ROOMS AND MV ROOMS" (p.753): fires on either flag.
+    always_on: true
+    when:
+      any_of: [{has_lv_mv_room_is: true}, {has_mv_room_is: true}]
     requires_sprinkler_system: true
     systems:
       - name: "LV / MV Room - Clean Agent (Section 3.14) with motorized louvers closing on discharge"
