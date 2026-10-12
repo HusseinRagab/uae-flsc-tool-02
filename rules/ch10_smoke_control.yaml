@@ -63,34 +63,43 @@ branches:
     systems:
       - name: "Stair Pressurization NOT Required (default)"
         required: not_required
-        detail: "Stair pressurization is NOT required for midrise / lowrise occupancies other than hospitals, malls, educational and assembly. Where provided, design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height band; max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N max door-opening force per Section 2.6."
+        detail: "Above-grade stairs. Where the building has basements more than 7 m deep, the basement stairs follow Table 10.22 item 1 (and the pressurization extends to all levels if the basement stair is common to the floors above grade). Stair pressurization is NOT required for midrise / lowrise occupancies other than hospitals, malls, educational and assembly. Where provided, design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height band; max ΔP across door per Table 10.3.b (53-113 Pa) with 133 N max door-opening force per Section 2.6."
 
-  - id: sc_underground_deep
+  - id: sc_basement_any
+    # Table 10.22 items 2 and 4 (p.859) carry no depth or basement-count
+    # trigger: they apply to every underground / basement area other than
+    # parking. Items 1 and 3 (stairs, firefighting lift) need depth > 7 m.
     match:
-      floors_below_grade_gt: 2
       occupancy_not: [parking_enclosed, parking_open]
-    section: "Ch 10, #3.4 / Table 10.22"
+      any_of:
+        - {floors_below_grade_gt: 0}
+        - {occupancy_in: [high_depth_underground, low_depth_underground]}
+    section: "Ch 10, #3.4 / Table 10.22 items 2 and 4"
     page: "p.859"
     systems:
-      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
+      - name: "Passenger Elevator Lobby at Underground / Basement Levels (1-hr smoke barrier)"
+        detail: "Every elevator connecting underground and basement areas shall have an elevator lobby arranged as a smoke barrier with at least 1-hour fire resistance; lobby doors limited to 250 C above ambient at the end of 30 minutes, self-closing or automatic-closing, closing on a smoke detector directly outside the lobby (or permitted on the fire alarm signal); no smoke control is then required for the lobby (Table 10.22 item 2.1 i-viii). Underground, basement and basement parking areas without an elevator lobby are not permitted (item 2.2 i)."
+      - name: "Corridor and Open Circulation Smoke Management (underground / basement, non-parking)"
+        spec: "Per Section 2.8"
+        detail: "Corridor and open circulation areas at underground spaces and basements, other than parking, shall be provided with a smoke management system per Section 2.8 (Table 10.22 item 4.i)."
+      - name: "Enclosed Rooms > 280 m2: Dedicated Smoke Exhaust (Section 2.17) OR Mechanical Smoke Purge (Section 2.13)"
+        detail: "Enclosed rooms having a floor area greater than 280 m2 shall be provided with a dedicated and independent smoke exhaust system per Section 2.17, OR a mechanical smoke purging system using dedicated ducting per Section 2.13 (Table 10.22 item 4.ii)."
+
+  - id: sc_basement_deep
+    match:
+      occupancy_not: [parking_enclosed, parking_open]
+      any_of:
+        - {depth_below_grade_m_gt: 7}
+        - {is_high_depth_is: true}
+    suppresses: [sc_midrise_lowrise_ff_lift]
+    section: "Ch 10, #3.4 / Table 10.22 items 1 and 3 (depth more than 7 m)"
+    page: "p.859"
+    systems:
+      - name: "Stair Pressurization (basement stairs, depth more than 7 m)"
         spec: "Per Section 2.6"
-      - name: "Passenger Elevator Lobby (mandatory)"
-      - name: "Firefighting Lift (deep basements - > 7 m below OR > 2 basements)"
-      - name: "Corridor Smoke Management (basement, non-parking)"
-      - name: "Dedicated Smoke Exhaust for Enclosed Rooms > 280 m²"
-
-  - id: sc_underground_deep_by_depth
-    match:
-      depth_below_grade_m_gt: 7
-      occupancy_not: [parking_enclosed, parking_open]
-    section: "Ch 10, #3.4 / Table 10.22"
-    page: "p.859"
-    systems:
-      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
-      - name: "Passenger Elevator Lobby (mandatory)"
-      - name: "Firefighting Lift (deep basements - > 7 m below OR > 2 basements)"
-      - name: "Corridor Smoke Management (basement, non-parking)"
-      - name: "Dedicated Smoke Exhaust for Enclosed Rooms > 280 m²"
+        detail: "Stairs connecting underground buildings and basements having a depth of more than 7 m from the fire access level shall be provided with stair pressurization per Section 2.6 (Table 10.22 item 1.i). It shall extend to all levels of the building if the basement stair is common to all the floors above grade (item 1.ii). Pressurization using a vestibule per Section 2.16 is permitted (item 1.iii). Table 10.22 prints a depth of more than 7 m from the fire access level; the tool also applies this row when 3 or more basements are entered or the occupancy is high depth underground (#1.7.45), since the depth input may be left blank. Check the actual depth."
+      - name: "Firefighting Lift (depth more than 7 m)"
+        detail: "Underground buildings and basements having a depth of more than 7 m from the fire access level shall be provided with a firefighting lift extending to all levels of the building (Table 10.22 item 3.i-ii). A firefighting lift lobby is not required; where provided it follows Chapter 1, with a 1-hour smoke-partition enclosure, and no smoke control or purge is then required for the lift shaft; lift pressurization using a vestibule per Section 2.16 is permitted (items 3.iii-vi). Table 10.22 prints a depth of more than 7 m from the fire access level; the tool also applies this row when 3 or more basements are entered or the occupancy is high depth underground (#1.7.45), since the depth input may be left blank. Check the actual depth."
 
   - id: sc_parking_enclosed
     match: {occupancy: parking_enclosed}
@@ -122,14 +131,11 @@ branches:
         required: conditional
 
   - id: sc_basement_parking_deep
-    match: {occupancy_in: [parking_enclosed, parking_open], floors_below_grade_gt: 2}
-    section: "Ch 10, #3.4 / Table 10.22 + Table 10.23"
-    page: "p.859-860"
-    systems:
-      - name: "Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"
-
-  - id: sc_basement_parking_deep_by_depth
-    match: {occupancy_in: [parking_enclosed, parking_open], depth_below_grade_m_gt: 7}
+    match:
+      occupancy_in: [parking_enclosed, parking_open]
+      any_of:
+        - {floors_below_grade_gt: 2}
+        - {depth_below_grade_m_gt: 7}
     section: "Ch 10, #3.4 / Table 10.22 + Table 10.23"
     page: "p.859-860"
     systems:
@@ -249,6 +255,12 @@ branches:
     systems:
       - name: "Open-Plan Office: Openable Ventilation Panels"
         required: conditional
+
+  - id: sc_business_open_plan_highrise
+    match: {occupancy: business, height_m_gt: 23}
+    section: "Ch 10, #3.9 / Table 10.27 item 3"
+    page: "p.865"
+    systems:
       - name: "Stair Pressurization (open-plan office in highrise)"
         required: conditional
 
@@ -256,14 +268,24 @@ branches:
     match:
       height_m_lte: 23
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
-    section: "Ch 10, #3.3 / Table 10.21 items 2-4"
+    section: "Ch 10, #3.3 / Table 10.21 items 2 and 4"
     page: "p.858"
     systems:
-      - name: "Passenger Elevator Lobby (no fire-resistance rating required)"
+      - name: "Passenger Elevator Lobby - above-grade floors (no fire-resistance rating required)"
         required: conditional
-      - name: "Firefighting Lift (NOT mandatory)"
+        detail: "Table 10.21 covers the above-grade floors. Underground and basement levels follow Table 10.22 (lobby with 1-hour smoke barrier) where the building has basements."
+      - name: "Corridor Smoke Management NOT Required - above-grade floors"
         required: not_required
-      - name: "Corridor Smoke Management NOT Required"
+        detail: "Table 10.21 covers the above-grade floors. Underground and basement corridors follow Table 10.22 item 4 where the building has basements."
+
+  - id: sc_midrise_lowrise_ff_lift
+    match:
+      height_m_lte: 23
+      occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
+    section: "Ch 10, #3.3 / Table 10.21 item 3"
+    page: "p.858"
+    systems:
+      - name: "Firefighting Lift (NOT mandatory)"
         required: not_required
 
 auxiliary_rooms:
@@ -315,9 +337,3 @@ auxiliary_rooms:
       - name: "LPG / Hazardous + Flammable Chemical Room Ventilation"
         code_ref: "Ch 10, #2.20 / Table 10.26.2"
         page_ref: "p.864"
-  - id: sc_aux_tunnel
-    flag: has_tunnel
-    systems:
-      - name: "Tunnel Smoke Management"
-        code_ref: "Ch 10, #3.7 / Table 10.25"
-        page_ref: "p.862-863"

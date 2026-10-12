@@ -239,7 +239,7 @@ branches:
 
   - id: fa_nursery_plants
     # Plant / vegetation nursery exemption (Table 8.13 item 28, p.508).
-    # Must precede fa_storage_industrial so it wins the first-match branch.
+    # fa_storage_industrial excludes this case (all matching branches are unioned).
     match: {occupancy: storage_industrial, is_plant_nursery_is: true}
     section: "Ch 8, #5.1 / Table 8.13 item 28"
     page: "p.508"
@@ -250,7 +250,7 @@ branches:
 
   - id: fa_cold_storage
     # Cold-storage warehouse (Table 8.13 item 21, p.506).
-    # Must precede fa_storage_industrial so it wins the first-match branch.
+    # fa_storage_industrial excludes this case (all matching branches are unioned).
     match: {occupancy: storage_industrial, is_cold_storage_is: true}
     section: "Ch 8, #5.1 / Table 8.13 item 21"
     page: "p.506"
@@ -268,7 +268,7 @@ branches:
 
   - id: fa_robotic_parking
     # Robotic / Mechanical Parking or Robotic Logistics (Table 8.13 item 23, p.506).
-    # Must precede fa_parking_enclosed and fa_storage_industrial.
+    # fa_storage_industrial excludes this case (all matching branches are unioned).
     match: {has_robotic_parking_is: true}
     section: "Ch 8, #5.1 / Table 8.13 item 23"
     page: "p.506"
@@ -281,7 +281,10 @@ branches:
       - name: "Main FACP at Continuously Attended Location"
 
   - id: fa_storage_industrial
-    match: {occupancy: storage_industrial}
+    # Items 21 (cold storage), 23 (robotic) and 28 (plant nursery) are the
+    # specific rows for those buildings; the engine unions matching branches,
+    # so this general storage row must exclude them.
+    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20"
     page: "p.506"
     systems:
