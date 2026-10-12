@@ -368,6 +368,11 @@ class Building(BaseModel):
     # not separated, with a ground floor built up area of more than 3600 m2, irrespective of
     # the number of storeys, shall be considered as Malls (audit ENG-02).
     mercantile_multi_tenant: bool = False
+    # Owner ruling 12.10.2026, P3 Ch47 Q3: Business Group C (Table 1.1 p.48) and Mercantile
+    # Group C (Table 1.1 p.50, #1.7.9.2 p.41). Below 23 m Ch 6 Table 6.5 item 11 / 12
+    # (stand-alone EL, p.419) governs; from 23 m the height rows govern.
+    is_business_group_c: bool = False
+    is_mercantile_group_c: bool = False
     tunnel_length_m: float = 0.0
 
 

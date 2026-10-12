@@ -189,6 +189,12 @@ branches:
       height_m_lt: 23
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, storage_industrial, mall_covered, mall_open, mall_mixed]
       has_amusement_confounding_is: false
+      # Owner ruling 12.10.2026, P3 Ch47 Q3: a ticked Business / Mercantile Group C
+      # building below 23 m takes Table 6.5 item 11 / 12 instead (one system type).
+      not:
+        any_of:
+          - {occupancy: business, is_business_group_c_is: true}
+          - {occupancy_in: [mercantile_a, mercantile_b], is_mercantile_group_c_is: true}
     section: "Ch 6, #4.3 / Table 6.5 item 5"
     page: "p.419"
     systems:
@@ -203,6 +209,12 @@ branches:
       height_m_lte: 15
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, storage_industrial, mall_covered, mall_open, mall_mixed]
       has_amusement_confounding_is: false
+      # Owner ruling 12.10.2026, P3 Ch47 Q3: a ticked Business / Mercantile Group C
+      # building below 23 m takes Table 6.5 item 11 / 12 instead (one system type).
+      not:
+        any_of:
+          - {occupancy: business, is_business_group_c_is: true}
+          - {occupancy_in: [mercantile_a, mercantile_b], is_mercantile_group_c_is: true}
     section: "Ch 6, #4.3 / Table 6.5 item 6"
     page: "p.419"
     systems:
@@ -224,31 +236,72 @@ branches:
       - *el_single_system
 
 
-  # CH47-07: Table 6.5 items 11-12 are Business Group C and Mercantile Group C only.
-  # Offices (Table 1.1 Business Group B) and the tool's mercantile_a / _b (Table 1.1
-  # Groups A / B) take the height rows above. The tool has no Group C input, so the
-  # stand-alone row is shown as a conditional option (owner question).
+  # CH47-07 + owner ruling 12.10.2026, P3 Ch47 Q3: Table 6.5 items 11-12 are Business
+  # Group C and Mercantile Group C only (Table 1.1 p.48 / p.50, #1.7.9.2 p.41). Ticked
+  # and below 23 m: item 11 / 12 governs, one required stand-alone line, and the
+  # height row (items 5-6) is not printed. At 23 m or more the height rows (items 1-2)
+  # govern and no item 11 / 12 line is printed. Unticked below 23 m: the height row
+  # governs and item 11 / 12 is shown as a conditional prompt. An amusement building
+  # (item 4) keeps item 4 (open point in the a2 report).
   - id: el_business_group_c
     match:
       occupancy: business
+      is_business_group_c_is: true
+      height_m_lt: 23
+      has_amusement_confounding_is: false
+    section: "Ch 6, #4.3 / Table 6.5 item 11 (Business Group C)"
+    page: "p.419"
+    systems:
+      - name: "Stand-alone Self-Contained EL (Section 3.4)"
+        spec: "Per Table 6.4 - Business Group C (Table 1.1), below 23 m"
+        code_ref: "Ch 6, #4.3 / Table 6.5 item 11"
+        page_ref: "p.419"
+        detail: "Table 6.5 item 11 BUSINESS, GROUP C (p.419): Stand alone Self Contained Emergency Lighting System as per Section 3.4., shall be provided and permitted. Table 1.1 (p.48) Business Group C: barber shops, beauty shops, massage centers, typing centers, translation centers, print shops, photo studios. 'Business Group C (stand-alone)' is ticked and the building is below 23 m, so item 11 governs and the low rise / midrise row (items 5-6, Monitored) is not applied: owner ruling 12.10.2026, P3 Ch47 Q3. At 23 m or more the highrise rows (items 1-2) govern."
+
+  - id: el_business_group_c_check
+    match:
+      occupancy: business
+      is_business_group_c_is: false
+      height_m_lt: 23
     section: "Ch 6, #4.3 / Table 6.5 item 11 (Business Group C)"
     page: "p.419"
     systems:
       - name: "Stand-alone Self-Contained EL (Section 3.4) - Business Group C only"
         required: conditional
-        spec: "Per Table 6.4 - only where the occupancy is Business Group C (Table 1.1)"
-        detail: "Table 6.5 item 11 BUSINESS, GROUP C (p.419): Stand alone Self Contained Emergency Lighting System as per Section 3.4 shall be provided and permitted. Table 1.1 (p.48) Business Group C: barber shops, beauty shops, massage centers, typing centers, translation centers, print shops, photo studios. Offices, banks and government offices are Business Group B and take the height row printed above. Whether item 11 replaces the height row for a Business Group C building is an open owner question."
+        spec: "Per Table 6.4 - only where the occupancy is Business Group C (Table 1.1); tick 'Business Group C (stand-alone)'"
+        code_ref: "Ch 6, #4.3 / Table 6.5 item 11"
+        page_ref: "p.419"
+        detail: "Table 6.5 item 11 BUSINESS, GROUP C (p.419): Stand alone Self Contained Emergency Lighting System as per Section 3.4., shall be provided and permitted. Table 1.1 (p.48) Business Group C: barber shops, beauty shops, massage centers, typing centers, translation centers, print shops, photo studios. Offices, banks and government offices are Business Group B and take the height row printed above. Owner ruling 12.10.2026, P3 Ch47 Q3: tick 'Business Group C (stand-alone)' for a Group C building; below 23 m item 11 then replaces the height row."
 
   - id: el_mercantile_group_c
     match:
-      occupancy: mercantile_a
+      occupancy_in: [mercantile_a, mercantile_b]
+      is_mercantile_group_c_is: true
+      height_m_lt: 23
+      has_amusement_confounding_is: false
+    section: "Ch 6, #4.3 / Table 6.5 item 12 (Mercantile Group C)"
+    page: "p.419"
+    systems:
+      - name: "Stand-alone Self-Contained EL (Section 3.4)"
+        spec: "Per Table 6.4 - Mercantile Group C (Table 1.1 / #1.7.9.2), below 23 m"
+        code_ref: "Ch 6, #4.3 / Table 6.5 item 12"
+        page_ref: "p.419"
+        detail: "Table 6.5 item 12 MERCANTILE, GROUP C (p.419): Stand alone Self Contained Emergency Lighting System as per Section 3.4., shall be provided and permitted. Table 1.1 (p.50) Mercantile Group C: kiosks, food trucks, mercantile trucks; #1.7.9.2 (p.41) Class C: mercantile occupancies having an aggregate gross area of not more than 280 m2 and occupying only ground floor for sales purposes. 'Mercantile Group C (stand-alone)' is ticked and the building is below 23 m, so item 12 governs and the low rise / midrise row (items 5-6, Monitored) is not applied: owner ruling 12.10.2026, P3 Ch47 Q3. At 23 m or more the highrise rows (items 1-2) govern."
+
+  - id: el_mercantile_group_c_check
+    match:
+      occupancy_in: [mercantile_a, mercantile_b]
+      is_mercantile_group_c_is: false
+      height_m_lt: 23
     section: "Ch 6, #4.3 / Table 6.5 item 12 (Mercantile Group C)"
     page: "p.419"
     systems:
       - name: "Stand-alone Self-Contained EL (Section 3.4) - Mercantile Group C only"
         required: conditional
-        spec: "Per Table 6.4 - only where the occupancy is Mercantile Group C (Table 1.1 / #1.7.9.2)"
-        detail: "Table 6.5 item 12 MERCANTILE, GROUP C (p.419): Stand alone Self Contained Emergency Lighting System as per Section 3.4 shall be provided and permitted. Table 1.1 (p.50) Mercantile Group C: kiosks, food trucks, mercantile trucks; #1.7.9.2 (p.41) Class C: aggregate gross area of not more than 280 m2 and occupying only ground floor for sales purposes. Other retail takes the height row printed above. Whether item 12 replaces the height row for a Mercantile Group C building is an open owner question."
+        spec: "Per Table 6.4 - only where the occupancy is Mercantile Group C (Table 1.1 / #1.7.9.2); tick 'Mercantile Group C (stand-alone)'"
+        code_ref: "Ch 6, #4.3 / Table 6.5 item 12"
+        page_ref: "p.419"
+        detail: "Table 6.5 item 12 MERCANTILE, GROUP C (p.419): Stand alone Self Contained Emergency Lighting System as per Section 3.4., shall be provided and permitted. Table 1.1 (p.50) Mercantile Group C: kiosks, food trucks, mercantile trucks; #1.7.9.2 (p.41) Class C: aggregate gross area of not more than 280 m2 and occupying only ground floor for sales purposes. Other retail takes the height row printed above. Owner ruling 12.10.2026, P3 Ch47 Q3: tick 'Mercantile Group C (stand-alone)' for a Group C building; below 23 m item 12 then replaces the height row."
 
   - id: el_fuel_dispensing
     match:
