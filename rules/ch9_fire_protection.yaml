@@ -236,99 +236,138 @@ branches:
   - id: superhighrise_large_plot
     match: {height_m_gt: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.2.1 / Table 9.18.A"
-    page: "p.695"
+    page: "p.696"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Full coverage throughout building including basements and podiums per Section 3.5. Triggered by super-highrise (>90 m) with plot > 20,000 m2."
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.18.A i). Triggered by super highrise (more than 90 m) on a plot exceeding 20,000 m2."
       - name: "Wet Riser System (zoned - High/Low per Table 9.6.13)"
         requires_wet_riser: true
-        detail: "Zoned wet-riser system with High and Low pressure zones per Table 9.6.13. Every standpipe Class III with 38 mm hose-reel outlet and 64 mm landing valve."
+        detail: "Wet risers throughout per Section 3.4, with High Zones and Low Zones according to the pressure limitations of Table 9.6 item 13 (Table 9.18.A iii-iv). Outlets: 25 mm hose reel (or 40 mm hose rack) and 65 mm landing valve (Table 9.6 items 1, 7)."
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
-        detail: "Cross-connections at lowest and highest floor of each pressure zone to allow pump redundancy and pressure equalisation."
+        detail: "Table 9.18.A v."
       - name: "Multi-level Pump Set (every 90 m from lowest level)"
-        detail: "Vertically staged pump rooms every 90 m of building height per Table 9.6.13."
+        detail: "A multi-level pump set arrangement every 90 m height from the lowest fire pump set level per Table 9.6 item 13 (Table 9.18.A vi)."
       - name: "Yard Fire Hydrants"
-        detail: "Yard hydrant loop around perimeter per Section 3.11."
+        detail: "Yard hydrants per Section 3.11 (Table 9.18.A vii). Not required where infrastructure yard hydrants are available within 60 m of the towers; tapping from the existing yard hydrant network is permitted to extend coverage (Table 9.18.A viii)."
       - name: "Fire Pump (first/lowest level)"
-        spec: "Combined (yard + internal): 1000 gpm @ 17 bar | Intermediate pumps every 90 m per Table 9.6.13"
-        detail: "UL/FM listed pump set sized for base-of-building duty; intermediate zone pumps supplement with boosted pressure."
+        spec: "1000 gpm @ 17 bar (combined yard + internal; irrespective of number of stairs and standpipes)"
+        detail: "Where a fire pump set is combined and serves both yard hydrants and internal building systems, the first pump set at the lowest level is 1000 gpm irrespective of the number of stairs and standpipes, at 17 bar (Table 9.18.A ix)."
+      - name: "Upper-level Pump Sets (every 90 m)"
+        pump_spec_type: standpipe_dependent
+        detail: "Where a pump set only serves internal building systems, the pump sets located vertically at every 90 m intermediate interval from the lowest level fire pump (Table 9.18.A xi)."
       - name: "Fire Water Tank"
-        spec: "60 minutes duration"
-        detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous utility refill."
+        spec: "60 minutes duration (lowest level, combined)"
+        detail: "Combined water tank at the lowest level: 60 minutes, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.18.A x)."
+      - name: "Upper-level Fire Water Tanks (every 90 m)"
+        spec: "30 minutes duration each"
+        detail: "A fire water tank for every upper-level pump set (every 90 m interval), 30 minutes, with automatic low water level detection, instantaneous refilling, and pumping and piping to refill the tanks from lower levels (Table 9.18.A xii)."
 
   - id: superhighrise_small_plot
     match: {height_m_gt: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
-    section: "Ch 9, #4.2.1 / Table 9.18.B"
-    page: "p.696"
-    systems:
-      - name: "Automatic Sprinkler System (full coverage)"
-        detail: "Full coverage throughout building per Section 3.5. Triggered by super-highrise (>90 m) with plot <= 20,000 m2."
-      - name: "Wet Riser System (zoned)"
-        requires_wet_riser: true
-        detail: "Zoned wet risers per Section 3.4 and Table 9.6.13."
-      - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
-      - name: "Multi-level Pump Set (every 90 m)"
-        detail: "Vertically staged pump rooms every 90 m of building height."
-      - name: "Fire Pump"
-        spec: "Per Table 9.6.13 (zoned pump sets staged every 90 m)"
-        detail: "UL/FM listed."
-      - name: "Fire Water Tank"
-        spec: "60 minutes duration"
-
-  - id: highrise_45_90_large_plot
-    match: {height_m_gt: 45, height_m_lte: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
-    section: "Ch 9, #4.3.1 / Table 9.19.A"
+    section: "Ch 9, #4.2.1 / Table 9.18.B (and row C)"
     page: "p.697"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Full sprinkler coverage throughout building per Section 3.5."
-      - name: "Wet Riser System (looped, High/Low zones per Table 9.6.13)"
+        detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.18.B i). Row C (yard hydrants provided as part of infrastructure development, irrespective of plot area) has the same requirements."
+      - name: "Wet Riser System (zoned)"
         requires_wet_riser: true
-        detail: "Looped, pressure-zoned wet riser system per Section 3.4 and Table 9.6.13."
-      - name: "Wet Risers Interconnected at Lowest + Highest Level"
-      - name: "Yard Fire Hydrants"
-        detail: "Yard hydrant loop per Section 3.11. Not required if infrastructure hydrants are available within 60 m."
-      - name: "Fire Pump"
-        spec: "Combined: 1000 gpm @ 6.9 bar at most remote landing valve"
-        detail: "UL/FM listed combined (yard + internal)."
-      - name: "Fire Water Tank"
-        spec: "60 minutes duration"
-        detail: "Dedicated breeching inlet + instantaneous refill."
-
-  - id: highrise_45_90_small_plot
-    match: {height_m_gt: 45, height_m_lte: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
-    section: "Ch 9, #4.3.1 / Table 9.19.B"
-    page: "p.697"
-    systems:
-      - name: "Automatic Sprinkler System (full coverage)"
-        detail: "Full sprinkler coverage throughout building per Section 3.5."
-      - name: "Wet Riser System (zoned per Table 9.6.13)"
-        requires_wet_riser: true
-        detail: "Zoned wet riser system per Section 3.4."
-      - name: "Wet Risers Interconnected at Lowest + Highest Level"
-      - name: "Fire Pump"
+        detail: "Wet risers per Section 3.4 with High Zones and Low Zones per Table 9.6 item 13 (Table 9.18.B iii-iv). Outlets: 25 mm hose reel (or 40 mm hose rack) and 65 mm landing valve (Table 9.6 items 1, 7)."
+      - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
+        detail: "Table 9.18.B v."
+      - name: "Multi-level Pump Set (every 90 m)"
+        detail: "Every 90 m height from the lowest fire pump set level per Table 9.6 item 13 (Table 9.18.B vi)."
+      - name: "Fire Pump (first/lowest level)"
+        spec: "1000 gpm @ 17 bar (irrespective of the number of standpipes)"
+        detail: "First fire pump set at the lowest level of the building (Table 9.18.B vii)."
+      - name: "Upper-level Pump Sets (every 90 m)"
         pump_spec_type: standpipe_dependent
-        detail: "750 gpm for 2 standpipes, 1000 gpm for more than 2; 6.9 bar at most remote landing valve. UL/FM listed."
+        detail: "Upper-level pump sets located at every 90 m interval from the lowest level fire pump (Table 9.18.B ix)."
       - name: "Fire Water Tank"
-        spec: "60 minutes duration"
-        detail: "Dedicated breeching inlet."
+        spec: "60 minutes duration (lowest level)"
+        detail: "Water tank at the lowest level: 60 minutes, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.18.B viii)."
+      - name: "Upper-level Fire Water Tanks (every 90 m)"
+        spec: "30 minutes duration each"
+        detail: "A fire water tank for every upper-level pump set (every 90 m interval), 30 minutes, with automatic low water level detection, instantaneous refilling, and pumping and piping to refill the tanks from lower levels (Table 9.18.B x)."
 
-  - id: highrise_23_45
-    match: {height_m_gt: 23, height_m_lte: 45, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
-    section: "Ch 9, #4.3.1 / Table 9.19 (23 m < H <= 45 m)"
+  - id: highrise_45_90_large_plot
+    match: {height_m_gt: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    section: "Ch 9, #4.3.1 / Table 9.19.A"
     page: "p.698"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Full sprinkler coverage throughout building per Section 3.5."
-      - name: "Wet Riser System"
+        detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.A i). Table 9.19 rows A/B apply when the most remote landing valve is 45 m or more above the lowest fire pump set level (row heading: more than 45 m ... from lowest pump set level; Table 9.6 item 13.iii zones the risers at a height 45 m from the fire pump location). The tool takes the pump room at the lowest basement unless it is set at grade."
+      - name: "Wet Riser System (looped, High/Low zones per Table 9.6.13)"
         requires_wet_riser: true
-        detail: "Wet risers per Section 3.4 throughout, interconnected at highest level."
-      - name: "Wet Risers Interconnected at Highest Level"
+        detail: "Wet risers per Section 3.4 with looped High Zones and Low Zones according to the pressure limitations of Table 9.6 item 13 (Table 9.19.A iii-iv)."
+      - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
+        detail: "Table 9.19.A v."
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 (Table 9.19.A vi). Not required where infrastructure yard hydrants are available within 60 m of the towers; tapping from the existing network is permitted (Table 9.19.A vii)."
       - name: "Fire Pump"
-        pump_spec_type: standpipe_dependent
-        detail: "750 gpm for 2 standpipes, 1000 gpm for more than 2; 6.9 bar at most remote landing valve."
+        spec: "1000 gpm @ 6.9 bar at most remote landing valve (combined yard + internal; irrespective of number of stairs)"
+        detail: "Where a fire pump set is combined and serves yard hydrants and internal building systems (Table 9.19.A viii)."
       - name: "Fire Water Tank"
         spec: "60 minutes duration"
+        detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.A ix)."
+
+  - id: highrise_45_90_small_plot
+    match: {height_m_gt: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    section: "Ch 9, #4.3.1 / Table 9.19.B"
+    page: "p.698"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.B i). Table 9.19 rows A/B apply when the most remote landing valve is 45 m or more above the lowest fire pump set level (row heading: more than 45 m ... from lowest pump set level; Table 9.6 item 13.iii zones the risers at a height 45 m from the fire pump location). The tool takes the pump room at the lowest basement unless it is set at grade."
+      - name: "Wet Riser System (zoned per Table 9.6.13)"
+        requires_wet_riser: true
+        detail: "Wet risers per Section 3.4 with High Zones and Low Zones according to the pressure limitations of Table 9.6 item 13 (Table 9.19.B iii-iv)."
+      - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
+        detail: "Table 9.19.B v."
+      - name: "Fire Pump"
+        pump_spec_type: standpipe_dependent
+        detail: "Table 9.19.B vi."
+      - name: "Fire Water Tank"
+        spec: "60 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.B vii)."
+
+  - id: highrise_23_45_large_plot
+    match: {height_m_gt: 23, pump_head_height_m_lt: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    section: "Ch 9, #4.3.1 / Table 9.19.C"
+    page: "p.699"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.C i)."
+      - name: "Wet Riser System"
+        requires_wet_riser: true
+        detail: "Wet risers throughout per Section 3.4 (Table 9.19.C iii)."
+      - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
+        detail: "Table 9.19.C iv."
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 (Table 9.19.C v). Not required where infrastructure yard hydrants are available within 60 m of the towers (Table 9.19.C vi)."
+      - name: "Fire Pump"
+        spec: "1000 gpm @ 6.9 bar at most remote landing valve and yard hydrant (combined; irrespective of number of standpipes)"
+        detail: "Where a fire pump set is combined and serves yard hydrants and internal building systems (Table 9.19.C vii)."
+      - name: "Fire Water Tank"
+        spec: "60 minutes duration"
+        detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.C viii)."
+
+  - id: highrise_23_45
+    match: {height_m_gt: 23, pump_head_height_m_lt: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    section: "Ch 9, #4.3.1 / Table 9.19.D"
+    page: "p.699"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.D i)."
+      - name: "Wet Riser System"
+        requires_wet_riser: true
+        detail: "Wet risers throughout per Section 3.4 (Table 9.19.D iii)."
+      - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
+        detail: "Table 9.19.D iv."
+      - name: "Fire Pump"
+        pump_spec_type: standpipe_dependent
+        detail: "Table 9.19.D v-vi."
+      - name: "Fire Water Tank"
+        spec: "60 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.D vii)."
 
   - id: midrise_public_small_plot
     # Detention excluded — midrise detention has its own dedicated branch
