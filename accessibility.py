@@ -17,7 +17,7 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
             status="conditional",
             spec="Private villas: accessible features apply where the project opts into public/visitor access or is commercial villa with common facilities",
             detail="Confirm with Civil Defence / Municipality for commercial villa clusters with shared amenities.",
-            code_ref="Ch 15, §2.2 Scope",
+            code_ref="Ch 15, #2.2 Scope",
             page_ref="p.1088+",
             source_rule="acc_villa",
         ))
@@ -69,9 +69,9 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
             items.append(Requirement(
                 system="Area of refuge / evacuation elevator access",
                 status="required",
-                spec="Areas of refuge and accessible route to evacuation elevators where provided (ties to Ch 3 §3.9 / Ch 5)",
+                spec="Areas of refuge and accessible route to evacuation elevators where provided (ties to Ch 3 #3.9 / Ch 5)",
                 detail="Confirm refuge sizing (0.28 m²/person, min spaces per 200 occupants) against Ch 3.",
-                code_ref="Ch 15 §3.5 · Ch 3 area of refuge",
+                code_ref="Ch 15 #3.5 · Ch 3 area of refuge",
                 page_ref="p.1100+",
                 source_rule="acc_refuge",
             ))

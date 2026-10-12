@@ -26,8 +26,8 @@ branches:
         detail: "Mandatory for all super-highrise. Lobby is 1-hr fire-rated smoke partition. No separate smoke control needed for the lift shaft when lobby is provided."
 
   # ---------- Table 10.20 - Highrise (23-90 m) ----------
-  # Code §3.2.1 (p.857) says "more than 23 m but less than 90 m". At the 90 m
-  # edge, Ch 1 §1.7.42 + FAQ Annexure 1 treat the building as highrise (super
+  # Code #3.2.1 (p.857) says "more than 23 m but less than 90 m". At the 90 m
+  # edge, Ch 1 #1.7.42 + FAQ Annexure 1 treat the building as highrise (super
   # starts *more than* 90 m). Match is therefore inclusive at 90 m.
   - id: sc_highrise
     match: {height_m_gt: 23, height_m_lte: 90}

@@ -821,7 +821,7 @@ with st.sidebar:
     st.caption(f"Hazard class (auto-derived from occupancy): **{derived_hazard}**")
     with st.expander("Mixed occupancy + construction type (Ch 1)", expanded=False):
         st.selectbox(
-            "Mixed occupancy mode (Ch 1 §2.4–2.5)",
+            "Mixed occupancy mode (Ch 1 #2.4–2.5)",
             options=["none", "most_restrictive", "separated"],
             format_func=lambda x: {
                 "none": "Single occupancy (default)",
@@ -831,7 +831,7 @@ with st.sidebar:
             key="mixed_occupancy_mode_input",
         )
         st.selectbox(
-            "Construction type (Ch 1 §2.6 — reporting aid)",
+            "Construction type (Ch 1 #2.6 — reporting aid)",
             options=["unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"],
             format_func=lambda x: x.replace("_", " ").title() if x != "unspecified" else "Not specified",
             key="construction_type_input",
@@ -1489,7 +1489,7 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
     if gs("has_lpg_tank_roof_mounted") and b.height_m > 90:
         errs.append(
             "🚫 **LPG roof tank on super-highrise (>90 m) is PROHIBITED.** "
-            "UAE Ch 11 §2.5.1.3 (p.900) bans roof LPG installations on buildings "
+            "UAE Ch 11 #2.5.1.3 (p.900) bans roof LPG installations on buildings "
             "taller than 90 m. Either lower the building, change to a podium / "
             "ground tank, or uncheck the roof-mounted flag."
         )
@@ -1555,7 +1555,7 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
 
     if b.has_lpg_tanks and b.height_m > 23:
         info.append(
-            "ℹ LPG tanks declared on a highrise. Per Ch 11 §2.5.1 the tanks "
+            "ℹ LPG tanks declared on a highrise. Per Ch 11 #2.5.1 the tanks "
             "must be on the roof or podium only (never inside the building). "
             "Verify location."
         )

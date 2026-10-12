@@ -24,7 +24,7 @@ general:
         code_ref: "Ch 7, #2.2.2"
         page_ref: "p.431"
         spec: "Pre-recorded voice messages SHALL be both in Arabic and English"
-        detail: "Per §2.2.2, pre-recorded voice messages shall be both in Arabic and English, in an accent which is familiar and intelligible to the people of UAE (cosmopolitan environment with 165+ nationalities). Messages shall be prepared by people familiar with fire emergency procedures and shall be simple, to the point, and customised to the specific building (not generalised). MANDATORY ('shall')."
+        detail: "Per #2.2.2, pre-recorded voice messages shall be both in Arabic and English, in an accent which is familiar and intelligible to the people of UAE (cosmopolitan environment with 165+ nationalities). Messages shall be prepared by people familiar with fire emergency procedures and shall be simple, to the point, and customised to the specific building (not generalised). MANDATORY ('shall')."
 
   - id: evc_general_voice_messages
     when: {}
@@ -170,7 +170,7 @@ branches:
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
         spec: "Per Section 2.4 + Table 7.1 - public-mode audibility 15 dB above ambient (Table 7.1 #4.3)"
-        detail: "EVC required for malls (covered / open / mixed). Multi-zone messaging with all-call override; public-mode voice messages shall be 15 dB above the ambient sound level (Table 7.1 #4.3, p.434). Average ambient sound levels for information: 40 dBA mercantile, 55 dBA assembly zones (Ch 7 §2.3, p.432)."
+        detail: "EVC required for malls (covered / open / mixed). Multi-zone messaging with all-call override; public-mode voice messages shall be 15 dB above the ambient sound level (Table 7.1 #4.3, p.434). Average ambient sound levels for information: 40 dBA mercantile, 55 dBA assembly zones (Ch 7 #2.3, p.432)."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
         detail: "Two-way telephone jacks at every fire-command interface and major mall circulation node."
@@ -245,8 +245,8 @@ branches:
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
-        spec: "Per Section 2.4 + Table 7.1 - 30 dBA storage / 80 dBA industrial / 85 dBA mechanical-room average ambient sound levels for information (Ch 7 §2.3, p.432)"
-        detail: "EVC required for storage and industrial occupancies with built-up area > 5,000 m². Speaker placement to overcome high industrial ambient noise. The 30/80/85 dBA figures from Ch 7 §2.3 (p.432) are 'average ambient sound levels for information' (informational reference) - NOT design thresholds. Public-mode audibility design target is 15 dB above the measured ambient (Table 7.1 #4.3)."
+        spec: "Per Section 2.4 + Table 7.1 - 30 dBA storage / 80 dBA industrial / 85 dBA mechanical-room average ambient sound levels for information (Ch 7 #2.3, p.432)"
+        detail: "EVC required for storage and industrial occupancies with built-up area > 5,000 m². Speaker placement to overcome high industrial ambient noise. The 30/80/85 dBA figures from Ch 7 #2.3 (p.432) are 'average ambient sound levels for information' (informational reference) - NOT design thresholds. Public-mode audibility design target is 15 dB above the measured ambient (Table 7.1 #4.3)."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
 
@@ -284,7 +284,7 @@ branches:
     systems:
       - name: "Emergency Voice Evacuation (EVC) - healthcare under highrise"
         required: not_required
-        detail: "EVC and two-way telephone are NOT mandatory for healthcare occupancies under highrise threshold per Table 7.3 (healthcare is not listed). Hospitals taller than 23 m fall under the highrise branch and require EVC. NOTE: §2.1.1 Table 7.1 control-unit location text (p.433) specifically calls out 'nurse stations at hospitals' as a continuously monitored location for EVC siting - this implies the code anticipates EVC at hospitals even though Table 7.3 does not mandate it. RECOMMENDED practice: highrise / super-highrise hospitals and any hospital with phased / staged evacuation procedures should provide EVC even when not strictly mandated."
+        detail: "EVC and two-way telephone are NOT mandatory for healthcare occupancies under highrise threshold per Table 7.3 (healthcare is not listed). Hospitals taller than 23 m fall under the highrise branch and require EVC. NOTE: #2.1.1 Table 7.1 control-unit location text (p.433) specifically calls out 'nurse stations at hospitals' as a continuously monitored location for EVC siting - this implies the code anticipates EVC at hospitals even though Table 7.3 does not mandate it. RECOMMENDED practice: highrise / super-highrise hospitals and any hospital with phased / staged evacuation procedures should provide EVC even when not strictly mandated."
 
   - id: evc_mercantile_not_required
     match:

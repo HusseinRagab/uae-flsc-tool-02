@@ -18,7 +18,7 @@ def evaluate_eap(b: Building) -> ChapterReport:
             system="Emergency Action Plan",
             status="not_required",
             spec="Private villa: formal EAP documentation not typically mandated at this scale",
-            code_ref="Ch 19, §2",
+            code_ref="Ch 19, #2",
             page_ref="p.1230+",
             source_rule="eap_villa_na",
         ))
@@ -75,7 +75,7 @@ def evaluate_eap(b: Building) -> ChapterReport:
                 system="Drills and training",
                 status="required",
                 spec="Periodic drills so occupants and staff are familiar with the EAP",
-                code_ref="Ch 19, §2.1",
+                code_ref="Ch 19, #2.1",
                 page_ref="p.1231+",
                 source_rule="eap_drills",
             ),

@@ -94,7 +94,7 @@ _PUMP_SPECS_FILENAME = "pump_specs.yaml"
 # the legacy behaviour for installations that haven't unpacked the new file.
 _PUMP_FALLBACK = {
     "standpipe_dependent": {
-        "source": "UAE FLSC 2018 Ch. 9 / NFPA 14:2019 §7.10",
+        "source": "UAE FLSC 2018 Ch 9 Section 4 occupancy tables; Table 9.6 item 3.iii",
         "pressure_bar": 6.9,
         "pressure_note": "at most remote landing valve",
         "pump_description": "UL/FM listed electric or diesel-driven pump set "
@@ -128,20 +128,23 @@ def _resolve_pump(entry: Dict[str, Any], b: Building):
         # Unknown spec type — fall through to the legacy if-tree below so the
         # caller still gets a return value, never a None-from-missing-row.
         cfg = _PUMP_FALLBACK.get(pst)
-    if pst == "standpipe_dependent" and cfg is not None:
-        n = b.wet_riser_standpipes
-        gpm = next((br["gpm"] for br in cfg.get("brackets", [])
-                    if n <= br.get("max_standpipes", 999)), None)
+    if cfg is not None and cfg.get("brackets"):
+        # Count-dependent duty: standpipes (most tables) or exit stairs
+        # (Table 9.24.C.2). `max_standpipes` is the older bracket key.
+        field = cfg.get("count_field", "wet_riser_standpipes")
+        label = cfg.get("count_label", "standpipe")
+        n = getattr(b, field)
+        gpm = next((br["gpm"] for br in cfg["brackets"]
+                    if n <= br.get("max_count", br.get("max_standpipes", 999))), None)
         if gpm is None:
-            gpm = cfg.get("brackets", [{}])[-1].get("gpm", 1000)
+            gpm = cfg["brackets"][-1].get("gpm", 1000)
         bar  = cfg.get("pressure_bar", 6.9)
         note = cfg.get("pressure_note", "at most remote landing valve")
         desc = cfg.get("pump_description", "")
         cite = cfg.get("source", "")
         return (
             f"{gpm} gpm @ {bar} bar {note}",
-            f"Pump sized at {gpm} gpm based on {n} standpipe"
-            f"{'s' if n != 1 else ''} in the wet-riser system. {desc}"
+            f"Pump sized at {gpm} gpm for {n} {label}{'s' if n != 1 else ''}. {desc}"
             + (f" [Source: {cite}]" if cite else ""),
         )
     if pst in ("fixed_250", "fixed_1000") and cfg is not None:
@@ -169,7 +172,7 @@ def _as_req(entry: Dict[str, Any], branch: Optional[Dict[str, Any]] = None,
         if rspec:
             spec = rspec
         if rdetail:
-            detail = rdetail
+            detail = f"{detail} {rdetail}" if detail else rdetail
     return Requirement(
         system=entry["name"], status=status, spec=spec, detail=detail,
         code_ref=entry.get("code_ref") or (branch.get("section") if branch else None),
@@ -239,6 +242,10 @@ def _merge_duties(items: List[Requirement]) -> List[Requirement]:
     drop, replace = set(), {}
     for duty, idx in groups.items():
         if len({items[i].source_rule for i in idx}) < 2:
+            continue
+        # A line whose flow (or minutes) is not printed as a number, e.g.
+        # "2 adjacent deluge zones", cannot be ranked: keep every line.
+        if any(_duty_key(items[i])[0] == 0 for i in idx):
             continue
         best = max(idx, key=lambda i: _duty_key(items[i]))
         w = items[best]
@@ -672,6 +679,13 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
         has_diesel_generator_room=b.has_diesel_generator_room,
         has_fire_pump_room=b.has_fire_pump_room,
         has_main_electrical_room=b.has_main_electrical_room,
+        # Table 9.24 inputs: standpipes (A.3), exit stairs (C.2), robotic (B),
+        # covered/shaded (D); pump level for Table 9.19 zoning.
+        wet_riser_standpipes=b.wet_riser_standpipes,
+        exit_stairs=b.exit_stairs,
+        has_robotic_parking=b.has_robotic_parking,
+        is_covered_shaded_parking=b.is_covered_shaded_parking,
+        pump_room_at_grade=b.pump_room_at_grade,
     )
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
@@ -779,7 +793,7 @@ def _mixed_occupancy_note(b: Building) -> Optional[str]:
     secs = ", ".join(b.secondary_occupancies) if b.secondary_occupancies else "(none listed)"
     if b.mixed_occupancy_mode == "separated":
         return (
-            f"Mixed occupancy treated as SEPARATED (Ch 1 §2.5). Secondary: {secs}. "
+            f"Mixed occupancy treated as SEPARATED (Ch 1 #2.5). Secondary: {secs}. "
             "Provide fire-barrier ratings per Table 1.2 between occupancy compartments."
         )
     if b.mixed_occupancy_mode == "most_restrictive" or b.secondary_occupancies:
@@ -787,7 +801,7 @@ def _mixed_occupancy_note(b: Building) -> Optional[str]:
         hazards = [default_hazard(b.occupancy)] + [default_hazard(o) for o in b.secondary_occupancies]
         top = max(hazards, key=lambda h: rank.get(h, 0))
         return (
-            f"Mixed occupancy treated as MOST RESTRICTIVE (Ch 1 §2.4). Secondary: {secs}. "
+            f"Mixed occupancy treated as MOST RESTRICTIVE (Ch 1 #2.4). Secondary: {secs}. "
             f"Highest default hazard among listed occupancies: {top}."
         )
     return None

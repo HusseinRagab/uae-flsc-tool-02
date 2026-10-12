@@ -42,7 +42,7 @@ OCCUPANCY_DEFS = {
     "assembly_b": "Assembly Group B - Occupant load 301 to 1,000. Cinemas, theatres, banquet halls, conference halls, mid-size mosques, ballrooms.",
     "assembly_c": "Assembly Group C - Occupant load 50 to 300. Restaurants, cafes, small meeting rooms, small mosques, community halls, bars, nightclubs.",
     "business": "Business - Offices, non-inpatient clinics, government offices, banks, courthouses, professional services.",
-    # NOTE: Education group letters swapped 2026-05 to match UAE FLSC Ch 3 §5.3 / Table 3.13.3.
+    # NOTE: Education group letters swapped 2026-05 to match UAE FLSC Ch 3 #5.3 / Table 3.13.3.
     # Per code: Group A = Nurseries / KG / Preschool (Table 3.20); Group B/C = Schools and Colleges
     # / Universities (Table 3.21). Schema IDs preserved (education_a/_b/_c) for backward compat
     # with saved scenarios; their meaning is the code's meaning, not the schema's original.
@@ -59,7 +59,7 @@ OCCUPANCY_DEFS = {
     "hotel_c": "Hotel Group C - Budget hotels, apartment hotels, furnished apartments.",
     "daycare_a": "Daycare Group A - Daycare for more than 12 clients.",
     "daycare_b": "Daycare Group B - Daycare for 7 to 12 clients.",
-    # daycare_c: UAE FLSC Ch 3 §5.10 only defines Daycare Groups A and B. Schema keeps _c as a
+    # daycare_c: UAE FLSC Ch 3 #5.10 only defines Daycare Groups A and B. Schema keeps _c as a
     # UI convenience for family daycare (4-6 clients); Ch 3 rules treat it the same as Group B.
     "daycare_c": "Daycare Group C - Family daycare for 4 to 6 clients (UI category; Ch 3 falls back to Group B rules).",
     "residential": "Residential - Apartment buildings, flats, condominiums. Multi-family dwellings.",
@@ -70,8 +70,8 @@ OCCUPANCY_DEFS = {
     "detention_a": "Detention & Correctional Group A - Maximum security; occupants restrained and require supervised evacuation.",
     "detention_b": "Detention & Correctional Group B - Medium security correctional facilities.",
     "detention_c": "Detention & Correctional Group C - Minimum security, police holding cells, short-term detention.",
-    "villa_private": "Private Villa (Ch 1 §1.7.34) - Single-family dwelling unit, generally ground with first floor, built and solely owned by an individual on an individual plot.",
-    "villa_commercial": "Commercial Villa (Ch 1 §1.7.35) - One- or two-family dwelling units built in a group by a developer and sold, leased or rented to individual families. Mosques, community halls and recreation facilities may also be part of this development. NOT a private villa converted to a shop/clinic - use the 'villa converted to other use' flag for that (Table 8.13 item 14 / Table 9.21.d).",
+    "villa_private": "Private Villa (Ch 1 #1.7.34) - Single-family dwelling unit, generally ground with first floor, built and solely owned by an individual on an individual plot.",
+    "villa_commercial": "Commercial Villa (Ch 1 #1.7.35) - One- or two-family dwelling units built in a group by a developer and sold, leased or rented to individual families. Mosques, community halls and recreation facilities may also be part of this development. NOT a private villa converted to a shop/clinic - use the 'villa converted to other use' flag for that (Table 8.13 item 14 / Table 9.21.d).",
     "mall_covered": "Covered Mall - Fully enclosed/climatised shopping mall with common internal circulation; tenants accessed from internal mall.",
     "mall_open": "Open Mall - Outdoor strip mall or open-air shopping complex. Tenants accessed from external circulation only.",
     "mall_mixed": "Mixed Mall - Development combining covered and open mall elements (covered anchor + open retail street).",
@@ -335,7 +335,7 @@ class Building(BaseModel):
 
     @property
     def height_class(self) -> str:
-        # Ch 1 §1.7.39–1.7.42 + FAQ Annexure 1 (p.1273):
+        # Ch 1 #1.7.39–1.7.42 + FAQ Annexure 1 (p.1273):
         #   lowrise  : height at or up to 15 m
         #   midrise  : between 15 m and 23 m (include 23 m; highrise starts *more than* 23 m)
         #   highrise : more than 23 m up to 90 m (include 90 m; super starts *more than* 90 m)
