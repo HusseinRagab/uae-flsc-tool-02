@@ -9,6 +9,30 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 3 owner answers coded (24 cards, 16:27Z, all on the recommended option)
+
+Log: project files `uae_flsc_tool/phase3/ANSWERS_12.10.2026.md`; reports REPORT_a1/a2/a3.
+- Ch 10: 90 m tunnel = jet fan (higher band); high-depth underground gets the #2.9.4.a fire lift
+  without a basement count; mall/assembly stair (inference) and "such as" corridor cite the rulings.
+- Ch 11 / 19 / 15: written EAP required for every non-villa building; villas get assembly point,
+  drills, wheelchairs as conditional (p.1090, p.1233 unread); new inputs: new or modified building
+  + CD approval (cylinders stop without it, #2.2.4-#2.2.5), aboveground at-grade tanks (Table 11.5),
+  indoor / outdoor flame-effect show (indoor in an unsprinklered building stops, #3.2.2).
+- Ch 4 / 6: Class A for parking / underground = p.374 types as a tool decision, none for
+  infrastructure, mixed follows R13 (NOT EVALUATED with none listed); Business / Mercantile Group C
+  stand-alone checkboxes (Table 6.5 item 11/12 below 23 m).
+- Storey table: identical-storeys count, counts must cover every floor or Table 3.14 is NOT
+  EVALUATED. Secondary animal housing needs a group (R13).
+- Ch 9: converted villa (9.21.d) suppresses the 9.23 villa rows; parking above 23 m merges the
+  9.19 / 9.24 riser, sprinkler, pump and tank lines (one each, both tables cited); attached parking
+  has its own height and basement levels (blank = lines that depend on them NOT EVALUATED); LPG
+  spray line reads the at-grade input (underground only = not required).
+- Grid vs the previous push: pump / tank unchanged; parking 50 m and 95 m lose the duplicate 9.24
+  sprinkler and riser lines. Tests: 268 pytest, 112 cases, structural 0.
+- Mercantile C and Business A/B/C: phase 4 (App Q4).
+- Follow-up cards open: cylinder "new building" default, villa EAP line, flame effect alarm
+  condition, amusement vs Group C EL row.
+
 ### 2026-10-12 — Phase 3 (Ch 4-7, 10, 11, 15, 19, Annexure 2, app, per-storey egress, animal housing) on the branch (draft)
 
 Five packages built off master 825e900 and merged on `claude/project-thread-0zjltx`; reports in
@@ -220,7 +244,8 @@ the 750 gpm row of 9.24.C.2.
 | P2 Ch 9 Q1-Q9 | plot GF BUA sum blank, 900 m2 edge, Group U small yard, Table 9.29 H/I/J gate, assembly B/C LH, animal housing, robotic parking EH2, hotel G.ii/G.iii, secondary storage hazard | answered 12.10, coded (Q6 phase 3) |
 | P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | answered 12.10, coded |
 | P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | answered 12.10 14:58Z, coded (F6 phase 3) |
-| P3 cards (24) | Ch 10 Q1-Q4, Ch 11 Q1-Q7, Ch 4-7 Q1-Q3, storey Q1-Q4, app Q1-Q6 | open 12.10, coded on the recommended option where noted in the reports |
+| P3 cards (24) | Ch 10 Q1-Q4, Ch 11 Q1-Q7, Ch 4-7 Q1-Q3, storey Q1-Q4, app Q1-Q6 | answered 12.10 16:27Z, coded (App Q4 = phase 4) |
+| P3 follow-ups (4) | cylinder new-building default, villa EAP, flame effect alarm, amusement vs Group C | open |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
