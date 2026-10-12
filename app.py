@@ -1552,8 +1552,9 @@ with d1:
     st.metric("Height class", building.height_class.replace("_", " "))
     st.caption(f"Datum: {getattr(building, 'height_datum', 'grade').replace('_', ' ')}")
 with d2:
-    st.metric("Occupant load", f"{_ol.occupant_load if _ol else '—'}")
-    st.caption(f"≥ {_ol.min_exits if _ol else 2} exits (Table 3.14)" if _ol else "")
+    # OL 0 = not evaluated (villa, no Table 3.13 row, mall GLA unknown): see the OL note.
+    st.metric("Occupant load", f"{_ol.occupant_load:,}" if _ol and _ol.occupant_load else "not evaluated")
+    st.caption(f"≥ {_ol.min_exits} exits per storey (Table 3.14)" if _ol else "")
 with d3:
     st.metric("Required systems", _tot.get("required", 0))
     st.caption(f"Conditional {_tot.get('conditional', 0)}")
@@ -1576,7 +1577,7 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
         st.write(f"Height: {building.height_m:g} m → **{building.height_class}**")
         st.write(f"Required systems: **{_tot.get('required', 0)}**")
         if _ol:
-            st.write(f"OL: {_ol.occupant_load} → ≥ {_ol.min_exits} exits")
+            st.write(f"OL: {_ol.occupant_load or 'not evaluated'} → ≥ {_ol.min_exits} exits per storey")
     with sc2:
         st.markdown("**Scenario B**")
         b_occ = st.selectbox("B occupancy", options=list(OCCUPANCY_DEFS.keys()),
@@ -1602,8 +1603,8 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
             )
             if b_report.occupant_load:
                 st.caption(
-                    f"B OL: {b_report.occupant_load.occupant_load} → "
-                    f"≥ {b_report.occupant_load.min_exits} exits"
+                    f"B OL: {b_report.occupant_load.occupant_load or 'not evaluated'} → "
+                    f"≥ {b_report.occupant_load.min_exits} exits per storey"
                 )
 
 

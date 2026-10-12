@@ -393,6 +393,15 @@ class Building(BaseModel):
                     self.is_idle_pallet_storage, self.is_aboveground_tank_storage))
 
     @property
+    def largest_storey_area_min_m2(self) -> float:
+        """Lower bound on the largest storey area (no per-storey input): the
+        ground-floor BUA, or the GFA spread evenly over every storey above and
+        below grade, whichever is larger. Used by Table 3.27 item 2.iii (villa
+        floor over 400 m2)."""
+        n = self.floors_above_grade + self.floors_below_grade
+        return max(self.ground_floor_bua_m2, self.gross_floor_area_m2 / n if n else 0.0)
+
+    @property
     def pump_head_height_m(self) -> float:
         """Height of the most remote landing valve above the fire pump
         (Table 9.6 item 13; Table 9.19 rows A/B "from lowest pump set level").

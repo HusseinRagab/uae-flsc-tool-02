@@ -318,6 +318,17 @@ def _sprinkler_required(items: List[Requirement]) -> bool:
                for it in items)
 
 
+def building_sprinklered(b: Building, fp_rules: Optional[Dict[str, Any]] = None) -> bool:
+    """Ch 2 'sprinkler protected' (Tables 2.3/2.4, 2.6/2.7): the building's Ch 9
+    general rules or table row require an automatic sprinkler system."""
+    rules = fp_rules if fp_rules is not None else load_rules("ch9_fire_protection.yaml")
+    if not rules:
+        return False
+    gen = _collect_general(rules, b)
+    branch_items = _collect_branch(rules.get("branches", []), b)[0]
+    return _sprinkler_required(list(gen) + list(branch_items))
+
+
 def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeilingSpec]:
     hc = rules.get("high_ceiling")
     if not hc: return None
@@ -981,7 +992,8 @@ def _evaluate_single(b: Building) -> ComplianceReport:
     lpg_rules = load_rules("ch11_lpg.yaml")
 
     wet = _branch_requires_wet_riser(fp_rules, b)
-    chapters.append(evaluate_fire_access(b, requires_wet_riser=wet))
+    spr = building_sprinklered(b, fp_rules)
+    chapters.append(evaluate_fire_access(b, requires_wet_riser=wet, sprinklered=spr))
 
     # MOE -> FE -> ES -> EL -> EVC -> FA -> FP -> SC -> LPG - chapter-number order.
     if moe_rules:
@@ -1029,7 +1041,7 @@ def _evaluate_single(b: Building) -> ComplianceReport:
         _ensure_chapter_not_blank(ch, b)
 
     ol = compute_occupant_load(b)
-    fa_summary = compute_fire_access(b, requires_wet_riser=wet)
+    fa_summary = compute_fire_access(b, requires_wet_riser=wet, sprinklered=spr)
 
     return ComplianceReport(
         building=b,
