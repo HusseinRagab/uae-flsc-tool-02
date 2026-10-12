@@ -16,6 +16,7 @@ Currently implemented:
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Callable
 
@@ -36,26 +37,20 @@ RULES_DIR = Path(__file__).parent / "rules"
 # ---------------------------- Condition evaluator ----------------------------
 
 def _eval_when(when: Dict[str, Any], b: Building) -> bool:
+    """True when every key of `when` holds. Two combinators:
+    `any_of: [{...}, {...}]` holds when at least one sub-condition holds;
+    `not: {...}` holds when the sub-condition (all its keys together) fails."""
     for key, expected in when.items():
-        if key == "occupancy":
+        if key == "any_of":
+            if not any(_eval_when(c, b) for c in expected): return False
+        elif key == "not":
+            if _eval_when(expected, b): return False
+        elif key == "occupancy":
             if b.occupancy != expected: return False
         elif key == "occupancy_not":
             if b.occupancy in expected: return False
         elif key == "occupancy_in":
-            if b.occupancy not in expected:
-                # Healthcare B/C follow Table 9.20.b / 9.21.b (residential /
-                # business sprinkler tier), not Table 9.20.a / 9.21.a (hospitals).
-                # Older YAML occupancy_in lists omit them; a residential-tier
-                # list is treated as including clinics / outpatient.
-                if b.occupancy in ("healthcare_b", "healthcare_c"):
-                    residential_tier = {
-                        "residential", "labour_accommodation", "staff_accommodation",
-                        "hostel", "business", "animal_housing",
-                    }
-                    if not residential_tier.issubset(set(expected)):
-                        return False
-                else:
-                    return False
+            if b.occupancy not in expected: return False
         elif key == "hazard_class_in":
             if b.hazard_class not in expected: return False
         elif key == "occupancy_group_is":
@@ -75,16 +70,7 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
         elif key.endswith("_gte"):
             if not (getattr(b, key[:-4]) >= expected): return False
         elif key.endswith("_lt"):
-            actual = getattr(b, key[:-3])
-            # Ch 1 §1.7.41-42 + FAQ Annexure 1: 23 m is still midrise (highrise
-            # starts *more than* 23 m); 90 m is still highrise (super starts
-            # *more than* 90 m). YAML drafts that still use height_m_lt: 23/90
-            # would otherwise drop those exact heights into a gap.
-            if key == "height_m_lt" and expected in (23, 90, 23.0, 90.0):
-                if not (actual <= expected):
-                    return False
-            elif not (actual < expected):
-                return False
+            if not (getattr(b, key[:-3]) < expected): return False
         elif key.endswith("_lte"):
             if not (getattr(b, key[:-4]) <= expected): return False
         elif key.endswith("_is"):
@@ -98,20 +84,6 @@ def _eval_when(when: Dict[str, Any], b: Building) -> bool:
         else:
             if getattr(b, key, None) != expected: return False
     return True
-
-
-def _align_fa_height_thresholds(rules: Dict[str, Any]) -> None:
-    """Table 8.13 item 2 highrise is Ch 1 §1.7.41 (more than 23 m), not the
-    15 m midrise floor. Older YAML drafts used height_m_gt: 15 on fa_highrise
-    and height_m_lte: 15 on fa_midrise_lowrise, which sent 15-23 m buildings
-    into 5-floor phased evacuation. Mutates the cached rules dict in place."""
-    for br in rules.get("branches") or []:
-        rid = br.get("id")
-        m = br.get("match") or {}
-        if rid == "fa_highrise" and m.get("height_m_gt") == 15:
-            m["height_m_gt"] = 23
-        if rid == "fa_midrise_lowrise" and m.get("height_m_lte") == 15:
-            m["height_m_lte"] = 23
 
 
 # ---------------------------- Pump spec resolver -----------------------------
@@ -203,11 +175,17 @@ def _as_req(entry: Dict[str, Any], branch: Optional[Dict[str, Any]] = None,
         code_ref=entry.get("code_ref") or (branch.get("section") if branch else None),
         page_ref=entry.get("page_ref") or (branch.get("page") if branch else None),
         source_rule=rule_id or (branch.get("id") if branch else None),
+        duty=entry.get("duty"),
     )
 
 
 def _select_branches(branches_list: List[Dict[str, Any]], b: Building) -> List[Dict[str, Any]]:
-    return [br for br in branches_list if _eval_when(br.get("match", {}), b)]
+    """Matching branches, minus any branch that a more specific matching
+    branch names in its `suppresses:` list (e.g. Table 9.20.c single-exit
+    suppresses the generic Table 9.20.b row for the same building)."""
+    matched = [br for br in branches_list if _eval_when(br.get("match", {}), b)]
+    suppressed = {sid for br in matched for sid in (br.get("suppresses") or [])}
+    return [br for br in matched if br.get("id") not in suppressed]
 
 
 def _collect_general(rules: Dict[str, Any], b: Building) -> List[Requirement]:
@@ -230,7 +208,52 @@ def _collect_branch(branches: List[Dict[str, Any]], b: Building):
             selected_section = br.get("section")
         for e in br.get("systems", []):
             out.append(_as_req(e, branch=br, b=b))
-    return out, selected_id, selected_section, matched
+    return _merge_duties(out), selected_id, selected_section, matched
+
+
+_NUM = r"(\d[\d,]*(?:\.\d+)?)"
+
+
+def _max_num(text: Optional[str], unit: str) -> float:
+    vals = [float(m.group(1).replace(",", ""))
+            for m in re.finditer(_NUM + r"\s*" + unit, text or "", re.I)]
+    return max(vals) if vals else 0.0
+
+
+def _duty_key(it: Requirement):
+    if it.duty == "pump":
+        return (_max_num(it.spec, "gpm"), _max_num(it.spec, "bar"))
+    return (_max_num(it.spec, "min"),)
+
+
+def _merge_duties(items: List[Requirement]) -> List[Requirement]:
+    """One fire pump and one fire water tank per building. When branches from
+    two code tables both apply (e.g. a highrise warehouse: Table 9.19 and
+    Table 9.27), each emits its own `duty: pump` / `duty: tank` line. Keep
+    the most onerous one (flow, then pressure; or minutes) and name the
+    others in its detail as checked but not governing."""
+    groups: Dict[str, List[int]] = {}
+    for i, it in enumerate(items):
+        if it.duty and it.status == "required":
+            groups.setdefault(it.duty, []).append(i)
+    drop, replace = set(), {}
+    for duty, idx in groups.items():
+        if len({items[i].source_rule for i in idx}) < 2:
+            continue
+        best = max(idx, key=lambda i: _duty_key(items[i]))
+        w = items[best]
+        others = [items[i] for i in idx if i != best]
+        note = "; ".join(f"{o.spec or o.system} ({o.code_ref})" for o in others)
+        extra = (f" Governing {'pump duty' if duty == 'pump' else 'tank duration'}: "
+                 f"more than one code table applies to this building and this is the "
+                 f"most onerous. Also checked, not governing: {note}.")
+        if duty == "pump":
+            hi_bar = max((_max_num(o.spec, "bar") for o in others), default=0.0)
+            if hi_bar > _max_num(w.spec, "bar"):
+                extra += f" The pump must also meet {hi_bar:g} bar where that table requires it."
+        replace[best] = w.model_copy(update={"detail": (w.detail or "") + extra})
+        drop.update(i for i in idx if i != best)
+    return [replace.get(i, it) for i, it in enumerate(items) if i not in drop]
 
 
 def _collect_flag(sec: List[Dict[str, Any]], b: Building) -> List[Requirement]:
@@ -454,7 +477,6 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
 
 def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 8 - Fire Detection & Alarm."""
-    _align_fa_height_thresholds(rules)
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
     if gen:

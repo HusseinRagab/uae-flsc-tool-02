@@ -70,7 +70,7 @@ CASES = [
          inputs=dict(occupancy="healthcare_a", height_m=12, floors_above_grade=3,
                      ground_floor_bua_m2=1000, plot_area_m2=2000,
                      has_diesel_generator_room=True),
-         expect_fp_aux_systems=["Foam Sprinkler System (Section 3.9)"]),
+         expect_fp_aux_systems=["Diesel Generator Room - Foam Sprinkler System (Section 3.9)"]),
 
     dict(name="FP: Warehouse with 15 m ceiling triggers high-ceiling design",
          inputs=dict(occupancy="storage_industrial", height_m=14,
@@ -89,7 +89,7 @@ CASES = [
          inputs=dict(occupancy="business", height_m=10, floors_above_grade=2,
                      ground_floor_bua_m2=500, plot_area_m2=1000,
                      has_commercial_kitchen=True),
-         expect_fp_eq_systems=["Automatic Wet Chemical System (Section 3.12) + Grease Filters"]),
+         expect_fp_eq_systems=["Commercial Kitchen Hood - Automatic Wet Chemical System (Section 3.12) + Grease Filters"]),
 
 
     # ---- EL archetypes (Ch 6) ----
