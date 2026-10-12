@@ -22,7 +22,7 @@ general:
       - name: "Yard Fire Hydrant System"
         code_ref: "Ch 9, #4.1.6"
         page_ref: "p.694"
-        detail: "Yard hydrant loop per Section 3.11. Required because storage/industrial built-up area (BUA) > 3,600 m2 OR ground-floor > 100 m from existing functional hydrant. Trigger keyed off ground-floor BUA per code text 'more than 3600 m2 built-up area' (#4.1.6, p.694) - NOT plot area; a 4,000 m2 BUA warehouse on a small plot must still trigger this rule."
+        detail: "Yard hydrant loop per Section 3.11. Required because the storage/industrial built-up area is more than 3,600 m2 (#4.1.6, p.694). Built-up area is the total floor area of all floors including mezzanines (#4.1.11, p.695); this rule fires on the ground-floor area alone and the companion rule below fires on the total over all floors. Keyed off built-up area, not plot area."
   - id: g_yard_hydrant_storage_total_bua
     # Companion to g_yard_hydrant_storage_plot: code #4.1.6 keys off TOTAL
     # built-up area (all floors), so a multi-storey warehouse on a small
@@ -37,6 +37,27 @@ general:
         code_ref: "Ch 9, #4.1.6"
         page_ref: "p.694"
         detail: "Yard hydrant loop per Section 3.11. Required because total storage/industrial built-up area across all floors > 3,600 m2 (#4.1.6, p.694). This companion trigger catches multi-storey storage buildings whose ground-floor footprint alone is below 3,600 m2."
+  - id: g_yard_hydrant_storage_remote
+    when:
+      building_category_is: storage_industrial
+      gf_beyond_100m_from_hydrant_is: true
+    systems:
+      - name: "Yard Fire Hydrant System"
+        code_ref: "Ch 9, #4.1.6"
+        page_ref: "p.694"
+        detail: "Yard hydrant system per Section 3.11. Required because the storage/industrial built-up ground floor area is more than 100 m away from an existing, functional and available hydrant (#4.1.6, p.694)."
+  - id: g_second_pump_set_90m
+    # Table 9.6 item 13.iv (p.584): measured from the fire pump, not from
+    # grade. Super highrise rows already carry their upper-level pump sets.
+    when:
+      height_m_gt: 23
+      height_m_lte: 90
+      pump_head_height_m_gte: 90
+    systems:
+      - name: "Second Fire Pump Set + Dedicated Water Tank"
+        code_ref: "Ch 9, Table 9.6 item 13.iv"
+        page_ref: "p.584"
+        detail: "The most remote landing valve is 90 m or more above the lowest fire pump set (building height plus depth to the pump room). Table 9.6 item 13.iv: where the most remote landing valve is located at a height of 90 m from the fire pump location, a second set of fire pumps and dedicated water tanks shall be provided."
   - id: g_storage_sprinkler_over_3floors
     when:
       building_category_is: storage_industrial
