@@ -3487,24 +3487,29 @@ equipment:
 
   - id: eq_B_lpg_tanks_underground_and_roof
     flag: has_lpg_tanks
-    # Both underground / mounded and roof tanks ticked: the roof tanks are covered by
-    # Table 9.31.B i (p.756) and Table 11.7 #5 (Ch 11), so the spray is required for them.
-    when: {has_lpg_tank_underground_mounded_is: true, has_lpg_tank_roof_mounted_is: true}
+    # Underground / mounded tanks ticked beside roof or at-grade tanks: those tanks are
+    # covered by Table 9.31.B i (p.756) and Table 11.5 item 5 / Table 11.7 #5 (Ch 11), so
+    # the spray is required for them (owner ruling 12.10.2026, P3 Ch11 Q4 at-grade input).
+    when:
+      has_lpg_tank_underground_mounded_is: true
+      any_of:
+        - {has_lpg_tank_roof_mounted_is: true}
+        - {has_lpg_tank_at_grade_is: true}
     systems:
       - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
         code_ref: "Ch 11, Table 11.7 #5 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
         page_ref: "p.906, p.756"
-        detail: "Roof-mounted LPG tanks are ticked: Table 9.31.B i-ii (p.756) cover tanks on roofs or podiums, and Chapter 11 requires their fire protection (Table 11.7 #5), so the fixed water spray system is required on every roof tank. The underground / mounded tanks need none (Table 11.9 #5). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
+        detail: "Roof-mounted or aboveground at-grade LPG tanks are ticked beside the underground / mounded tanks: Table 9.31.B i-ii (p.756) cover tanks aboveground or on roofs or podiums, and Chapter 11 requires their fire protection (Table 11.5 item 5, Table 11.7 #5), so the fixed water spray system is required on every such tank. The underground / mounded tanks need none (Table 11.9 #5). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
 
   - id: eq_B_lpg_tanks_underground_mounded
     flag: has_lpg_tanks
-    when: {has_lpg_tank_underground_mounded_is: true, has_lpg_tank_roof_mounted_is: false}
+    when: {has_lpg_tank_underground_mounded_is: true, has_lpg_tank_roof_mounted_is: false, has_lpg_tank_at_grade_is: false}
     systems:
       - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
-        required: conditional
+        required: not_required
         code_ref: "Ch 11, #2.5.3 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
         page_ref: "p.906, p.756"
-        detail: "Underground / mounded LPG tanks are ticked: Table 9.31.B i-ii (p.756) apply only where LPG tanks are installed aboveground or on roofs or podiums, so the water spray system is required only for the tanks installed aboveground or on roofs or podiums. Where some tanks are aboveground: fixed water spray on every aboveground LPG tank fed from the building fire pump and water tank (Table 11.5 item 5.i), or a dry-type water spray ring with open nozzles and a Civil Defence breeching inlet where the building has none (item 5.ii). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
+        detail: "Only underground / mounded LPG tanks are declared (no roof or aboveground at-grade tanks ticked): Table 9.31.B i-ii (p.756) apply only where LPG tanks are installed aboveground or on roofs or podiums, and Table 11.9 #5 makes fire protection for underground / mounded tanks not mandatory, so no water spray system is required. Tick the roof or at-grade tank box if the project also has those tanks (owner ruling 12.10.2026, P3 Ch11 Q4)."
 
   - id: eq_C_flammable_liquid_tanks
     flag: has_flammable_liquid_tanks

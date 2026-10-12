@@ -20,8 +20,27 @@ def test_lpg_roof_and_underground_roof_spray_required():
                   has_lpg_tank_underground_mounded=True) == ["required"]
 
 
-def test_lpg_underground_only_stays_conditional():
-    assert _spray(has_lpg_tank_underground_mounded=True) == ["conditional"]
+def test_lpg_underground_only_not_required():
+    # Owner ruling 12.10.2026, P3 Ch11 Q4: with the at-grade input, underground / mounded
+    # tanks alone declare no aboveground tank (Table 9.31.B i-ii p.756, Table 11.9 #5).
+    assert _spray(has_lpg_tank_underground_mounded=True) == ["not_required"]
+
+
+def test_lpg_underground_and_at_grade_required():
+    assert _spray(has_lpg_tank_underground_mounded=True,
+                  has_lpg_tank_at_grade=True) == ["required"]
+
+
+def test_mixed_multiple_without_list_names_class_a_not_evaluated():
+    # P3 Ch47 Q2: mixed_multiple has no Class A line of its own; with no occupancies
+    # listed it is named NOT EVALUATED, never silently absent.
+    r = report(occupancy="mixed_multiple", height_m=12)
+    assert any(it.system == "Class A Fire Extinguisher - NOT EVALUATED" for it in items(r, "FE"))
+    r2 = report(occupancy="mixed_multiple", height_m=12, mixed_occupancy_mode="most_restrictive",
+                secondary_occupancies=["residential"])
+    fe = [it.system for it in items(r2, "FE")]
+    assert "Class A Fire Extinguisher - NOT EVALUATED" not in fe
+    assert any(x.startswith("Class A") for x in fe)
 
 
 def test_lpg_aboveground_only_required():

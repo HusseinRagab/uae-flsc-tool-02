@@ -361,7 +361,8 @@ def test_CH9D_09_lpg_underground_mounded_not_given_aboveground_spray():
     r = report(occupancy="residential", height_m=30, ground_floor_bua_m2=1000, plot_area_m2=3000,
                has_lpg_tanks=True, has_lpg_tank_underground_mounded=True)
     lpg = [it for it in items(r, "FP") if it.system.startswith("LPG Tanks")]
-    assert len(lpg) == 1 and lpg[0].status == "conditional"
+    # Owner ruling 12.10.2026, P3 Ch11 Q4: no roof / at-grade tank ticked -> not required
+    assert len(lpg) == 1 and lpg[0].status == "not_required"
     assert "aboveground or on roofs or podiums" in lpg[0].detail
 
 

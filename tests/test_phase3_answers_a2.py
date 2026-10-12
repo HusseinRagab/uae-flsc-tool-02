@@ -63,7 +63,9 @@ def test_P3_Ch47_Q2_class_a_for_occupancies_row_1_does_not_list():
                                       "Table 4.3 row 1 does not list this occupancy")
         assert "pending an owner ruling" not in a[0].detail
     assert class_a(report(occupancy="infrastructure", height_m=6, ground_floor_bua_m2=500)) == []
-    assert class_a(report(occupancy="mixed_multiple", height_m=10, ground_floor_bua_m2=1000)) == []
+    # mixed_multiple has no Class A line of its own; with no occupancies listed it is
+    # named NOT EVALUATED (coordinator merge, tests/test_phase3_merge.py)
+    assert [a.system for a in class_a(report(occupancy="mixed_multiple", height_m=10, ground_floor_bua_m2=1000))] == ["Class A Fire Extinguisher - NOT EVALUATED"]
     # R13: the listed occupancies bring their own Class A lines (p.373 and p.374 types).
     m = report(occupancy="mixed_multiple", height_m=10, ground_floor_bua_m2=1000,
                mixed_occupancy_mode="most_restrictive",

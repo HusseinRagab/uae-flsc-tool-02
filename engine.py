@@ -1483,7 +1483,30 @@ def evaluate(b: Building) -> ComplianceReport:
             "requires_wet_riser": any(r.requires_wet_riser for r in reps),
             "mixed_occupancy_note": note,
         })
-    return _evaluate_single(b)
+    r = _evaluate_single(b)
+    if b.occupancy == "mixed_multiple":
+        r = _mixed_class_a_not_evaluated(r)
+    return r
+
+
+def _mixed_class_a_not_evaluated(r: ComplianceReport) -> ComplianceReport:
+    """Owner ruling 12.10.2026, P3 Ch47 Q2: mixed_multiple has no Class A line of its own;
+    its listed occupancies decide (R13). With none listed, the Class A line is named as
+    NOT EVALUATED, never left out silently."""
+    item = Requirement(
+        system="Class A Fire Extinguisher - NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: list the occupancies of this mixed building (most restrictive, R13)",
+        detail=("Table 4.3 row 1 (p.373-374) lists Class A extinguishers by occupancy and does "
+                "not list 'mixed and multiple'. The Class A type follows the occupancies in the "
+                "building (owner ruling 12.10.2026, P3 Ch47 Q2; ruling R13), so it is not "
+                "evaluated until they are listed under 'most restrictive'."),
+        code_ref="Ch 4, Table 4.3 row 1; ruling R13", page_ref="p.373-374",
+        source_rule="p3_ch47_q2_mixed_class_a")
+    chapters = [c.model_copy(update={"blocks": list(c.blocks) + [SectionBlock(
+                    title="Class A - mixed occupancy", items=[item])]})
+                if c.chapter_code == "FE" else c for c in r.chapters]
+    return r.model_copy(update={"chapters": chapters})
 
 
 def _secondary_hazard(o: str, b: Building) -> Optional[str]:

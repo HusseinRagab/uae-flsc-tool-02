@@ -141,9 +141,9 @@ def test_CH10_19_underground_tank_no_aboveground_cap_fire_protection_not_mandato
     assert "180,000 Gal" in get(r, "LPG", "Maximum Quantity (Underground/Mounded)").spec
     fp = get(r, "LPG", "Underground / Mounded Tank Fire Protection")
     assert fp.status == "not_required" and "Table 11.9 #5" in fp.code_ref
-    # Ch 9 keeps its conditional line for any aboveground tank (CH9D-09)
+    # P3 Ch11 Q4: no roof / at-grade tank ticked, so Ch 9 agrees: not required
     ch9 = [it for it in items(r, "FP") if it.system.startswith("LPG Tanks")]
-    assert len(ch9) == 1 and ch9[0].status == "conditional"
+    assert len(ch9) == 1 and ch9[0].status == "not_required"
 
 
 def test_CH10_20_asme_reduction_is_15_m_to_3_m_with_table_11_10_b():
