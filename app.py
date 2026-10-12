@@ -198,6 +198,16 @@ def _invalid_scenario_values(data: dict) -> list:
             bad.append(f"{label} = {v} (must be a whole number)")
         elif v < lo:
             bad.append(f"{label} = {v} (minimum {lo})")
+    mode = data.get("mixed_occupancy_mode_input")
+    if mode is not None and mode not in ("none", "most_restrictive", "separated"):
+        bad.append(f"Mixed occupancy mode = {mode!r} (not a listed mode)")
+    secs = data.get("secondary_occupancies_input")
+    if secs is not None:
+        known = {occ for _, occ in OCC_FLAT}
+        if not isinstance(secs, list):
+            bad.append(f"Secondary occupancies = {secs!r} (not a list)")
+        else:
+            bad += [f"Secondary occupancy {o!r} (not a known occupancy)" for o in secs if o not in known]
     return bad
 
 
@@ -661,6 +671,8 @@ with st.sidebar:
             # Ch 9 routing inputs (phase 1)
             "exit_stairs_input", "is_covered_shaded_parking", "pump_room_at_grade",
             "gf_beyond_100m_from_hydrant", "has_single_exit_stair",
+            # Mixed occupancy (ruling R13)
+            "mixed_occupancy_mode_input", "secondary_occupancies_input",
         ]
         def _serializable(v):
             # Convert tuple to list for JSON; passthrough rest
@@ -874,6 +886,22 @@ with st.sidebar:
                 "separated": "Separated by fire barriers (Table 1.2)",
             }[x],
             key="mixed_occupancy_mode_input",
+        )
+        # Ruling R13 (12.10.2026): in most-restrictive mode every listed occupancy
+        # is evaluated and the most onerous line per system is kept (Ch 1 #2.4.4).
+        # The primary occupancy is dropped from the list so the widget never holds a
+        # value missing from its options after the primary changes.
+        if st.session_state.get("secondary_occupancies_input"):
+            st.session_state["secondary_occupancies_input"] = [
+                o for o in st.session_state["secondary_occupancies_input"] if o != occupancy]
+        st.multiselect(
+            "Other occupancies in the building",
+            options=[occ for _, occ in OCC_FLAT if occ != occupancy],
+            format_func=_occ_label,
+            key="secondary_occupancies_input",
+            help="Most restrictive: each one is evaluated and the most onerous line per "
+                 "system is kept; lines a secondary occupancy brings say so. Separated: "
+                 "listed in the report note only.",
         )
         st.selectbox(
             "Construction type (Ch 1 #2.6 — reporting aid)",
@@ -1271,6 +1299,8 @@ building = Building(
     project_name=project_name, occupancy=occupancy, height_m=height_m,
     height_datum=st.session_state.get("height_datum_input", "grade"),
     mixed_occupancy_mode=st.session_state.get("mixed_occupancy_mode_input", "none"),
+    secondary_occupancies=[o for o in st.session_state.get("secondary_occupancies_input", [])
+                           if o != occupancy],
     construction_type=st.session_state.get("construction_type_input", "unspecified"),
     floors_above_grade=int(floors_above), floors_below_grade=int(floors_below),
     depth_below_grade_m=float(depth_below_grade),

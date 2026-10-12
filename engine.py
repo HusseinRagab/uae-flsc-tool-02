@@ -850,18 +850,108 @@ def _mixed_occupancy_note(b: Building) -> Optional[str]:
             f"Mixed occupancy treated as SEPARATED (Ch 1 #2.5). Secondary: {secs}. "
             "Provide fire-barrier ratings per Table 1.2 between occupancy compartments."
         )
-    if b.mixed_occupancy_mode == "most_restrictive" or b.secondary_occupancies:
-        rank = {"LH": 0, "OH1": 1, "OH2": 2, "HH": 3}
-        hazards = [default_hazard(b.occupancy)] + [default_hazard(o) for o in b.secondary_occupancies]
-        top = max(hazards, key=lambda h: rank.get(h, 0))
+    if b.mixed_occupancy_mode == "most_restrictive" and b.secondary_occupancies:
         return (
-            f"Mixed occupancy treated as MOST RESTRICTIVE (Ch 1 #2.4). Secondary: {secs}. "
-            f"Highest default hazard among listed occupancies: {top}."
+            f"Mixed occupancy treated as MOST RESTRICTIVE (Ch 1 #2.4.4, p.55). Secondary: {secs}. "
+            f"Every listed occupancy is evaluated and the most onerous line per system is kept; "
+            f"lines brought by a secondary occupancy say so (ruling R13, 12.10.2026). "
+            f"Hazard class used: {b.hazard_class} (the highest of those listed)."
         )
+    if b.mixed_occupancy_mode == "most_restrictive":
+        return ("Mixed occupancy mode is MOST RESTRICTIVE but no secondary occupancy is listed: "
+                "the report covers the primary occupancy only. List the other occupancies to "
+                "apply Ch 1 #2.4.4.")
+    if b.secondary_occupancies:
+        return (f"Secondary occupancies listed ({secs}) but the mixed occupancy mode is not set: "
+                "they are not evaluated. Choose MOST RESTRICTIVE or SEPARATED.")
     return None
 
 
+_STATUS_RANK = {"required": 3, "conditional": 2, "recommended": 1, "not_required": 0}
+_HAZARD_RANK = {"LH": 0, "OH1": 1, "OH2": 2, "HH": 3}
+
+
+def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
+    """Ruling R13 (12.10.2026), Ch 1 #2.4.4 (p.55): a mixed occupancy takes the most
+    restrictive requirements of the occupancies involved. `runs` is a list of
+    (occupancy, chapters) with the primary occupancy first. Per chapter and block:
+    - one line per system name at its most onerous status (required > conditional >
+      recommended > not_required); lines of that status with different specs are all
+      kept, each naming its occupancy, because the tool cannot rank free text (the same
+      spec keeps the first occupancy's wording, primary first);
+    - an occupancy whose block holds only not_required lines is dropped from that block
+      when another occupancy requires something there (e.g. EVC not required for
+      business, required for a hotel);
+    - one governing fire pump and fire water tank line (`duty`), as for one building;
+    - a line that only a secondary occupancy brings says so."""
+    primary_occ, primary = runs[0]
+    out = []
+    for ci, ch in enumerate(primary):
+        others = [(occ, chs[ci]) for occ, chs in runs[1:]]
+        titles, by_title = [], {}
+        for occ, c in [(primary_occ, ch)] + others:
+            for blk in c.blocks:
+                if blk.title not in by_title:
+                    titles.append(blk.title)
+                    by_title[blk.title] = []
+                by_title[blk.title].append((occ, blk.items))
+        blocks = []
+        for t in titles:
+            contrib = by_title[t]
+            block_req = any(it.status != "not_required" for _, its in contrib for it in its)
+            tagged = [(occ, it) for occ, its in contrib
+                      if not (block_req and all(i.status == "not_required" for i in its))
+                      for it in its]
+            names, groups = [], {}
+            for occ, it in tagged:
+                if it.system not in groups:
+                    names.append(it.system)
+                    groups[it.system] = []
+                groups[it.system].append((occ, it))
+            items = []
+            for n in names:
+                g = groups[n]
+                top = max(_STATUS_RANK[it.status] for _, it in g)
+                g = [(o, it) for o, it in g if _STATUS_RANK[it.status] == top]
+                specs = {}
+                for o, it in g:
+                    specs.setdefault(it.spec, (it, []))[1].append(o)
+                for it, occs in specs.values():
+                    if primary_occ not in occs or len(specs) > 1:
+                        it = it.model_copy(update={"detail": (it.detail + " " if it.detail else "") + (
+                            f"[Mixed occupancy, most restrictive (ruling R13): from {', '.join(occs)}.]")})
+                    items.append(it)
+            blocks.append(SectionBlock(title=t, items=_merge_duties(items)))
+        sec = ch.selected_branch_section
+        extra = "; ".join(f"{occ}: {c.selected_branch}" for occ, c in others if c.selected_branch)
+        if extra:
+            sec = f"{sec or ''} + most restrictive with {extra} (ruling R13)".strip()
+        out.append(ch.model_copy(update={"blocks": blocks, "selected_branch_section": sec}))
+    return out
+
+
 def evaluate(b: Building) -> ComplianceReport:
+    """Ruling R13 (12.10.2026): in most_restrictive mixed mode every listed occupancy is
+    evaluated on the same building, at the highest hazard class of those listed, and the
+    chapters are merged keeping the most onerous line per system."""
+    if b.mixed_occupancy_mode == "most_restrictive" and b.secondary_occupancies:
+        occs = [b.occupancy] + [o for o in dict.fromkeys(b.secondary_occupancies) if o != b.occupancy]
+        hz = max([b.hazard_class] + [default_hazard(o) for o in occs[1:]], key=lambda h: _HAZARD_RANK[h])
+        base = b.model_copy(update={"hazard_class": hz})
+        single = lambda o: base.model_copy(update={"occupancy": o, "secondary_occupancies": [],
+                                                   "mixed_occupancy_mode": "none"})
+        reps = [_evaluate_single(single(o)) for o in occs]
+        r0 = reps[0]
+        return r0.model_copy(update={
+            "building": base,
+            "chapters": _merge_most_restrictive([(o, r.chapters) for o, r in zip(occs, reps)]),
+            "requires_wet_riser": any(r.requires_wet_riser for r in reps),
+            "mixed_occupancy_note": _mixed_occupancy_note(base),
+        })
+    return _evaluate_single(b)
+
+
+def _evaluate_single(b: Building) -> ComplianceReport:
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
     fe_rules  = load_rules("ch4_fire_extinguishers.yaml")
