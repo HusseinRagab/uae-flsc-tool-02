@@ -270,13 +270,18 @@ CASES = [
 
 
     # ---- FA archetypes (Ch 8) ----
+    # Ruling R7 (12.10.2026): a hotel keeps its own Table 8.13 item 18 protocol;
+    # the highrise row is shown on a residential tower. Height items are general.
     dict(name="FA: Highrise -> sub-FACPs every 45m + 5-floor PAS",
-         inputs=dict(occupancy="hotel_a", height_m=55, floors_above_grade=18,
+         inputs=dict(occupancy="residential", height_m=55, floors_above_grade=18,
                      ground_floor_bua_m2=1200, plot_area_m2=5000),
          expect_fa_branch="fa_highrise",
+         expect_fa_general=[
+             "Sub-FACPs / Annunciators every 45 m",
+             "Highrise Main FACP - Redundancy and Hot-Swap",
+         ],
          expect_fa_systems=[
              "Smoke Detection and Alarm System (entire building)",
-             "Sub-FACPs / Annunciators every 45 m",
              "5-Floor Phased Evacuation Alarm",
          ]),
 
