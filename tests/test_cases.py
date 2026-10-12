@@ -98,7 +98,7 @@ CASES = [
                      floors_above_grade=35, ground_floor_bua_m2=1800,
                      plot_area_m2=25000),
          expect_el_branch="el_super_highrise",
-         expect_el_systems=["Central Battery Emergency Lighting (Section 3.2)"]),
+         expect_el_systems=["Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"]),
 
     dict(name="EL: Mall -> Central Battery (with monitored alternative)",
          inputs=dict(occupancy="mall_covered", height_m=18,
@@ -106,8 +106,7 @@ CASES = [
                      plot_area_m2=25000),
          expect_el_branch="el_mall",
          expect_el_systems=[
-             "Central Battery Emergency Lighting (Section 3.2)",
-             "Monitored Self-Contained EL (Section 3.3) - alternative",
+             "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting",
          ]),
 
     dict(name="EL: Lowrise hospital -> Monitored Self-Contained",
@@ -168,7 +167,7 @@ CASES = [
                      floors_above_grade=2, ground_floor_bua_m2=2000,
                      plot_area_m2=5000, has_amusement_confounding=True),
          expect_el_branch="el_assembly_amusement",
-         expect_el_systems=["Central Battery Emergency Lighting (Section 3.2)"]),
+         expect_el_systems=["Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"]),
 
 
     # ---- FE archetypes (Ch 4) ----
@@ -418,24 +417,24 @@ CASES = [
              "Kitchen Cooking Operation Ventilation",
          ]),
 
-    dict(name="SC: Tunnel flag -> tunnel smoke management",
+    dict(name="SC: Tunnel flag -> tunnel smoke management (one line, Table 10.25)",
          inputs=dict(occupancy="business", height_m=10, floors_above_grade=2,
                      ground_floor_bua_m2=2000, plot_area_m2=5000,
                      has_tunnel=True),
-         expect_sc_aux=["Tunnel Smoke Management"]),
+         expect_sc_systems=["Tunnel Smoke Management - Road / Rail"]),
 
     dict(name="SC: Deep basement (4 levels below) -> underground stair pressurization",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
                      floors_below_grade=4, ground_floor_bua_m2=8000,
                      basement_bua_m2=8000, plot_area_m2=15000),
-         expect_sc_systems=["Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"]),
+         expect_sc_systems=["Stair Pressurization (basement stairs, depth more than 7 m)"]),
 
     # AUDIT Ch 10 Table 10.22 - depth-only trigger (1 basement, 8 m deep)
     dict(name="AUDIT SC: Single deep basement (8m, 1 level) -> Table 10.22 by depth",
          inputs=dict(occupancy="business", height_m=20, floors_above_grade=5,
                      floors_below_grade=1, depth_below_grade_m=8.0,
                      ground_floor_bua_m2=800, plot_area_m2=2000),
-         expect_sc_systems=["Stair Pressurization (deep basements - > 7 m below OR > 2 basements)"]),
+         expect_sc_systems=["Stair Pressurization (basement stairs, depth more than 7 m)"]),
 
     # AUDIT Ch 10 Table 10.27 item 4 - lowrise corridor > 60 m
     # Audit-correction: Table 10.27 item 4 (p.866) lists ONLY mercantile, staff/labour

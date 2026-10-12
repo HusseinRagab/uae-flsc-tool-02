@@ -122,13 +122,8 @@ branches:
     section: "Ch 6, #4.3 / Table 6.5 item 1"
     page: "p.419"
     systems:
-      - name: "Central Battery Emergency Lighting (Section 3.2)"
-        spec: "Type per Table 6.2 - dedicated control + computer interface; 2-hour fire-rated wiring; cross-zoned circuits"
-        detail: "Centralized EL system covering the entire facility under one facility-management. Vented or VRLA central battery (NiCd or flat-plate lead-acid) sized for 3-hour duration. Battery room protected with automatic clean-agent system. NOTE: The 90 m 'Super-Highrise' threshold is defined in UAE FLSC Chapter 1 (Definitions) - Ch 6 Table 6.5 only references the term."
-      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
-        required: conditional
-        spec: "Per Table 6.3 - centralised monitoring + computer interface; UPS/battery in each luminaire"
-        detail: "Equally acceptable alternative to central battery system (code Table 6.5 uses 'OR' between Central Battery and Monitored Self-Contained - no hierarchy implied). Monitored self-contained luminaires reporting to a central monitoring unit; no cross-zoning required."
+      - name: "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"
+        detail: "Table 6.5 items 1-4 (p.419): a Central Battery Emergency Lighting System per Section 3.2 OR a Monitored Type Self-Contained Emergency Lighting System per Section 3.3, complete with dedicated control and computer interfacing, shall be provided. Either system satisfies the table; the code states no preference. Central battery option: Type per Table 6.2 - dedicated control + computer interface; 2-hour fire-rated wiring; cross-zoned circuits. Centralized EL system covering the entire facility under one facility-management. Vented or VRLA central battery (NiCd or flat-plate lead-acid) sized for 3-hour duration. Battery room protected with automatic clean-agent system. NOTE: The 90 m 'Super-Highrise' threshold is defined in UAE FLSC Chapter 1 (Definitions) - Ch 6 Table 6.5 only references the term. Monitored option: Per Table 6.3 - centralised monitoring + computer interface; UPS/battery in each luminaire."
 
   - id: el_highrise
     match:
@@ -138,12 +133,8 @@ branches:
     section: "Ch 6, #4.3 / Table 6.5 item 2"
     page: "p.419"
     systems:
-      - name: "Central Battery Emergency Lighting (Section 3.2)"
-        spec: "Per Table 6.2 - 3-hour duration"
-      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
-        required: conditional
-        spec: "Per Table 6.3 - centralised monitoring + computer interface"
-        detail: "Equally acceptable alternative to central battery system - code Table 6.5 uses 'OR' between Central Battery and Monitored Self-Contained (no hierarchy implied)."
+      - name: "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"
+        detail: "Table 6.5 items 1-4 (p.419): a Central Battery Emergency Lighting System per Section 3.2 OR a Monitored Type Self-Contained Emergency Lighting System per Section 3.3, complete with dedicated control and computer interfacing, shall be provided. Either system satisfies the table; the code states no preference. Central battery option: Per Table 6.2 - 3-hour duration. Monitored option: Per Table 6.3 - centralised monitoring + computer interface."
 
   - id: el_mall
     match:
@@ -151,11 +142,8 @@ branches:
     section: "Ch 6, #4.3 / Table 6.5 item 3"
     page: "p.419"
     systems:
-      - name: "Central Battery Emergency Lighting (Section 3.2)"
-        spec: "Per Table 6.2 - facility-wide, single facility management"
-      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
-        required: conditional
-        detail: "Equally acceptable alternative to central battery system - code Table 6.5 uses 'OR' between Central Battery and Monitored Self-Contained (no hierarchy implied)."
+      - name: "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"
+        detail: "Table 6.5 items 1-4 (p.419): a Central Battery Emergency Lighting System per Section 3.2 OR a Monitored Type Self-Contained Emergency Lighting System per Section 3.3, complete with dedicated control and computer interfacing, shall be provided. Either system satisfies the table; the code states no preference. Central battery option: Per Table 6.2 - facility-wide, single facility management."
 
   - id: el_assembly_amusement
     match:
@@ -164,11 +152,8 @@ branches:
     section: "Ch 6, #4.3 / Table 6.5 item 4"
     page: "p.419"
     systems:
-      - name: "Central Battery Emergency Lighting (Section 3.2)"
-        detail: "Amusement buildings (mazes / mirrors / theme rides) require central battery EL or monitored self-contained EL irrespective of height."
-      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
-        required: conditional
-        detail: "Equally acceptable alternative to central battery system - code Table 6.5 uses 'OR' between Central Battery and Monitored Self-Contained (no hierarchy implied)."
+      - name: "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"
+        detail: "Table 6.5 items 1-4 (p.419): a Central Battery Emergency Lighting System per Section 3.2 OR a Monitored Type Self-Contained Emergency Lighting System per Section 3.3, complete with dedicated control and computer interfacing, shall be provided. Either system satisfies the table; the code states no preference. Central battery option: Amusement buildings (mazes / mirrors / theme rides) require central battery EL or monitored self-contained EL irrespective of height."
 
   - id: el_amusement_standalone
     match:
@@ -177,17 +162,15 @@ branches:
     section: "Ch 6, #4.3 / Table 6.5 item 4 (AMUSEMENT BUILDINGS - standalone class)"
     page: "p.419"
     systems:
-      - name: "Central Battery Emergency Lighting (Section 3.2)"
-        detail: "Per Table 6.5 row 4, 'AMUSEMENT BUILDINGS' is a standalone occupancy class (NOT gated on Assembly). Mazes, mirror houses, theme rides, escape rooms, etc., require central battery EL or monitored self-contained EL irrespective of height or primary occupancy classification."
-      - name: "Monitored Self-Contained EL (Section 3.3) - alternative"
-        required: conditional
-        detail: "Equally acceptable alternative to central battery system - code Table 6.5 uses 'OR' between Central Battery and Monitored Self-Contained (no hierarchy implied)."
+      - name: "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"
+        detail: "Table 6.5 items 1-4 (p.419): a Central Battery Emergency Lighting System per Section 3.2 OR a Monitored Type Self-Contained Emergency Lighting System per Section 3.3, complete with dedicated control and computer interfacing, shall be provided. Either system satisfies the table; the code states no preference. Central battery option: Per Table 6.5 row 4, 'AMUSEMENT BUILDINGS' is a standalone occupancy class (NOT gated on Assembly). Mazes, mirror houses, theme rides, escape rooms, etc., require central battery EL or monitored self-contained EL irrespective of height or primary occupancy classification."
 
   - id: el_midrise_general
     match:
       height_m_gt: 15
       height_m_lte: 23
-      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, mall_covered, mall_open, mall_mixed]
+      has_amusement_confounding_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 5"
     page: "p.419"
     systems:
@@ -198,7 +181,8 @@ branches:
   - id: el_lowrise_general
     match:
       height_m_lte: 15
-      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, storage_industrial]
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing, storage_industrial, mall_covered, mall_open, mall_mixed]
+      has_amusement_confounding_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 6"
     page: "p.419"
     systems:

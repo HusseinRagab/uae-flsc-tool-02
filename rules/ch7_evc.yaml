@@ -311,6 +311,7 @@ branches:
   - id: evc_villa_not_required
     match:
       occupancy_in: [villa_private, villa_commercial]
+      height_m_lte: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -321,6 +322,7 @@ branches:
   - id: evc_parking_not_required
     match:
       occupancy_in: [parking_enclosed, parking_open]
+      height_m_lte: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -331,6 +333,7 @@ branches:
   - id: evc_fuel_not_required
     match:
       occupancy: motor_fuel_dispensing
+      height_m_lte: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -342,6 +345,7 @@ branches:
     match:
       occupancy: storage_industrial
       gross_floor_area_m2_lte: 5000
+      height_m_lte: 23
     section: "Ch 7, #3.1 / Table 7.3 item 9 (BUA threshold)"
     page: "p.439"
     systems:
