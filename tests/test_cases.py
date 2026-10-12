@@ -302,7 +302,8 @@ CASES = [
          expect_fa_branch="fa_healthcare",
          expect_fa_systems=[
              "Annunciators at Nurse Stations (strategic locations)",
-             "Visual Notification Devices in Critical Care (in lieu of audible)",
+             # CH8-14 (phase 2): a permitted option, renamed and shown as conditional.
+             "Visual Notification Devices in Critical Care in lieu of audible (permitted)",
          ],
          expect_fa_aux=["Aspiration Air Sampling (Operation Theatre)"]),
 
@@ -588,7 +589,8 @@ CASES = [
          expect_fa_general=[
              "Visible (Strobe) Notification Device Spacing - Table 8.1.a",
              "Addressable Fire Detection & Alarm Control Panel (FACP)",
-             "FACP Interface to Civil Defence Receiving Station",
+             # CH8-16 (phase 2): Ch 16 Table 16.1 Smart Monitoring System.
+             "FACP Signals to Civil Defence (Smart Monitoring System)",
          ]),
 
     dict(name="AUDIT FA: Bulk flammable liquid storage -> CD/HoE gating spec/detail",
