@@ -9,11 +9,57 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Rulings R1-R13 and R2b coded (rulings PR, draft)
+
+Branch `claude/project-thread-0zjltx` restarted on master `18a0342`. Hussein answered every
+ruling on decision cards (10:02-10:03Z, R2b 10:22Z), all on the recommended option. Not
+merged: a merge redeploys the live app. Issued reports may change; re-run before relying.
+
+- **R1** 23.0 m is highrise in every chapter (`height_class`, app, Ch 3/6/7/8/9/10 YAML).
+- **R2 / R2b** a lowrise building with 3 or more basements, or deeper than 7 m, or the
+  high-depth occupancy takes Table 9.20.a row H (`is_high_depth`), and its Table 9.21 rows
+  are suppressed.
+- **R3** Table 9.24.A.3: exactly 3 standpipes = 1000 gpm (printed "more than 3" read as a
+  typo).
+- **R4** Table 9.21.b.3.i: building systems by Table 9.21.a tiers (GF BUA up to 500 / 501 to
+  3,600 / more than 3,600 m2); combined 1000 gpm pump and 60 min tank stay.
+- **R5** aboveground LPG tank: Ch 11 Table 11.5 item 5 fixed water spray governs; the Table
+  9.31.B "no protection" text is a noted conflict.
+- **R6** malls of 23 m or more keep Table 9.22 flows and take Table 9.6 item 13 zoning (45 m
+  pump head) and the second pump set (90 m).
+- **R7** Ch 8: Sub-FACP every 45 m and highrise FACP redundancy (Table 8.1 item 14.1 ii) for
+  every building of 23 m or more; hotels leave the highrise rows; hotel, healthcare,
+  detention, education and covered/mixed malls keep their own protocol with a not_required
+  line naming the highrise protocol not applied.
+- **R8** every Table 9.29 sprinkler row (A, C, D, E, G, H, I, J, L) and 9.29.M high ceiling
+  only in a building whose table row requires sprinklers; #4.13.1 not_required note
+  otherwise. 9.29.K (wet riser to roof) is not gated: it is a wet riser item.
+- **R9** open parking travel S 122 m / NS 91 m (Table 3.16 row 20.ii) with the Table 3.15.b
+  item iv conflict printed.
+- **R10** open mall: no Table 8.13 row, item 13 MERCANTILE through the height rows; open
+  parking: item 22 by analogy, every line labelled.
+- **R11** Table 9.29.A edges 13.5 m and 18 m take the higher band, stated on the report.
+- **R12** new `has_mv_room` flag (app checkbox "MV room"): wheeled CO2 12 kg, labelled an
+  engineering decision; Table 9.30.J is printed "LV ROOMS AND MV ROOMS" so it fires on
+  either flag; Table 8.14 item 11 by analogy. The old `has_lv_mv_room` key now means LV
+  room: an old saved file with an MV room must tick "MV room".
+- **R13** most-restrictive mixed mode: app multiselect "Other occupancies"; every listed
+  occupancy is evaluated at the highest hazard class listed and merged, keeping the most
+  onerous status per system; lines a secondary brings name it; one pump and tank line.
+  Mode and secondaries are now saved and checked on Load.
+- **Tests:** `tests/test_rulings.py` (14) + phase 1 (50) = 64 pytest; `test_cases.py` 112
+  (2 cases re-pointed for R7 and R10); `_structural_check.py` 0 errors.
+- **Grid diff vs master (6552 cases):** 5956 change. 23 m cases change in every chapter
+  (R1). FA: height items at 30-95 m, hotel/healthcare protocol, open mall/parking. FP: R2b
+  and high-depth occupancy now row H (sprinklers, wet riser, 45 min tank), R4 tiers, R6
+  zoning/second pump, R8 not_required lines. MOE: the Table 3.15.b text line in every
+  building with basements, and open parking.
+
 ### 2026-10-12 — Phase 1 merged to master on Hussein's go (09:39Z)
 
 PR #20 merged; the live app redeploys from master. Reports issued with the earlier app
 may change (pump/tank rows, parking, Table 9.30 rooms): re-run any issued job before
-relying on it. Rulings R1, R2, R4, R6, R7 still open; phases 2-3 not started. The PC
+relying on it. Rulings were then answered and coded (entry above); phases 2-3 not started. The PC
 clone (Created\24.Fire Protection Mind map\python tool\) needs a pull.
 
 ### 2026-10-12 — R14b ruled (#4.1.5) — gate on every Table 9.30 room
@@ -76,16 +122,11 @@ the 750 gpm row of 9.24.C.2.
 
 | Ruling | Question | State |
 | --- | --- | --- |
-| R1 | 23.0 m exactly: midrise or highrise (CH10-03) | waiting |
-| R2 | Lowrise with 3+ basements (CH9B-07) | waiting |
-| R3 | 9.24.A.3 "more than 3 standpipes" | coded on option a (exactly 3 = 1000 gpm), marked "R3 pending" |
-| R4 | 9.21.b.3.i cross-refers to 9.21.a tiers (CH9B-06 sub-3600 part) | waiting |
-| R5 | LPG aboveground tank: Ch 11 vs Ch 9 | waiting (later phase) |
-| R6 | Malls above 23 m (CH9A-18) | waiting |
-| R7 | FA protocol above 23 m for hotels/healthcare/detention (CH8-11) | waiting |
-| R8-R13 | see audit | waiting (later phases) |
+| R1-R13, R2b | see audit and RULINGS_12.10.2026.md (project files) | ruled 12.10, coded in the rulings PR (draft, not merged) |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
+
+Phase 2 (the rest of the 189 findings) comes as its own PR after the rulings PR.
 
 ## Known, not fixed in phase 1
 
