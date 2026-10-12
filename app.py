@@ -1152,7 +1152,7 @@ with st.sidebar:
             st.markdown("*LPG tank variants (tick all that apply):*")
             st.checkbox("Roof-mounted tank (Tables 11.7/11.8 - max 2,000 Gal)",
                         key="has_lpg_tank_roof_mounted",
-                        help="Layered requirements: stricter separation distances, 2,000 Gal aggregate cap (or 1,000 Gal if construction does not comply with Table 11.7.2.i).")
+                        help="Roof / podium tanks: Table 11.7 location and construction rules, Table 11.8 separations, 2,000 Gal aggregate cap (or 1,000 Gal if construction does not comply with Table 11.7 #2.i). Not allowed above 90 m (#2.5.1.3).")
             st.checkbox("Underground / mounded tank (Tables 11.9/11.10)",
                         key="has_lpg_tank_underground_mounded",
                         help="Different rule set: ASME container, cathodic protection, separation measured from PRV / fill connections (not tank surface). ASME-listed containers may qualify for separation reduction per Table 11.10.b.")
@@ -1164,7 +1164,7 @@ with st.sidebar:
             st.markdown("*Cylinder variants (tick all that apply):*")
             st.checkbox("Indoor cylinder room (Table 11.2)",
                         key="has_lpg_cylinders_indoor",
-                        help="Layered requirements: dedicated room with mechanical ventilation, gas-leak detection, ESVs, 1-hr fire-rated separation. Stricter quantity limits than outdoor.")
+                        help="Table 11.2: indoor cylinders only for residential / apartments / villas where Civil Defence permits (#2.4.2.1). Ventilated masonry compartment on an external wall, 1 x 24 kg, no ignition source within 1.5 m, detector at most 30 cm above floor.")
         else:
             st.session_state["has_lpg_cylinders_indoor"] = False
 
@@ -1176,7 +1176,7 @@ with st.sidebar:
         st.markdown("*Flame effect (assembly / entertainment):*")
         st.checkbox("Flame-effect LPG installation (Table 11.12)",
                     key="has_lpg_flame_effect",
-                    help="LPG used for indoor / outdoor flame-effect entertainment shows. Triggers strict separation distances (6 m to exits, 3 m to ignition), dedicated extinguishers, fixed FP per risk assessment + Civil Defence approval.")
+                    help="LPG used for indoor / outdoor flame-effect shows (Ch 11 #3, Table 11.12): cylinders 6 m from the audience and stage, no piping within 3 m of the audience, 24 kg maximum indoors, indoor shows only in fully sprinklered buildings with fire alarm (#3.2.2).")
 
     with st.expander("⚙️ Equipment (FP Table 9.31 + FA Table 8.15)", expanded=False):
         st.checkbox("Check all", key="eq_all", on_change=eq_cb)
@@ -1966,9 +1966,10 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
 
     if b.has_lpg_tanks and b.height_m >= 23:
         info.append(
-            "ℹ LPG tanks declared on a highrise. Per Ch 11 #2.5.1 the tanks "
-            "must be on the roof or podium only (never inside the building). "
-            "Verify location."
+            "ℹ LPG tanks declared on a highrise. Per Ch 11 #2.5.1.2 (p.900) "
+            "central tanks are preferred underground or above ground rather "
+            "than on the roof; a roof tank is permitted on buildings up to "
+            "90 m only (#2.5.1.3). Verify location."
         )
 
     if b.has_diesel_generator_room and not b.has_main_electrical_room:

@@ -751,6 +751,13 @@ def evaluate_lpg(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         blocks.append(SectionBlock(title="LPG - Base Gas-System Requirements (Ch 11, Tables 11.1, 11.4, 11.5, 11.6)", items=_dedupe(branch_items)))
 
     addons = _dedupe(_collect_flag(rules.get("addons", []), b))
+    if b.has_lpg_flame_effect and addons and not building_sprinklered(b):
+        # Ch 11 #3.2.2 / Table 11.12 #1.iii (p.923): no indoor flame effect show
+        # unless the building is fully sprinkler protected (audit CH10-09).
+        note = ("This building is not sprinkler protected per the Ch 9 result above, so an "
+                "indoor flame effect show is NOT allowed here (#3.2.2); outdoor shows only.")
+        addons = [it.model_copy(update={"detail": note})
+                  if it.system.startswith("Indoor Flame Effect Shows") else it for it in addons]
     if addons:
         blocks.append(SectionBlock(title="LPG - Variant Add-ons (Roof / Underground / Indoor / Food Truck / PRDP)", items=addons))
 
