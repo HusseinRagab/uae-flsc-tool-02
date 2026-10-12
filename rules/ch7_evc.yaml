@@ -150,14 +150,14 @@ branches:
 
   - id: evc_highrise
     match:
-      height_m_gt: 23
+      height_m_gte: 23
       height_m_lte: 90
     section: "Ch 7, #3.1 / Table 7.3 item 2"
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
         spec: "Per Section 2.4 + Table 7.1"
-        detail: "EVC required for highrise buildings (23 m < height <= 90 m). Phased / staged evacuation messaging by floor."
+        detail: "EVC required for highrise buildings (23 m <= height <= 90 m, ruling R1). Phased / staged evacuation messaging by floor."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
         detail: "Two-way telephone jacks at stair landings, lift lobbies and fire command centre for firefighter communication."
@@ -254,42 +254,42 @@ branches:
   - id: evc_residential_not_required
     match:
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel]
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation (EVC) - residential occupancies up to highrise threshold"
         required: not_required
-        detail: "EVC and two-way telephone are NOT mandatory for residential / labour / staff accommodation / hostel buildings up to 23 m. Buildings exceeding 23 m fall under the highrise branch above and require EVC + Two-way."
+        detail: "EVC and two-way telephone are NOT mandatory for residential / labour / staff accommodation / hostel buildings below 23 m. Buildings of 23 m or more fall under the highrise branch above and require EVC + Two-way."
 
   - id: evc_business_not_required
     match:
       occupancy: business
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation (EVC) - business under highrise"
         required: not_required
-        detail: "EVC and two-way telephone are NOT mandatory for business (office) occupancies under highrise threshold. Once height > 23 m the highrise branch applies and EVC + Two-way are required."
+        detail: "EVC and two-way telephone are NOT mandatory for business (office) occupancies under highrise threshold. Once height reaches 23 m (ruling R1) the highrise branch applies and EVC + Two-way are required."
 
   - id: evc_healthcare_not_required
     # Table 7.3 lists no healthcare category — EVC is not mandated for ANY
     # healthcare sub-type (hospital / clinic / ambulatory) under highrise.
     match:
       occupancy_in: [healthcare_a, healthcare_b, healthcare_c]
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation (EVC) - healthcare under highrise"
         required: not_required
-        detail: "EVC and two-way telephone are NOT mandatory for healthcare occupancies under highrise threshold per Table 7.3 (healthcare is not listed). Hospitals taller than 23 m fall under the highrise branch and require EVC. NOTE: #2.1.1 Table 7.1 control-unit location text (p.433) specifically calls out 'nurse stations at hospitals' as a continuously monitored location for EVC siting - this implies the code anticipates EVC at hospitals even though Table 7.3 does not mandate it. RECOMMENDED practice: highrise / super-highrise hospitals and any hospital with phased / staged evacuation procedures should provide EVC even when not strictly mandated."
+        detail: "EVC and two-way telephone are NOT mandatory for healthcare occupancies under highrise threshold per Table 7.3 (healthcare is not listed). Hospitals of 23 m or more fall under the highrise branch and require EVC. NOTE: #2.1.1 Table 7.1 control-unit location text (p.433) specifically calls out 'nurse stations at hospitals' as a continuously monitored location for EVC siting - this implies the code anticipates EVC at hospitals even though Table 7.3 does not mandate it. RECOMMENDED practice: highrise / super-highrise hospitals and any hospital with phased / staged evacuation procedures should provide EVC even when not strictly mandated."
 
   - id: evc_mercantile_not_required
     match:
       occupancy_in: [mercantile_a, mercantile_b]
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -300,7 +300,7 @@ branches:
   - id: evc_daycare_not_required
     match:
       occupancy_in: [daycare_a, daycare_b, daycare_c]
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -311,7 +311,7 @@ branches:
   - id: evc_villa_not_required
     match:
       occupancy_in: [villa_private, villa_commercial]
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -322,7 +322,7 @@ branches:
   - id: evc_parking_not_required
     match:
       occupancy_in: [parking_enclosed, parking_open]
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -333,7 +333,7 @@ branches:
   - id: evc_fuel_not_required
     match:
       occupancy: motor_fuel_dispensing
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"
     systems:
@@ -345,7 +345,7 @@ branches:
     match:
       occupancy: storage_industrial
       gross_floor_area_m2_lte: 5000
-      height_m_lte: 23
+      height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 item 9 (BUA threshold)"
     page: "p.439"
     systems:

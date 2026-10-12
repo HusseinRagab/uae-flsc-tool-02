@@ -335,16 +335,15 @@ class Building(BaseModel):
 
     @property
     def height_class(self) -> str:
-        # Ch 1 #1.7.39–1.7.42 + FAQ Annexure 1 (p.1273):
-        #   lowrise  : height at or up to 15 m
-        #   midrise  : between 15 m and 23 m (include 23 m; highrise starts *more than* 23 m)
-        #   highrise : more than 23 m up to 90 m (include 90 m; super starts *more than* 90 m)
+        # Ch 1 #1.7.39-1.7.42, Table 1.7 (p.67), FAQ Q27 (p.1282), Ch 2 #2.9.3/#2.9.4:
+        #   lowrise  : height up to 15 m
+        #   midrise  : more than 15 m and less than 23 m
+        #   highrise : 23 m up to 90 m (ruling R1, 12.10.2026: exactly 23.0 m is highrise
+        #              in every chapter; Table 1.7 prints "23 m - < 90 m")
         #   super    : more than 90 m
-        # Ch 9 wording has a 1 mm gap at exactly 23 m and 90 m; the inclusive
-        # edges above match Civil Defence practice and the FAQ.
         if self.height_m > 90:
             return "super_highrise"
-        if self.height_m > 23:
+        if self.height_m >= 23:
             return "highrise"
         if self.height_m > 15:
             return "midrise"

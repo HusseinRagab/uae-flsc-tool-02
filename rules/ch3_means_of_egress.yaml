@@ -27,11 +27,11 @@ general:
         detail: "Side-hinged or pivoted swinging doors required. Per Table 3.2 #4 item i (p.248), swing in direction of egress applies on ANY of four triggers: (a) occupant load >= 50, (b) horizontal exit, (c) high-hazard content room, (d) exit enclosure. Panic hardware (or fire-exit hardware on fire-rated doors) bar between 865-1220 mm AFFL. Doors readily operable from egress side without keys, tools or special knowledge."
 
   # Lowrise / midrise: code differentiates sprinklered (1/3) vs non-sprinklered (1/2).
-  # height_m_lte: 23 catches lowrise (<=15) AND midrise (15-23).
+  # height_m_lt: 23 catches lowrise (<=15) AND midrise (15-23).
   - id: moe_g_exit_remoteness_lowrise_midrise
     when:
       occupancy_not: [villa_private, villa_commercial]
-      height_m_lte: 23
+      height_m_lt: 23
     systems:
       - name: "Exit Remoteness - Lowrise / Midrise (Table 3.15.a items i-iv)"
         spec: "Sprinklered: 1/3 of floor diagonal between exits; non-sprinklered: 1/2 of floor diagonal between exits"
@@ -44,13 +44,13 @@ general:
   - id: moe_g_exit_remoteness_highrise
     when:
       occupancy_not: [villa_private, villa_commercial]
-      height_m_gt: 23
+      height_m_gte: 23
     systems:
       - name: "Exit Remoteness - Highrise / Super-highrise (Table 3.15.a items v-vi)"
         spec: "1/3 of floor diagonal between exits (sprinklered only)"
         code_ref: "Ch 3, #4.4 / Table 3.15.a"
         page_ref: "p.288"
-        detail: "Measured as the straight line between centres of exit doors (not walking distance). Per Table 3.15.a items v-vi (p.288): highrise (>23-90 m) and super-highrise (>90 m) are tabulated as sprinklered only, both at 1/3 of floor diagonal. Non-sprinklered highrise is not permitted (see Ch 9)."
+        detail: "Measured as the straight line between centres of exit doors (not walking distance). Per Table 3.15.a items v-vi (p.288): highrise (23-90 m, ruling R1) and super-highrise (>90 m) are tabulated as sprinklered only, both at 1/3 of floor diagonal. Non-sprinklered highrise is not permitted (see Ch 9)."
 
   - id: moe_g_required_exits
     when:
