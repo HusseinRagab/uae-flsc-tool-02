@@ -304,7 +304,8 @@ def _dedupe(items: List[Requirement]) -> List[Requirement]:
 def _pick_band(h: float) -> Optional[str]:
     # Table 9.29.A prints "10 m TO 13.5 m", "13.5 m TO 18 m", "18 m TO 30 m": the
     # shared edges 13.5 m and 18 m take the higher band (ruling R11, 12.10.2026).
-    if 10 <= h < 13.5: return "band_10_13_5"
+    # Table 9.29 row M (p.750) applies where the ceiling height EXCEEDS 10 m (CH9C-19).
+    if 10 < h < 13.5: return "band_10_13_5"
     if 13.5 <= h < 18: return "band_13_5_18"
     if 18 <= h <= 30: return "band_18_30"
     return None
@@ -321,6 +322,15 @@ def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeili
     hc = rules.get("high_ceiling")
     if not hc: return None
     if not _eval_when(hc.get("trigger", {}), b): return None
+    if b.ceiling_height_m <= 10:
+        # Table 9.29 row M (p.750): "Where building ceiling height exceeds 10 m".
+        return HighCeilingSpec(
+            applies=True, not_required=True, ceiling_height_m=b.ceiling_height_m,
+            hazard_class=b.hazard_class,
+            note=(f"Not required: Table 9.29 row M applies where the building ceiling height "
+                  f"exceeds 10 m; this ceiling is {b.ceiling_height_m:g} m."),
+            code_ref="Ch 9, #4.13.1 / Table 9.29 row M", page_ref="p.750",
+        )
     gen = _collect_general(rules, b)
     branch_items = _collect_branch(rules.get("branches", []), b)[0]
     if not _sprinkler_required(list(gen) + list(branch_items)):
@@ -395,7 +405,8 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     var_items = _collect_flag(
         [r for r in var_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
     if not sprinkler_required:
-        for it in _collect_flag([r for r in var_rules if r.get("requires_sprinkler_system")], b):
+        for it in _collect_flag([r for r in var_rules if r.get("requires_sprinkler_system")
+                                 and not r.get("silent_when_unsprinklered")], b):
             var_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: #4.13.1 extends the building sprinkler system to the "
@@ -414,7 +425,8 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     aux_items = _collect_flag(
         [r for r in aux_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
     if not sprinkler_required:
-        for it in _collect_flag([r for r in aux_rules if r.get("requires_sprinkler_system")], b):
+        for it in _collect_flag([r for r in aux_rules if r.get("requires_sprinkler_system")
+                                 and not r.get("silent_when_unsprinklered")], b):
             aux_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: Table 9.30 systems apply only when the main building is "
@@ -427,6 +439,11 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         blocks.append(SectionBlock(title="FP - Auxiliary Rooms (Table 9.30)", items=aux_items))
 
     eq_items = _dedupe(_collect_flag(rules.get("equipment", []), b))
+    # One room, one system (CH9D-10): a Table 9.31 line that names the same system
+    # as a required Table 9.30 line (diesel generator foam sprinklers, 9.30.G = 9.31.E)
+    # is already listed in the auxiliary-room block.
+    aux_required = {it.system for it in aux_items if it.status == "required"}
+    eq_items = [it for it in eq_items if it.system not in aux_required]
     if eq_items:
         blocks.append(SectionBlock(title="FP - Equipment (Table 9.31)", items=eq_items))
 
@@ -727,7 +744,7 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
         ground_floor_bua_m2=parking_area,
         basement_bua_m2=parking_area if b.basement_bua_m2 > 0 else 0.0,
         plot_area_m2=b.plot_area_m2,
-        hazard_class="OH2" if synth_occ == "parking_enclosed" else "OH1",
+        hazard_class="OH1",   # #1.1.13.2 (p.528): parking garages, open or enclosed
         has_high_ceiling=b.has_high_ceiling,
         ceiling_height_m=b.ceiling_height_m,
         has_diesel_generator_room=b.has_diesel_generator_room,

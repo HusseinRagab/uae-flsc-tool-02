@@ -1146,8 +1146,9 @@ branches:
         duty: tank
         spec: "60 minutes duration"
         detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous refilling arrangement."
-      - name: "Underground Fuel Storage Tank Protection (cross-reference Ch 9 #4.15 / Ch 13)"
-        detail: "Underground fuel storage tanks: vapour-recovery, leak-detection, overfill prevention, vent piping, transfer-point safeguards per Chapter 13 Flammable Liquids. Aboveground LPG tanks (if any) per Ch 11."
+      - name: "Fuel Storage Tanks - cross-reference Chapter 13 (not listed in Table 9.25)"
+        required: recommended
+        detail: "Table 9.25 (p.722) lists no fuel-tank protection requirement. Fuel storage tanks on the site are covered by Chapter 13 Flammable and Combustible Liquids (starts p.975); check that chapter for the tank installation. Aboveground LPG tanks, if any, per Chapter 11."
 
   - id: motor_fuel_dispensing_group_b
     match: {occupancy: motor_fuel_dispensing, motor_fuel_group_is: B}
@@ -1171,8 +1172,9 @@ branches:
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water-level detection, instantaneous refilling arrangement."
-      - name: "Underground Fuel Storage Tank Protection (cross-reference Ch 9 #4.15 / Ch 13)"
-        detail: "Underground fuel storage tanks: vapour-recovery, leak-detection, overfill prevention, vent piping, transfer-point safeguards per Chapter 13 Flammable Liquids."
+      - name: "Fuel Storage Tanks - cross-reference Chapter 13 (not listed in Table 9.25)"
+        required: recommended
+        detail: "Table 9.25 (p.722) lists no fuel-tank protection requirement. Fuel storage tanks on the site are covered by Chapter 13 Flammable and Combustible Liquids (starts p.975); check that chapter for the tank installation. Aboveground LPG tanks, if any, per Chapter 11."
 
   - id: motor_fuel_dispensing_group_c
     match: {occupancy: motor_fuel_dispensing, motor_fuel_group_is: C}
@@ -1194,8 +1196,9 @@ branches:
       - name: "Fire Water Tank"
         required: not_required
         detail: "NOT required for Group C."
-      - name: "Underground Fuel Storage Tank Protection (cross-reference Ch 9 #4.15 / Ch 13)"
-        detail: "Underground fuel storage tanks still require vapour-recovery / leak-detection / overfill prevention per Ch 13 even though no water-based fire-protection system is mandated."
+      - name: "Fuel Storage Tanks - cross-reference Chapter 13 (not listed in Table 9.25)"
+        required: recommended
+        detail: "Table 9.25 (p.722) lists no fuel-tank protection requirement. Fuel storage tanks on the site are covered by Chapter 13 Flammable and Combustible Liquids (starts p.975); check that chapter for the tank installation. Aboveground LPG tanks, if any, per Chapter 11."
 
   # ============================================================================
   # Section 4.10 / Table 9.26 - INFRASTRUCTURE FIRE PROTECTION SYSTEMS
@@ -1219,9 +1222,11 @@ branches:
         duty: tank
         spec: "90 minutes capacity at full pump duty"
         detail: "Low water-level detection, dedicated direct breeching inlet, instantaneous refilling. TSE (treated sewage water) acceptable subject to testing; sweet water from lakes/ponds acceptable with adequate reserve."
-      - name: "Marina / Waterfront - Cross-reference Chapter 21"
+      - name: "Marina / Waterfront - Cross-reference Ch 20 Table 20.5"
         required: conditional
-        detail: "Marinas and waterfront infrastructure shall additionally comply with Chapter 21 / Table 21.4 (Marine fire-protection systems)."
+        code_ref: "Ch 9, #4.10 / Table 9.26 B; Ch 20, Table 20.5"
+        page_ref: "p.723, p.1268"
+        detail: "Marinas and waterfront developments shall additionally comply with Ch 20 Table 20.5 Marinas Fire Protection Systems (p.1268). Table 9.26 B prints 'Chapter 21, Table 21.4'; the 2018 code has no Chapter 21, and marinas are Chapter 20."
 
   # ============================================================================
   # ============================================================================
@@ -2571,7 +2576,7 @@ branches:
   # instead of being merged into one governing line.
   # ============================================================================
   - id: tunnel_cable_short
-    match: {has_tunnel: true, tunnel_kind: cable, tunnel_length_m_lt: 60}
+    match: {has_tunnel: true, tunnel_kind: cable, tunnel_length_m_gt: 0, tunnel_length_m_lt: 60}
     section: "Ch 9, #4.12 / Table 9.28 Group A (Cable Tunnel < 60 m)"
     page: "p.747"
     systems:
@@ -2606,7 +2611,7 @@ branches:
   - id: tunnel_road_rail_medium
     match: {has_tunnel: true, tunnel_kind: road_rail, tunnel_length_m_gte: 90, tunnel_length_m_lte: 1000}
     section: "Ch 9, #4.12 / Table 9.28 Group B (Road/Rail Tunnel 90-1000 m)"
-    page: "p.748"
+    page: "p.747"
     systems:
       - name: "Wet Riser System (throughout)"
         spec: "Per Section 3.4"
@@ -2631,13 +2636,24 @@ branches:
         spec: "60 minutes operation with low water-level detection and instantaneous refilling"
 
   - id: tunnel_road_rail_short_none
-    match: {has_tunnel: true, tunnel_kind: road_rail, tunnel_length_m_lt: 90}
+    match: {has_tunnel: true, tunnel_kind: road_rail, tunnel_length_m_gt: 0, tunnel_length_m_lt: 90}
     section: "Ch 9, #4.12 / Table 9.28 Group B (Road/Rail Tunnel < 90 m)"
-    page: "p.748"
+    page: "p.747"
     systems:
       - name: "No Tunnel Fire Protection System Required"
         required: not_required
-        detail: "Road/rail tunnels less than 90 m do NOT require any fixed fire-protection system per Table 9.28 Group B. Portable extinguishers per Chapter 4 still apply, plus auxiliary-room provisions per Table 9.30."
+        detail: "Table 9.28 B.1 (p.747): if the length of the tunnel is less than 90 m, 'None'. Auxiliary rooms in the tunnel, if any, are protected per Table 9.30 (#4.12.1)."
+
+  - id: tunnel_length_missing
+    # Table 9.28 rows A and B are decided by the tunnel length (p.747). A blank
+    # (0 m) length is a missing input, never the shortest row.
+    match: {has_tunnel: true, tunnel_length_m_lte: 0}
+    section: "Ch 9, #4.12 / Table 9.28"
+    page: "p.747"
+    systems:
+      - name: "Tunnel Length Required (Table 9.28 not evaluated)"
+        required: conditional
+        detail: "Table 9.28 rows depend on the tunnel length (cable tunnels: less than 60 m / more than 60 m; road/rail tunnels: less than 90 m / 90 m-1000 m / more than 1000 m). Enter the tunnel length to get the tunnel fire protection systems."
 
   - id: storage_plant_nursery
     match: {occupancy: storage_industrial, is_plant_nursery: true}
@@ -2906,25 +2922,38 @@ various_locations:
   # when the building's table row gives no automatic sprinkler system. 9.29.K (wet
   # riser extended to the roof) is a wet riser item, not a sprinkler extension, so it
   # is not gated. 9.29.M (ceilings over 10 m, Table 9.29.A) is gated in the engine.
-  # NOTE: Exterior balcony sprinklers (Table 9.29.B, p.749) not encoded - user explicitly
-  # skipped to avoid UI bloat. The code requires sidewall/pendent sprinklers on exterior
-  # balconies of sprinklered buildings (max 12 m2 per head, 79 °C rating). Designers
-  # checking balcony coverage should consult Table 9.29.B directly.
+  # Rows are cited "Table 9.29 row X": "Table 9.29.A" is the separate High Ceiling
+  # table (p.750). Rules marked silent_when_unsprinklered are standing notes or
+  # rows the user did not tick; they print nothing (no #4.13.1 note) in a building
+  # whose table row gives no automatic sprinkler system.
   - id: var_atrium
     flag: has_atrium
     requires_sprinkler_system: true
     systems:
       - name: "Atrium Sprinklers (ceiling + adjacent to opening)"
         required: recommended
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.A"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row A"
         page_ref: "p.749"
-        detail: "Atriums SHOULD be provided with sprinklers at the atrium ceiling and immediately adjacent to every atrium opening (code uses 'should', not 'shall' - Table 9.29.A is the only 'should' entry). Non-combustible draft stops 450 mm deep. See Ch 10 for atrium smoke control."
+        detail: "Table 9.29 row A i-ii: atriums should be provided with an automatic sprinkler system per Section 3.5, and sprinkler heads should be installed immediately adjacent to the atrium opening (the code says 'should'). See Ch 10 for atrium smoke control."
+      - name: "Atrium Draft Stops - non-combustible, 450 mm deep"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row A"
+        page_ref: "p.749"
+        detail: "Table 9.29 row A ii: non-combustible material draft stops of 450 mm deep shall be provided (adjacent to the atrium opening)."
+  - id: var_balconies
+    flag: has_exterior_balconies
+    requires_sprinkler_system: true
+    systems:
+      - name: "Exterior Balcony Sprinklers (sidewall or pendent)"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row B"
+        page_ref: "p.749"
+        spec: "Coverage not more than 12 m2 per sprinkler head; temperature rating 79 deg C"
+        detail: "Table 9.29 row B: exterior balconies shall be provided with an automatic sprinkler system per Section 3.5; sidewall sprinkler heads or pendent sprinklers at the exterior balconies of buildings where sprinkler protection is required; balcony coverage shall not exceed 12 m2 per sprinkler head; temperature rating 79 deg C."
   - id: var_rain_screen
     flag: has_rain_screen_glazing
     requires_sprinkler_system: true
     systems:
       - name: "Glazing / Rain-screen Sprinkler Protection"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.C"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row C"
         page_ref: "p.749"
         detail: "Window-type pendent sprinklers on ceiling or sidewall sprinklers on walls to cover interior glazing (draft-curtain effect)."
   - id: var_stairs
@@ -2932,7 +2961,7 @@ various_locations:
     requires_sprinkler_system: true
     systems:
       - name: "Stair Shaft Sprinklers (top + first landing above bottom)"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.D"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row D"
         page_ref: "p.749"
         detail: "Sprinkler at top of shaft and at first accessible landing above the bottom of the shaft per Section 3.5."
   - id: var_elevator_shaft
@@ -2940,23 +2969,56 @@ various_locations:
     requires_sprinkler_system: true
     systems:
       - name: "Elevator Pit Sidewall Spray Sprinklers"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.E"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row E"
         page_ref: "p.749"
         detail: "Sidewall spray sprinklers at the bottom of each elevator hoistway, not more than 600 mm above the pit floor per Section 3.5."
   - id: var_bathroom_heaters
     flag: has_bathrooms_with_heaters
     requires_sprinkler_system: true
     systems:
-      - name: "Bathroom Sprinklers (where electric water-heaters are installed)"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.G"
+      - name: "Above-False-Ceiling Space of Bathrooms with Heaters - Sprinklers"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 rows F.ii and G.i"
         page_ref: "p.749"
-        detail: "Bathrooms equipped with electric water-heaters shall be sprinklered per Section 3.5 (Table 9.29.G - BATHROOMS). Public washrooms in commercial buildings are also sprinklered; private residential/hotel/apartment guest washrooms WITHOUT heaters are exempt. (NOTE: Table 9.29.F covers the separate 'above false ceiling' provision - that requires sprinklers in concealed combustible-construction spaces and is a different trigger - flag a designer review where both conditions apply.)"
+        detail: "Table 9.29 rows F.ii / G.i: in bathrooms, the above false ceiling spaces where heaters are installed shall be protected with sprinklers per Section 3.5. This applies to the above-false-ceiling space, not to the bathroom itself."
+  - id: var_above_false_ceiling_note
+    # Table 9.29 row F.i (p.749): a standing note for every sprinklered building.
+    always_on: true
+    requires_sprinkler_system: true
+    silent_when_unsprinklered: true
+    systems:
+      - name: "Above False Ceiling Spaces - Sprinklers Not Required"
+        required: not_required
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row F"
+        page_ref: "p.749"
+        detail: "Table 9.29 row F.i: sprinklers shall not be required above false ceilings; however, compartmentation and fire stopping shall be considered at regular intervals. Exception row F.ii: bathrooms where heaters are installed above the false ceiling."
+  - id: var_public_washrooms
+    # Table 9.29 row G.ii (p.749). Residential dwellings fall under G.iii.
+    always_on: true
+    when: {occupancy_not: [residential, labour_accommodation, staff_accommodation, hostel, villa_private]}
+    requires_sprinkler_system: true
+    silent_when_unsprinklered: true
+    systems:
+      - name: "Public Washrooms and Bathrooms - Sprinklers"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row G.ii"
+        page_ref: "p.749"
+        detail: "Table 9.29 row G.ii: public washrooms and bathrooms shall be provided with a sprinkler system per Section 3.5 (where the building has them)."
+  - id: var_residential_washrooms_note
+    always_on: true
+    when: {occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, villa_private, hotel_a, hotel_b, hotel_c]}
+    requires_sprinkler_system: true
+    silent_when_unsprinklered: true
+    systems:
+      - name: "Residential / Hotel / Apartment Washrooms and Bathrooms - Sprinklers Not Required"
+        required: not_required
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row G.iii"
+        page_ref: "p.749"
+        detail: "Table 9.29 row G.iii: residential, hotel and apartment washrooms and bathrooms shall not require sprinkler protection (row G.i above-false-ceiling spaces with heaters still apply)."
   - id: var_laundry_storage
     flag: has_laundry_storage_rooms
     requires_sprinkler_system: true
     systems:
       - name: "Laundry / Storage Room Sprinklers"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.H"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row H"
         page_ref: "p.749"
         detail: "Residential / apartment / hotel-apartment laundry and storage rooms protected with sprinklers per Section 3.5."
   - id: var_pantries
@@ -2964,7 +3026,7 @@ various_locations:
     requires_sprinkler_system: true
     systems:
       - name: "Pantry Sprinklers (business/commercial)"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.I"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row I"
         page_ref: "p.749"
         detail: "Pantries in offices and commercial buildings sprinklered per Section 3.5."
   - id: var_stages
@@ -2972,14 +3034,14 @@ various_locations:
     requires_sprinkler_system: true
     systems:
       - name: "Stage Sprinklers (under stages, dressing rooms, storerooms, workshops)"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.J"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row J"
         page_ref: "p.749"
         detail: "Permanent stages in assembly occupancies protected with sprinklers under the stage, dressing rooms, storerooms and workshops per Section 3.5."
   - id: var_roof_lpg_or_restaurant
     flag: has_roof_lpg_or_restaurant
     systems:
       - name: "Wet Riser extended to roof (with hose reel)"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.K"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row K"
         page_ref: "p.750"
         detail: "Building wet riser extended to roofs with LPG tanks, restaurant seating, assembly, or sheesha bars. Hose reels provided at roof level."
   - id: var_garbage_chute
@@ -2987,7 +3049,7 @@ various_locations:
     requires_sprinkler_system: true
     systems:
       - name: "Garbage Chute Sprinklers (top + alternating floors + lowest)"
-        code_ref: "Ch 9, #4.13.1 / Table 9.29.L"
+        code_ref: "Ch 9, #4.13.1 / Table 9.29 row L"
         page_ref: "p.750"
         detail: "One sprinkler at top of shaft, one at alternating floors, one at lowest level per Section 3.5."
 
@@ -3021,6 +3083,41 @@ high_ceiling:
 # instead when the building's table row gives no automatic sprinkler system.
 # 9.30.D (battery room) requires nothing, so it is not gated.
 auxiliary_rooms:
+  - id: aux_msds_and_unoccupied_note
+    # #4.14.1 (p.752) and #4.1.16 (p.695): one note whenever any Table 9.30 room is ticked.
+    always_on: true
+    when:
+      any_of:
+        - {has_anesthetizing_room_is: true}
+        - {has_battery_charger_room_is: true}
+        - {has_bms_room_is: true}
+        - {has_computer_room_is: true}
+        - {has_control_room_is: true}
+        - {has_diesel_generator_room_is: true}
+        - {has_main_electrical_room_is: true}
+        - {has_ahu_room_is: true}
+        - {has_lv_mv_room_is: true}
+        - {has_mv_room_is: true}
+        - {has_transformer_room_utility_is: true}
+        - {has_transformer_room_private_is: true}
+        - {has_lift_machine_room_is: true}
+        - {has_main_telephone_room_is: true}
+        - {has_main_server_room_is: true}
+        - {has_rmu_idf_mdf_room_is: true}
+        - {has_gsm_room_is: true}
+        - {has_operation_theater_is: true}
+        - {has_mri_scanning_room_is: true}
+        - {has_records_room_is: true}
+        - {has_ups_room_is: true}
+        - {has_cold_freezer_room_is: true}
+    requires_sprinkler_system: true
+    silent_when_unsprinklered: true
+    systems:
+      - name: "Auxiliary Room System Selection - MSDS Review and Occupied-Area Rule"
+        code_ref: "Ch 9, #4.14.1; #4.1.16"
+        page_ref: "p.752, p.695"
+        detail: "#4.14.1: where rooms and equipment are provided with fire protection systems per Table 9.30, the designers shall first consider and consult the relevant Material Safety Data Sheet (MSDS) before designing and proposing such systems. #4.1.16: for clean agent, aerosol, CO2 and other suppression systems, LV rooms, transformer rooms, telephone rooms, generator rooms and other such equipment / machinery rooms located in occupied buildings or attached to them are not considered unoccupied areas."
+
   - id: aux_A_anesthetizing
     flag: has_anesthetizing_room
     requires_sprinkler_system: true
@@ -3037,7 +3134,7 @@ auxiliary_rooms:
       - name: "Battery Charger Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.B"
         page_ref: "p.752"
-        detail: "Battery charger room: clean agent (FM-200 / Novec 1230 / Inergen) per Section 3.14 is preferred to avoid water damage to DC equipment; double-interlocked pre-action is also acceptable."
+        detail: "Table 9.30.B: clean agent system per Section 3.14 OR a double interlocked pre-action sprinkler system per Section 3.7."
 
   - id: aux_C_bms
     flag: has_bms_room
@@ -3046,7 +3143,7 @@ auxiliary_rooms:
       - name: "BMS Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.C"
         page_ref: "p.752"
-        detail: "BMS room: clean agent preferred to protect controls. Rooms < 10 m2 and not critical to building monitoring are exempt."
+        detail: "Table 9.30.C: clean agent system per Section 3.14 OR a double interlocked pre-action sprinkler system per Section 3.7. Exemption (iii): BMS rooms which are less than 10 m2 in area AND are not with critical building monitoring and management systems shall not be required to be protected."
 
   - id: aux_D_battery
     flag: has_battery_room
@@ -3055,7 +3152,7 @@ auxiliary_rooms:
         required: not_required
         code_ref: "Ch 9, #4.14 / Table 9.30.D"
         page_ref: "p.752"
-        detail: "Table 9.30.D explicitly states 'None' for battery rooms. However ventilation and hydrogen-monitoring per NFPA 1 / IFC still apply."
+        detail: "Table 9.30.D: None."
 
   - id: aux_E_computer
     flag: has_computer_room
@@ -3064,7 +3161,7 @@ auxiliary_rooms:
       - name: "Computer Room - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.E"
         page_ref: "p.752"
-        detail: "Computer room: clean agent preferred to avoid water damage. Rooms < 10 m2 and non-critical are exempt."
+        detail: "Table 9.30.E: clean agent system per Section 3.14 OR a double interlocked pre-action sprinkler system per Section 3.7. Exemption (iii): computer rooms which are less than 10 m2 in area AND are not with critical life or building monitoring and management systems shall not be required to be protected."
 
   - id: aux_F_control
     flag: has_control_room
@@ -3073,16 +3170,16 @@ auxiliary_rooms:
       - name: "Control Room / Fire Command Centre - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.F"
         page_ref: "p.752"
-        detail: "Control / Fire Command Centre: clean agent preferred. Rooms < 10 m2 and separated service blocks with 3 m detachment from predominant occupancy are exempt."
+        detail: "Table 9.30.F: clean agent system per Section 3.14 OR a double interlocked pre-action sprinkler system per Section 3.7. Exemptions: (iii) rooms which are less than 10 m2 in area AND are not with critical life or building monitoring and control systems; (iv) rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected. A fire command centre houses critical life safety control systems, so exemption (iii) does not cover it."
 
   - id: aux_G_diesel_generator
     flag: has_diesel_generator_room
     requires_sprinkler_system: true
     systems:
       - name: "Diesel Generator Room - Foam Sprinkler System (Section 3.9)"
-        code_ref: "Ch 9, #4.14 / Table 9.30.G"
-        page_ref: "p.752"
-        detail: "DIESEL GENERATOR ROOMS REQUIRE FOAM SPRINKLERS - NOT water sprinklers. Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from predominant occupancy are exempt."
+        code_ref: "Ch 9, #4.14 / Table 9.30.G / Table 9.31.E"
+        page_ref: "p.752, p.756"
+        detail: "Table 9.30.G and Table 9.31.E (same text): foam sprinkler system shall be provided per Section 3.9. Exemption (ii): diesel generator rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected. One system meets both tables."
 
   - id: aux_H_main_electrical
     flag: has_main_electrical_room
@@ -3091,7 +3188,7 @@ auxiliary_rooms:
       - name: "Main Electrical Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.H"
         page_ref: "p.753"
-        detail: "Main electrical room: clean agent per Section 3.14. Exempt when room is < 10 m2 OR on a typical floor (must be 1-hour fire-rated enclosure, limited to distribution boards + junction boxes, with full penetration firestopping). Also exempt if located in separated service block with 3 m detachment."
+        detail: "Table 9.30.H: clean agent system per Section 3.14. Exemptions: (ii) electrical rooms which are less than 10 m2 in area OR are located on typical floors; such typical floor electrical rooms shall be 1 hour fire rated enclosures limited to distribution boards and junction boxes, with fully compliant penetration fire stopping; (iii) electrical rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected."
 
   - id: aux_I_ahu
     flag: has_ahu_room
@@ -3112,7 +3209,7 @@ auxiliary_rooms:
       - name: "LV / MV Room - Clean Agent (Section 3.14) with motorized louvers closing on discharge"
         code_ref: "Ch 9, #4.14 / Table 9.30.J"
         page_ref: "p.753"
-        detail: "LV / MV room: clean agent per Section 3.14. Where louvers are provided they must be motorized and close automatically on clean-agent discharge to maintain room tightness. Rooms < 10 m2 or typical-floor rooms exempt if 1-hr fire rated with distribution boards only."
+        detail: "Table 9.30.J: clean agent system per Section 3.14; where louvers are provided for LV rooms protected with clean agent, louvers shall be motorized and closed upon clean agent discharge to maintain room tightness. Exemptions: (ii) rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected; (iii) rooms which are less than 10 m2 in area OR are located on typical floors; such typical floor or podium floor rooms shall be 1 hour fire rated enclosures limited to distribution boards and junction boxes, with fully compliant penetration fire stopping."
 
   - id: aux_K_transformer_utility
     flag: has_transformer_room_utility
@@ -3122,7 +3219,7 @@ auxiliary_rooms:
         required: conditional
         code_ref: "Ch 9, #4.14 / Table 9.30.K"
         page_ref: "p.753"
-        detail: "Utility-owned transformer rooms (DEWA / SEWA / ADDC / FEWA / AADC) enclosed and outside substations. Default: no protection required. If the utility operator's technical spec calls for protection, then provide either Clean Agent (Section 3.14) OR Deluge Water Spray (Section 3.8) OR Water Mist (Section 3.10). Choice of system depends on utility spec and insulation medium (oil vs dry-type)."
+        detail: "Utility-owned transformer rooms (DEWA / SEWA / ADDC / FEWA / AADC) enclosed and outside substations. Default: no protection required. If the utility operator's technical spec calls for protection, then provide either Clean Agent (Section 3.14) OR Deluge Water Spray (Section 3.8) OR Water Mist (Section 3.10)."
 
   - id: aux_L_transformer_private
     flag: has_transformer_room_private
@@ -3131,7 +3228,7 @@ auxiliary_rooms:
       - name: "Transformer Room (private) - Clean Agent (3.14) OR Deluge Water Spray (3.8) OR Water Mist (3.10) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.L"
         page_ref: "p.753"
-        detail: "Privately-owned enclosed transformer rooms outside substations. Four acceptable options: (1) Clean Agent per Section 3.14, (2) Deluge Water Spray per Section 3.8 (typical for oil-filled), (3) Water Mist per Section 3.10, or (4) 2-hour fire-rated enclosure with 90-min fire doors or motorized fire-rated louvers - this last option requires exclusively dry-type equipment and no other storage in the room."
+        detail: "Privately-owned enclosed transformer rooms outside substations. Four options: (i) clean agent per Section 3.14, (ii) deluge water spray per Section 3.8, (iii) water mist per Section 3.10, or (iv) 2 hour fire rated enclosure with 90 minutes fire doors or 90 minutes fire rated motorized louvers, housing exclusively dry type electrical equipment and no other storage. Exemption (v): private enclosed transformer rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected."
 
   - id: aux_M_lift_machine
     flag: has_lift_machine_room
@@ -3149,7 +3246,7 @@ auxiliary_rooms:
       - name: "Main Telephone Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.N"
         page_ref: "p.754"
-        detail: "Main telephone room: clean agent per Section 3.14. < 10 m2 or typical-floor rooms exempt if limited to distribution boards with firestopping. Separated service-block rooms with 3 m detachment also exempt."
+        detail: "Table 9.30.N: clean agent system per Section 3.14. Exemptions: (ii) telephone rooms which are less than 10 m2 in area OR are located on typical floors; such typical floor telephone rooms shall be limited to distribution boards and junction boxes with fully compliant penetration fire stopping; (iii) telephone rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected."
 
   - id: aux_O_main_server
     flag: has_main_server_room
@@ -3158,7 +3255,7 @@ auxiliary_rooms:
       - name: "Main Server Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.O"
         page_ref: "p.754"
-        detail: "Main server room: clean agent per Section 3.14, typically with VESDA aspirating smoke detection. < 10 m2 or typical-floor rooms exempt if compartmented with firestopping. Server cabinets exposed within occupied sprinklered rooms exempt."
+        detail: "Table 9.30.O: clean agent system per Section 3.14. Exemptions: (ii) server rooms which are less than 10 m2 in area OR are located on typical floors; such typical floor server rooms shall be compartmented with fully compliant penetration fire stopping systems; (iii) server cabinets exposed to occupied rooms, provided the room has an automatic sprinkler system; (iv) server rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected."
 
   - id: aux_P_rmu_idf_mdf
     flag: has_rmu_idf_mdf_room
@@ -3167,7 +3264,7 @@ auxiliary_rooms:
       - name: "RMU / IDF / MDF / CDF / MMR Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.P"
         page_ref: "p.754"
-        detail: "RMU / IDF / MDF / CDF / MMR rooms protected with clean agent per Section 3.14."
+        detail: "Table 9.30.P: clean agent system per Section 3.14. Exemptions: (ii) rooms which are less than 10 m2 in area or are located on typical floors; such typical floor rooms shall be compartmented with fully compliant fire stopping systems; (iii) rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected."
 
   - id: aux_Q_gsm
     flag: has_gsm_room
@@ -3176,7 +3273,7 @@ auxiliary_rooms:
       - name: "GSM Room - Clean Agent (Section 3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.Q"
         page_ref: "p.754"
-        detail: "GSM / telecoms equipment room: clean agent per Section 3.14."
+        detail: "Table 9.30.Q: clean agent system per Section 3.14. Exemptions: (ii) rooms which are less than 10 m2 in area or are located on typical floors; such typical floor rooms shall be compartmented with fully compliant fire stopping systems; (iii) rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected."
 
   - id: aux_R_operation_theater
     flag: has_operation_theater
@@ -3203,7 +3300,7 @@ auxiliary_rooms:
       - name: "Records Room - Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR Clean Agent (3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.T"
         page_ref: "p.755"
-        detail: "Records room: three options - wet sprinkler, double-interlocked pre-action, or clean agent. Clean agent preferred where paper records are valuable."
+        detail: "Records room: three options - wet sprinkler, double-interlocked pre-action, or clean agent."
 
   - id: aux_U_ups
     flag: has_ups_room
@@ -3212,7 +3309,7 @@ auxiliary_rooms:
       - name: "UPS Room - Clean Agent (3.14) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.U"
         page_ref: "p.755"
-        detail: "UPS room: three options - clean agent (preferred to avoid water damage to batteries), pre-action, or 2-hr fire-rated enclosure housing only dry batteries + dry electrical equipment."
+        detail: "UPS room: three options - clean agent, pre-action, or 2-hr fire-rated enclosure housing only dry batteries + dry electrical equipment."
 
   - id: aux_V_cold_freezer
     flag: has_cold_freezer_room
@@ -3228,17 +3325,30 @@ equipment:
     flag: has_commercial_kitchen
     systems:
       - name: "Commercial Kitchen Hood - Automatic Wet Chemical System (Section 3.12) + Grease Filters"
-        code_ref: "Ch 9, #4.15 / Table 9.31.A"
-        page_ref: "p.756"
-        detail: "UL-300 listed wet-chemical extinguishing system over cooking surfaces, hoods and ductwork with fuel/gas shut-off interlock. Grease filters in the hood. Required for commercial kitchens with 3 or more burners."
+        code_ref: "Ch 9, #4.15 / Table 9.31.A; #3.12 / Table 9.14 item 6"
+        page_ref: "p.756, p.675"
+        spec: "For commercial kitchens having 3 or more burners"
+        detail: "Table 9.31.A: an automatic wet chemical system per Section 3.12 for commercial kitchens having 3 or more burners; grease filters shall be installed for the kitchen hood. Table 9.14 item 6: on activation, all sources of fuel and electric power that produce heat to all equipment protected by the system shall be shut down; gas appliances not requiring protection but located under the same ventilation equipment shall also be shut off; shutoff devices shall require manual resetting before fuel or power is restored."
 
   - id: eq_B_lpg_tanks
     flag: has_lpg_tanks
+    # Table 9.31.B i-ii cover tanks aboveground or on roofs or podiums only (p.756).
+    when: {has_lpg_tank_underground_mounded_is: false}
     systems:
       - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
         code_ref: "Ch 11, #2.5.3 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
         page_ref: "p.906, p.756"
         detail: "Fixed water spray system on every aboveground LPG tank, fed from the fire pump and water tank of the building the LPG tank serves, designed per Chapter 9 (Table 11.5 item 5.i). Where that building has no fire pump and water tank, a dry-type water spray ring with open nozzles connected to a Civil Defence breeching inlet (Table 11.5 item 5.ii; Table 9.31.B ii gives the same dry deluge with breeching inlet for a building that is not sprinklered). Code conflict: Table 9.31.B iii (p.756) reads 'Where LPG tanks are installed aboveground, no protection shall be required, unless the proximity of such tanks is more than 6 m from any point of structure', while Table 11.5 item 5.i (p.906) requires the fixed water spray with no exemption. Ruling R5 (12.10.2026): Chapter 11 governs, so no distance exemption is applied."
+
+  - id: eq_B_lpg_tanks_underground_mounded
+    flag: has_lpg_tanks
+    when: {has_lpg_tank_underground_mounded_is: true}
+    systems:
+      - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
+        required: conditional
+        code_ref: "Ch 11, #2.5.3 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
+        page_ref: "p.906, p.756"
+        detail: "Underground / mounded LPG tanks are ticked: Table 9.31.B i-ii (p.756) apply only where LPG tanks are installed aboveground or on roofs or podiums, so the water spray system is required only for the tanks installed aboveground or on roofs or podiums. Where some tanks are aboveground: fixed water spray on every aboveground LPG tank fed from the building fire pump and water tank (Table 11.5 item 5.i), or a dry-type water spray ring with open nozzles and a Civil Defence breeching inlet where the building has none (item 5.ii). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
 
   - id: eq_C_flammable_liquid_tanks
     flag: has_flammable_liquid_tanks
@@ -3254,15 +3364,15 @@ equipment:
       - name: "Cable Spread Areas - Automatic Water Deluge Spray (Table 3.8) OR Water Mist (Table 3.10)"
         code_ref: "Ch 9, #4.15 / Table 9.31.D"
         page_ref: "p.756"
-        detail: "Cable spread / cable tray galleries: water deluge spray per Table 3.8 or water mist per Table 3.10. Water mist preferred where water damage is a concern."
+        detail: "Cable spread / cable tray galleries: water deluge spray per Table 3.8 or water mist per Table 3.10."
 
   - id: eq_E_diesel_generator
     flag: has_diesel_generator_room
     systems:
-      - name: "Diesel Generator - Foam Sprinkler System (Section 3.9)"
+      - name: "Diesel Generator Room - Foam Sprinkler System (Section 3.9)"
         code_ref: "Ch 9, #4.15 / Table 9.31.E"
         page_ref: "p.756"
-        detail: "Diesel Generator Room - Foam sprinkler system per Section 3.9 (Table 9.31.E). Foam suppresses hydrocarbon fuel fires. Diesel generator rooms in separated service blocks with 3 m detachment from the predominant occupancy are exempt. This is the same single foam sprinkler system as Table 9.30.G (Auxiliary Rooms block): both tables require it, and one system satisfies both."
+        detail: "Table 9.31.E: foam sprinkler system shall be provided per Section 3.9. Exemption (ii): diesel generator rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected. Where Table 9.30.G also lists the room, the one foam sprinkler system meets both tables and is listed once."
 
   - id: eq_F_boilers
     flag: has_boilers
@@ -3279,7 +3389,7 @@ equipment:
         required: conditional
         code_ref: "Ch 9, #4.15 / Table 9.31.G"
         page_ref: "p.756"
-        detail: "Required ONLY where the cooling-tower material is NOT tested and certified for non-combustibility. Modern FRP / HDPE cooling towers with non-combustibility certification are exempt. If combustible fill is present, deluge spray per Table 3.8."
+        detail: "Table 9.31.G: where the cooling tower material is not tested and certified for non-combustibility, an automatic water deluge spray system shall be provided per Table 3.8."
 
   - id: eq_H_oil_filled_transformers
     flag: has_oil_filled_transformers
