@@ -9,6 +9,13 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 1 merged to master on Hussein's go (09:39Z)
+
+PR #20 merged; the live app redeploys from master. Reports issued with the earlier app
+may change (pump/tank rows, parking, Table 9.30 rooms): re-run any issued job before
+relying on it. Rulings R1, R2, R4, R6, R7 still open; phases 2-3 not started. The PC
+clone (Created\24.Fire Protection Mind map\python tool\) needs a pull.
+
 ### 2026-10-12 — R14b ruled (#4.1.5) — gate on every Table 9.30 room
 
 Hussein chose "All Table 9.30 rooms" (07:33Z). Every `auxiliary_rooms` row in
@@ -27,7 +34,7 @@ the previous commit: 940 of 6552 cases change, every one only this line. Test
 `test_R14_lift_machine_room_sprinkler_only_in_sprinklered_buildings`. The other Table 9.30
 rooms followed under R14b (above).
 
-### 2026-10-12 — Phase 1 (engine core + Ch 9 pumps and tables) — draft PR, NOT merged
+### 2026-10-12 — Phase 1 (engine core + Ch 9 pumps and tables) — PR #20
 
 Branch `claude/project-thread-0zjltx` off master `fc479a1`. Results change for many
 building types; issued reports made with the live app may need a re-run once merged.
