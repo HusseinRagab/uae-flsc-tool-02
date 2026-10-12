@@ -332,6 +332,7 @@ class Building(BaseModel):
     # --- FE (Ch 4) - Hazard / Class flags
     has_class_b_storage_zones: bool = False       # chemical / linen / waste / flammable liquid / solvent / lab stores
     has_combustible_metals: bool = False          # magnesium / titanium / zirconium / sodium / lithium / potassium
+    has_group_a_plastic_storage: bool = False     # Ch 4 Table 4.3 row 3 item 2.ii: Group A plastic storage and activity (wheeled foam)
     has_hv_or_heavy_electrical: bool = False      # HV room / heavy electrical machinery
     has_parking_area: bool = True                 # in-building parking area (most occupancies have one)
     attached_parking_kind: Literal["enclosed", "open"] = "enclosed"  # ATTACHED parking sub-occupancy: open vs enclosed (drives MOE/FP/FA/SC parking sub-evaluation)

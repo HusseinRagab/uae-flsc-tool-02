@@ -176,7 +176,9 @@ CASES = [
                      ground_floor_bua_m2=1200, plot_area_m2=5000,
                      has_commercial_kitchen=True, has_main_electrical_room=True),
          expect_fe_general=[
-             "Class A Fire Extinguisher (Multi-purpose Dry Powder OR Clean Agent) + CO2",
+             # Re-pointed phase 3 CH47-11: hotels are Table 4.3 row 1 item 6 (p.373),
+             # dry powder AND CO2 with no clean-agent alternative.
+             "Class A Fire Extinguisher (Multi-purpose Dry Powder AND CO2)",
              "Class K Fire Extinguisher (Residential Kitchen)",
          ],
          expect_fe_addons=[
@@ -628,7 +630,8 @@ CASES = [
          expect_el_general=[
              "Emergency Lighting - General Performance Specs (Table 6.1)",
              "EL Proximity Rule (within 2m)",
-             "EL Cable Fire Rating",
+             # "EL Cable Fire Rating" removed phase 3 CH47-08: Table 6.3 #7.i (p.416) does
+             # not require fire-rated wiring for a monitored system (this 20 m case).
              "EL Acceptance Tests + Periodic Inspection",
          ]),
 
