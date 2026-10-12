@@ -269,7 +269,7 @@ def test_CH3_Q8_table_3_16_prints_one_named_column():
     assert "61 m" not in s.spec and "NS" not in s.spec
     assert ns.spec.startswith("Column NS (non-sprinklered)") and "travel 61 m" in ns.spec
     assert "91 m" not in ns.spec
-    assert "column S" in s.detail and "R8" in s.detail and "Ch3 Q8" in s.detail
+    assert "Column S" in s.detail and "R8" in s.detail and "Ch3 Q8" in s.detail
     # The engine uses building_sprinklered (the R8 test).
     r = engine.evaluate(b)
     t = one(r, "MOE", "Travel / Dead-end / Commonpath (Business)")

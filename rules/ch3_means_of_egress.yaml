@@ -32,7 +32,8 @@ general:
       height_m_lt: 23
     systems:
       - name: "Exit Remoteness - Lowrise / Midrise (Table 3.15.a items i-iv)"
-        spec: "Sprinklered: 1/3 of floor diagonal between exits; non-sprinklered: 1/2 of floor diagonal between exits"
+        spec_s: "1/3 of floor diagonal between exits (Table 3.15.a items i, iii)"
+        spec_ns: "1/2 of floor diagonal between exits (Table 3.15.a items ii, iv)"
         code_ref: "Ch 3, #4.4 / Table 3.15.a"
         page_ref: "p.288"
         detail: "Measured as the shortest walking distance between exits (not straight-line). Per Table 3.15.a items i-iv (p.288): lowrise (<=15 m) and midrise (>15-23 m) buildings size remoteness by the 1/3 (sprinklered) or 1/2 (non-sprinklered) of the floor diagonal. #4.4.8 (p.291): Table 3.15.a does not apply to basements and podiums used only for parking and service rooms, provided the 61 m travel distance is met (Table 3.15.b applies)."
@@ -45,7 +46,8 @@ general:
       height_m_gte: 23
     systems:
       - name: "Exit Remoteness - Highrise / Super-highrise (Table 3.15.a items v-vi)"
-        spec: "1/3 of floor diagonal between exits (sprinklered only)"
+        spec_s: "1/3 of floor diagonal between exits (Table 3.15.a items v-vi)"
+        spec_ns: "No row: Table 3.15.a items v-vi list highrise and super highrise as sprinklered only; Ch 9 requires sprinklers at this height"
         code_ref: "Ch 3, #4.4 / Table 3.15.a"
         page_ref: "p.288"
         detail: "Measured as the straight line between centres of exit doors (not walking distance). Per Table 3.15.a items v-vi (p.288): highrise (23-90 m, ruling R1) and super-highrise (>90 m) are tabulated as sprinklered only, both at 1/3 of floor diagonal. Non-sprinklered highrise is not permitted (see Ch 9). #4.4.8 (p.291): Table 3.15.a does not apply to basements and podiums used only for parking and service rooms (Table 3.15.b applies)."
@@ -108,7 +110,8 @@ general:
         - {has_parking_area: true}
     systems:
       - name: "Basement / Parking Podium Travel Distance (Table 3.15.b)"
-        spec: "Sprinklered enclosed basement parking: max 61 m travel + 15 m commonpath / dead-end. Non-sprinklered: 46 m travel + 15 m. Open podium parking: sprinklered 122 m travel; non-sprinklered 91 m (Table 3.16 row 20.ii, ruling R9) + 15 m."
+        spec_s: "Enclosed basement / podium parking: max 61 m travel (item i). Open podium parking: max 122 m travel (item iii). Dead end and commonpath max 15 m."
+        spec_ns: "Enclosed basement / podium parking: max 46 m travel (item ii). Open podium parking: max 91 m travel (Table 3.16 row 20.ii; item iv prints 122 m, ruling R9). Dead end and commonpath max 15 m."
         code_ref: "Ch 3, #4.4.8 / Table 3.15.b"
         page_ref: "p.291"
         detail: "Applies to basements and enclosed podiums used only for vehicle parking and service rooms (generator, server, battery, service rooms)."

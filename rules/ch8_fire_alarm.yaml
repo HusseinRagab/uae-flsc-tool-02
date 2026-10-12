@@ -334,7 +334,7 @@ branches:
     systems:
       - name: "Fire Detection and Alarm System NOT REQUIRED (Plant / Vegetation Nursery)"
         required: not_required
-        detail: "Per Table 8.13 item 28 (p.508): 'Fire Detection and Alarm System shall not be required' for plant and vegetation nurseries. Row 28 lists no Table 8.14 / 8.15 item, so a nursery prints no auxiliary room or equipment lines, even for rooms ticked in the inputs (owner ruling 12.10.2026, Ch8 Q4)."
+        detail: "Per Table 8.13 item 28 (p.508): 'Fire Detection and Alarm System shall not be required' for plant and vegetation nurseries. With no FA system required, the report prints no Table 8.1 system lines (owner ruling 12.10.2026, follow-up F1) and, since row 28 lists no Table 8.14 / 8.15 item, no auxiliary room or equipment lines, even for rooms ticked in the inputs (Ch8 Q4)."
 
   - id: fa_cold_storage
     # Cold-storage warehouse (Table 8.13 item 21, p.506).

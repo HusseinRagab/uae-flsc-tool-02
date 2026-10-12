@@ -545,16 +545,17 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
 
 
 def _moe_sprinkler_columns(rules: Dict[str, Any], spr: bool) -> Dict[str, Any]:
-    """Owner ruling 12.10.2026, Ch3 Q8: a Table 3.16 line carrying `spec_s` / `spec_ns`
-    prints only the column of this building's Ch 9 result (building_sprinklered, the
-    sprinkler test of ruling R8) and names it; a line tagged `sprinkler_column: S|NS`
-    prints only in a building of that kind."""
+    """Owner ruling 12.10.2026, Ch3 Q8 (Table 3.16) and follow-up F7 (Tables 3.15.a and
+    3.15.b): a line carrying `spec_s` / `spec_ns` prints only the column of this
+    building's Ch 9 result (building_sprinklered, the sprinkler test of ruling R8) and
+    names it; a line tagged `sprinkler_column: S|NS` prints only in a building of that
+    kind."""
     col = "S" if spr else "NS"
-    why = ("Table 3.16 column S (sprinklered) used: Ch 9 requires an automatic sprinkler "
+    why = ("Column S (sprinklered) used: Ch 9 requires an automatic sprinkler "
            "system in this building" if spr else
-           "Table 3.16 column NS (non-sprinklered) used: Ch 9 does not require an automatic "
+           "Column NS (non-sprinklered) used: Ch 9 does not require an automatic "
            "sprinkler system in this building")
-    why += " (the sprinkler test of ruling R8; owner ruling 12.10.2026, Ch3 Q8)."
+    why += " (the sprinkler test of ruling R8; owner rulings 12.10.2026, Ch3 Q8 and F7)."
 
     def pick(systems):
         out = []
@@ -691,16 +692,17 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
 def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 8 - Fire Detection & Alarm."""
     blocks = []
-    gen = _dedupe(_collect_general(rules, b))
+    # Table 8.13 item 28 PLANT NURSERY (p.508): no FA system is required, so neither the
+    # Table 8.1 system lines nor the Table 8.14 / 8.15 lines apply (owner rulings
+    # 12.10.2026, Ch8 Q4 and follow-up F1).
+    nursery = b.occupancy == "storage_industrial" and b.is_plant_nursery
+    gen = [] if nursery else _dedupe(_collect_general(rules, b))
     if gen:
         blocks.append(SectionBlock(title="FA - General Requirements (Ch 8, #3 + #4 / Table 8.1.a)", items=gen))
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
     if branch_items:
         blocks.append(SectionBlock(title="FA - Detection & Alarm by Occupancy / Height (Ch 8, Table 8.13)", items=_dedupe(branch_items)))
 
-    # Table 8.13 item 28 PLANT NURSERY (p.508) lists no Table 8.14 / 8.15 item:
-    # a nursery prints no room or equipment lines (owner ruling 12.10.2026, Ch8 Q4).
-    nursery = b.occupancy == "storage_industrial" and b.is_plant_nursery
     aux = [] if nursery else _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
     if aux:
         blocks.append(SectionBlock(title="FA - Auxiliary Rooms (Ch 8, Table 8.14)", items=aux))
@@ -894,7 +896,10 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
     fa_rules  = load_rules("ch8_fire_alarm.yaml")
     fp_rules  = load_rules("ch9_fire_protection.yaml")
     sc_rules  = load_rules("ch10_smoke_control.yaml")
-    if moe_rules: chapters.append(evaluate_moe(synth, moe_rules))
+    # Attached parking takes the S / NS column from the parent building's Ch 9 result
+    # (owner ruling 12.10.2026, follow-up F8): it shares the parent's sprinkler system.
+    if moe_rules: chapters.append(evaluate_moe(synth, moe_rules,
+                                               sprinklered=building_sprinklered(b)))
     if fe_rules:  chapters.append(evaluate_fe(synth, fe_rules))
     if es_rules:  chapters.append(evaluate_es(synth, es_rules))
     if el_rules:  chapters.append(evaluate_el(synth, el_rules))
