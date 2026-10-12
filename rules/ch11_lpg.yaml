@@ -90,8 +90,10 @@ branches:
       - name: "Two-Stage Pressure Regulation"
         spec: "First stage 5 psi (0.35 bar) commercial / 75 mbar residential; second stage 0.5 psi (0.035 bar)"
         detail: "Both regulators required. Vent piping to atmosphere. Excess flow / pressure-relief valves on tank."
-      - name: "Tank Fire Protection (cross-reference Ch 9 #4.15 Table 9.31.B)"
-        detail: "Aboveground LPG tanks per Ch 9 require automatic Water Deluge Spray (Section 3.8) where building is sprinklered, or Dry Deluge Spray with breeching inlet otherwise. Exempt only if tank is > 6 m from any structure."
+      - name: "Tank Fire Protection - Fixed Water Spray System"
+        code_ref: "Ch 11, #2.5.3 / Table 11.5 item 5"
+        page_ref: "p.906"
+        detail: "Fixed water spray system on every aboveground LPG tank, fed from the fire pump and water tank of the building it serves (item 5.i); where none is available, a dry-type water spray ring with open nozzles connected to a Civil Defence breeching inlet (item 5.ii). Design per Chapter 9. Ch 9 Table 9.31.B iii (p.756) prints a 6 m proximity clause that conflicts; ruling R5 (12.10.2026): Chapter 11 governs and no exemption is applied."
 
   # ----- Central LPG Infrastructure (has_gas_infra_connection flag) -----
   - id: lpg_central_distribution
