@@ -24,7 +24,8 @@ from pathlib import Path
 import streamlit as st
 import yaml as _yaml
 
-from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER, HAZARD_NOT_CLASSIFIED
+from flsc_schema import (Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER,
+                         HAZARD_NOT_CLASSIFIED, ANIMAL_HOUSING_GROUPS)
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
@@ -202,6 +203,34 @@ USE_AREA_KEYS = [k for i in range(USE_AREA_MAX)
                  for k in (f"use_area_row_{i}", f"use_area_m2_{i}")]
 
 
+# Owner answer 12.10.2026, F6: per-storey table <-> data editor frame.
+_STOREY_COLS = ("storey", "row", "area_m2")
+
+
+def _storey_table_frame(lines):
+    import pandas as pd
+    lines = [ln for ln in (lines or []) if isinstance(ln, dict)]
+    return pd.DataFrame({
+        "storey": pd.Series([ln.get("storey") for ln in lines], dtype="object"),
+        "row": pd.Series([ln.get("row") for ln in lines], dtype="object"),
+        "area_m2": pd.Series([ln.get("area_m2") for ln in lines], dtype="float64"),
+    })
+
+
+def _storey_table_records(df) -> list:
+    """Editor frame -> saved lines. Fully blank lines (a row just added) are dropped;
+    any other line is kept as entered, and the report names what it lacks."""
+    out = []
+    for rec in df.to_dict("records"):
+        nm, rw, ar = (rec.get(k) for k in _STOREY_COLS)
+        nm = nm.strip() if isinstance(nm, str) else ""
+        rw = rw if isinstance(rw, str) and rw else None
+        ar = float(ar) if isinstance(ar, (int, float)) and ar == ar else None
+        if nm or rw or ar is not None:
+            out.append({"storey": nm, "row": rw, "area_m2": ar})
+    return out
+
+
 def _invalid_scenario_values(data: dict) -> list:
     bad = []
     for key, (label, lo, whole) in _SCENARIO_LIMITS.items():
@@ -237,6 +266,35 @@ def _invalid_scenario_values(data: dict) -> list:
     n_use = data.get("use_area_count_input")
     if isinstance(n_use, int) and not isinstance(n_use, bool) and n_use > n_max:
         bad.append(f"Number of per-use areas = {n_use} (maximum {n_max})")
+    # Owner answer 12.10.2026, Ch9 Q6: animal housing group A / B / C (#1.1.13).
+    if data.get("animal_housing_group_input") not in (None, "A", "B", "C"):
+        bad.append(f"Animal housing group = {data['animal_housing_group_input']!r} "
+                   "(not a listed option)")
+    # Owner answer 12.10.2026, F6: per-storey table, a list of {storey, row, area_m2}.
+    # A blank storey name or row is kept (the report names it); a wrong type, an
+    # unknown row or a negative / non-numeric area is refused here.
+    tbl = data.get("storey_table_input")
+    if tbl is not None:
+        if not isinstance(tbl, list):
+            bad.append(f"Per-storey table = {tbl!r} (not a list)")
+        elif len(tbl) > 200:
+            bad.append(f"Per-storey table has {len(tbl)} lines (maximum 200)")
+        else:
+            for i, ln in enumerate(tbl, 1):
+                if not isinstance(ln, dict) or set(ln) - {"storey", "row", "area_m2"}:
+                    bad.append(f"Per-storey table line {i} = {ln!r} (not a storey / row / "
+                               "area line)")
+                    continue
+                nm, rw, ar = ln.get("storey"), ln.get("row"), ln.get("area_m2")
+                if nm is not None and not isinstance(nm, str):
+                    bad.append(f"Per-storey table line {i} storey = {nm!r} (not text)")
+                if rw is not None and rw not in _rows:
+                    bad.append(f"Per-storey table line {i} Table 3.13 row = {rw!r} "
+                               "(not a listed option)")
+                if ar is not None and (isinstance(ar, bool) or not isinstance(ar, (int, float))):
+                    bad.append(f"Per-storey table line {i} area = {ar!r} (not a number)")
+                elif ar is not None and (ar != ar or ar < 0):
+                    bad.append(f"Per-storey table line {i} area = {ar} (minimum 0)")
     mode = data.get("mixed_occupancy_mode_input")
     if mode is not None and mode not in ("none", "most_restrictive", "separated"):
         bad.append(f"Mixed occupancy mode = {mode!r} (not a listed mode)")
@@ -723,6 +781,8 @@ with st.sidebar:
             "largest_storey_area_m2_input", "mall_gla_m2_input", "use_area_count_input",
             *USE_AREA_KEYS, "building_volume_m3_input",
             "is_waterfront", "is_theme_park", "tower_setback_over_30m",
+            # Owner answers 12.10.2026: F6 per-storey table, Ch9 Q6 animal housing group
+            "storey_table_input", "animal_housing_group_input",
         ]
         def _serializable(v):
             # Convert tuple to list for JSON; passthrough rest
@@ -769,6 +829,13 @@ with st.sidebar:
                     if k == "occupancy_chosen" and isinstance(v, list) and len(v) == 2:
                         v = tuple(v)
                     st.session_state[k] = v
+                # F6 / Ch9 Q6 (owner answers 12.10.2026): a file without these keys
+                # (saved before phase 3) clears them, so no table or group from the
+                # previous project is carried over; the editor restarts from the file.
+                st.session_state["storey_table_input"] = list(_data.get("storey_table_input") or [])
+                st.session_state["storey_table_base"] = st.session_state["storey_table_input"]
+                st.session_state.pop("storey_table_editor", None)
+                st.session_state["animal_housing_group_input"] = _data.get("animal_housing_group_input")
                 st.session_state["_scenario_loaded_marker"] = True
                 st.success("Scenario loaded - sidebar widgets refreshed.")
                 st.rerun()
@@ -867,6 +934,19 @@ with st.sidebar:
     st.session_state["occupancy_chosen"] = (_chosen_cat, _chosen_sub)
     occupancy = _chosen_sub
     st.info(OCCUPANCY_DEFS.get(occupancy, ""))
+    if occupancy == "animal_housing":
+        # Owner answer 12.10.2026, Ch9 Q6: the three groups take their printed hazard
+        # class (#1.1.13.1.q / r, p.528; #1.1.13.3.a, p.529). No default group.
+        st.selectbox(
+            "Animal housing group (required)", list(ANIMAL_HOUSING_GROUPS), index=None,
+            format_func=lambda g: (f"Group {g} - {ANIMAL_HOUSING_GROUPS[g][3]} "
+                                   f"({ANIMAL_HOUSING_GROUPS[g][0]}, {ANIMAL_HOUSING_GROUPS[g][1]})"),
+            placeholder="Select the group (#1.1.13)",
+            key="animal_housing_group_input",
+            help="Ch 9 #1.1.13: Group A (animal market, pet shops, bird market, veterinary "
+                 "clinic) and Group C (zoo) are Light Hazard (#1.1.13.1.q, r, p.528); Group B "
+                 "(stable, animal sheds, livestock shelter, slaughter houses) is Ordinary "
+                 "Hazard Group 2 (#1.1.13.3.a, p.529).")
     if occupancy in INCOMPATIBLE_FLAGS_BY_OCC:
         st.caption(
             "💡 Special Rooms / Equipment that typically don't apply to this "
@@ -924,7 +1004,7 @@ with st.sidebar:
     for w in _warnings:
         st.caption(w)
 
-    derived_hazard = default_hazard(occupancy)
+    derived_hazard = default_hazard(occupancy, st.session_state.get("animal_housing_group_input"))
     # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking is Extra Hazard
     # Group 2 (#1.1.13.5.b, p.530); the hazard is forced to HH + EH2 when ticked.
     _robotic_eh2 = (bool(st.session_state.get("has_robotic_parking"))
@@ -934,6 +1014,12 @@ with st.sidebar:
         st.caption("Hazard class: **HH, Extra Hazard Group 2** (robotic / mechanical parking "
                    "is ticked: #1.1.13.5.b, p.530 lists 'Parking, Group B (Robotic, Mechanical "
                    "parking)' under Extra Hazard, Group 2; owner ruling 12.10.2026, Ch9 Q7).")
+    elif occupancy == "animal_housing":
+        _ahg = st.session_state.get("animal_housing_group_input")
+        if _ahg in ANIMAL_HOUSING_GROUPS:
+            _hz, _cl, _pg, _ = ANIMAL_HOUSING_GROUPS[_ahg]
+            st.caption(f"Hazard class (Animal Housing Group {_ahg}, {_cl}, {_pg}): **{_hz}** "
+                       "(owner answer 12.10.2026, Ch9 Q6)")
     elif occupancy != "storage_industrial":
         st.caption(f"Hazard class (auto-derived from occupancy, #1.1.13): **{derived_hazard}**")
     if occupancy in ("assembly_b", "assembly_c"):
@@ -1227,7 +1313,8 @@ with st.sidebar:
             "Largest storey area (m2)", min_value=0.0, value=0.0, step=100.0,
             key="largest_storey_area_m2_input",
             help="Table 3.14 runs on the occupant load of the largest storey (#4.3.1, "
-                 "#4.1.3). 0 = not entered: the whole GFA is used and the report says so.")
+                 "#4.1.3). 0 = not entered: the whole GFA is used and the report says so. "
+                 "Not used when the per-storey table below has lines.")
         if occupancy in ("mall_covered", "mall_open", "mall_mixed"):
             st.number_input(
                 "Mall gross leasable area, GLA (m2)", min_value=0.0, value=0.0, step=1000.0,
@@ -1251,6 +1338,31 @@ with st.sidebar:
             with _c2:
                 st.number_input(f"Use {_i + 1}: area (m2)", min_value=0.0, value=0.0,
                                 step=50.0, key=f"use_area_m2_{_i}")
+        # Owner answer 12.10.2026, F6: per-storey per-use table. When it has lines it
+        # governs the OL and the Table 3.14 count (per storey, #4.3.1 / #4.1.3).
+        st.markdown("*Per-storey table (optional): storey, Table 3.13 row, area*")
+        st.caption("One line per use on each storey; lines with the same storey name form "
+                   "one storey. Row blank = the densest Table 3.13 row of the occupancy. "
+                   "When the table has lines it replaces the largest storey area and the "
+                   "per-use areas above for the occupant load and Table 3.14.")
+        if "storey_table_base" not in st.session_state:
+            st.session_state["storey_table_base"] = list(
+                st.session_state.get("storey_table_input") or [])
+        _edited = st.data_editor(
+            _storey_table_frame(st.session_state["storey_table_base"]),
+            key="storey_table_editor", num_rows="dynamic", hide_index=True,
+            column_config={
+                "storey": st.column_config.TextColumn(
+                    "Storey", help="Storey name or level, e.g. GF, L1, B1."),
+                "row": st.column_config.SelectboxColumn(
+                    "Table 3.13 row", options=list(TABLE_3_13_ROWS),
+                    format_func=lambda r: f"{r} - {TABLE_3_13_ROWS[r][0]}",
+                    help="Blank = the densest Table 3.13 row of the occupancy (Ch3 Q2)."),
+                "area_m2": st.column_config.NumberColumn(
+                    "Area (m2)", min_value=0.0, step=10.0,
+                    help="Floor area of this use on this storey (#1.4.5)."),
+            })
+        st.session_state["storey_table_input"] = _storey_table_records(_edited)
 
     # ----- FE (Ch 4) -----
     with st.expander("🧯 FE - Settings (Ch 4)", expanded=False):
@@ -1347,6 +1459,16 @@ if (occupancy == "storage_industrial" or _storage_secondary) \
              "or Mixed occupancy when storage is another occupancy). Table 9.27 row 4 applies "
              "above 3600 m2 (#4.1.13); enter this building's GF BUA when it is the only "
              "building on the plot (owner ruling 12.10.2026, Ch9 Q1).")
+    st.stop()
+
+if occupancy == "animal_housing" \
+        and st.session_state.get("animal_housing_group_input") not in ANIMAL_HOUSING_GROUPS:
+    st.error("Select the animal housing group (sidebar, under the occupancy): Group A (animal "
+             "market, pet shops, bird market, veterinary clinic) and Group C (zoo) are Light "
+             "Hazard (#1.1.13.1.q, r, p.528); Group B (stable, animal sheds, livestock shelter, "
+             "slaughter houses) is Ordinary Hazard Group 2 (#1.1.13.3.a, p.529). A project "
+             "saved before the split has no group, and the tool does not assume one (owner "
+             "answer 12.10.2026, Ch9 Q6).")
     st.stop()
 
 # ---------- Pre-evaluate to detect wet riser requirement ---------------------
@@ -1695,6 +1817,13 @@ building = Building(
     is_waterfront=gs("is_waterfront"),
     is_theme_park=gs("is_theme_park"),
     tower_setback_over_30m=gs("tower_setback_over_30m"),
+    # Owner answer 12.10.2026, F6: per-storey table (blank = the inputs above)
+    storey_uses=[{"storey": ln.get("storey") or "", "row": ln.get("row"),
+                  "area_m2": float(ln.get("area_m2") or 0.0)}
+                 for ln in (st.session_state.get("storey_table_input") or [])],
+    # Owner answer 12.10.2026, Ch9 Q6
+    animal_housing_group=(st.session_state.get("animal_housing_group_input")
+                          if occupancy == "animal_housing" else None),
 )
 report = _cached_evaluate(building.model_dump_json())
 
@@ -1726,7 +1855,9 @@ st.markdown(
     ),
     unsafe_allow_html=True,
 )
-st.caption(f"**Occupancy:** `{occupancy}` - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
+_ahg_txt = (f" **Group {building.animal_housing_group}**" if building.animal_housing_group
+            else "")   # owner answer 12.10.2026, Ch9 Q6
+st.caption(f"**Occupancy:** `{occupancy}`{_ahg_txt} - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
 
 _ol = report.occupant_load
 _fa = report.fire_access
@@ -1740,8 +1871,10 @@ with d2:
     # shown (owner ruling 12.10.2026, Ch3 Q2). See the OL note.
     _ol_ok = bool(_ol and _ol.evaluated and _ol.occupant_load)
     st.metric("Occupant load", f"{_ol.occupant_load:,}" if _ol_ok else "not evaluated")
-    st.caption((f"≥ {_ol.min_exits} exits (Table 3.14 on the "
-                f"{'whole-building' if _ol.storey_area_m2 == _ol.area_m2 else 'largest storey'}"
+    _basis = (f"governing storey '{_ol.governing_storey}'" if _ol and _ol.governing_storey
+              else "whole-building" if _ol and _ol.storey_area_m2 == _ol.area_m2
+              else "largest storey")
+    st.caption((f"≥ {_ol.min_exits} exits (Table 3.14 on the {_basis}"
                 f" OL {_ol.storey_occupant_load:,})") if _ol_ok else
                (_ol.exit_ref if _ol else ""))
 with d3:
@@ -1753,6 +1886,8 @@ with d4:
 st.markdown(ui.status_summary_html(_tot), unsafe_allow_html=True)
 if _ol and _ol.note:
     st.caption(f"OL: {_ol.note}")
+for _w in (_ol.warnings if _ol else []):   # owner answer 12.10.2026, F6
+    st.warning(f"Per-storey table: {_w}")
 if report.mixed_occupancy_note:
     st.info(report.mixed_occupancy_note)
 
@@ -1783,7 +1918,7 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
             b_building = building.model_copy(update={
                 "occupancy": b_occ,
                 "height_m": float(b_h),
-                "hazard_class": default_hazard(b_occ),
+                "hazard_class": default_hazard(b_occ, building.animal_housing_group),
             })
             b_report = evaluate(b_building)
             b_tot = b_report.count_status()

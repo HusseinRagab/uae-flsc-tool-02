@@ -66,7 +66,7 @@ OCCUPANCY_DEFS = {
     "labour_accommodation": "Labour Accommodation - Dormitory-style housing for construction/industrial workers with shared facilities.",
     "staff_accommodation": "Staff Accommodation - Housing for employees of a single institution (hospital/hotel/airport staff).",
     "hostel": "Hostel - Shared lodging, bunk-bed dormitories, youth hostels, pilgrim accommodation.",
-    "animal_housing": "Animal Housing - Stables, kennels, veterinary boarding, livestock pens.",
+    "animal_housing": "Animal Housing - Group A (animal market, pet shops, bird market, veterinary clinic), Group B (stable, animal sheds, livestock shelter, slaughter houses), Group C (zoo), as listed in Ch 9 #1.1.13 (p.528-529). Choose the group.",
     "detention_a": "Detention & Correctional Group A - Maximum security; occupants restrained and require supervised evacuation.",
     "detention_b": "Detention & Correctional Group B - Medium security correctional facilities.",
     "detention_c": "Detention & Correctional Group C - Minimum security, police holding cells, short-term detention.",
@@ -93,8 +93,10 @@ OCCUPANCY_DEFS = {
 #   OH2 #1.1.13.3: Animal Housing B (stables, animal sheds, livestock shelter),
 #       Malls Group A (covered malls).
 #   EH2 #1.1.13.5.b: robotic / mechanical parking.
-# Animal Housing A and C are LH; the tool's single animal_housing occupancy takes the
-# highest of its three groups (OH2) until the group is chosen (override in the app).
+# Animal Housing A and C are LH (#1.1.13.1.q, r, p.528), B is OH2 (#1.1.13.3.a, p.529):
+# see ANIMAL_HOUSING_GROUPS. The animal_housing value below (OH2, the highest of the
+# three) is used only where no group is known (a secondary occupancy in R13 mode); the
+# app requires the group for the primary occupancy (owner answer 12.10.2026, Ch9 Q6).
 # Storage / industrial has no default: the app makes the user choose (Table 9.27).
 # HAZARD_NOT_CLASSIFIED lists the occupancies #1.1.13 does not name; their value
 # here is the tool's working default and the app says the designer must select.
@@ -150,7 +152,18 @@ def occupancy_group(occ: str) -> Optional[str]:
     return None
 
 
-def default_hazard(occ: str) -> str:
+# Owner answer 12.10.2026, Ch9 Q6 (phase 3): animal housing split into its three groups.
+# group: (hazard class, #1.1.13 clause, page, examples as printed).
+ANIMAL_HOUSING_GROUPS = {
+    "A": ("LH", "#1.1.13.1.q", "p.528", "Animal Market, Pet Shops, Bird Market, Veterinary Clinic"),
+    "B": ("OH2", "#1.1.13.3.a", "p.529", "Stable, Animal sheds, Livestock Shelter, Slaughter Houses"),
+    "C": ("LH", "#1.1.13.1.r", "p.528", "Zoo"),
+}
+
+
+def default_hazard(occ: str, animal_housing_group: Optional[str] = None) -> str:
+    if occ == "animal_housing" and animal_housing_group in ANIMAL_HOUSING_GROUPS:
+        return ANIMAL_HOUSING_GROUPS[animal_housing_group][0]
     return HAZARD_BY_OCCUPANCY.get(occ, "OH1")
 
 
@@ -159,6 +172,16 @@ class UseArea(BaseModel):
     (see occupant_load.TABLE_3_13_ROWS) and the floor area assigned to it.
     Owner ruling 12.10.2026, Ch3 Q2."""
     row: str
+    area_m2: float = Field(0.0, ge=0)
+
+
+class StoreyUse(BaseModel):
+    """One line of the per-storey table (owner answer 12.10.2026, F6): the storey it
+    belongs to, a Table 3.13 row id (None = the densest row of the occupancy, Ch3 Q2)
+    and the floor area of that use on that storey. Lines with the same storey name
+    form one storey."""
+    storey: str = ""
+    row: Optional[str] = None
     area_m2: float = Field(0.0, ge=0)
 
 
@@ -187,6 +210,7 @@ class Building(BaseModel):
     # 0 / empty = not entered; each fallback is named in the report line.
     largest_storey_area_m2: float = Field(0.0, ge=0)   # Q1: Table 3.14 per storey (#4.3.1); 0 -> whole GFA
     use_areas: List[UseArea] = Field(default_factory=list)  # Q2: per-use areas (#1.4.5); empty -> densest Table 3.13 row
+    storey_uses: List[StoreyUse] = Field(default_factory=list)  # F6: per-storey per-use table; empty -> the inputs above
     mall_gla_m2: float = Field(0.0, ge=0)              # Q3: mall gross leasable area (Table 3.13 row 14); 0 -> GFA
     building_volume_m3: float = Field(0.0, ge=0)       # Q5: gross cubical extent (#2.8.8.a / #2.8.9.a); 0 -> footprint x height
     is_waterfront: bool = False                        # Q6: waterfront property (#2.8.10, Table 2.8)
@@ -198,6 +222,9 @@ class Building(BaseModel):
     ] = "unspecified"
 
     hazard_class: Literal["LH", "OH1", "OH2", "HH"] = "OH1"
+    # Owner answer 12.10.2026, Ch9 Q6: Animal Housing Group A / B / C (#1.1.13). With a
+    # group and no hazard_class given, the hazard is the group's printed class.
+    animal_housing_group: Optional[Literal["A", "B", "C"]] = None
 
     # --- FP (Ch 9) - High Ceiling
     has_high_ceiling: bool = False
@@ -372,6 +399,15 @@ class Building(BaseModel):
         return "general"
 
     @model_validator(mode="after")
+    def _animal_housing_hazard(self):
+        """Ch 9 #1.1.13 (p.528-529): the chosen animal housing group sets the hazard
+        class unless one was given explicitly (an override)."""
+        if (self.occupancy == "animal_housing" and self.animal_housing_group
+                and "hazard_class" not in self.model_fields_set):
+            self.hazard_class = ANIMAL_HOUSING_GROUPS[self.animal_housing_group][0]
+        return self
+
+    @model_validator(mode="after")
     def _height_stated(self):
         if self.height_m <= 0 and "height_m" in self.model_fields_set \
                 and self.occupancy != "infrastructure":
@@ -442,7 +478,11 @@ class Building(BaseModel):
 
     @property
     def use_area_total_m2(self) -> float:
-        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered."""
+        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered. When the
+        per-storey table has lines it governs (owner answer 12.10.2026, F6) and its
+        areas are summed instead."""
+        if self.storey_uses:
+            return sum(u.area_m2 for u in self.storey_uses)
         return sum(u.area_m2 for u in self.use_areas)
 
     @property
@@ -531,6 +571,20 @@ class OccupantLoadSummary(BaseModel):
     evaluated: bool = True
     storey_area_m2: float = 0.0
     storey_occupant_load: int = 0
+    # Owner answer 12.10.2026, F6: per-storey table results. governing_storey is the
+    # storey whose OL sets the Table 3.14 count; warnings are input checks to show.
+    governing_storey: str = ""
+    storeys: List["StoreyLoad"] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+
+
+class StoreyLoad(BaseModel):
+    """One storey of the per-storey table (F6): area, OL and Table 3.14 exits."""
+    storey: str
+    area_m2: float = 0.0
+    occupant_load: int = 0
+    min_exits: int = 0
+    parts: List[str] = Field(default_factory=list)
 
 
 class FireAccessSummary(BaseModel):
