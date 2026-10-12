@@ -547,31 +547,31 @@ CASES = [
              "Fire Pump (Tier 4 OH)",
          ]),
 
-    dict(name="AUDIT FP: Aircraft hanger -> foam deluge + 1500 gpm (Table 9.27 Group Q)",
+    dict(name="AUDIT FP: Aircraft hanger (Group I default) -> foam deluge + 3000 gpm (Table 9.27 Group Q.1)",
          inputs=dict(occupancy="storage_industrial", height_m=12, ground_floor_bua_m2=4000,
                      plot_area_m2=10000, hazard_class="OH2", is_aircraft_hanger=True),
          expect_fp_branch="storage_aircraft_hanger",
          expect_fp_systems=[
              "Foam-Water Deluge System",
              "Fire Pump (Aircraft Hanger)",
-             "Fire Water Tank + Foam Concentrate",
+             "Foam Concentrate",
          ]),
 
     dict(name="AUDIT FP: Cold storage -> dry-pipe sprinklers (Table 9.27 Group P)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000,
                      plot_area_m2=5000, hazard_class="OH1", is_cold_storage=True),
-         expect_fp_branch="storage_cold_storage",
+         expect_fp_branch="storage_cold_storage_r3",
          expect_fp_systems=[
-             "Automatic DRY-Pipe Sprinkler System (NOT wet pipe)",
+             "Automatic Dry Type Sprinkler System",
          ]),
 
     dict(name="AUDIT FP: Flammable liquid warehouse -> foam + 120-min tank (Table 9.27 Group R)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000,
                      plot_area_m2=5000, hazard_class="HH", is_flammable_liquid_warehouse=True),
-         expect_fp_branch="storage_flammable_liquid_warehouse",
+         expect_fp_branch="storage_flammable_liquid_warehouse_r3",
          expect_fp_systems=[
              "Sprinkler OR Foam-Water Sprinkler System",
-             "Fire Water Tank + Foam Reserve",
+             "Foam Solution Reserve",
          ]),
 
     dict(name="AUDIT FP: Plant nursery -> extinguishers only (Table 9.27 Group V)",
@@ -749,7 +749,7 @@ CASES = [
     dict(name="AUDIT FP: Idle pallet warehouse (Table 9.27 Group K)",
          inputs=dict(occupancy="storage_industrial", is_idle_pallet_storage=True,
                      height_m=10, ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="OH2"),
-         expect_fp_branch="storage_idle_pallet_warehouse",
+         expect_fp_branch="storage_idle_pallet_warehouse_r2",
          expect_fp_systems=["Fire Pump (Idle Pallet Storage)"]),
 
     # ---- AUDIT FP: Tunnel (Table 9.28) ----
