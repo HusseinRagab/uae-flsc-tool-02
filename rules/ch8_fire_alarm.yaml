@@ -95,7 +95,7 @@ branches:
     match:
       height_m_gt: 90
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
-                      mall_covered, mall_open, mall_mixed,
+                      mall_covered, mall_mixed,
                       parking_enclosed, parking_open,
                       storage_industrial,
                       detention_a, detention_b, detention_c,
@@ -130,7 +130,7 @@ branches:
       height_m_gte: 23
       height_m_lte: 90
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
-                      mall_covered, mall_open, mall_mixed,
+                      mall_covered, mall_mixed,
                       parking_enclosed, parking_open,
                       storage_industrial,
                       detention_a, detention_b, detention_c,
@@ -156,7 +156,7 @@ branches:
     match:
       height_m_lt: 23
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
-                      mall_covered, mall_open, mall_mixed,
+                      mall_covered, mall_mixed,
                       parking_enclosed, parking_open,
                       storage_industrial,
                       detention_a, detention_b, detention_c,
@@ -176,7 +176,9 @@ branches:
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
 
   - id: fa_mall
-    match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
+    # Item 24 is headed "COVERED MALL" (p.507). An open mall has no Table 8.13 row
+    # and takes item 13 MERCANTILE through the height rows (ruling R10, 12.10.2026).
+    match: {occupancy_in: [mall_covered, mall_mixed]}
     section: "Ch 8, #5.1 / Table 8.13 item 24"
     page: "p.507"
     systems:
@@ -337,15 +339,33 @@ branches:
       - name: "Positive Alarm Sequence (PAS) - 120 s"
         detail: "If not silenced/reset within 120 s, evacuation alarm triggers throughout the parking."
 
+  - id: fa_mall_open
+    # Ruling R10 (12.10.2026): label only; the requirements come from the height
+    # row (items 3-4 + 9-13 below 23 m, items 1-2 at 23 m or more).
+    match: {occupancy: mall_open}
+    section: "Ch 8, #5.1 / Table 8.13 item 13 (open mall, ruling R10)"
+    page: "p.503"
+    systems:
+      - name: "Open Mall - Table 8.13 item 13 MERCANTILE applies"
+        required: conditional
+        detail: "Table 8.13 has no open-mall row; item 24 is headed COVERED MALL (p.507). The open mall is treated as item 13 MERCANTILE (p.503): smoke detection throughout, system interfaces, Table 8.14 / 8.15 rooms and equipment, PAS 180 s then evacuation throughout (ruling R10, 12.10.2026). At 23 m or more the highrise row governs as for any mercantile building."
+
   - id: fa_parking_open
+    # Ruling R10 (12.10.2026): Table 8.13 has no open-parking row. Item 22 ENCLOSED
+    # PARKING is applied by analogy and every line says so.
     match: {occupancy: parking_open}
-    section: "Ch 8, #5.1 / Table 8.13 item 22"
+    section: "Ch 8, #5.1 / not in Table 8.13 - item 22 applied by analogy (ruling R10)"
     page: "p.506"
     systems:
-      - name: "Manual Fire Detection and Alarm System"
-        spec: "Per Section 4.10"
-        detail: "Manual call points only; automatic detection not required for open parking."
-      - name: "Audio-Visual Notification (throughout parking areas)"
+      - name: "Open Parking - not in Table 8.13; item 22 (Enclosed Parking) applied by analogy"
+        required: conditional
+        detail: "Table 8.13 (p.502-508) has no open-parking row. Item 22 ENCLOSED PARKING is applied by analogy (ruling R10, 12.10.2026); confirm with Civil Defence. Table 8.1 item 5 (i) (p.456) asks for automatic addressable detection in every building and enclosed structure."
+      - name: "Conditional FA System (per sprinkler presence) - by analogy with item 22"
+        detail: "By analogy with Table 8.13 item 22 (i)-(iii): if the parking is fully sprinklered, Manual Fire Detection and Alarm System (Section 4.10), no automatic detectors; if NOT sprinklered, Heat Detection and Alarm System (Section 4.7) throughout."
+      - name: "Audio-Visual Notification (throughout parking areas) - by analogy with item 22"
+        detail: "Table 8.13 item 22 (iv), applied by analogy."
+      - name: "Positive Alarm Sequence (PAS) - 120 s - by analogy with item 22"
+        detail: "Table 8.13 item 22 (vii)-(viii), applied by analogy: if not silenced or reset within 120 s, evacuation alarm triggers throughout the parking."
 
   - id: fa_villa_private
     match: {occupancy: villa_private}
@@ -477,11 +497,20 @@ auxiliary_rooms:
   - id: fa_aux_lv_mv
     flag: has_lv_mv_room
     systems:
-      - name: "Smoke Detection (LV / MV Room)"
+      - name: "Smoke Detection (LV Room)"
         code_ref: "Ch 8, #5.2 / Table 8.14 item 11"
         page_ref: "p.509"
         spec: "Per Section 4.4 OR Aspiration per Section 4.5"
-        detail: "Code Table 8.14 item 11 references 'LV ROOM' only; MV is treated the same as an engineering-safe interpretation. Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
+        detail: "Code text cites 'Section 4.4' which is Beam-Type (Projected Beam) Smoke; the intended reference is Section 4.3 (Spot-Type Smoke). YAML follows code wording for traceability."
+
+  - id: fa_aux_mv
+    flag: has_mv_room
+    systems:
+      - name: "Smoke Detection (MV Room)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 11 (LV room row applied to MV, ruling R12)"
+        page_ref: "p.509"
+        spec: "Per Section 4.4 OR Aspiration per Section 4.5"
+        detail: "Engineering decision, not a code row: Table 8.14 has no MV room row (item 9 ELECTRICAL ROOM and item 11 LV ROOM both call for smoke detection); the item 11 LV row is applied to the MV room (ruling R12, 12.10.2026)."
 
   - id: fa_aux_lift_machine
     flag: has_lift_machine_room

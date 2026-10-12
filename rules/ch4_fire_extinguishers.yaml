@@ -177,11 +177,11 @@ addons:
   - id: fe_class_c_lv_mv
     flag: has_lv_mv_room
     systems:
-      - name: "Class C Extinguisher - LV / MV Room"
+      - name: "Class C Extinguisher - LV Room"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4"
         page_ref: "p.376"
         spec: "CO2 5 kg OR Clean Agent 5 kg"
-        detail: "Inside LV/MV room next to exit. Max travel 9 m."
+        detail: "Inside the LV room next to exit. Max travel 9 m. An MV room takes the HV row (ruling R12)."
 
   - id: fe_class_c_telephone
     flag: has_main_telephone_room
@@ -255,6 +255,15 @@ addons:
         page_ref: "p.376"
         spec: "Wheeled CO2 12 kg"
         detail: "Trolley-mounted CO2 inside the HV / heavy electrical equipment room, next to exit. Max travel 9 m."
+
+  - id: fe_class_c_wheeled_mv
+    flag: has_mv_room
+    systems:
+      - name: "Class C Wheeled CO2 - MV Room (treated as HV)"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 5 item 9 (MV as HV, ruling R12)"
+        page_ref: "p.376"
+        spec: "Wheeled CO2 12 kg"
+        detail: "Engineering decision, not a code row: Table 4.3 names LV rooms (row 4, CO2 or clean agent 5 kg) and HV rooms (row 5, wheeled CO2 12 kg) only. The MV room is treated as HV (ruling R12, 12.10.2026). Trolley-mounted CO2 inside the room, next to exit. Max travel 9 m."
 
   # ---- Class K - Commercial kitchen ----
   - id: fe_class_k_commercial

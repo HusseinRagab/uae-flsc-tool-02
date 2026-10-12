@@ -92,7 +92,7 @@ general:
       floors_below_grade_gt: 0
     systems:
       - name: "Basement / Parking Podium Travel Distance (Table 3.15.b)"
-        spec: "Sprinklered enclosed basement parking: max 61 m travel + 15 m commonpath / dead-end. Non-sprinklered: 46 m travel + 15 m. Open podium parking: 122 m travel + 15 m."
+        spec: "Sprinklered enclosed basement parking: max 61 m travel + 15 m commonpath / dead-end. Non-sprinklered: 46 m travel + 15 m. Open podium parking: sprinklered 122 m travel; non-sprinklered 91 m (Table 3.16 row 20.ii, ruling R9) + 15 m."
         code_ref: "Ch 3, #4.4.8 / Table 3.15.b"
         page_ref: "p.291"
         detail: "Applies to basements and enclosed podiums used only for vehicle parking and service rooms (generator, server, battery, service rooms)."
@@ -341,14 +341,16 @@ branches:
 
   - id: moe_parking_open
     match: {occupancy: parking_open}
-    section: "Ch 3, #4 + #5.16 / Tables 3.13 row 19 (Open) + 3.15.b items iii-iv"
-    page: "p.287, 291"
+    section: "Ch 3, #4 + #5.16 / Tables 3.13 row 19 (Open) + 3.15.b items iii-iv + 3.16 row 20.ii"
+    page: "p.287, 291, 295"
     systems:
       - name: "Occupant Load Factor (Open Parking - Table 3.13 row 19)"
         spec: "27.9 m² gross. Stair capacity 7.6 mm/person; ramp 5 mm/person"
       - name: "Travel Distance (Open Podium Parking)"
-        spec: "Max 122 m travel from most remote parking lot to exit door (sprinklered or non-sprinklered)"
-        detail: "Per Table 3.15.b items iii-iv. Dead-end and commonpath shall not exceed 15 m. Open podium parking benefits from natural ventilation - the longer travel distance acknowledges the much lower smoke / heat hazard. Note: Mechanical/Robotic parking is a SEPARATE row (Table 3.13 row 20, Parking Group C) with OLF 46.5 m² - see moe_parking_enclosed for the row 20 reference."
+        spec: "Travel S 122 m, NS 91 m from most remote parking lot to exit door; commonpath and dead-end 15 m"
+        code_ref: "Ch 3, Table 3.16 row 20.ii + Table 3.15.b items iii-iv"
+        page_ref: "p.295, 291"
+        detail: "Table 3.16 row 20.ii (p.295) gives open parking S 122 m, NS 91 m travel. CODE CONFLICT: Table 3.15.b item iv (p.291) prints 122 m for a non-sprinklered open podium. The tool uses the stricter 91 m (ruling R9, 12.10.2026); confirm with Civil Defence. Dead-end and commonpath shall not exceed 15 m. Open podium parking benefits from natural ventilation - the longer travel distance acknowledges the much lower smoke / heat hazard. Note: Mechanical/Robotic parking is a SEPARATE row (Table 3.13 row 20, Parking Group C) with OLF 46.5 m² - see moe_parking_enclosed for the row 20 reference."
       - name: "Open-parking definition (Ch 1, Table 1.9.34)"
         detail: "To qualify as 'open parking' the structure must have permanent wall openings ≥ 0.4 m² per linear metre of exterior perimeter, distributed over 40% of perimeter or uniformly on at least two opposing sides; interior wall lines / column lines ≥ 20% open. Any part of parking within 30 m of permanent natural ventilation opening."
 

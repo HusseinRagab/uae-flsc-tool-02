@@ -182,10 +182,13 @@ class Building(BaseModel):
     has_diesel_generator_room: bool = False
     has_main_electrical_room: bool = True   # universal in any non-villa building
     has_ahu_room: bool = False
-    # has_lv_mv_room: code Table 8.14/9.30 item 11 mentions "LV ROOM" only; MV is treated
-    # the same here as an engineering-safe interpretation. Keep the combined flag for UI
-    # simplicity; surface MV in the rule detail text rather than splitting the flag.
+    # has_lv_mv_room = LV room (key kept so saved files still load). Ch 4 Table 4.3 names
+    # LV and HV rooms only and Table 8.14 has no MV row; Table 9.30.J is printed "LV ROOMS
+    # AND MV ROOMS". Ruling R12 (12.10.2026): an MV room is its own flag, treated as HV
+    # for extinguishers (wheeled CO2 12 kg, labelled an engineering decision), Table 8.14
+    # item 11 by analogy, and Table 9.30.J as printed.
     has_lv_mv_room: bool = False
+    has_mv_room: bool = False
     has_transformer_room_utility: bool = False
     has_transformer_room_private: bool = False
     has_lift_machine_room: bool = True      # default True; uncheck for MRL elevators / no lift
