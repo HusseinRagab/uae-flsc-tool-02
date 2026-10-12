@@ -370,64 +370,171 @@ branches:
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.D vii)."
 
   - id: midrise_public_small_plot
-    # Detention excluded — midrise detention has its own dedicated branch
-    # (midrise_detention, Table 9.20.d). Without this exclusion a 15-23 m
-    # detention building matched BOTH and produced duplicate Fire Pump lines.
-    match: {height_m_gt: 15, height_m_lte: 23, occupancy_group_is: midrise_public,
-            occupancy_not: [detention_a, detention_b, detention_c],
-            plot_area_m2_lt: 20000}
-    section: "Ch 9, #4.4.1 / Table 9.20.a (plot < 20,000 m2)"
+    # Table 9.20.a covers the #4.4.1 occupancies AND row H: high depth
+    # underground buildings or buildings with 3 or more basements. Per #1.7.45
+    # (p.45) high depth = more than 7 m or more than two basements below exit
+    # discharge, so a #4.4.2 (residential-group) building that is high depth
+    # routes here, not to Table 9.20.b (ruling 12.10.2026). Detention keeps
+    # Table 9.20.d, which is at least as onerous.
+    match:
+      height_m_gt: 15
+      height_m_lte: 23
+      occupancy_not: [detention_a, detention_b, detention_c]
+      any_of:
+        - {occupancy_group_is: midrise_public}
+        - {occupancy_group_is: midrise_residential, is_high_depth_is: true}
+      plot_area_m2_lte: 20000
+    section: "Ch 9, #4.4.1 / Table 9.20.a.1 (plot not more than 20,000 m2)"
     page: "p.700"
     systems:
-      - name: "Automatic Sprinkler System (full coverage)"
-        detail: "Full sprinkler coverage throughout midrise per Section 3.5."
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.1 i). Row H of Table 9.20.a applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45: more than 7 m or more than two basements below exit discharge). Plot area exactly 20,000 m2 is taken under row 1: the table prints less than / more than 20,000 m2 and #4.1.4 triggers yard hydrants only above 20,000 m2."
       - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
-        detail: "Wet risers throughout per Section 3.4."
+        detail: "Wet risers throughout per Section 3.4, interconnected at the highest level (Table 9.20.a.1 iii-iv)."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: standpipe_dependent
-        detail: "750 gpm for 2 standpipes, 1000 gpm for more than 2; 6.9 bar."
+        detail: "Table 9.20.a.1 v."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "45 minutes duration"
-        detail: "Dedicated breeching inlet + instantaneous refill."
+        detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.a.1 vi)."
 
   - id: midrise_public_large_plot
-    # Detention excluded — see midrise_public_small_plot note above.
-    match: {height_m_gt: 15, height_m_lte: 23, occupancy_group_is: midrise_public,
-            occupancy_not: [detention_a, detention_b, detention_c],
-            plot_area_m2_gte: 20000}
-    section: "Ch 9, #4.4.1 / Table 9.20.a (plot >= 20,000 m2)"
+    # Table 9.20.a covers the #4.4.1 occupancies AND row H: high depth
+    # underground buildings or buildings with 3 or more basements. Per #1.7.45
+    # (p.45) high depth = more than 7 m or more than two basements below exit
+    # discharge, so a #4.4.2 (residential-group) building that is high depth
+    # routes here, not to Table 9.20.b (ruling 12.10.2026). Detention keeps
+    # Table 9.20.d, which is at least as onerous.
+    match:
+      height_m_gt: 15
+      height_m_lte: 23
+      occupancy_not: [detention_a, detention_b, detention_c]
+      any_of:
+        - {occupancy_group_is: midrise_public}
+        - {occupancy_group_is: midrise_residential, is_high_depth_is: true}
+      plot_area_m2_gt: 20000
+    section: "Ch 9, #4.4.1 / Table 9.20.a.2 (plot more than 20,000 m2)"
     page: "p.700"
     systems:
-      - name: "Automatic Sprinkler System (full coverage)"
-        detail: "Full sprinkler coverage per Section 3.5."
-      - name: "Wet Riser System"
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.a.2 i). Row H applies to high depth underground buildings and buildings with 3 or more basements (#1.7.45)."
+      - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
-        detail: "Wet risers per Section 3.4, interconnected at highest level."
+        detail: "Wet risers per Section 3.4, interconnected at the highest level (Table 9.20.a.2 iii-iv)."
       - name: "Yard Fire Hydrants"
-        detail: "Yard hydrant loop per Section 3.11. Not required if infrastructure hydrants within 60 m."
+        detail: "Yard hydrants per Section 3.11 (Table 9.20.a.2 v). Not required where infrastructure yard hydrants are available within 60 m of the building; in that case Table 9.20.a.1 applies instead: pump 750 gpm (2 standpipes) or 1000 gpm (more than 2) @ 6.9 bar and a 45-minute tank (Table 9.20.a.2 vi)."
       - name: "Fire Pump"
-        spec: "Combined (yard + internal): 1000 gpm @ 6.9 bar"
-        detail: "Because plot >= 20,000 m2 the combined-duty pump is required."
+        duty: pump
+        spec: "1000 gpm @ 6.9 bar at most remote landing valve and hydrant (combined yard + internal; irrespective of number of standpipes)"
+        detail: "Table 9.20.a.2 vi (combined pump set serving yard hydrants and internal systems)."
       - name: "Fire Water Tank"
-        spec: "60 minutes duration"
-        detail: "Dedicated breeching inlet."
+        duty: tank
+        spec: "60 minutes duration (combined)"
+        detail: "Combined tank: low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.a.2 vii)."
 
-  - id: midrise_residential
-    match: {height_m_gt: 15, height_m_lte: 23, occupancy_group_is: midrise_residential}
-    section: "Ch 9, #4.4.2 / Table 9.20.b"
+  # ---- Midrise residential group (Table 9.20.b, #4.4.2, p.701-702) ----
+  # Rows 1-3 are tiers on the ground-floor built-up area; row 4 (plot more
+  # than 20,000 m2) adds yard hydrants and the 1000 gpm / 60 min duty on top
+  # of the applicable row 1-3. High depth buildings go to Table 9.20.a row H.
+  - id: midrise_residential_upto_900
+    match:
+      height_m_gt: 15
+      height_m_lte: 23
+      occupancy_group_is: midrise_residential
+      is_high_depth_is: false
+      ground_floor_bua_m2_lte: 900
+    section: "Ch 9, #4.4.2 / Table 9.20.b.1 (GF BUA up to 900 m2)"
     page: "p.701"
     systems:
-      - name: "Automatic Sprinkler System (full coverage)"
-        detail: "Full sprinkler coverage per Section 3.5."
-      - name: "Wet Riser System"
-        requires_wet_riser: true
-        detail: "Wet risers per Section 3.4."
+      - name: "Dry Riser + Hose Reel System (throughout)"
+        detail: "Dry riser and hose reel system throughout the building per Section 3.2 and Section 3.3 (Table 9.20.b.1 i). No sprinklers are required at this tier."
+      - name: "Dry Risers Interconnected at Highest Level"
+        detail: "Table 9.20.b.1 ii."
+      - name: "Automatic Sprinkler System"
+        required: not_required
+        detail: "Not required by Table 9.20.b.1 (GF BUA up to 900 m2)."
       - name: "Fire Pump"
-        pump_spec_type: standpipe_dependent
-        detail: "750 gpm for 2 standpipes, 1000 gpm for more than 2; 6.9 bar."
+        duty: pump
+        spec: "50 gpm @ 4.5 bar at most remote hose valve"
+        detail: "Table 9.20.b.1 iii."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "45 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.b.1 iv)."
+
+  - id: midrise_residential_901_3600
+    match:
+      height_m_gt: 15
+      height_m_lte: 23
+      occupancy_group_is: midrise_residential
+      is_high_depth_is: false
+      ground_floor_bua_m2_gt: 900
+      ground_floor_bua_m2_lte: 3600
+    section: "Ch 9, #4.4.2 / Table 9.20.b.2 (GF BUA 901 to 3,600 m2)"
+    page: "p.701"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.b.2 i). The table prints up to 900 m2 and 901 m2 to 3,600 m2; the tool takes any area above 900 m2 under this row."
+      - name: "Dry Riser + Hose Reel System (throughout)"
+        detail: "Dry riser and hose reel system throughout the building per Section 3.2 and Section 3.3 (Table 9.20.b.2 iii)."
+      - name: "Dry Risers Interconnected at Highest Level"
+        detail: "Table 9.20.b.2 iv."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "300 gpm @ 4.5 bar at most remote hose reel"
+        detail: "Table 9.20.b.2 v."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "45 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.b.2 vi)."
+
+  - id: midrise_residential_over_3600
+    match:
+      height_m_gt: 15
+      height_m_lte: 23
+      occupancy_group_is: midrise_residential
+      is_high_depth_is: false
+      ground_floor_bua_m2_gt: 3600
+    section: "Ch 9, #4.4.2 / Table 9.20.b.3 (GF BUA more than 3,600 m2)"
+    page: "p.701"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.20.b.3 i)."
+      - name: "Wet Riser System (interconnected at highest level)"
+        requires_wet_riser: true
+        detail: "Wet riser system throughout per Section 3.4, interconnected at the highest level (Table 9.20.b.3 ii-iii)."
+      - name: "Fire Pump"
+        duty: pump
+        pump_spec_type: standpipe_dependent
+        detail: "Table 9.20.b.3 v."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "45 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.b.3 vi)."
+
+  - id: midrise_residential_large_plot
+    match:
+      height_m_gt: 15
+      height_m_lte: 23
+      occupancy_group_is: midrise_residential
+      is_high_depth_is: false
+      plot_area_m2_gt: 20000
+    section: "Ch 9, #4.4.2 / Table 9.20.b.4 (plot more than 20,000 m2)"
+    page: "p.702"
+    systems:
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 (Table 9.20.b.4 i). Sprinklers and wet riser or hose reel follow Table 9.20.b.1, 2 or 3 as applicable (items iii-iv), shown in the row above. Not required where infrastructure yard hydrants are available within 60 m of the building; the code then says the requirements of Table 9.20.b.3 apply (item ii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "1000 gpm (combined yard + internal, or yard hydrants only)"
+        detail: "Table 9.20.b.4 vi (combined pump set) and vii (pump set serving only the yard hydrants): 1000 gpm. Row 4 prints no pressure; the pressure of the applicable row 1-3 at the most remote outlet still applies."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.b.4 viii)."
 
   # ---- Midrise single-exit small footprint (Table 9.20.c, #4.4.3) ----
   # Residential/Business/Animal Housing midrise (15-23 m) with single exit stair
@@ -439,6 +546,8 @@ branches:
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
       ground_floor_bua_m2_lte: 500
       has_single_exit_stair_is: true
+      is_high_depth_is: false
+    suppresses: [midrise_residential_upto_900]
     section: "Ch 9, #4.4.3 / Table 9.20.c"
     page: "p.703"
     systems:
