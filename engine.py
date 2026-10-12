@@ -251,9 +251,13 @@ def _merge_duties(items: List[Requirement]) -> List[Requirement]:
         w = items[best]
         others = [items[i] for i in idx if i != best]
         note = "; ".join(f"{o.spec or o.system} ({o.code_ref})" for o in others)
-        extra = (f" Governing {'pump duty' if duty == 'pump' else 'tank duration'}: "
-                 f"more than one code table applies to this building and this is the "
-                 f"most onerous. Also checked, not governing: {note}.")
+        what = "pump duty" if duty == "pump" else "tank duration"
+        if all(_duty_key(o) == _duty_key(w) for o in others):
+            extra = f" The same {what} is also required by: {note}."
+        else:
+            extra = (f" Governing {what}: more than one code table applies to this "
+                     f"building and this is the most onerous. Also checked, not "
+                     f"governing: {note}.")
         if duty == "pump":
             hi_bar = max((_max_num(o.spec, "bar") for o in others), default=0.0)
             if hi_bar > _max_num(w.spec, "bar"):
