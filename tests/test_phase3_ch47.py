@@ -79,3 +79,41 @@ def test_CH47_13_fe_text_is_the_printed_text():
         assert gone not in text, gone
     rmu = named(r, "FE", "Class C Extinguisher - RMU Room")
     assert rmu and rmu[0].code_ref.endswith("row 4 items 7-8")
+
+
+# ------------------------------------------------------------------ Ch 5
+def test_CH47_03_education_a_gets_nursery_strip_line():
+    """Table 5.3 item 8.ii p.398 'Nurseries shall be provided with Photoluminescent Exit
+    Marking strips as per Table 5.1.4'; Table 1.1 p.48 Group A lists nurseries beside
+    kindergartens, so the line is conditional until the nursery box is ticked."""
+    name = "Photoluminescent Exit Marking Strips (Nurseries)"
+    r = report(occupancy="education_a", height_m=8, ground_floor_bua_m2=800)
+    s = named(r, "ES", name)
+    assert len(s) == 1 and s[0].status == "conditional" and "8.ii" in s[0].code_ref
+    t = report(occupancy="education_a", height_m=8, ground_floor_bua_m2=800, has_nursery_within=True)
+    s = named(t, "ES", name)
+    assert [x.status for x in s] == ["required"]
+    assert not named(report(occupancy="education_b", height_m=8), "ES", name)
+
+
+def test_CH47_14_floor_proximity_and_distance_wording():
+    """Table 5.3 items 6.ii / 11.iii (p.397-398) floor proximity in assembly and hotel;
+    Table 5.2 #4 p.395 rated viewing distance or 30 m, whichever is less."""
+    r = report(occupancy="business", height_m=10)
+    text = all_text(r, "ES")
+    assert "all assembly occupancies (Table 5.3 item 6.ii" in text
+    assert "all hotel occupancies (Table 5.3 item 11.iii" in text
+    assert "rated viewing distance or 30 m, whichever is less" in text
+    for gone in ("dance halls", "spaced further than 15 m", "line-of-sight", "~"):
+        assert gone not in text, gone
+
+
+def test_CH47_17_exit_sign_colours_and_spacing():
+    """Table 5.1 item 1 p.388: 9.5 mm letter spacing; 'EXIT' matte White on Green;
+    running man Green on White, open door background."""
+    r = report(occupancy="business", height_m=10)
+    s = named(r, "ES", "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)")
+    assert len(s) == 1
+    for v in ("9.5 mm", "matte White colour on Green background",
+              "Green colour on White, open door background"):
+        assert v in s[0].spec, v

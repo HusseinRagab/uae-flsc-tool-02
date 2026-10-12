@@ -19,8 +19,8 @@ general:
       - name: "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)"
         code_ref: "Ch 5, #2 / Table 5.1 item 1"
         page_ref: "p.388"
-        spec: "Letters >= 150 mm tall; principal stroke >= 19 mm wide; letter width >= 51 mm. Running-man pictogram >= 150 mm tall. 'EXIT' in English AND Arabic."
-        detail: "Per Table 5.1 item 1 (p.388): Exit signs shall read EXIT in English and Arabic in plainly legible letters. Letters not less than 150 mm (6 inch) in height; principal strokes >= 19 mm (3/4 inch) wide; letter width >= 51 mm proportionally. Running-man pictogram (ISO 7010 / NFPA 170) towards exit door, image height >= 150 mm. Pictograms per ISO 3864 / NFPA 170."
+        spec: "Letters >= 150 mm tall; principal stroke >= 19 mm wide; letter width >= 51 mm; spacing between letters >= 9.5 mm. Running-man pictogram >= 150 mm tall, >= 9.5 mm from the EXIT letters, heading towards an open door. 'EXIT' in English AND Arabic. Letter 'EXIT' in matte White colour on Green background; running man towards an open door in Green colour on White, open door background."
+        detail: "Per Table 5.1 item 1 (p.388): Exit signs shall read EXIT in English and Arabic in plainly legible letters. Letters not less than 150 mm (6 inch) in height; principal strokes >= 19 mm (3/4 inch) wide; letter width >= 51 mm proportionally. Item 1.iii: minimum spacing between letters not less than 9.5 mm (3/8 inch); item 1.iv: signs larger than item 1.ii use letter widths, strokes and spacing in proportion to their height. Item 2: image of running man towards the exit door not less than 150 mm (6 inch) high; spacing between the running man image and EXIT letter not less than 9.5 mm (3/8 inch); the running man heading towards an open door. Item 3 COLOURS: letter 'EXIT' in matte White colour on Green background; the 'RUNNING MAN TOWARDS AN OPEN DOOR' in Green colour on White, open door background."
 
   - id: es_g_illumination
     when:
@@ -32,8 +32,8 @@ general:
       - name: "Sign Illumination - External vs Internal"
         code_ref: "Ch 5, #2 / Table 5.2 item 1"
         page_ref: "p.395"
-        spec: "Every sign continuously illuminated (may flash on alarm). EXTERNALLY illuminated: >= 54 lux (5 ft-cd) at illuminated surface, contrast ratio >= 0.5, viewing distance ~ 15 m (visible from 100 x H meters where H = sign-board height). INTERNALLY illuminated: Civil Defence approved + listed, viewing distance ~ 30 m (visible from 150 x H meters where H = sign-board height)."
-        detail: "Per Table 5.2 item 1 (p.395). EXTERNALLY ILLUMINATED (#1.2): not less than 54 lux (5 ft-candle) at the illuminated surface, contrast ratio not less than 0.5; visible from 100 x H meters where H is the height of the sign board, i.e. approximately 15 m maximum viewing distance. INTERNALLY ILLUMINATED (#1.3): shall be approved and registered by Civil Defence for the purpose; visible from 150 x H meters, i.e. approximately 30 m maximum viewing distance. NOTE: external signs MUST NOT be spaced further than 15 m apart - spacing externally illuminated signs at 30 m intervals (the internal-sign limit) violates code."
+        spec: "Every sign continuously illuminated (may flash on alarm). EXTERNALLY illuminated: >= 54 lux (5 ft-cd) at illuminated surface, contrast ratio >= 0.5, viewing distance approximately 15 m (visible from 100 x H meters where H = height of the sign board). INTERNALLY illuminated: approved and registered by Civil Defence, viewing distance approximately 30 m (visible from 150 x H meters)."
+        detail: "Per Table 5.2 item 1 (p.395). EXTERNALLY ILLUMINATED (#1.2): not less than 54 lux (5 ft-candle) at the illuminated surface, contrast ratio not less than 0.5; visible from 100 x H meters where H is the height of the sign board, i.e. approximately 15 m maximum viewing distance. INTERNALLY ILLUMINATED (#1.3): shall be approved and registered by Civil Defence for the purpose; visible from 150 x H meters, i.e. approximately 30 m viewing distance. Table 5.2 #4 (p.395): no point in exit corridor or exit access corridor shall be in excess of the rated viewing distance or 30 m, whichever is less, from nearest Exit Sign / Directional Sign / Floor proximity Sign."
 
   - id: es_g_photoluminescent
     when:
@@ -71,7 +71,7 @@ general:
       - name: "Directional Exit Sign Placement Rules"
         code_ref: "Ch 5, #2 / Table 5.2 #2 (items iii-iv) + #4"
         page_ref: "p.395"
-        spec: "Mounted at a HEIGHT BETWEEN 3000 mm AND 4000 mm from the finished floor; installed at EVERY change of direction; PERPENDICULAR to the direction of egress; max line-of-sight distance OR 30 m (whichever is less) from nearest sign."
+        spec: "Mounted at a HEIGHT BETWEEN 3000 mm AND 4000 mm from the finished floor; installed at EVERY change of direction; PERPENDICULAR to the direction of egress; no point in exit corridor or exit access corridor in excess of the rated viewing distance or 30 m, whichever is less, from nearest Exit Sign / Directional Sign / Floor proximity Sign (Table 5.2 #4)."
         detail: "Per Table 5.2 #2 (p.395). #2.iii: Directional Exit Signs shall be installed at a height BETWEEN 3000 mm and 4000 mm from the finished floor (this mandatory mounting band applies to all overhead directional signs, distinct from floor-proximity signs). #2.iv: installed at every change of direction and perpendicular to the direction of egress. #4: no point in any exit corridor or exit access corridor shall be in excess of the rated viewing distance OR 30 m, whichever is less, from the nearest Exit Sign / Directional Sign / Floor Proximity Sign."
 
   - id: es_g_floor_proximity_mounting
@@ -85,7 +85,7 @@ general:
         code_ref: "Ch 5, #2 / Table 5.1 item 7 (trigger); also Table 5.2 #2.v-vi (mounting dimensions)"
         page_ref: "p.395"
         spec: "Bottom of sign 150-455 mm above finished floor; door-side signs within 100 mm from door frame"
-        detail: "Trigger and sign-format compliance from Table 5.1 item 7 (p.391): floor proximity Exit Signs comply with Table 5.1.1 and floor proximity Directional Signs comply with Table 5.1.2. Mounting dimensions from Table 5.2 #2.v-vi (p.395): bottom of sign shall be NOT LESS than 150 mm AND NOT MORE than 455 mm above the finished floor; where required at exit doors, mounted adjacent to door within 100 mm from door frame. Floor proximity signs are required where smoke layer can obscure ceiling-level signs (theatres, cinemas, dance halls, mall play / cinema / food-court zones, robotic parking, HH storage zones - see addons)."
+        detail: "Trigger and sign-format compliance from Table 5.1 item 7 (p.391): floor proximity Exit Signs comply with Table 5.1.1 and floor proximity Directional Signs comply with Table 5.1.2. Mounting dimensions from Table 5.2 #2.v-vi (p.395): bottom of sign shall be NOT LESS than 150 mm AND NOT MORE than 455 mm above the finished floor; where required at exit doors, mounted adjacent to door within 100 mm from door frame. Floor proximity Signs are required in all assembly occupancies (Table 5.3 item 6.ii, p.397) and all hotel occupancies (Table 5.3 item 11.iii, p.398). Elsewhere, floor proximity Exit / Directional signs, if provided, comply with Table 5.1.7 (Table 5.3 items 1.iv, 2.iii, 3.ii)."
 
   - id: es_g_exit_sign_mounting_position
     when:
@@ -111,7 +111,7 @@ general:
         code_ref: "Ch 5, #3 / Table 5.3 item 1"
         page_ref: "p.397"
         spec: "Externally OR internally illuminated, per Table 5.2 #1.1; sign format per Table 5.1.1"
-        detail: "Exit doors at exit corridors that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1 (size of letters, running-man pictogram, colours). Illumination may be EITHER external OR internal per Table 5.2 #1.1 (the code does not mandate internally illuminated) - external signs viewable to ~15 m, internal to ~30 m."
+        detail: "Exit doors at exit corridors that lead to exit discharge or to assembly points shall be provided with Exit Signs complying with Table 5.1.1 (size of letters, running-man pictogram, colours). Illumination may be EITHER external OR internal per Table 5.2 #1.1 (the code does not mandate internally illuminated); viewing distance approximately 15 m for externally illuminated and approximately 30 m for internally illuminated signs (Table 5.2 #1.2-1.3)."
 
   - id: es_g_horizontal_exit_signs
     when:
@@ -150,7 +150,7 @@ general:
         code_ref: "Ch 5, #3 / Table 5.3 item 3"
         page_ref: "p.397"
         spec: "Per Table 5.1.2 - directional arrow + running-man pictogram"
-        detail: "Directional Signs shall be provided in compliance with Table 5.1.2 along the exit access corridor. Per Table 5.2 #4 (p.395): no point in any exit corridor or exit access corridor shall exceed the rated viewing distance OR 30 m, whichever is less, from the nearest Exit / Directional / Floor Proximity Sign. The 30 m cap applies to ALL signs (external as well as internal); externally illuminated signs are further capped at ~15 m (100 x H) per Table 5.2 #1.2."
+        detail: "Directional Signs shall be provided in compliance with Table 5.1.2 along the exit access corridor. Per Table 5.2 #4 (p.395): no point in any exit corridor or exit access corridor shall exceed the rated viewing distance OR 30 m, whichever is less, from the nearest Exit / Directional / Floor Proximity Sign. The rated viewing distance of an externally illuminated sign is approximately 15 m (100 x H, Table 5.2 #1.2.ii) and of an internally illuminated sign approximately 30 m (150 x H, #1.3.ii)."
 
   - id: es_g_dead_end_no_exit
     when:
@@ -253,6 +253,19 @@ branches:
     systems:
       - name: "Educational Occupancy Compliance Note"
         detail: "Universal Exit/Directional Signs and Evacuation Plan apply. Nurseries and auditoriums also require Photoluminescent Exit Marking strips per Table 5.1.4 (see add-ons)."
+
+  # Table 5.3 item 8.ii (p.398) names Nurseries; Table 1.1 (p.48) Educational Group A
+  # lists Nurseries, Kindergarten, Preschool center and Talent Grooming centers as
+  # separate items, so an education_a building is not always a nursery (CH47-03).
+  - id: es_education_a_nursery_check
+    match: {occupancy: education_a, has_nursery_within_is: false}
+    section: "Ch 5, #3 / Table 5.3 item 8.ii"
+    page: "p.398"
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Nurseries)"
+        required: conditional
+        spec: "Per Table 5.1.4 - required where the building is or contains a nursery"
+        detail: "Table 5.3 item 8.ii (p.398): Nurseries shall be provided with Photoluminescent Exit Marking strips as per Table 5.1.4. Educational Group A (Table 1.1, p.48) covers nurseries, kindergartens, preschool centers and talent grooming centers; tick 'Nursery (inside education)' where the building is or contains a nursery and the line becomes required."
 
   - id: es_healthcare
     # Table 5.3 item 9 "HEALTHCARE OCCUPANCIES" is a single undivided row covering
