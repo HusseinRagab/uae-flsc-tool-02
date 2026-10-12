@@ -112,7 +112,7 @@ branches:
         code_ref: "Ch 11, #2.3.14 / Table 11.4 #7"
         page_ref: "p.903"
         spec: "ESVs required at: (a) knockout pot, (b) Pressure Reducing Distribution Panel (PRDP) local to each kitchen / apartment (Stage 2), and (c) building entry / utility takeoff."
-        detail: "Solenoid / motorized ESVs interfaced with gas-leak detection system, fire alarm system, and manual emergency shut-off pushbuttons at exits. Per code §2.3.14 + Table 11.4 #7, the mandatory ESV locations are the knockout pot, the PRDP serving each kitchen / apartment (Stage-2 local isolation), and at the point of building entry. Earlier guidance suggesting an ESV at 'every floor / risk-zone boundary' is NOT supported by the code text and has been corrected."
+        detail: "Solenoid / motorized ESVs interfaced with gas-leak detection system, fire alarm system, and manual emergency shut-off pushbuttons at exits. Per code #2.3.14 + Table 11.4 #7, the mandatory ESV locations are the knockout pot, the PRDP serving each kitchen / apartment (Stage-2 local isolation), and at the point of building entry. Earlier guidance suggesting an ESV at 'every floor / risk-zone boundary' is NOT supported by the code text and has been corrected."
       - name: "Manual Master Shut-off Valve at Building Entry"
         spec: "Per Section 2.5"
         detail: "Accessible to fire department at building perimeter."
@@ -180,10 +180,10 @@ addons:
         spec: "For Malls and developments larger than 20,000 m² with central LPG tanks: 4,000 Gal allowed on roof, installed as two 2,000 Gal LPG tanks spaced 15 m apart."
         detail: "Per Table 11.7 #3.iii (p.909), the standard 2,000 Gal cap is relaxed for Malls / developments greater than 20,000 m² that operate central LPG tanks. The roof inventory may go up to 4,000 Gal aggregate ONLY when split into two 2,000 Gal tanks installed at least 15 m apart. Does NOT apply to a single tank > 2,000 Gal."
       - name: "Super-Highrise Prohibition (Building Height > 90 m)"
-        code_ref: "Ch 11, §2.5.1.3"
+        code_ref: "Ch 11, #2.5.1.3"
         page_ref: "p.900"
         spec: "LPG tanks on Super-Highrise buildings (height greater than 90 m) are NOT ALLOWED."
-        detail: "Hard prohibition per code §2.5.1.3 (p.900): LPG tanks on super-highrise buildings (height greater than 90 m) shall not be installed. Where the building height exceeds 90 m, the roof-mounted LPG tank flag is incompatible and the design must instead use a ground-level / podium tank or central distribution from a remote tank farm. Verify against the building's reported height_m before approving any roof-tank configuration."
+        detail: "Hard prohibition per code #2.5.1.3 (p.900): LPG tanks on super-highrise buildings (height greater than 90 m) shall not be installed. Where the building height exceeds 90 m, the roof-mounted LPG tank flag is incompatible and the design must instead use a ground-level / podium tank or central distribution from a remote tank farm. Verify against the building's reported height_m before approving any roof-tank configuration."
       - name: "Roof-Mounted LPG Tank Separation Distances (Table 11.8)"
         code_ref: "Ch 11, #2.5.4 / Table 11.8"
         page_ref: "p.910"
@@ -289,11 +289,11 @@ addons:
         code_ref: "Ch 11, #2.5.6 / Table 11.11"
         page_ref: "p.921-922"
         spec: "Per Table 11.11 - tapping point design, isolation valves, pressure regulation stages, leak monitoring"
-        detail: "Wherever a building taps from a central / municipal LPG distribution network, the PRDP (Pressure Reducing Distribution Panel, per code §2.5.6, p.921) is the demarcation between utility and consumer. Requirements: dedicated tapping vault or above-ground enclosure, double-block-and-bleed isolation, two-stage pressure regulation (utility side and consumer side), pressure-relief venting to safe location, leak detection at the PRDP. Mandatory for all LPG installations downstream of a central network."
+        detail: "Wherever a building taps from a central / municipal LPG distribution network, the PRDP (Pressure Reducing Distribution Panel, per code #2.5.6, p.921) is the demarcation between utility and consumer. Requirements: dedicated tapping vault or above-ground enclosure, double-block-and-bleed isolation, two-stage pressure regulation (utility side and consumer side), pressure-relief venting to safe location, leak detection at the PRDP. Mandatory for all LPG installations downstream of a central network."
 
   # NOTE: Table 11.13 (Point of Transfer and Exposures, p.926) is not encoded - no schema flag
   # exists for bulk LPG delivery tanker parking / transfer separations (has_lpg_liquid_transfer).
-  # If a future schema flag is added, Table 11.13 + §4.8 (p.929) tanker parking requirements
+  # If a future schema flag is added, Table 11.13 + #4.8 (p.929) tanker parking requirements
   # should be encoded as an additional addon here.
   - id: lpg_addon_flame_effect
     flag: has_lpg_flame_effect

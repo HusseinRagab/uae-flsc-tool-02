@@ -70,7 +70,7 @@ def compute_fire_access(b: Building, requires_wet_riser: bool = False) -> FireAc
     spr = _sprinklered(b, requires_wet_riser)
     fp = _footprint_m2(b)
     notes: List[str] = [
-        "Accessway min width 6 m; vertical clearance 4.5 m (Table 2.2 / §2.6).",
+        "Accessway min width 6 m; vertical clearance 4.5 m (Table 2.2 / #2.6).",
         "Max parking distance: 15 m from building entrance, 18 m from breeching inlet.",
         "Max road grade 10%.",
     ]
@@ -86,7 +86,7 @@ def compute_fire_access(b: Building, requires_wet_riser: bool = False) -> FireAc
         extent, ref = _extent_industrial(vol, spr)
         notes.append(f"Gross cubical extent proxy ≈ {vol:,.0f} m³ (GFA × 3.5 m storey).")
     elif is_low and not spr:
-        extent, ref = "Provide fire access road to within 15 m of entrance", "§2.6 / Table 2.2 (lowrise)"
+        extent, ref = "Provide fire access road to within 15 m of entrance", "#2.6 / Table 2.2 (lowrise)"
     elif not spr and b.height_class == "midrise":
         extent, ref = _extent_midrise_nonsprinklered(fp)
     else:
@@ -101,7 +101,7 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False) -> Chapt
     items = [
         Requirement(system="Fire vehicle accessway width + clearance", status="required",
             spec=f"Min width {s.accessway_width_m:g} m; vertical clearance {s.vertical_clearance_m:g} m",
-            detail="; ".join(s.notes[:3]), code_ref="Ch 2, §2.6 / Table 2.2", page_ref="p.207",
+            detail="; ".join(s.notes[:3]), code_ref="Ch 2, #2.6 / Table 2.2", page_ref="p.207",
             source_rule="fsa_table_2_2"),
         Requirement(system="Parking distance to entrance / breeching inlet", status="required",
             spec=f"≤ {s.max_distance_entrance_m:g} m from entrance; ≤ {s.max_distance_breeching_m:g} m from breeching inlet",
@@ -109,7 +109,7 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False) -> Chapt
         Requirement(system="Extent of fire vehicle access around building", status="required",
             spec=s.extent,
             detail=f"Footprint ≈ {s.footprint_m2:,.0f} m²; sprinklered assumed: {s.sprinklered_assumed}. {s.extent_ref}.",
-            code_ref=s.extent_ref.split()[0] if s.extent_ref else "Ch 2, §2.8", page_ref="p.213–215",
+            code_ref=s.extent_ref.split()[0] if s.extent_ref else "Ch 2, #2.8", page_ref="p.213–215",
             source_rule="fsa_extent"),
         Requirement(system="Access road grade", status="required",
             spec=f"Maximum road grade {s.max_road_grade_pct:g}%",
@@ -119,7 +119,7 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False) -> Chapt
         items.append(Requirement(
             system="Accessway within 18 m of breeching inlet", status="required",
             spec="Required for midrise and highrise exceeding 15 m habitable height",
-            code_ref="Ch 2, §2.6.2", page_ref="p.207", source_rule="fsa_breeching_18m"))
+            code_ref="Ch 2, #2.6.2", page_ref="p.207", source_rule="fsa_breeching_18m"))
     return ChapterReport(
         chapter_code="FSA", chapter_title="Fire Service Access (Ch 2)",
         selected_branch="fsa_auto", selected_branch_section=s.extent_ref,
