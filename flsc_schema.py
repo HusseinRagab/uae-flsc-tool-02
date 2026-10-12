@@ -525,9 +525,13 @@ class Building(BaseModel):
         'Highrise' with 23 m or more in height, 'High Depth' with more than 2
         basements, Malls and multi storey Amusement Parks. One trigger for the FSA
         Fire Lift line and the Ch 10 'NOT mandatory' line (owner ruling 12.10.2026,
-        Ch3 Q9)."""
+        Ch3 Q9). The high-depth underground occupancy (Ch 1 #1.7.45, p.45) counts as
+        'High Depth' with no basement count entered (owner ruling 12.10.2026, P3 Ch10 Q4),
+        matching the Ch 10 lift line."""
         hits = (("highrise of 23 m or more", self.height_m >= 23),
                 ("high depth with more than 2 basements", self.floors_below_grade > 2),
+                ("high depth underground (Ch 1 #1.7.45)",
+                 self.occupancy == "high_depth_underground" and self.floors_below_grade <= 2),
                 ("mall", self.occupancy in ("mall_covered", "mall_open", "mall_mixed")),
                 ("multi storey amusement park", self.is_theme_park and self.floors_above_grade > 1))
         return [why for why, hit in hits if hit]

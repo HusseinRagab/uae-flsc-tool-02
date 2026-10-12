@@ -147,8 +147,10 @@ def test_CH10_17_tunnel_tiers_on_length_one_line():
     r = report(tunnel_length_m=200, **kw)
     line = one(r, "Tunnel Smoke Management")
     assert line.status == "required" and "Section 2.14" in line.spec
+    # Re-pointed: owner ruling 12.10.2026, P3 Ch10 Q2 (exactly 90 m takes the higher band,
+    # tests/test_phase3_answers_a1.py); it was a conditional "tier to be confirmed" line.
     r = report(tunnel_length_m=90, **kw)
-    assert one(r, "Tunnel Smoke Management").status == "conditional"
+    assert one(r, "Tunnel Smoke Management").status == "required"
     r = report(**kw)
     assert "NOT EVALUATED" in one(r, "Tunnel Smoke Management").system
     r = report(tunnel_kind="cable", tunnel_length_m=50, **kw)

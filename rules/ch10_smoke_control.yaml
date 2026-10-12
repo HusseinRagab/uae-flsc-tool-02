@@ -225,7 +225,8 @@ branches:
 
   # Table 10.27 item 4 (p.866): "such as" covered mercantile, staff and labour
   # accommodation, residential and office buildings - examples, not a closed
-  # list (CH10-05). Hospitals, schools and malls have their own corridor rows.
+  # list (CH10-05; owner ruling 12.10.2026, P3 Ch10 Q3: examples, every lowrise /
+  # midrise occupancy). Hospitals, schools and malls have their own corridor rows.
   - id: sc_lowrise_long_corridor
     match:
       height_m_lt: 23
@@ -237,12 +238,13 @@ branches:
     systems:
       - name: "Enclosed Corridor Natural Ventilation (corridor length > 60 m, lowrise/midrise)"
         spec: "Natural ventilation per Section 2.15 where the exterior façade or roof is accessible; fire rating of the corridor walls shall be ensured"
-        detail: "Enclosed corridors of lowrise and midrise buildings having a circulation length in excess of 60 m (Table 10.27 item 4.i). The code names covered mercantile spaces, staff accommodations, labour accommodations, residential buildings and office buildings as examples ('such as'), so the row applies to any lowrise or midrise building with such a corridor. Hospitals, schools and malls follow their own rows (Table 10.27 items 1 and 2, Table 10.24)."
+        detail: "Enclosed corridors of lowrise and midrise buildings having a circulation length in excess of 60 m (Table 10.27 item 4.i). The code names covered mercantile spaces, staff accommodations, labour accommodations, residential buildings and office buildings as examples ('such as'), so the row applies to any lowrise or midrise building with such a corridor (owner ruling 12.10.2026, P3 Ch10 Q3). Hospitals, schools and malls follow their own rows (Table 10.27 items 1 and 2, Table 10.24)."
 
   # Table 10.21 item 1.i (p.858) only removes malls and assembly from the
   # "not required" statement; Table 10.24 (malls) and Table 10.27 items 8-14
   # (assembly spaces) print no stair row (CH10-28). Hospitals: Table 10.27
   # item 1.vi (sc_hospital_stair). Schools: item 2.2.i (sc_school_stair).
+  # Owner ruling 12.10.2026, P3 Ch10 Q1: required, labelled an inference of item 1.i.
   - id: sc_midlow_special_occupancy_stair
     match:
       height_m_lt: 23
@@ -252,7 +254,7 @@ branches:
     systems:
       - name: "Stair Pressurization (malls / assembly: Table 10.21 item 1.i exemption does not apply)"
         spec: "Per Section 2.6"
-        detail: "Table 10.21 item 1.i: stair pressurization shall not be required for occupancies other than hospitals, malls, educational and assembly, so the exemption does not cover this building. No Ch 10 row prints a stair item for malls (Table 10.24) or assembly spaces (Table 10.27 items 8-14); the tool reads the item 1.i exclusion as requiring stair pressurization. This is an inference, pending an owner ruling; confirm with the authority."
+        detail: "Table 10.21 item 1.i: stair pressurization shall not be required for occupancies other than hospitals, malls, educational and assembly, so the exemption does not cover this building. No Ch 10 row prints a stair item for malls (Table 10.24) or assembly spaces (Table 10.27 items 8-14); the tool reads the item 1.i exclusion as requiring stair pressurization. This is an inference from item 1.i, adopted by owner ruling 12.10.2026, P3 Ch10 Q1."
 
   - id: sc_storage_industrial_under_230
     match: {occupancy: storage_industrial, ground_floor_bua_m2_lt: 230}
@@ -404,23 +406,16 @@ branches:
         spec: "Natural ventilation per Section 2.11 OR Section 2.15 acceptable; natural ventilation utilizing the tunnel openings acceptable; a jet fan system shall not be mandatory"
         detail: "Road tunnels having total length of less than 90 m (Table 10.25 row 1, item 2.i-iii). Smoke management systems other than jet fan systems shall be installed through a fire engineering analysis demonstrating the intent of item 1.iii (row 1, item 1.iv). A rail tunnel of less than 90 m is covered by the rail row on p.863, which the tool does not evaluate: check it there."
 
-  - id: sc_aux_tunnel_road_rail_90
-    match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_gte: 90, tunnel_length_m_lte: 90}
-    section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel), items 2-3"
-    page: "p.862"
-    systems:
-      - name: "Tunnel Smoke Management - Road / Rail, length exactly 90 m (tier to be confirmed)"
-        required: conditional
-        detail: "Table 10.25 prints 'less than 90 m' (natural ventilation acceptable, jet fan not mandatory) and 'more than 90 m' (jet fan system per Section 2.14 for the entire tunnel); a length of exactly 90 m falls in neither. Owner ruling pending; the more onerous reading is the jet fan system."
-
+  # Owner ruling 12.10.2026, P3 Ch10 Q2: a length of exactly 90 m (neither 'less
+  # than' nor 'more than' 90 m on p.862) takes the higher band, as R11 at band edges.
   - id: sc_aux_tunnel_road_rail_over_90
-    match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_gt: 90}
+    match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_gte: 90}
     section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel), item 3"
     page: "p.862-863"
     systems:
       - name: "Tunnel Smoke Management - Road / Rail, length more than 90 m (jet fan system)"
         spec: "Jet fan system per Section 2.14 for the entire tunnel; other systems or combinations permitted where justified by an engineering analysis and CFD modeling"
-        detail: "Road tunnels having total length of more than 90 m (Table 10.25 row 1, item 3.i-ii). Rail tunnels of more than 90 m: jet fan OR ducted purge (Table 10.25 rail row, p.863)."
+        detail: "Road tunnels having total length of more than 90 m (Table 10.25 row 1, item 3.i-ii). A length of exactly 90 m falls in neither printed band ('less than 90 m', 'more than 90 m') and takes this higher band (owner ruling 12.10.2026, P3 Ch10 Q2, as ruling R11 at band edges). Rail tunnels of more than 90 m: jet fan OR ducted purge (Table 10.25 rail row, p.863)."
 
   - id: sc_aux_tunnel_cable
     match: {has_tunnel: true, tunnel_kind_is: cable}
