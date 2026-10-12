@@ -243,7 +243,7 @@ branches:
   # "not required" statement; Table 10.24 (malls) and Table 10.27 items 8-14
   # (assembly spaces) print no stair row (CH10-28). Hospitals: Table 10.27
   # item 1.vi (sc_hospital_stair). Schools: item 2.2.i (sc_school_stair).
-  - id: sc_lowrise_special_occupancy_stair
+  - id: sc_midlow_special_occupancy_stair
     match:
       height_m_lt: 23
       occupancy_in: [mall_covered, mall_open, mall_mixed, assembly_a, assembly_b, assembly_c]

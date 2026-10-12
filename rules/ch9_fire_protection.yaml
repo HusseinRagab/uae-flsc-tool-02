@@ -3405,9 +3405,20 @@ equipment:
         page_ref: "p.906, p.756"
         detail: "Fixed water spray system on every aboveground LPG tank, fed from the fire pump and water tank of the building the LPG tank serves, designed per Chapter 9 (Table 11.5 item 5.i). Where that building has no fire pump and water tank, a dry-type water spray ring with open nozzles connected to a Civil Defence breeching inlet (Table 11.5 item 5.ii; Table 9.31.B ii gives the same dry deluge with breeching inlet for a building that is not sprinklered). Code conflict: Table 9.31.B iii (p.756) reads 'Where LPG tanks are installed aboveground, no protection shall be required, unless the proximity of such tanks is more than 6 m from any point of structure', while Table 11.5 item 5.i (p.906) requires the fixed water spray with no exemption. Ruling R5 (12.10.2026): Chapter 11 governs, so no distance exemption is applied."
 
+  - id: eq_B_lpg_tanks_underground_and_roof
+    flag: has_lpg_tanks
+    # Both underground / mounded and roof tanks ticked: the roof tanks are covered by
+    # Table 9.31.B i (p.756) and Table 11.7 #5 (Ch 11), so the spray is required for them.
+    when: {has_lpg_tank_underground_mounded_is: true, has_lpg_tank_roof_mounted_is: true}
+    systems:
+      - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
+        code_ref: "Ch 11, Table 11.7 #5 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
+        page_ref: "p.906, p.756"
+        detail: "Roof-mounted LPG tanks are ticked: Table 9.31.B i-ii (p.756) cover tanks on roofs or podiums, and Chapter 11 requires their fire protection (Table 11.7 #5), so the fixed water spray system is required on every roof tank. The underground / mounded tanks need none (Table 11.9 #5). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
+
   - id: eq_B_lpg_tanks_underground_mounded
     flag: has_lpg_tanks
-    when: {has_lpg_tank_underground_mounded_is: true}
+    when: {has_lpg_tank_underground_mounded_is: true, has_lpg_tank_roof_mounted_is: false}
     systems:
       - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
         required: conditional
