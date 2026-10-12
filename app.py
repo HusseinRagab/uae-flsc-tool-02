@@ -222,6 +222,8 @@ def _invalid_scenario_values(data: dict) -> list:
         # Owner ruling 12.10.2026, Ch9 Q9
         "secondary_storage_hazard_input": ("Secondary storage hazard class", (
             None, "LH", "OH1", "OH2", "HH", "EH2")),
+        # Phase 3 CH10-16: Table 10.27 item 8 / item 14
+        "theater_cinema_kind_input": ("Theatre / cinema kind", (None, "cinema", "theatre", "both")),
     }
     # Ch3 Q2 per-use areas (owner ruling 12.10.2026): known Table 3.13 rows, at most
     # as many rows as the sidebar offers.
@@ -696,7 +698,7 @@ with st.sidebar:
             *SPECIAL_ROOMS_KEYS, *VARIOUS_LOCATIONS_KEYS, *EQUIPMENT_KEYS,
             *FE_KEYS, *ES_FEATURE_KEYS, *ES_ZONE_KEYS,
             "ceiling_height_m_input", "corridor_length_m",
-            "assembly_area_m2_input",
+            "assembly_area_m2_input", "theater_cinema_kind_input",
             "gas_system_radio",
             "has_lpg_tank_roof_mounted", "has_lpg_tank_underground_mounded",
             "has_lpg_cylinders_indoor", "has_lpg_cylinders_food_truck", "has_lpg_flame_effect",
@@ -1499,23 +1501,41 @@ with st.sidebar:
         corridor_length_m = st.number_input(
             "Longest enclosed corridor length (m)",
             min_value=0.0, value=0.0, step=5.0,
-            help="If > 60 m at lowrise/midrise (residential/office/hotel/mercantile/staff "
-                 "accommodation), Ch 10 Table 10.27 item 4 requires natural ventilation per "
-                 "Section 2.15 where exterior façade / roof accessible.",
+            help="More than 60 m in a lowrise / midrise building: Ch 10 Table 10.27 item 4 "
+                 "requires natural ventilation per Section 2.15 where the exterior façade / "
+                 "roof is accessible. The code's list (mercantile, staff / labour "
+                 "accommodation, residential, office) reads 'such as', so it applies to any "
+                 "occupancy; hospitals, schools and malls follow their own rows.",
         )
-        # Assembly-area trigger for Table 10.27 items 9-13 (>2000 m² exhibition/sports/auditorium/stadium).
-        # Only relevant for assembly_* occupancies; for others the field is left at 0 and ignored.
-        if occupancy.startswith("assembly_"):
+        # Hall-area trigger: Table 10.27 items 9-13 (assembly) and item 2.3 (school sports
+        # hall / auditorium), both "having area more than 2000 m2". Phase 3 CH10-16: no
+        # GFA fallback; 0 = not entered.
+        if occupancy.startswith(("assembly_", "education_")):
             assembly_area_m2 = st.number_input(
-                "Largest assembly-hall area (m²)",
+                "Largest assembly-hall / sports-hall / auditorium area (m²)",
                 min_value=0.0, value=0.0, step=100.0,
                 key="assembly_area_m2_input",
-                help="Triggers Ch 10 Table 10.27 items 9–13 (exhibition / assembly / sports / "
-                     "auditorium / stadium) smoke management when > 2,000 m². If left at 0, "
-                     "falls back to total GFA for area-based triggering.",
+                help="Ch 10 Table 10.27 items 9-13 (exhibition / assembly / sports hall / "
+                     "auditorium / indoor stadium) and item 2.3 (school sports hall / "
+                     "auditorium): smoke purge per Section 2.13 when more than 2,000 m2. "
+                     "Left at 0 in an assembly building of more than 2,000 m2 GFA, the "
+                     "report prints these rows as NOT EVALUATED.",
             )
         else:
             assembly_area_m2 = 0.0
+        # Table 10.27 item 8 (cinema: Section 2.13 purge) vs item 14 (theatre:
+        # Section 2.9 smoke management). Phase 3 CH10-16.
+        if st.session_state.get("has_theater_cinema"):
+            st.selectbox(
+                "Theatre / cinema kind (Ch 10 Table 10.27 items 8 / 14)",
+                options=[None, "cinema", "theatre", "both"],
+                format_func=lambda v: {None: "Not stated", "cinema": "Cinema",
+                                       "theatre": "Theatre", "both": "Cinema and theatre"}[v],
+                key="theater_cinema_kind_input",
+                help="Cinema: dedicated smoke purge per Section 2.13 (6 ACH permitted). "
+                     "Theatre: smoke management per Section 2.9. Not stated: the report "
+                     "prints the row as NOT EVALUATED.",
+            )
         st.caption("Other SC outputs (Tables 10.19-10.27) auto-derive from height tier, occupancy, "
                    "depth below grade and Special Rooms / Various Locations / Equipment flags.")
 
@@ -1643,6 +1663,8 @@ building = Building(
     has_amusement_confounding=gs("has_amusement_confounding"),
     has_nightclub_disco=gs("has_nightclub_disco"),
     has_theater_cinema=gs("has_theater_cinema"),
+    theater_cinema_kind=(st.session_state.get("theater_cinema_kind_input")
+                         if gs("has_theater_cinema") else None),
     has_nursery_within=gs("has_nursery_within"),
     has_auditorium_within=gs("has_auditorium_within"),
     has_hh_storage_zones=gs("has_hh_storage_zones"),

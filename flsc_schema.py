@@ -181,7 +181,7 @@ class Building(BaseModel):
     basement_bua_m2: float = Field(0.0, ge=0)
     plot_area_m2: float = Field(0.0, ge=0)
     corridor_length_m: float = Field(0.0, ge=0)     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
-    assembly_area_m2: float = Field(0.0, ge=0)      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
+    assembly_area_m2: float = Field(0.0, ge=0)      # SC Ch 10 - largest hall area: Table 10.27 items 9-13 (> 2000 m2 exhibition/assembly/sports/auditorium/stadium) and item 2.3 (school sports hall / auditorium). 0 = not entered: assembly_* with GFA > 2000 m2 prints NOT EVALUATED (no GFA fallback; CH10-16).
 
     # --- MOE (Ch 3) / FSA (Ch 2) inputs - owner rulings 12.10.2026, Ch3 Q1-Q6.
     # 0 / empty = not entered; each fallback is named in the report line.
@@ -278,6 +278,9 @@ class Building(BaseModel):
     has_amusement_confounding: bool = False       # mazes, mirrors, play areas (assembly)
     has_nightclub_disco: bool = False
     has_theater_cinema: bool = False
+    # SC Ch 10 Table 10.27 item 8 (cinema: #2.13 purge) vs item 14 (theatre: #2.9);
+    # None = not stated -> NOT EVALUATED line (phase 3, CH10-16).
+    theater_cinema_kind: Optional[Literal["cinema", "theatre", "both"]] = None
     has_nursery_within: bool = False              # education sub-zone
     has_auditorium_within: bool = False           # education sub-zone
     has_hh_storage_zones: bool = False            # HH groups / robotic / cold / cable spread (storage)
