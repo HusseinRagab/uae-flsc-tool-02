@@ -628,7 +628,8 @@ CASES = [
          expect_el_general=[
              "Emergency Lighting - General Performance Specs (Table 6.1)",
              "EL Proximity Rule (within 2m)",
-             "EL Cable Fire Rating",
+             # "EL Cable Fire Rating" removed phase 3 CH47-08: Table 6.3 #7.i (p.416) does
+             # not require fire-rated wiring for a monitored system (this 20 m case).
              "EL Acceptance Tests + Periodic Inspection",
          ]),
 

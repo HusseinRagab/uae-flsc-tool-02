@@ -117,3 +117,90 @@ def test_CH47_17_exit_sign_colours_and_spacing():
     for v in ("9.5 mm", "matte White colour on Green background",
               "Green colour on White, open door background"):
         assert v in s[0].spec, v
+
+
+# ------------------------------------------------------------------ Ch 6
+def el_system_types(r):
+    return [it for it in items(r, "EL") if it.status == "required" and
+            ("Central Battery" in it.system or it.system.startswith(("Monitored", "Stand-alone")))]
+
+
+def test_CH47_07_offices_and_retail_get_one_system_type():
+    """Table 6.5 p.419 items 11-12 are Business / Mercantile GROUP C; Table 1.1 p.48 offices
+    are Business Group B, p.50 Mercantile Group C = kiosks / food trucks."""
+    for occ, h in (("business", 10), ("mercantile_a", 8), ("business", 18)):
+        r = report(occupancy=occ, height_m=h, ground_floor_bua_m2=1500)
+        t = el_system_types(r)
+        assert [x.system for x in t] == ["Monitored Self-Contained EL (Section 3.3)"], (occ, t)
+        c = [it for it in items(r, "EL") if it.system.startswith("Stand-alone")]
+        assert len(c) == 1 and c[0].status == "conditional" and "GROUP C" in c[0].detail
+    hi = report(occupancy="business", height_m=40)
+    assert [x.system for x in el_system_types(hi)] == [
+        "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"]
+
+
+def test_CH47_08_fire_rated_el_wiring_only_for_central_battery():
+    """Table 6.2 #8.i p.414 central battery wiring 2 hour fire rated; Table 6.3 #7.i p.416
+    monitored luminaires to central monitoring unit not required to be fire rated."""
+    low = report(occupancy="residential", height_m=12)
+    assert not [it for it in items(low, "EL") if "Cable Fire Rating" in it.system]
+    mon = el_system_types(low)[0]
+    assert "not be required to be fire rated" in mon.detail
+    sup = report(occupancy="residential", height_m=120)
+    cb = el_system_types(sup)[0]
+    assert "2 hour fire rated, throughout" in cb.detail and "#8.i" in cb.detail
+    assert "EN 50200 (930" not in all_text(sup, "EL")
+
+
+def test_CH47_09_el_inspection_intervals_as_printed():
+    """Table 6.7 p.422 item 2.vi 15 minutes; Table 6.8 p.423 monthly 30 seconds, annual
+    minimum 3 hours, batteries replaced every 4 years."""
+    r = report(occupancy="business", height_m=10)
+    a = named(r, "EL", "EL Acceptance Tests + Periodic Inspection")
+    assert len(a) == 1
+    for v in ("15-minute load test", "30 seconds", "minimum of 3 hours", "every 4 years"):
+        assert v in a[0].spec, v
+    assert "6-monthly" not in a[0].detail and "LED indicator" not in a[0].detail
+    assert a[0].code_ref.startswith("Ch 6, #6.1 / Table 6.7")
+
+
+def test_CH47_15_el_citations():
+    """Table 6.1 sits under #3.1 (p.408, item 4 on p.410)."""
+    r = report(occupancy="business", height_m=10)
+    g = named(r, "EL", "Emergency Lighting - General Performance Specs (Table 6.1)")[0]
+    assert g.code_ref == "Ch 6, #3.1 / Table 6.1" and g.page_ref == "p.408, p.410"
+    p = named(r, "EL", "EL Proximity Rule (within 2m)")[0]
+    assert p.code_ref.startswith("Ch 6, #3.1 / Table 6.1 item 1.v-vii")
+    assert "item 5/2" not in all_text(report(occupancy="business", height_m=30), "EL")
+
+
+# Table 6.1.a / 6.1.b p.410, entered a second time from the page image (double entry):
+# H: (D1, D2, D3, D4, D5) in m.
+SPACING_A = {"2.5": ("2.7", "7.2", "1.5", "4.6", "3.65"), "3": ("2.5", "7.3", "1.6", "4.7", "3.6"),
+             "4": ("2.1", "7.5", "1.7", "4.8", "3.45"), "6": ("2", "5.3", "1.8", "3.7", "3.3")}
+SPACING_B = {"2.5": ("2.5", "8.5", "2.3", "7.4", "4.95"), "3": ("2.5", "9", "1.6", "8", "6.25"),
+             "4": ("2.6", "9.8", "2.3", "8.6", "3.6"), "6": ("2.4", "10.3", "1.6", "9.5", "3")}
+
+
+def test_CH47_18_spacing_tables_spare_capacity_and_single_system():
+    """Tables 6.1.a / 6.1.b p.410; Table 6.3 #4.ii p.416 5% spare capacity; #4.2 p.419."""
+    r = report(occupancy="residential", height_m=40)
+    sp = named(r, "EL", "EL Luminaire Spacing - Minimum Guideline (Tables 6.1.a / 6.1.b)")
+    assert len(sp) == 1
+    d = sp[0].detail
+    a_part, b_part = d.split("Table 6.1.b")[0], d.split("Table 6.1.b")[1]
+    for part, table in ((a_part, SPACING_A), (b_part, SPACING_B)):
+        for h, row in table.items():
+            assert f"{h} m = " + " / ".join(row) + " m" in part, (h, row)
+    assert "5% spare capacity" in all_text(r, "EL")
+    one = named(r, "EL", "One Centralized Emergency Lighting System for the Entire Facility (#4.2)")
+    assert len(one) == 1 and one[0].status == "required"
+
+
+def test_CH47_19_villa_basement_from_basement_count():
+    """Table 6.5 p.419 items 9-10 'required for basements, if any'; item 14 stand-alone."""
+    r = report(occupancy="villa_private", height_m=6, floors_below_grade=1, basement_bua_m2=0)
+    b = named(r, "EL", "Stand-alone Self-Contained EL (basement only)")
+    assert len(b) == 1 and b[0].status == "required"
+    none = report(occupancy="villa_private", height_m=6, floors_below_grade=0, basement_bua_m2=0)
+    assert not named(none, "EL", "Stand-alone Self-Contained EL (basement only)")
