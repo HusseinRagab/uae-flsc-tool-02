@@ -601,11 +601,22 @@ INCOMPATIBLE_FLAGS_BY_OCC = {
 }
 
 
+# Owner ruling 12.10.2026, P3 Ch47 Q3: flags that apply to listed occupancies only;
+# every other occupancy clears them on an occupancy change.
+OCC_ONLY_FLAGS = {
+    "is_business_group_c": ("business",),
+    "is_mercantile_group_c": ("mercantile_a", "mercantile_b"),
+}
+
+
 def _apply_incompatible_flag_reset(occupancy: str) -> None:
     """Silently set incompatible flags to False for the given occupancy.
     Does NOT touch flags that are compatible — user keeps their state."""
     for flag in INCOMPATIBLE_FLAGS_BY_OCC.get(occupancy, []):
         st.session_state[flag] = False
+    for flag, occs in OCC_ONLY_FLAGS.items():
+        if occupancy not in occs:
+            st.session_state[flag] = False
 
 
 # ---------------- Archetype presets ----------------
@@ -834,6 +845,7 @@ with st.sidebar:
             "height_datum_input", "construction_type_input", "hazard_override_input",
             # Hazard / occupancy
             "occupancy_chosen", "mercantile_multi_tenant",
+            "is_business_group_c", "is_mercantile_group_c",
             # Parking
             "has_parking_area", "attached_parking_kind_radio", "parking_area_m2_input",
             # Special rooms / various / equipment / FE / ES / Gas / FP / SC
@@ -1062,6 +1074,21 @@ with st.sidebar:
                          "a single roof or not separated and having a ground floor built up "
                          "area of more than 3600 m2, irrespective of the number of storeys, "
                          "shall be considered as Malls.")
+        # Owner ruling 12.10.2026, P3 Ch47 Q3.
+        st.checkbox("Mercantile Group C (stand-alone)", key="is_mercantile_group_c",
+                    help="Ch 1 Table 1.1 row 11 (p.50) Mercantile Group C: kiosks, food trucks, "
+                         "mercantile trucks; #1.7.9.2 (p.41) Class C: aggregate gross area of "
+                         "not more than 280 m2 and occupying only ground floor. Below 23 m, "
+                         "Ch 6 Table 6.5 item 12 (p.419) governs: stand-alone self-contained "
+                         "emergency lighting. At 23 m or more the height rows govern.")
+    if occupancy == "business":
+        # Owner ruling 12.10.2026, P3 Ch47 Q3.
+        st.checkbox("Business Group C (stand-alone)", key="is_business_group_c",
+                    help="Ch 1 Table 1.1 row 2 (p.48) Business Group C: barber shops, beauty "
+                         "shops, massage centers, typing centers, translation centers, print "
+                         "shops, photo studios. Below 23 m, Ch 6 Table 6.5 item 11 (p.419) "
+                         "governs: stand-alone self-contained emergency lighting. At 23 m or "
+                         "more the height rows govern.")
     if occupancy in INCOMPATIBLE_FLAGS_BY_OCC:
         st.caption(
             "💡 Special Rooms / Equipment that typically don't apply to this "
@@ -2045,6 +2072,9 @@ building = Building(
                           if occupancy == "animal_housing" else None),
     # Phase 3 app package (audit ENG-02, CH9A-20, CH9B-14)
     mercantile_multi_tenant=gs("mercantile_multi_tenant") and occupancy in ("mercantile_a", "mercantile_b"),
+    # Owner ruling 12.10.2026, P3 Ch47 Q3
+    is_business_group_c=gs("is_business_group_c") and occupancy == "business",
+    is_mercantile_group_c=gs("is_mercantile_group_c") and occupancy in ("mercantile_a", "mercantile_b"),
     has_water_reactive_materials=gs("has_water_reactive_materials"),
     has_attached_commercial_outlet=(gs("has_attached_commercial_outlet") and float(height_m) <= 15
                                     and occupancy in ("villa_private", "villa_commercial",
@@ -2298,6 +2328,8 @@ def _ticked_chips(building_obj: Building) -> str:
         "has_water_reactive_materials": "Water reactive materials",
         "has_attached_commercial_outlet": "Commercial outlet (9.21.e)",
         "mercantile_multi_tenant": "Mercantile group",
+        "is_business_group_c": "Business Group C",
+        "is_mercantile_group_c": "Mercantile Group C",
         # FE-specific
         "has_class_b_storage_zones": "Class B storage",
         "has_combustible_metals": "Combustible metals",

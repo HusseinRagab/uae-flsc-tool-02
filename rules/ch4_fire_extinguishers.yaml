@@ -5,10 +5,9 @@ meta:
   chapter_title: "Fire Extinguishers"
 
 # ---------- UNIVERSAL: Class A (Table 4.3 row 1) -----------------------------
-# Class A fires (ordinary combustibles - paper, wood, fabric, plastics) apply
-# to virtually every occupancy (assembly, business, education, healthcare,
-# residential, hotel, daycare, detention, mercantile, mall, storage,
-# industrial, animal housing, fuel dispensing).
+# Class A fires (ordinary combustibles - paper, wood, fabric, plastics): the
+# occupancies Table 4.3 row 1 lists (p.373-374), plus parking and underground
+# buildings by owner ruling 12.10.2026 (P3 Ch47 Q2). Infrastructure: no line.
 general:
   # ----- Universal FE Specifications (Tables 4.4 + Material Standards section) -----
   - id: fe_g_civil_defence_approval
@@ -87,19 +86,22 @@ general:
         page_ref: "p.374"
         detail: "Table 4.3 row 1 items 8-12 (p.374: detention and correction, mercantile, malls, storage (warehouse) and factories, animal housing, fuel dispensing) print Multi-purpose Dry Powder 2-A, 20-B, C 4 kg OR Clean Agent 4 kg, AND CO2 5 kg. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 30 m. Place along the corridors, waiting areas, shops, supermarkets, service corridors, staff and reception areas, where people can easily find and use them. As a practice fire extinguishers are placed in Fire Hose Cabinets (FHC); such cabinets shall clearly have signage that indicates presence of extinguishers inside."
 
-  # Occupancies Table 4.3 row 1 does not list (parking, infrastructure, mixed,
-  # underground): the earlier universal line is kept unchanged, labelled, pending
-  # an owner ruling (phase 3 ch47 question Q2).
-  - id: fe_g_class_a_unlisted
+  # Occupancies Table 4.3 row 1 (p.373-374) does not list. Owner ruling 12.10.2026,
+  # P3 Ch47 Q2: open / enclosed parking and high / low depth underground take a
+  # required line with the p.374 types, labelled a tool decision; infrastructure gets
+  # no Class A line; mixed_multiple gets no line of its own (its listed occupancies
+  # decide under R13, most restrictive). Same name and spec as fe_g_class_a_p374 so
+  # an R13 merge with a p.374 occupancy keeps one line.
+  - id: fe_g_class_a_parking_underground
     when:
-      occupancy_in: [parking_enclosed, parking_open, infrastructure, mixed_multiple,
+      occupancy_in: [parking_enclosed, parking_open,
                      high_depth_underground, low_depth_underground]
     systems:
       - name: "Class A Fire Extinguisher (Multi-purpose Dry Powder OR Clean Agent) + CO2"
-        spec: "Multi-purpose Dry Powder 4 kg, rating 2-A:20-B:C (or Clean Agent 4 kg) AND CO2 5 kg per location"
-        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1 (occupancy not listed)"
+        spec: "Multi-purpose Dry Powder 2-A, 20-B, C 4 kg (ONE) OR Clean Agent Type 4 kg (ONE), AND CO2 Type 5 kg (ONE) per location; each serves approximately 280 m2; maximum travel distance 30 m"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1, p.374 types (tool decision, owner ruling 12.10.2026, P3 Ch47 Q2)"
         page_ref: "p.373-374"
-        detail: "Table 4.3 row 1 (p.373-374) does not list this occupancy. The tool keeps its earlier universal Class A line here pending an owner ruling; confirm with Civil Defence. Each extinguisher serves approximately 280 m2; maximum travel distance 30 m."
+        detail: "Tool decision, owner ruling 12.10.2026 (P3 Ch47 Q2): Table 4.3 row 1 does not list this occupancy (p.373-374 list assembly, business, educational, healthcare, residential, hotel, daycare, detention and correction, mercantile, malls, storage (warehouse) and factories, animal housing, fuel dispensing). Parking and underground buildings take the types printed on p.374: Multi-purpose Dry Powder 2-A, 20-B, C 4 kg OR Clean Agent 4 kg, AND CO2 5 kg. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 30 m. As a practice fire extinguishers are placed in Fire Hose Cabinets (FHC); such cabinets shall clearly have signage that indicates presence of extinguishers inside."
 
   - id: fe_g_class_a_villa
     when:

@@ -265,7 +265,7 @@ branches:
       - name: "Photoluminescent Exit Marking Strips (Nurseries)"
         required: conditional
         spec: "Per Table 5.1.4 - required where the building is or contains a nursery"
-        detail: "Table 5.3 item 8.ii (p.398): Nurseries shall be provided with Photoluminescent Exit Marking strips as per Table 5.1.4. Educational Group A (Table 1.1, p.48) covers nurseries, kindergartens, preschool centers and talent grooming centers; tick 'Nursery (inside education)' where the building is or contains a nursery and the line becomes required."
+        detail: "Table 5.3 item 8.ii (p.398): Nurseries shall be provided with Photoluminescent Exit Marking strips as per Table 5.1.4. Educational Group A (Table 1.1, p.48) covers nurseries, kindergartens, preschool centers and talent grooming centers; tick 'Nursery (inside education)' where the building is or contains a nursery and the line becomes required. Owner ruling 12.10.2026, P3 Ch47 Q1: the line stays conditional for Educational Group A and is required when 'Nursery' is ticked."
 
   - id: es_healthcare
     # Table 5.3 item 9 "HEALTHCARE OCCUPANCIES" is a single undivided row covering
@@ -459,7 +459,7 @@ addons:
         code_ref: "Ch 5, #3 / Table 5.3 item 8.ii"
         page_ref: "p.398"
         spec: "Per Table 5.1.4"
-        detail: "Nurseries within educational occupancies shall be provided with Photoluminescent Exit Marking strips."
+        detail: "Table 5.3 item 8.ii (p.398): Nurseries shall be provided with Photoluminescent Exit Marking strips as per Table 5.1.4. Required because 'Nursery (inside education)' is ticked: owner ruling 12.10.2026, P3 Ch47 Q1 (conditional for Educational Group A, required when 'Nursery' is ticked)."
 
   - id: es_auditorium_photoluminescent
     flag: has_auditorium_within
