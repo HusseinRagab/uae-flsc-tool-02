@@ -24,6 +24,9 @@ def store(**kw):
     kw.setdefault("occupancy", "storage_industrial")
     kw.setdefault("height_m", 8)
     kw.setdefault("plot_area_m2", 20000)
+    # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum is required. These tests
+    # model one building on the plot, so the sum is this building's GF BUA.
+    kw.setdefault("sum_gf_bua_m2", kw.get("ground_floor_bua_m2", 0.0))
     return report(**kw)
 
 

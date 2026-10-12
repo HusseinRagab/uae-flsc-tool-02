@@ -1236,11 +1236,14 @@ branches:
   #                                      the whole ground floor as one unit)
   #   storage_gf_bua_sum_m2              #4.1.13 sum of built-up ground floor areas of
   #                                      the buildings on the plot (never less than
-  #                                      this building's ground-floor BUA)
+  #                                      this building's ground-floor BUA; not entered
+  #                                      = above 3600 m2, row 4, with a 'not evaluated'
+  #                                      line: owner ruling 12.10.2026, Ch9 Q1)
   #   storage_total_bua_m2               #4.1.11 built-up area of all floors
   #   storage_compartment_floor_area_m2  'total built-up floor area of the compartment'
   # Rows are made mutually exclusive, highest row first. Where a value falls on a
-  # printed edge or in a gap between two printed rows (e.g. exactly 900 m2 in Group A),
+  # printed edge or in a gap between two printed rows (e.g. exactly 900 m2 in Groups A-C,
+  # owner ruling 12.10.2026, Ch9 Q2; a Group U yard of 1000 m2 or less, non-LH, Ch9 Q3),
   # the higher row is used and the detail says so.
   # Base groups A-J apply only when no specialty group (K, P-V) and no commodity
   # (L-O) is selected. #4.11.1 (p.724): designers shall first consult the MSDS.
@@ -1275,7 +1278,7 @@ branches:
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (1500 ft2 area of operation)"
-        detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is printed in neither row 1 nor row 2; it is taken in row 2."
+        detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is printed in neither row 1 nor row 2; it is taken in row 2, the higher row (owner ruling 12.10.2026, Ch9 Q2)."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Dry Landing Valves"
@@ -1358,7 +1361,7 @@ branches:
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (OH1)"
-        detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is taken in row 2."
+        detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is printed in neither row 1 nor row 2; it is taken in row 2, the higher row (owner ruling 12.10.2026, Ch9 Q2)."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 2 OH)"
@@ -1436,7 +1439,7 @@ branches:
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.20 gpm / 140 m2 (OH2)"
-        detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is taken in row 2."
+        detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is printed in neither row 1 nor row 2; it is taken in row 2, the higher row (owner ruling 12.10.2026, Ch9 Q2)."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 2 OH2)"
@@ -2539,7 +2542,7 @@ branches:
     systems:
       - name: "Hose Reel System (Open Yard)"
         spec: "Per Section 3.3; equipment and cabinet approved for outdoor application (no dry landing valves)"
-        detail: "Row 3: total open storage yard more than 1000 m2 storing materials other than light hazard materials. A yard of 1000 m2 or less with such materials is not covered by any printed row; it is taken in row 3. Group U excludes flammable and combustible materials."
+        detail: "Row 3: total open storage yard more than 1000 m2 storing materials other than light hazard materials. A yard of 1000 m2 or less with such materials is not covered by any printed row; it is taken in row 3 (owner ruling 12.10.2026, Ch9 Q3). Group U excludes flammable and combustible materials."
       - name: "Fire Pump (Open Yard)"
         duty: pump
         spec: "50 gpm @ 4.5 bar at the remote hose-reel valve"
