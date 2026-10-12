@@ -9,6 +9,16 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 2 follow-up answers coded (8 cards, 14:58Z)
+
+- **F1** plant nursery prints only the Table 8.13 item 28 line (no Table 8.1 lines).
+- **F7** Tables 3.15.a and 3.15.b print one S or NS column (values re-read on p.288, p.291).
+- **F8** attached parking takes the parent building's sprinkler status for its columns.
+- F2 robotic EH2 parking only, F3 densest-row default, F4 row 4.vi excluded, F5 mall OL on
+  floor area: as coded. F6 per-storey per-use input: phase 3.
+- Tests: 167 pytest (4 new in tests/test_phase2_followups.py, all fail without the change),
+  112 cases, structural 0.
+
 ### 2026-10-12 — Phase 2 owner answers coded (24 cards, 12:29-12:30Z)
 
 All 24 phase 2 cards answered on the recommended option; log
@@ -178,7 +188,7 @@ the 750 gpm row of 9.24.C.2.
 | P2 Ch 8 Q1-Q6 | MCP 25/16 m, cold storage lines, ceiling 10/20 m edges, nursery, cable trays, item 22 (vii) | answered 12.10, coded |
 | P2 Ch 9 Q1-Q9 | plot GF BUA sum blank, 900 m2 edge, Group U small yard, Table 9.29 H/I/J gate, assembly B/C LH, animal housing, robotic parking EH2, hotel G.ii/G.iii, secondary storage hazard | answered 12.10, coded (Q6 phase 3) |
 | P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | answered 12.10, coded |
-| P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | open (decision cards) |
+| P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | answered 12.10 14:58Z, coded (F6 phase 3) |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
