@@ -6,9 +6,9 @@ meta:
 
 # ---------- GENERAL: applies to all occupancies (Tables 3.1 / 3.2 / 3.3) ----
 general:
+  # Owner ruling 12.10.2026, Ch3 Q7: Tables 3.1, 3.2 and 3.4 apply to villas too
+  # (#5.6.1, p.323: Table 3.27 prevails on conflict). Tables 3.14 and 3.15.a stay off.
   - id: moe_g_general_specs
-    when:
-      occupancy_not: [villa_private, villa_commercial]
     systems:
       - name: "Means of Egress - General Performance"
         spec: "Head room ≥ 2285 mm clear; walking surfaces slip-resistant; abrupt elevation changes ≤ 6.3 mm; guards on open sides"
@@ -17,11 +17,9 @@ general:
         detail: "Egress paths shall be free of obstructions and continuously maintained for full instant use during fire / emergency."
 
   - id: moe_g_door_minimums
-    when:
-      occupancy_not: [villa_private, villa_commercial]
     systems:
       - name: "Door Assembly Minimums (Table 3.2)"
-        spec: "Min width 915 mm; max opening force 67 N; door swing in egress direction where occupant load >= 50, OR serving a horizontal exit, OR a high-hazard content room, OR an exit enclosure; panic / fire-exit hardware on fire-rated assemblies"
+        spec: "Min width 915 mm; door forces (Table 3.2 item 5.ii): 67 N to release the latch, 133 N to set the door leaf in motion, 67 N to open to the required width; door swing in egress direction where occupant load >= 50, OR serving a horizontal exit, OR a high-hazard content room, OR an exit enclosure; panic / fire-exit hardware on fire-rated assemblies"
         code_ref: "Ch 3, #3.2 / Table 3.2"
         page_ref: "p.247-254"
         detail: "Side-hinged or pivoted swinging doors required. Per Table 3.2 #4 item i (p.248), swing in direction of egress applies on ANY of four triggers: (a) occupant load >= 50, (b) horizontal exit, (c) high-hazard content room, (d) exit enclosure. Panic hardware (or fire-exit hardware on fire-rated doors) bar between 865-1220 mm AFFL. Doors readily operable from egress side without keys, tools or special knowledge."
@@ -30,27 +28,29 @@ general:
   # height_m_lt: 23 catches lowrise (<=15) AND midrise (15-23).
   - id: moe_g_exit_remoteness_lowrise_midrise
     when:
-      occupancy_not: [villa_private, villa_commercial]
+      occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open]
       height_m_lt: 23
     systems:
       - name: "Exit Remoteness - Lowrise / Midrise (Table 3.15.a items i-iv)"
-        spec: "Sprinklered: 1/3 of floor diagonal between exits; non-sprinklered: 1/2 of floor diagonal between exits"
+        spec_s: "1/3 of floor diagonal between exits (Table 3.15.a items i, iii)"
+        spec_ns: "1/2 of floor diagonal between exits (Table 3.15.a items ii, iv)"
         code_ref: "Ch 3, #4.4 / Table 3.15.a"
         page_ref: "p.288"
-        detail: "Measured as the shortest walking distance between exits (not straight-line). Per Table 3.15.a items i-iv (p.288): lowrise (<=15 m) and midrise (>15-23 m) buildings size remoteness by the 1/3 (sprinklered) or 1/2 (non-sprinklered) of the floor diagonal."
+        detail: "Measured as the shortest walking distance between exits (not straight-line). Per Table 3.15.a items i-iv (p.288): lowrise (<=15 m) and midrise (>15-23 m) buildings size remoteness by the 1/3 (sprinklered) or 1/2 (non-sprinklered) of the floor diagonal. #4.4.8 (p.291): Table 3.15.a does not apply to basements and podiums used only for parking and service rooms, provided the 61 m travel distance is met (Table 3.15.b applies)."
 
   # Highrise / super-highrise: code only tabulates the sprinklered case (1/3 diagonal,
   # straight-line measurement). Non-sprinklered highrise is not permitted under Ch 9.
   - id: moe_g_exit_remoteness_highrise
     when:
-      occupancy_not: [villa_private, villa_commercial]
+      occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open]
       height_m_gte: 23
     systems:
       - name: "Exit Remoteness - Highrise / Super-highrise (Table 3.15.a items v-vi)"
-        spec: "1/3 of floor diagonal between exits (sprinklered only)"
+        spec_s: "1/3 of floor diagonal between exits (Table 3.15.a items v-vi)"
+        spec_ns: "No row: Table 3.15.a items v-vi list highrise and super highrise as sprinklered only; Ch 9 requires sprinklers at this height"
         code_ref: "Ch 3, #4.4 / Table 3.15.a"
         page_ref: "p.288"
-        detail: "Measured as the straight line between centres of exit doors (not walking distance). Per Table 3.15.a items v-vi (p.288): highrise (23-90 m, ruling R1) and super-highrise (>90 m) are tabulated as sprinklered only, both at 1/3 of floor diagonal. Non-sprinklered highrise is not permitted (see Ch 9)."
+        detail: "Measured as the straight line between centres of exit doors (not walking distance). Per Table 3.15.a items v-vi (p.288): highrise (23-90 m, ruling R1) and super-highrise (>90 m) are tabulated as sprinklered only, both at 1/3 of floor diagonal. Non-sprinklered highrise is not permitted (see Ch 9). #4.4.8 (p.291): Table 3.15.a does not apply to basements and podiums used only for parking and service rooms (Table 3.15.b applies)."
 
   - id: moe_g_required_exits
     when:
@@ -60,39 +60,58 @@ general:
         spec: "≥ 2 exits per floor; OL 500-1000 → ≥ 3 exits; OL > 1000 → ≥ 4 exits; outdoor OL > 6,000 → 3, > 9,000 → 4"
         code_ref: "Ch 3, #4.3 / Table 3.14"
         page_ref: "p.288"
-        detail: "Calculate occupant load (OL) from GFA / occupant-load-factor for the occupancy (Table 3.13), then size number of exits per these tiers. Balconies and mezzanines also require minimum 2 means of egress."
+        detail: "Per #4.3.1 (p.288) the number of means of egress is set for each storey: OL of the storey = storey floor area / Table 3.13 factor, rounded up (#4.1.2 'not less than', p.283); where an exit serves more than one storey only the OL of each storey considered individually is used (#4.1.3). The headline occupant load card gives the building total and the Table 3.14 count for the largest storey entered; with no largest storey area the whole GFA is used (owner ruling 12.10.2026, Ch3 Q1). Balconies and mezzanines also require minimum 2 means of egress."
         note: "Outdoor occupant-load tiers (Table 3.14 clauses vi/vii: OL>6,000 -> 3 exits, OL>9,000 -> 4 exits) are listed for reference but not currently evaluable: the Building schema has no indoor/outdoor `setting` flag, so this tool cannot auto-branch on outdoor venues. Treat outdoor OL thresholds as a manual designer check."
 
   - id: moe_g_stair_geometry
-    when:
-      occupancy_not: [villa_private, villa_commercial]
     systems:
       - name: "Stair Geometry (Ch 3, #3.3)"
         spec: "Tread depth ≥ 280 mm; riser height 100-180 mm uniform (max 10 mm variation per flight); head room on stairs ≥ 2,030 mm; max height between landings 3,660 mm"
         code_ref: "Ch 3, #3.3 / Table 3.4"
         page_ref: "p.255-258"
-        detail: "Per Table 3.4 #2 (p.255): general exit-stair riser MIN 100 mm, MAX 180 mm, uniform throughout each flight. Aisle stairs in Assembly are a separate case (Table 3.17, p.298): tread ≥ 280 mm, riser 100-205 mm with 178 mm being the Assembly aisle-stair limit (not the general stair limit). Stair handrails on both sides; intermediate handrails where width > 1,750 mm (Table 3.4 #10)."
+        detail: "Per Table 3.4 #2 (p.255): general exit-stair riser MIN 100 mm, MAX 180 mm, uniform throughout each flight. Aisle stairs in Assembly are a separate case: tread ≥ 280 mm and riser not less than 100 mm and not more than 205 mm (Table 3.17 item 8.ii-iii, p.298); where the aisle riser exceeds 178 mm the stair width is multiplied by factor A (Table 3.17 item 3.i, p.297), so 178 mm is a width-factor threshold, not a riser limit. Stair handrails on both sides; intermediate handrails where width > 1,750 mm (Table 3.4 #10)."
+
+  # Owner ruling 12.10.2026, Ch3 Q7: the general items above apply to villas with the
+  # villa tables taking precedence. Table 3.4 stair widths (item 1, p.255) are not
+  # itemised: p.255 is not in the checked page set.
+  - id: moe_g_villa_general_items
+    when:
+      occupancy_in: [villa_private, villa_commercial]
+    systems:
+      - name: "Villa: General Ch 3 Items (Tables 3.1, 3.2, 3.4) with Villa Table Precedence"
+        spec: "Tables 3.1 (general), 3.2 (doors) and 3.4 (stairs) apply to the villa as listed in this chapter's general items. Private villa: where they conflict with Table 3.27, Table 3.27 prevails (#5.6.1). Tables 3.14 (number of exits) and 3.15.a (remoteness) are not applied to villas."
+        code_ref: "Ch 3, #5.6.1 / Tables 3.1, 3.2, 3.4, 3.27"
+        page_ref: "p.246-259, 323"
+        detail: "Owner ruling 12.10.2026, Ch3 Q7. #5.6.1 (p.323): 'The Private Villa occupancies shall comply with Table 3.27. along with all other sections of this chapter. Where conflicts arise between this section and other sections of this Chapter or code, the requirements of this section shall prevail.' #5.6.1 covers private villas; commercial villas follow #5.7 / Table 3.28 (p.324), whose precedence wording the tool has not checked (needs p.324). Table 3.4 stair widths (item 1, p.255) are not itemised by the tool: read them on p.255."
 
   # Hazardous-area door rule - fires whenever the building is classed HH.
-  # Per Table 3.2 #3.2 item 4 (door swing) + #3.2 item viii (high-hazard content
-  # rooms), HH spaces require BOTH (a) door swing in egress direction AND
-  # (b) panic / fire-exit hardware on the egress side.
+  # Table 3.2 item 4.i (p.248): doors serving a high hazard content room swing in the
+  # direction of egress. Table 3.2 sets no panic-hardware trigger for HH rooms (item 12,
+  # p.250, only specifies the hardware), so panic hardware is not stated as required.
   - id: moe_g_hazardous_area_doors
     when:
       hazard_class_is: HH
     systems:
-      - name: "Hazardous Area Doors - Panic Hardware + Outswing (Table 3.2)"
-        spec: "Doors serving high-hazard content rooms shall (i) swing in the direction of egress travel, AND (ii) be equipped with panic hardware or fire-exit hardware on the egress side (bar 865-1220 mm AFFL)."
-        code_ref: "Ch 3, #3.2 / Table 3.2 item 4.i + item 8 (panic/fire-exit hardware)"
-        page_ref: "p.247-254"
-        detail: "Trigger: building hazard_class = HH (high-hazard content). Per Table 3.2 #4 item i (p.248) outswing is mandatory in HH content rooms (one of the four explicit triggers, alongside OL>=50, horizontal exit, exit enclosure). Panic / fire-exit hardware is required on doors serving HH rooms regardless of occupant load."
+      - name: "Hazardous Area Doors - Swing in Direction of Egress (Table 3.2 item 4.i)"
+        spec: "Side-hinged or pivoted-swinging doors serving a high hazard content room shall swing in the direction of egress travel."
+        code_ref: "Ch 3, #3.2 / Table 3.2 item 4.i"
+        page_ref: "p.248"
+        detail: "Trigger: building hazard_class = HH (high-hazard content). Table 3.2 item 4.i (p.248) lists four swing triggers: occupant load of 50 or more, horizontal exit, high hazard content room, exit enclosure. Where panic or fire exit hardware is fitted, Table 3.2 item 12 (p.250) applies: only approved and listed fire exit hardware on fire protection-rated door assemblies, actuating bar 865-1220 mm from finished floor. Table 3.2 does not require panic hardware on HH room doors."
 
+  # #4.4.8 (p.291): Table 3.15.b applies to basements and podiums used only for vehicle
+  # parking and service rooms -> parking occupancies or a building with a parking area;
+  # villas follow Table 3.27 / 3.28 (basement: standard enclosed exit stair).
   - id: moe_g_basement_parking_egress
     when:
       floors_below_grade_gt: 0
+      occupancy_not: [villa_private, villa_commercial]
+      any_of:
+        - {occupancy_in: [parking_enclosed, parking_open]}
+        - {has_parking_area: true}
     systems:
       - name: "Basement / Parking Podium Travel Distance (Table 3.15.b)"
-        spec: "Sprinklered enclosed basement parking: max 61 m travel + 15 m commonpath / dead-end. Non-sprinklered: 46 m travel + 15 m. Open podium parking: sprinklered 122 m travel; non-sprinklered 91 m (Table 3.16 row 20.ii, ruling R9) + 15 m."
+        spec_s: "Enclosed basement / podium parking: max 61 m travel (item i). Open podium parking: max 122 m travel (item iii). Dead end and commonpath max 15 m."
+        spec_ns: "Enclosed basement / podium parking: max 46 m travel (item ii). Open podium parking: max 91 m travel (Table 3.16 row 20.ii; item iv prints 122 m, ruling R9). Dead end and commonpath max 15 m."
         code_ref: "Ch 3, #4.4.8 / Table 3.15.b"
         page_ref: "p.291"
         detail: "Applies to basements and enclosed podiums used only for vehicle parking and service rooms (generator, server, battery, service rooms)."
@@ -110,6 +129,8 @@ branches:
         detail: "Use the most representative factor for each space. Stair capacity 7.6 mm/person; ramp 5 mm/person."
       - name: "Travel / Dead-end / Commonpath (Assembly)"
         spec: "≤ 50 people: commonpath 23 m; > 50: commonpath 6.1 m. Dead-end 6.1 m. Travel distance: sprinklered 76 m / non-sprinklered 61 m. Smoke-protected seating: travel 122 m sprinklered."
+        spec_s: "50 people or less (1.i): commonpath 23 m, dead end 6.1 m, travel 76 m. More than 50 people (1.ii): commonpath 6.1 m, dead end 6.1 m, travel 76 m. Smoke protected seating area (1.iii): commonpath 15 m, dead end 21 rows of seats, travel 122 m. Exhibition booth to exit access (1.iv): commonpath 15 m, dead end 0 m, travel 15 m."
+        spec_ns: "50 people or less (1.i): commonpath 23 m, dead end 6.1 m, travel 61 m. More than 50 people (1.ii): commonpath 6.1 m, dead end 6.1 m, travel 61 m. Smoke protected seating area (1.iii): commonpath 6.1 m, dead end not printed for NS, travel 61 m. Exhibition booth to exit access (1.iv): commonpath 15 m, dead end 0 m, travel 15 m."
         detail: "Smoke-protected seating allows extended travel and 21-rows dead-end. Exhibition booth to exit access: 15 m."
       - name: "Aisle Width (Assembly Seating)"
         spec: "Both-side seating: ≥ 1200 mm; one-side seating: ≥ 915 mm; ≤ 50 people: ≥ 915 mm. Aisle dead-end max 6.1 m. Aisle stairs: tread ≥ 280 mm, riser 100-205 mm uniform."
@@ -126,6 +147,8 @@ branches:
         spec: "Regular office 9.3 m²; Concentrated office 4.6 m²; Air-traffic-control observation 3.7 m²"
       - name: "Travel / Dead-end / Commonpath (Business)"
         spec: "Commonpath: sprinklered 30 m / non-sprinklered 23 m. Dead-end: sprinklered 15 m / non-sprinklered 6.1 m. Travel distance: sprinklered 91 m / non-sprinklered 61 m"
+        spec_s: "Regular office areas (2.i): commonpath 30 m, dead end 15 m, travel 91 m. Air traffic control observation levels (2.iii): no values printed."
+        spec_ns: "Regular office areas (2.i): commonpath 23 m, dead end 6.1 m, travel 61 m. Air traffic control observation levels (2.iii): no values printed."
       - name: "Single Exit Permission (Business - Table 3.19)"
         required: conditional
         spec: "Single exit door OR single exit stair permitted under specific low-OL conditions (Table 3.19 #1-2, p.304)."
@@ -149,25 +172,42 @@ branches:
         spec: "Classroom 1.9 m² net; Shops / labs / vocational 4.6 m² net"
       - name: "Travel / Dead-end / Commonpath (Educational)"
         spec: "Classroom: commonpath sprinklered 30 m / non 23 m. Dead-end sprinklered 15 m / non 6.1 m. Travel sprinklered 61 m / non 46 m. Shops/labs travel sprinklered 76 m / non 46 m."
+        spec_s: "Classroom (3.i): commonpath 30 m, dead end 15 m, travel 61 m. Shops, laboratories, vocational: commonpath 30 m, dead end 15 m, travel 76 m."
+        spec_ns: "Classroom (3.i): commonpath 23 m, dead end 6.1 m, travel 46 m. Shops, laboratories, vocational: commonpath 23 m, dead end 6.1 m, travel 46 m."
 
   - id: moe_education_a
     match: {occupancy: education_a}
     section: "Ch 3, #5.3.1 / Table 3.20 (Nurseries, KG, Preschool, Talent Centers)"
     page: "p.305-306"
     systems:
-      - name: "Single Exit Stair - Nursery / KG / Preschool (Table 3.20 #4 + #9)"
-        required: conditional
-        spec: "Two exit stairs required (Table 3.20 #4 item i, p.305). Existing single-stair villas converted to Group A may add an outside open stair to comply (Table 3.20 #9 item ii, p.306)."
-        detail: "Per Table 3.20 #4 (p.305) two exit stairs are normally required for Educational Group A. However Table 3.20 #9 (p.306) explicitly grandfathers existing two-storey private villas being changed to Group A: where a single exit stair already exists, the second required exit stair may be provided by adding an outside open stair (masonry or steel) discharging directly to outside at ground level. Classrooms must not be located on upper floors of such converted villas (#9 item iii); upper floors are restricted to offices / staff room / storage / health checkup."
+      - name: "Minimum 2 Exit Stairs - Single Exit Stair Not Permitted (Table 3.20 item 4)"
+        spec: "Single exit stair is not permitted. Minimum of 2 exit stairs, accessible from every part of every storey and mezzanine within the permitted commonpath distance (Table 3.20 item 4.i-ii, p.305). An existing single-stair villa converted to Group A provides the second stair as an added outside stair (Table 3.20 item 9.ii, p.306)."
+        code_ref: "Ch 3, #5.3.1 / Table 3.20 item 4"
+        page_ref: "p.305-306"
+        detail: "Per Table 3.20 item 4 (p.305) two exit stairs are required for Educational Group A. Table 3.20 item 9 (p.306) covers existing two-storey private villas being changed to Group A: where a single exit stair already exists, the second required exit stair may be provided by adding an outside open stair (masonry or steel) discharging directly to outside at ground level. Classrooms must not be located on upper floors of such converted villas (#9 item iii); upper floors are restricted to offices / staff room / storage / health checkup."
+      - name: "Classroom Location (Table 3.20 item 1)"
+        spec: "Rooms normally occupied by preschool, kindergarten or first-grade students (generally below 6 years) on a level of exit discharge; rooms of second-grade students (generally 6-8 years) not more than one storey above the level of exit discharge; otherwise dedicated means of egress directly to outside, independent of the building means of egress (item 1.iii). Aisles not less than 760 mm wide."
+        code_ref: "Ch 3, #5.3.1 / Table 3.20 item 1"
+        page_ref: "p.305"
+      - name: "Corridors (Table 3.20 item 2)"
+        spec: "Corridors not less than 1830 mm wide; enclosed corridor walls are smoke partitions; corridor 1 hour fire rated if the building is not sprinklered."
+        code_ref: "Ch 3, #5.3.1 / Table 3.20 item 2"
+        page_ref: "p.305"
 
   - id: moe_education_bc
     match: {occupancy_in: [education_b, education_c]}
     section: "Ch 3, #5.3.2 / Table 3.21 (Schools and Colleges)"
     page: "p.307-308"
     systems:
-      - name: "Single Exit Stair NOT Permitted - Schools / Colleges (Table 3.21 #5)"
-        required: not_required
-        detail: "Per Table 3.21 #5 item i (p.307), single exit stair is NOT permitted in Educational Group B (Schools Grade 1-12) or Group C (Colleges, Universities, adult education). A minimum of 2 exit stairs shall be provided, accessible from every part of every storey and mezzanine within the permitted commonpath distance. No villa-conversion grandfathering for B/C (unlike Group A under Table 3.20 #9)."
+      - name: "Minimum 2 Exit Stairs - Single Exit Stair Not Permitted (Table 3.21 item 5)"
+        spec: "Single exit stair is not permitted. Minimum of 2 exit stairs, accessible from every part of every storey and mezzanine within the permitted commonpath distance (Table 3.21 item 5.i-ii, p.307)."
+        code_ref: "Ch 3, #5.3.2 / Table 3.21 item 5"
+        page_ref: "p.307"
+        detail: "Per Table 3.21 item 5.i (p.307), single exit stair is NOT permitted in Educational Group B (Schools Grade 1-12) or Group C (Colleges, Universities, adult education). A minimum of 2 exit stairs shall be provided, accessible from every part of every storey and mezzanine within the permitted commonpath distance. No villa-conversion grandfathering for B/C (unlike Group A under Table 3.20 #9)."
+      - name: "Corridors (Table 3.21 item 2)"
+        spec: "Corridors not less than 1830 mm wide where classrooms are on one side only; not less than 3000 mm wide where classrooms are on both sides; looped unless exit stairs are at both extreme ends of the exit corridor; enclosed corridor walls are smoke partitions if the building is sprinkler protected throughout, otherwise the corridor has a 1-hour fire resistance rating."
+        code_ref: "Ch 3, #5.3.2 / Table 3.21 item 2"
+        page_ref: "p.307"
 
   # ------ Healthcare ------
   # Code split (per Ch 3 #5.4):
@@ -183,6 +223,8 @@ branches:
         spec: "Inpatient 22.3 m²; Sleeping 11.1 m²; Limited care 9.3 m²; Smoke-compartment crossing 2.8 m² net"
       - name: "Travel / Dead-end / Commonpath (Hospitals - Table 3.16 row 4)"
         spec: "Hospitals/Sleeping areas: commonpath S 30 m, dead-end S 9.1 m, travel S 61 m (sprinklered only - non-sprinklered hospitals not permitted). Inside suite to suite exit door 30 m. Inside suite to exit stair 61 m. Sleeping room to room main door 15 m."
+        spec_s: "Hospitals, sleeping areas (4.i): commonpath 30 m, dead end 9.1 m, travel 61 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
+        spec_ns: "Hospitals, sleeping areas (4.i): Table 3.16 prints the S column only (no non-sprinklered values). Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
         detail: "Per Table 3.16 row 4 (p.293): hospitals are tabulated as sprinklered-only. Two-exit requirement is absolute (Table 3.22 #4, p.313): single exit is NOT permitted, and every corridor must access two approved exits without passing through intervening rooms."
 
   - id: moe_healthcare_b
@@ -194,6 +236,8 @@ branches:
         spec: "Consultation 9.3 m²; Clinics 9.3 m²; Limited care 9.3 m²; Smoke-compartment crossing 2.8 m² net"
       - name: "Travel / Dead-end / Commonpath (Clinics - Table 3.16 row 4.ii)"
         spec: "Clinics / Consultancy areas: commonpath S 30 m / NS 23 m  |  dead-end S 15 m / NS 6.1 m  |  travel S 91 m / NS 61 m. Inside suite to exit door S/NS 30 m. Inside suite to exit stair S/NS 61 m."
+        spec_s: "Clinics, consultancy areas (4.ii): commonpath 30 m, dead end 15 m, travel 91 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m."
+        spec_ns: "Clinics, consultancy areas (4.ii): commonpath 23 m, dead end 6.1 m, travel 61 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m."
         detail: "Per Table 3.16 row 4.ii (p.293): Healthcare Group B (clinics, day-surgery, outpatient consultancy) uses the clinics row. Two-exit requirement applies per Table 3.22 #4 (p.313)."
 
   - id: moe_healthcare_c
@@ -205,19 +249,38 @@ branches:
         spec: "Ambulatory 13 m² (per Table 3.13.5)"
       - name: "Travel / Dead-end / Commonpath (Ambulatory - Table 3.16 row 5)"
         spec: "Ambulatory Health care: commonpath S 30 m / NS 23 m  |  dead-end S 15 m / NS 6.1 m  |  travel S 61 m / NS 46 m"
+        spec_s: "Ambulatory health care (5.i): commonpath 30 m, dead end 15 m, travel 61 m."
+        spec_ns: "Ambulatory health care (5.i): commonpath 23 m, dead end 6.1 m, travel 46 m."
         detail: "Per Table 3.16 row 5 (p.293) + Table 3.23 (p.315-316). Single exit is NOT permitted (Table 3.23 #2, p.315). Rooms or spaces larger than 232 m² require 2 separate remote exits (#3). 1-hour fire-rated separation from other tenants with 44 mm thick doors (#5)."
 
   # ------ Residential ------
   - id: moe_residential
-    match: {occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel]}
-    section: "Ch 3, #4 + #5.5 / Tables 3.13.6-7 + 3.16.6-7"
+    match: {occupancy: residential}
+    section: "Ch 3, #4 + #5.5 / Tables 3.13 row 6 + 3.16 row 6"
     page: "p.286, 293"
     systems:
       - name: "Occupant Load Factor (Residential)"
-        spec: "Apartments / staff accommodation / hostels / labour accommodation: 18.6 m² gross"
+        spec: "Apartments: 18.6 m² gross"
       - name: "Travel / Dead-end / Commonpath (Residential)"
         spec: "Apartment main door to exit: commonpath sprinklered 15 m / non 10.7 m. Dead-end sprinklered 15 m / non 10.7 m. Travel sprinklered 61 m / non 30 m. Within apartment to main door: S 38 m / NS 23 m (SAME numbers apply as BOTH Commonpath AND Travel - Table 3.16 row 6.ii). Other than dwelling to exit stair: travel sprinklered 76 m / non 61 m."
+        spec_s: "Apartment main door to exit (6.i): commonpath 15 m, dead end 15 m, travel 61 m. Within apartment to main door (6.ii): commonpath 38 m, dead end NA, travel 38 m. Apartment main door to outside stair (6.iii): commonpath 15 m, dead end 15 m, travel 61 m. Other than dwelling units to exit stair (6.iv): commonpath 15 m, dead end 15 m, travel 76 m."
+        spec_ns: "Apartment main door to exit (6.i): commonpath 10.7 m, dead end 10.7 m, travel 30 m. Within apartment to main door (6.ii): commonpath 23 m, dead end NA, travel 23 m. Apartment main door to outside stair (6.iii): commonpath 10.7 m, dead end 10.7 m, travel 30 m. Other than dwelling units to exit stair (6.iv): commonpath 10.7 m, dead end 10.7 m, travel 61 m."
         detail: "Per Table 3.16 row 6.ii (p.293) the 'Within Apartment to Main Door' row tabulates the SAME 38 m / 23 m number under BOTH the Commonpath column AND the Travel Distance column (dead-end is NA). The tool cannot distinguish these two semantic uses with a single value; designers should apply the limit to both metrics independently when sizing internal apartment corridors."
+
+  # Table 3.16 row 7 (p.293): Residential Group B, C - staff accommodation, hostels (7.i)
+  # and labour accommodation (7.ii) - not the apartment row 6.
+  - id: moe_residential_bc
+    match: {occupancy_in: [labour_accommodation, staff_accommodation, hostel]}
+    section: "Ch 3, #4 / Tables 3.13 row 7 + 3.16 row 7"
+    page: "p.286, 293"
+    systems:
+      - name: "Occupant Load Factor (Residential Group B, C)"
+        spec: "Staff accommodation, hostels, labour accommodation: 18.6 m² gross (Table 3.13 row 7)"
+      - name: "Travel / Dead-end / Commonpath (Staff / Labour Accommodation, Hostels - Table 3.16 row 7)"
+        spec: "Commonpath S 15 m, NS 10.7 m  |  Dead-end S 15 m, NS 10.7 m  |  Travel S 76 m, NS 61 m"
+        spec_s: "Commonpath 15 m  |  Dead end 15 m  |  Travel 76 m"
+        spec_ns: "Commonpath 10.7 m  |  Dead end 10.7 m  |  Travel 61 m"
+        detail: "Table 3.16 row 7.i (staff accommodation, hostels) and row 7.ii (labour accommodation), p.293, print the same values."
 
   # ------ Hotel ------
   - id: moe_hotel
@@ -229,18 +292,22 @@ branches:
         spec: "Hotel apartments / guest rooms: 18.6 m² gross"
       - name: "Travel / Dead-end / Commonpath (Hotel - Table 3.16 row 11)"
         spec: "Hotel guest room MAIN DOOR to exit: commonpath S 15 m / NS 10.7 m  |  dead-end S 15 m / NS 10.7 m  |  travel S 61 m / NS 53 m. WITHIN guest room to main door: travel S 38 m / NS 23 m (commonpath/dead-end NA)."
+        spec_s: "Hotel guest room main door to exit: commonpath 15 m, dead end 15 m, travel 61 m. Within guest room to main door: travel 38 m (commonpath / dead end NA)."
+        spec_ns: "Hotel guest room main door to exit: commonpath 10.7 m, dead end 10.7 m, travel 53 m. Within guest room to main door: travel 23 m (commonpath / dead end NA)."
         detail: "Per Table 3.16 row 11 (p.294). Note that hotel travel distances (S 61 / NS 53) are TIGHTER than the residential 'Other than dwelling to exit stair' numbers (S 76 / NS 61) - earlier versions of this rule mistakenly used the residential figures."
 
   # ------ Mercantile / Mall ------
   - id: moe_mercantile
-    match: {occupancy_in: [mercantile_a, mercantile_b]}
+    match: {occupancy_in: [mercantile_a, mercantile_b], hazard_class_in: [LH, OH1, OH2]}
     section: "Ch 3, #4 + #5.11 / Tables 3.13.13 + 3.16"
-    page: "p.286"
+    page: "p.286, 294"
     systems:
       - name: "Occupant Load Factor (Mercantile)"
         spec: "Sales below street: 2.8 m². Sales street floor: 2.8 m². Sales above street: 5.6 m². Two-or-more-street-floors: 3.7 m². Office areas only: 9.3 m². Goods areas (no public): 27.9 m²"
       - name: "Travel / Commonpath / Dead-end (Mercantile A/B/C - Table 3.16 row 13.i)"
         spec: "Travel: S 76 m, NS 46 m  |  Commonpath: S 30 m, NS 23 m  |  Dead-end: S 15 m, NS 6.1 m"
+        spec_s: "Travel 76 m  |  Commonpath 30 m  |  Dead end 15 m"
+        spec_ns: "Travel 46 m  |  Commonpath 23 m  |  Dead end 6.1 m"
         detail: "Standard retail mercantile (Class A, B, C - shops, showrooms, hypermarkets). For OPEN-AIR mercantile (row 13.ii) all distances are 0 m commonpath / 0 m dead-end / NA travel. For HIGH-HAZARD mercantile (fireworks, aerosol retail, etc.) see the moe_mercantile_high_hazard branch (row 13.iii)."
 
   # High-hazard mercantile - matches main mercantile occupancies BUT only when hazard_class = HH.
@@ -250,8 +317,14 @@ branches:
     section: "Ch 3, #4 + #5.11 / Table 3.16 row 13.iii"
     page: "p.294"
     systems:
+      - name: "Occupant Load Factor (Mercantile)"
+        spec: "Sales below street: 2.8 m². Sales street floor: 2.8 m². Sales above street: 5.6 m². Two-or-more-street-floors: 3.7 m². Office areas only: 9.3 m². Goods areas (no public): 27.9 m²"
+        code_ref: "Ch 3, Table 3.13 row 13"
+        page_ref: "p.286"
       - name: "Travel / Commonpath / Dead-end (High-Hazard Mercantile - Table 3.16 row 13.iii)"
         spec: "Commonpath: S 0 m, NS 0 m  |  Dead-end: S 15 m, NS 6.1 m  |  Travel: S 23 m, NS 23 m"
+        spec_s: "Commonpath 0 m  |  Dead end 15 m  |  Travel 23 m"
+        spec_ns: "Commonpath 0 m  |  Dead end 6.1 m  |  Travel 23 m"
         detail: "Applies to High-Hazard Mercantile (e.g. fireworks retail, aerosol-can retail, flammable-liquid retail). Per Table 3.16 row 13.iii (p.294) there is ZERO commonpath both sprinklered AND non-sprinklered (every sales position must have direct exit access) and travel is capped at 23 m WITH NO sprinkler benefit (S 23 m = NS 23 m). Compare to standard mercantile S 76 / NS 46. Outswing + panic hardware (Table 3.2 #4 item i + moe_g_hazardous_area_doors) also apply."
         code_ref: "Ch 3, #5.11 / Table 3.16 row 13.iii"
         page_ref: "p.294"
@@ -259,12 +332,14 @@ branches:
   - id: moe_mall
     match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
     section: "Ch 3, #4 + #5.12 / Tables 3.13.14 + 3.16"
-    page: "p.287"
+    page: "p.287, 294"
     systems:
       - name: "Occupant Load Factor (Mall)"
         spec: "Gross leasable area < 14,000 m²: 2.8 m². ≥ 14,000 m²: 3.3 m². Add 0.1 m² per 1,290 m² increment, capped at 5.1 m²/person."
       - name: "Travel / Commonpath / Dead-end (Mall - Table 3.16 rows 14-15)"
         spec: "COVERED MALL: Travel S 120 m, NS 46 m  |  Commonpath S 30 m, NS 23 m  |  Dead-end S 15 m, NS 6.1 m. Within tenant space (when pedestrian way per Table 3.33): Travel S 76 m, NS 46 m. OPEN-AIR MALL: 0/0/NA (no internal egress limits)."
+        spec_s: "Covered mall (14.i): travel 120 m, commonpath 30 m, dead end 15 m. Within tenant space with a pedestrian way per Table 3.33.2 (14.ii): travel 76 m, commonpath 30 m, dead end 15 m. Open air mall (15.i): commonpath 0 m, dead end 0 m, travel NA."
+        spec_ns: "Covered mall (14.i): travel 46 m, commonpath 23 m, dead end 6.1 m. Within tenant space with a pedestrian way per Table 3.33.2 (14.ii): travel 46 m, commonpath 23 m, dead end 6.1 m. Open air mall (15.i): commonpath 0 m, dead end 0 m, travel NA."
         detail: "Per Table 3.16 row 14.i (p.294): covered-mall sprinklered travel is 120 m (not 122 m). Tenant spaces inside the mall envelope follow the standard mercantile travel distances when a designated pedestrian way is provided per Table 3.33. (The 122 m figure that appears elsewhere in this codebase is the Ch 10 SC mall-circulation smoke-curtain interval, which is a separate parameter from MOE travel distance.)"
 
   # ------ Daycare ------
@@ -282,41 +357,49 @@ branches:
         detail: "10 mm/person stair-capacity factor reflects slower self-preservation of young children. NOTE: daycare_c is a UI category (family daycare, 4-6 clients) and is not a code-defined group - UAE FLSC Ch 3 #5.10 only defines Groups A and B. This rule treats daycare_c the same as Group B."
       - name: "Travel / Commonpath / Dead-end (Daycare - Table 3.16 row 12)"
         spec: "Any room door to exit: Travel S 46 m, NS 30 m  |  Commonpath S 30 m, NS 23 m  |  Dead-end S 15 m, NS 6.1 m. Any point in room to exit: S 61 m, NS 46 m. Any point to room door: S 30 m, NS 15 m (NA commonpath/dead-end)"
+        spec_s: "From any room door to exit door (12.i): travel 46 m, commonpath 30 m, dead end 15 m. From any point in room to exit door (12.ii): travel 61 m, commonpath 30 m, dead end 15 m. From any point in room to room door (12.iii): travel 30 m (commonpath / dead end NA)."
+        spec_ns: "From any room door to exit door (12.i): travel 30 m, commonpath 23 m, dead end 6.1 m. From any point in room to exit door (12.ii): travel 46 m, commonpath 23 m, dead end 6.1 m. From any point in room to room door (12.iii): travel 15 m (commonpath / dead end NA)."
 
   # ------ Detention ------
   - id: moe_detention
     match: {occupancy_in: [detention_a, detention_b, detention_c]}
     section: "Ch 3, #4 + #5.8 / Tables 3.13.10 + 3.16"
-    page: "p.286"
+    page: "p.286, 294"
     systems:
       - name: "Occupant Load Factor (Detention)"
         spec: "11.1 m² gross"
       - name: "Travel / Commonpath / Dead-end (Detention - Table 3.16 row 10)"
         spec: "Types II/III/IV: Travel S 61 m, NS 46 m  |  Commonpath S 30 m, NS 15 m  |  Dead-end S 15 m, NS 6.1 m. Type V (combustible): same travel/commonpath but Dead-end S 6.1 m, NS 6.1 m. Any room access door to exit: S 46 m, NS 46 m travel."
+        spec_s: "Types II, III, IV (10.i): travel 61 m, commonpath 30 m, dead end 15 m. Type V (10.ii): travel 61 m, commonpath 30 m, dead end 6.1 m. Any room exit access door to exit (10.iii): travel 46 m, commonpath 30 m, dead end 15 m."
+        spec_ns: "Types II, III, IV (10.i): travel 46 m, commonpath 15 m, dead end 6.1 m. Type V (10.ii): travel 46 m, commonpath 15 m, dead end 6.1 m. Any room exit access door to exit (10.iii): travel 46 m, commonpath 15 m, dead end 6.1 m."
         detail: "Detention requires supervised evacuation. Type V (combustible construction) tightens the dead-end limit to 6.1 m even when sprinklered."
 
   # ------ Storage / Industrial ------
   - id: moe_storage_industrial_ordinary
     match: {occupancy: storage_industrial, hazard_class_in: [LH, OH1, OH2]}
     section: "Ch 3, #4 + #5.14-15 / Tables 3.13.16, 3.13.18 + 3.16"
-    page: "p.287"
+    page: "p.287, 294-295"
     systems:
       - name: "Occupant Load Factor (Ordinary-hazard Storage / Industrial)"
         spec: "Storage Group B/C (low/ordinary): 27.9 m². Industrial Group B/C (general low-hazard): 9.3 m². Stair capacity 7.6 mm/person; ramp 5 mm/person"
       - name: "Travel / Commonpath / Dead-end (LH/OH Storage + Industrial - Table 3.16 rows 17, 19)"
         spec: "Storage LH/OH: Travel S 122 m, NS 61 m  |  Commonpath S 30 m, NS 15 m  |  Dead-end S 30 m, NS 15 m. Industrial Group B/C General LH: Travel S 75 m, NS 61 m. Industrial Special Purpose: Travel S 122 m, NS 91 m. Mechanical / Boiler / Furnace rooms: Travel S 75 m, NS 61 m. Aircraft Storage / Servicing GF: Travel S 30 m, NS 23 m. Aircraft Storage / Servicing Mezzanine: Travel S 23 m, NS 23 m."
+        spec_s: "Low / ordinary hazard storage (17.i-ii): commonpath 30 m, dead end 30 m, travel 122 m. Aircraft storage ground floor: commonpath 30 m, dead end 15 m, travel 30 m; mezzanine floor: commonpath 30 m, dead end 15 m, travel 23 m. Industrial general, low hazard (19.i): commonpath 30 m, dead end 15 m, travel 75 m. Special purpose (19.ii): commonpath 30 m, dead end 15 m, travel 122 m. Aircraft servicing ground floor (19.iii): commonpath 30 m, dead end 15 m, travel 30 m; mezzanine floor (19.iv): commonpath 23 m, dead end 15 m, travel 23 m. Mechanical equipment room (19.v), boiler / furnace room (19.vi): commonpath 30 m, dead end 15 m, travel 75 m."
+        spec_ns: "Low / ordinary hazard storage (17.i-ii): commonpath 15 m, dead end 15 m, travel 61 m. Aircraft storage ground floor: commonpath 15 m, dead end 15 m, travel 23 m; mezzanine floor: commonpath 15 m, dead end 15 m, travel 23 m. Industrial general, low hazard (19.i): commonpath 15 m, dead end 15 m, travel 61 m. Special purpose (19.ii): commonpath 15 m, dead end 15 m, travel 91 m. Aircraft servicing ground floor (19.iii): commonpath 15 m, dead end 15 m, travel 23 m; mezzanine floor (19.iv): commonpath 15 m, dead end 15 m, travel 23 m. Mechanical equipment room (19.v), boiler / furnace room (19.vi): commonpath 15 m, dead end 15 m, travel 61 m."
         detail: "Commonpath AND dead-end use the same value (30 m / 15 m) for storage - unusual. For aircraft hangers, travel distances are tightened irrespective of sprinkler protection."
 
   - id: moe_storage_industrial_high_hazard
     match: {occupancy: storage_industrial, hazard_class_is: HH}
     section: "Ch 3, #4 + #5.14-15 / Tables 3.13.15, 3.13.17 + 3.16"
-    page: "p.287"
+    page: "p.287, 294"
     systems:
       - name: "Occupant Load Factor (High-hazard Storage / Industrial)"
         spec: "Storage Group A (high-hazard): 27.9 m². Industrial Group A (high-hazard): 9.3 m². Stair capacity 18 mm/person; ramp 10 mm/person"
         detail: "High-hazard occupancies use ENLARGED stair / ramp capacity factors (18 mm vs 7.6 mm; 10 mm vs 5 mm) to permit faster egress under accelerated fire-development conditions."
       - name: "Travel / Commonpath / Dead-end (HH Storage + Industrial - Table 3.16 rows 16, 18)"
         spec: "HH Storage: Commonpath 0 m  |  Dead-end 0 m  |  Travel S 30 m, NS 23 m. HH Industrial: Commonpath 0 m  |  Dead-end 0 m  |  Travel S 23 m, NS 0 m (NS = HH industrial NOT permitted without sprinklers)."
+        spec_s: "High hazard storage (16.i): commonpath 0 m, dead end 0 m, travel 30 m. High hazard industrial (18.i): commonpath 0 m, dead end 0 m, travel 23 m."
+        spec_ns: "High hazard storage (16.i): commonpath 0 m, dead end 0 m, travel 23 m. High hazard industrial (18.i): commonpath 0 m, dead end 0 m, travel 0 m (read as: high hazard industrial not permitted without sprinklers)."
         detail: "ZERO commonpath and ZERO dead-end for HH (no sprinkler discount) - every workstation must have direct exit access. INTERPRETATION OF 'NS = 0 m' FOR HH INDUSTRIAL: Table 3.16 row 18.i (p.294) tabulates the non-sprinklered HH-industrial travel as 0 m, which is engineering-equivalent to 'no compliant non-sprinklered HH industrial layout exists.' This tool treats it as 'HH Industrial NOT permitted without sprinklers' - i.e. sprinklers are a precondition for HH industrial occupancy, not optional. Travel distances drastically shorter than ordinary storage (23-30 m vs 61-122 m)."
 
   # ------ Parking ------
@@ -328,9 +411,11 @@ branches:
       - name: "Occupant Load Factor (Enclosed Parking - Table 3.13 row 19)"
         spec: "27.9 m² gross. Stair capacity 7.6 mm/person; ramp 5 mm/person"
       - name: "Travel Distance (Enclosed Parking - sprinklered)"
+        sprinkler_column: S
         spec: "Max 61 m travel from most remote parking lot to exit door (along natural path)"
         detail: "Per Table 3.15.b item i. Dead-end and commonpath shall not exceed 15 m. Walking distance from most remote parking lot, along natural path of travel to an exit."
       - name: "Travel Distance (Enclosed Parking - non-sprinklered)"
+        sprinkler_column: NS
         spec: "Max 46 m travel from most remote parking lot to exit door"
         detail: "Per Table 3.15.b item ii. Dead-end and commonpath shall not exceed 15 m. Applies when enclosed basement/podium parking is NOT sprinklered. Buildings without sprinklers tighten the egress envelope by 15 m."
       - name: "Mechanical / Robotic Parking OLF (Table 3.13 row 20)"
@@ -348,6 +433,8 @@ branches:
         spec: "27.9 m² gross. Stair capacity 7.6 mm/person; ramp 5 mm/person"
       - name: "Travel Distance (Open Podium Parking)"
         spec: "Travel S 122 m, NS 91 m from most remote parking lot to exit door; commonpath and dead-end 15 m"
+        spec_s: "Open parking (20.ii): travel 122 m from most remote parking lot to exit door; commonpath 15 m, dead end 15 m"
+        spec_ns: "Open parking (20.ii): travel 91 m from most remote parking lot to exit door; commonpath 15 m, dead end 15 m"
         code_ref: "Ch 3, Table 3.16 row 20.ii + Table 3.15.b items iii-iv"
         page_ref: "p.295, 291"
         detail: "Table 3.16 row 20.ii (p.295) gives open parking S 122 m, NS 91 m travel. CODE CONFLICT: Table 3.15.b item iv (p.291) prints 122 m for a non-sprinklered open podium. The tool uses the stricter 91 m (ruling R9, 12.10.2026); confirm with Civil Defence. Dead-end and commonpath shall not exceed 15 m. Open podium parking benefits from natural ventilation - the longer travel distance acknowledges the much lower smoke / heat hazard. Note: Mechanical/Robotic parking is a SEPARATE row (Table 3.13 row 20, Parking Group C) with OLF 46.5 m² - see moe_parking_enclosed for the row 20 reference."
@@ -358,20 +445,122 @@ branches:
   - id: moe_animal_housing
     match: {occupancy: animal_housing}
     section: "Ch 3, #4 / Table 3.13.21 + 3.16"
-    page: "p.287"
+    page: "p.287, 295"
     systems:
       - name: "Occupant Load Factor (Animal Housing)"
         spec: "11.1 m²"
       - name: "Travel / Commonpath / Dead-end (Animal Housing - Table 3.16 row 22)"
         spec: "Travel S 91 m, NS 61 m  |  Commonpath S 30 m, NS 23 m  |  Dead-end S 15 m, NS 6.1 m"
+        spec_s: "Travel 91 m  |  Commonpath 30 m  |  Dead end 15 m"
+        spec_ns: "Travel 61 m  |  Commonpath 23 m  |  Dead end 6.1 m"
         detail: "Animal housing matches typical hotel/business travel distances. Sprinklered benefit applies normally (15 m dead-end vs 6.1 m non-sprinklered)."
 
-  # ------ Villas (no MOE numerical requirements) ------
-  - id: moe_villa
-    match: {occupancy_in: [villa_private, villa_commercial]}
-    section: "Ch 3, #4 + #5.6-7 / Table 3.13.8-9"
-    page: "p.286"
+  # ------ Villas ------
+  # Table 3.13 rows 8-9 and Table 3.16 rows 8-9 print None / NA (no OL factor, no
+  # travel distances), but Table 3.27 (private villa, p.323) sets mandatory egress
+  # items. #5.6.2 (p.323): Table 3.27 does not apply to commercial villas (#5.7,
+  # Table 3.28, p.324).
+  - id: moe_villa_private
+    match: {occupancy: villa_private}
+    section: "Ch 3, #5.6 / Table 3.27"
+    page: "p.323"
     systems:
-      - name: "Means of Egress - Villa"
-        required: not_required
-        detail: "Private and commercial villas have no occupant-load-factor or numerical means-of-egress requirements per Table 3.13.8-9 and Table 3.16.8-9. Standard residential best-practice egress applies (single primary exit + secondary escape route from upper floors)."
+      - name: "Primary and Secondary Means of Escape (Table 3.27 item 2.i)"
+        spec: "Every sleeping room and every living area shall have a primary means of escape (a door, stairway or ramp giving unobstructed travel to the outside) and a secondary means of escape. If the villa is sprinkler protected, the secondary means of escape is not required."
+        code_ref: "Ch 3, #5.6 / Table 3.27 item 2.i, 2.iv"
+        page_ref: "p.323"
+        detail: "Secondary means (item 2.iv): a door, stairway or ramp remote from the primary exit leading outside; a passage through an adjacent non-lockable space or set back area; a permanent stair to the roof with an outside stair to the level of discharge; or an operable exterior window not less than 510 mm wide and 610 mm high, clear opening not less than 0.53 m2, bottom not more than 6100 mm from finished ground floor. Civil Defence highly recommends a second primary escape (item 2.ii)."
+      - name: "Doors (Table 3.27 item 3)"
+        spec: "Closet door latches openable by children from inside the closet; bathroom doors openable from the outside in an emergency when locked; while the villa is occupied, no locking device that impedes or prohibits egress or cannot be easily disengaged."
+        code_ref: "Ch 3, #5.6 / Table 3.27 item 3"
+        page_ref: "p.323"
+      - name: "Hallway (Table 3.27 item 4.i)"
+        spec: "Hallway minimum 915 mm wide with a clear headroom of 2030 mm, without obstructions"
+        code_ref: "Ch 3, #5.6 / Table 3.27 item 4.i"
+        page_ref: "p.323"
+
+  # Table 3.27 item 2.iii: "Where any floor within villa exceeds 400 m2, two primary
+  # means of escape remote from each other shall be provided." The largest floor is at
+  # least max(GF BUA, GFA / storeys): over 400 m2 proves the rule applies.
+  - id: moe_villa_private_two_primary
+    match: {occupancy: villa_private, largest_storey_area_min_m2_gt: 400}
+    section: "Ch 3, #5.6 / Table 3.27 item 2.iii"
+    page: "p.323"
+    systems:
+      - name: "Two Primary Means of Escape - Floor over 400 m2 (Table 3.27 item 2.iii)"
+        spec: "A floor of the villa exceeds 400 m2: two primary means of escape remote from each other"
+        code_ref: "Ch 3, #5.6 / Table 3.27 item 2.iii"
+        page_ref: "p.323"
+
+  - id: moe_villa_private_two_primary_check
+    match:
+      occupancy: villa_private
+      largest_storey_area_min_m2_lte: 400
+      largest_storey_area_m2_lte: 0
+      not: {gross_floor_area_m2_lte: 400, ground_floor_bua_m2_lte: 400}
+    section: "Ch 3, #5.6 / Table 3.27 item 2.iii"
+    page: "p.323"
+    systems:
+      - name: "Two Primary Means of Escape - Floor over 400 m2 (Table 3.27 item 2.iii)"
+        required: conditional
+        spec: "If any floor of the villa exceeds 400 m2: two primary means of escape remote from each other (the inputs give no per-floor area)"
+        code_ref: "Ch 3, #5.6 / Table 3.27 item 2.iii"
+        page_ref: "p.323"
+
+  - id: moe_villa_private_basement
+    match: {occupancy: villa_private, floors_below_grade_gt: 0}
+    section: "Ch 3, #5.6 / Table 3.27 item 2.v-vi"
+    page: "p.323"
+    systems:
+      - name: "Basement Exit Stair (Table 3.27 item 2.vi)"
+        spec: "Basements shall have a standard enclosed exit stair leading to the discharge level; spiral stairs, winders and open stairs are not permitted for access and exit from basements (item 2.v)."
+        code_ref: "Ch 3, #5.6 / Table 3.27 item 2.v-vi"
+        page_ref: "p.323"
+
+  - id: moe_villa_commercial
+    match: {occupancy: villa_commercial}
+    section: "Ch 3, #5.7 / Table 3.28"
+    page: "p.324"
+    systems:
+      - name: "Means of Egress - Commercial Villa (Table 3.28)"
+        spec: "Comply with Ch 3 #5.7 and Table 3.28 (commercial villa). The private-villa Table 3.27 does not apply to commercial villas and groups of villas (#5.6.2, p.323)."
+        code_ref: "Ch 3, #5.7 / Table 3.28"
+        page_ref: "p.324"
+        detail: "Table 3.13 row 9 and Table 3.16 row 9 print None / NA: there is no occupant-load factor or travel distance for commercial villas. The Table 3.28 items are not itemised by this tool yet (needs the p.324 page check)."
+
+  # ------ Occupancies with no Table 3.13 / 3.16 row ------
+  # Owner ruling 12.10.2026, Ch3 Q2: MOE is not evaluated for these until the per-use
+  # areas are entered; no 2-exit minimum is printed as if it were the answer.
+  - id: moe_actual_use
+    match:
+      occupancy_in: [motor_fuel_dispensing, infrastructure, mixed_multiple, high_depth_underground, low_depth_underground]
+      use_area_total_m2_lte: 0
+    section: "Ch 3, #1.4.5 + #4 / Tables 3.13 + 3.16 by actual use"
+    page: "p.242, 285-287, 293-295"
+    systems:
+      - name: "Means of Egress Not Evaluated - Enter Per-Use Areas (#1.4.5)"
+        spec: "Table 3.13 has no row for this occupancy. The occupant load, the Table 3.14 number of exits and the Table 3.16 limits are not evaluated until the floor area of each actual use is entered (MOE settings: per-use areas). No exit count is stated."
+        code_ref: "Ch 3, #1.4.5 / #4.1.2 / Table 3.13"
+        page_ref: "p.242, 283, 285-287"
+        detail: "Owner ruling 12.10.2026, Ch3 Q2. #1.4.5 (p.242) and #4.1.2 (p.283): occupant load = sum over each area of (floor area assigned to that use / Table 3.13 factor of that use), each rounded up; then Table 3.14 per storey (#4.3.1)."
+      - name: "Travel / Dead-end / Commonpath by Actual Use (Table 3.16)"
+        spec: "Table 3.16 has no row for this occupancy: apply the Table 3.16 row (commonpath, dead end, travel distance) of the actual use of each area."
+        code_ref: "Ch 3, #4.5 / Table 3.16"
+        page_ref: "p.293-295"
+
+  - id: moe_actual_use_entered
+    match:
+      occupancy_in: [motor_fuel_dispensing, infrastructure, mixed_multiple, high_depth_underground, low_depth_underground]
+      use_area_total_m2_gt: 0
+    section: "Ch 3, #1.4.5 + #4 / Tables 3.13 + 3.16 by actual use"
+    page: "p.242, 285-287, 293-295"
+    systems:
+      - name: "Occupant Load by Actual Use (Table 3.13, #1.4.5)"
+        spec: "Occupant load from the per-use areas entered: each area / its Table 3.13 factor, rounded up, then added; Table 3.14 per storey. The result and the exit count are on the occupant load summary."
+        code_ref: "Ch 3, #1.4.5 / #4.1.2 / Table 3.13"
+        page_ref: "p.242, 283, 285-287"
+        detail: "Owner ruling 12.10.2026, Ch3 Q2."
+      - name: "Travel / Dead-end / Commonpath by Actual Use (Table 3.16)"
+        spec: "Table 3.16 has no row for this occupancy: apply the Table 3.16 row (commonpath, dead end, travel distance) of the actual use of each area."
+        code_ref: "Ch 3, #4.5 / Table 3.16"
+        page_ref: "p.293-295"

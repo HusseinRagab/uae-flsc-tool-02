@@ -85,24 +85,42 @@ OCCUPANCY_DEFS = {
     "low_depth_underground": "Low-Depth Underground - 2 or fewer basements.",
 }
 
+# Ch 9 #1.1.13 (p.526-530) hazard classification for sprinkler protection.
+#   LH  #1.1.13.1: Assembly C, Assembly B, Educational A/B/C, Healthcare B/C,
+#       Residential A/B/C (C = labour accommodation), Daycare A/B, Detention A/B/C.
+#   OH1 #1.1.13.2: Assembly A, Hotel A/B/C, Mercantile A/B, parking garages open or
+#       enclosed (Storage Group C list).
+#   OH2 #1.1.13.3: Animal Housing B (stables, animal sheds, livestock shelter),
+#       Malls Group A (covered malls).
+#   EH2 #1.1.13.5.b: robotic / mechanical parking.
+# Animal Housing A and C are LH; the tool's single animal_housing occupancy takes the
+# highest of its three groups (OH2) until the group is chosen (override in the app).
+# Storage / industrial has no default: the app makes the user choose (Table 9.27).
+# HAZARD_NOT_CLASSIFIED lists the occupancies #1.1.13 does not name; their value
+# here is the tool's working default and the app says the designer must select.
 HAZARD_BY_OCCUPANCY = {
-    "assembly_a": "OH1", "assembly_b": "OH1", "assembly_c": "OH1",
+    "assembly_a": "OH1", "assembly_b": "LH", "assembly_c": "LH",
     "business": "LH",
     "education_a": "LH", "education_b": "LH", "education_c": "LH",
-    "mercantile_a": "OH1", "mercantile_b": "OH2",
+    "mercantile_a": "OH1", "mercantile_b": "OH1",
     "healthcare_a": "LH", "healthcare_b": "LH", "healthcare_c": "LH",
-    "hotel_a": "LH", "hotel_b": "LH", "hotel_c": "LH",
+    "hotel_a": "OH1", "hotel_b": "OH1", "hotel_c": "OH1",
     "daycare_a": "LH", "daycare_b": "LH", "daycare_c": "LH",
     "residential": "LH",
-    "labour_accommodation": "OH1", "staff_accommodation": "LH",
-    "hostel": "LH", "animal_housing": "OH1",
-    "detention_a": "OH1", "detention_b": "OH1", "detention_c": "OH1",
+    "labour_accommodation": "LH", "staff_accommodation": "LH",
+    "hostel": "LH", "animal_housing": "OH2",
+    "detention_a": "LH", "detention_b": "LH", "detention_c": "LH",
     "villa_private": "LH", "villa_commercial": "LH",
     "mall_covered": "OH2", "mall_open": "OH2", "mall_mixed": "OH2",
-    "parking_enclosed": "OH2", "parking_open": "OH1",
+    "parking_enclosed": "OH1", "parking_open": "OH1",
     "storage_industrial": "OH2", "motor_fuel_dispensing": "HH", "infrastructure": "OH1",
     "mixed_multiple": "OH2",
     "high_depth_underground": "OH2", "low_depth_underground": "OH2",
+}
+HAZARD_NOT_CLASSIFIED = {
+    "business", "healthcare_a", "daycare_c", "villa_private", "villa_commercial",
+    "mall_open", "mall_mixed", "motor_fuel_dispensing", "infrastructure",
+    "mixed_multiple", "high_depth_underground", "low_depth_underground",
 }
 
 MIDRISE_PUBLIC = {
@@ -136,6 +154,14 @@ def default_hazard(occ: str) -> str:
     return HAZARD_BY_OCCUPANCY.get(occ, "OH1")
 
 
+class UseArea(BaseModel):
+    """One actual use of floor area (Ch 3 #1.4.5, #4.1.2): a Table 3.13 row id
+    (see occupant_load.TABLE_3_13_ROWS) and the floor area assigned to it.
+    Owner ruling 12.10.2026, Ch3 Q2."""
+    row: str
+    area_m2: float = Field(0.0, ge=0)
+
+
 class Building(BaseModel):
     project_name: str = Field("", description="Project reference")
     occupancy: Occupancy
@@ -156,6 +182,16 @@ class Building(BaseModel):
     plot_area_m2: float = Field(0.0, ge=0)
     corridor_length_m: float = Field(0.0, ge=0)     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
     assembly_area_m2: float = Field(0.0, ge=0)      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
+
+    # --- MOE (Ch 3) / FSA (Ch 2) inputs - owner rulings 12.10.2026, Ch3 Q1-Q6.
+    # 0 / empty = not entered; each fallback is named in the report line.
+    largest_storey_area_m2: float = Field(0.0, ge=0)   # Q1: Table 3.14 per storey (#4.3.1); 0 -> whole GFA
+    use_areas: List[UseArea] = Field(default_factory=list)  # Q2: per-use areas (#1.4.5); empty -> densest Table 3.13 row
+    mall_gla_m2: float = Field(0.0, ge=0)              # Q3: mall gross leasable area (Table 3.13 row 14); 0 -> GFA
+    building_volume_m3: float = Field(0.0, ge=0)       # Q5: gross cubical extent (#2.8.8.a / #2.8.9.a); 0 -> footprint x height
+    is_waterfront: bool = False                        # Q6: waterfront property (#2.8.10, Table 2.8)
+    is_theme_park: bool = False                        # Q6: theme / amusement park (#2.8.7, Table 2.5, #2.9.3, #2.9.4)
+    tower_setback_over_30m: bool = False               # Q6: tower facade more than 30 m from the fire access road (#2.8.6.b / #2.8.7.b)
 
     construction_type: Literal[
         "unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"
@@ -202,7 +238,8 @@ class Building(BaseModel):
     has_ups_room: bool = False
     has_cold_freezer_room: bool = False
 
-    # --- FP (Ch 9) - Various Locations (Table 9.29) (balcony removed earlier)
+    # --- FP (Ch 9) - Various Locations (Table 9.29)
+    has_exterior_balconies: bool = False    # Table 9.29 row B
     has_atrium: bool = False
     has_rain_screen_glazing: bool = False
     has_stairs: bool = True
@@ -212,6 +249,8 @@ class Building(BaseModel):
     has_pantries: bool = False
     has_permanent_stages: bool = False
     has_roof_lpg_or_restaurant: bool = False
+    has_roof_restaurant_assembly: bool = False     # FA Table 8.14 item 36: roof used for restaurant seating / assembly / sheesha
+    has_food_trucks: bool = False                  # FA Table 8.14 item 34: food trucks of any fuel
     has_garbage_chute: bool = False
 
     # --- FP (Ch 9) - Equipment (Table 9.31)
@@ -251,8 +290,8 @@ class Building(BaseModel):
     has_tunnel: bool = False                      # Table 6.6 item 9
 
     # --- FP (Ch 9) - Storage / Industrial sub-types (Table 9.27 specialty groups)
-    is_aircraft_hanger: bool = False                # Group Q - foam deluge, 1500 gpm pump
-    is_cold_storage: bool = False                   # Group P - dry-pipe sprinklers (< 40 deg C)
+    is_aircraft_hanger: bool = False                # Group Q - aircraft hangers (group in `hangar_group`)
+    is_cold_storage: bool = False                   # Group P - storage facilities below 4 deg C (dry type sprinklers)
     is_flammable_liquid_warehouse: bool = False     # Group R - foam + 120 min tank, in-rack
     is_flammable_liquid_industrial: bool = False    # Group S - foam sprinklers, processes
     is_open_yard_storage: bool = False              # Group U - outdoor/yard storage (no building envelope)
@@ -260,7 +299,20 @@ class Building(BaseModel):
     is_single_tenant_storage: bool = False          # Groups F-J - single-tenant variants (different pump/tank than multi-tenant Groups A-E)
     is_idle_pallet_storage: bool = False            # Group K - idle wood/plastic pallet warehouse
     is_extra_hazard_2: bool = False                 # Multi-tenant HH: Group E (EH2, Definition 1.1.13.5) vs Group D (EH1, Definition 1.1.13.4 - default). Drives EH2's higher density (0.40 vs 0.30), higher pump (1000/1500 vs 750/1250 gpm), and 120-min tank.
-    is_commodity_specific_storage: bool = False     # Opt-in for Table 9.27 Groups L-O (Class I-IV / plastics / rubber / tires / paper) commodity-driven design. Routes the HH match to the commodity-specific catch-all rule.
+    is_commodity_specific_storage: bool = False     # Legacy key (no longer routed): Groups L-O now follow `storage_commodity`.
+    # Phase 2 (ch9): Table 9.27 inputs.
+    storage_commodity: Literal["none", "class_i_iv", "plastics_rubber", "tires", "rolled_paper"] = "none"
+    # Groups L (Class I-IV), M (plastic, rubber), N (tires), O (rolled paper); "none" routes by hazard class.
+    max_unit_area_m2: float = Field(0.0, ge=0)      # #4.1.14 largest unit compartment area; 0 = not stated -> the ground-floor BUA (one unit)
+    sum_gf_bua_m2: float = Field(0.0, ge=0)         # #4.1.13 sum of built-up ground floor areas of all buildings on the plot; 0 = not entered (owner ruling 12.10.2026, Ch9 Q1: required; blank takes Table 9.27 row 4, never a lower row)
+    # Owner ruling 12.10.2026, Ch9 Q9: hazard of a storage_industrial SECONDARY occupancy
+    # (R13 most-restrictive mode). None = not chosen: its Table 9.27 rows are not evaluated.
+    # "EH2" = HH with Extra Hazard Group 2 (#1.1.13.5).
+    secondary_storage_hazard: Optional[Literal["LH", "OH1", "OH2", "HH", "EH2"]] = None
+    hangar_group: Literal["I", "II_III", "IV"] = "I"  # Table 9.27 Group Q.1 / Q.2 / Q.3; default Group I (most onerous)
+    is_aboveground_tank_storage: bool = False       # Table 9.27 Group T - flammable / combustible liquids in aboveground storage tanks
+    ast_storage_area_m2: float = Field(0.0, ge=0)   # Group T storage area; 0 = not stated -> row 2
+    ast_tank_capacity_m3: float = Field(0.0, ge=0)  # Group T largest tank capacity; 0 = not stated -> row 2
     # --- FP (Ch 9) - Single-exit-stair / commercial-attached / tent variants
     # These drive Tables 9.20.c, 9.21.c, 9.21.e, 9.21.f branches.
     # (Table 9.21.d - villas converted to commercial - reuses the existing
@@ -329,6 +381,83 @@ class Building(BaseModel):
         return (self.occupancy == "high_depth_underground"
                 or self.floors_below_grade >= 3 or self.depth_below_grade_m > 7)
 
+    # ---- Table 9.27 tier areas (Ch 9 #4.1.11-#4.1.14, p.695) ----
+    @property
+    def storage_unit_area_m2(self) -> float:
+        """#4.1.14 unit compartment area: the stated largest unit, else the whole
+        ground floor taken as one unit (never smaller than the real unit)."""
+        return self.max_unit_area_m2 if self.max_unit_area_m2 > 0 else self.ground_floor_bua_m2
+
+    @property
+    def storage_gf_bua_sum_m2(self) -> float:
+        """#4.1.13 sum of built-up ground floor areas of the buildings on the plot;
+        never less than this building's own ground-floor BUA. Owner ruling 12.10.2026,
+        Ch9 Q1: the sum is required; when it is not entered (0) the tier is unknown, so
+        it is taken above every printed tier limit (Table 9.27 row 4) and never a lower
+        row. The engine prints a 'not evaluated' line naming the missing input."""
+        if self.sum_gf_bua_m2 <= 0:
+            return float("inf")
+        return max(self.sum_gf_bua_m2, self.ground_floor_bua_m2)
+
+    @property
+    def storage_gf_bua_sum_missing(self) -> bool:
+        """Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum (#4.1.13) is not entered."""
+        return self.sum_gf_bua_m2 <= 0
+
+    @property
+    def storage_total_bua_m2(self) -> float:
+        """#4.1.11 built-up area of all floors (total GFA), never less than the
+        ground-floor BUA. Used where Table 9.27 prints 'total built-up floor area'."""
+        return max(self.gross_floor_area_m2, self.ground_floor_bua_m2)
+
+    @property
+    def storage_compartment_floor_area_m2(self) -> float:
+        """'Total built-up floor area of the compartment' (Groups N, O, R, S rows 1-2):
+        the stated unit compartment area, else the building's total built-up area."""
+        return self.max_unit_area_m2 if self.max_unit_area_m2 > 0 else self.storage_total_bua_m2
+
+    @property
+    def storage_has_specialty(self) -> bool:
+        """True when a Table 9.27 specialty group (K, P, Q, R, S, T, U, V) is ticked."""
+        return any((self.is_aircraft_hanger, self.is_cold_storage,
+                    self.is_flammable_liquid_warehouse, self.is_flammable_liquid_industrial,
+                    self.is_open_yard_storage, self.is_plant_nursery,
+                    self.is_idle_pallet_storage, self.is_aboveground_tank_storage))
+
+    @property
+    def largest_storey_area_min_m2(self) -> float:
+        """Largest storey area for Table 3.27 item 2.iii (villa floor over 400 m2):
+        the entered largest storey area (owner ruling 12.10.2026, Ch3 Q1), never
+        less than the ground-floor BUA; without it, a lower bound: the ground-floor
+        BUA, or the GFA spread evenly over every storey above and below grade,
+        whichever is larger."""
+        if self.largest_storey_area_m2 > 0:
+            return max(self.largest_storey_area_m2, self.ground_floor_bua_m2)
+        n = self.floors_above_grade + self.floors_below_grade
+        return max(self.ground_floor_bua_m2, self.gross_floor_area_m2 / n if n else 0.0)
+
+    @property
+    def use_area_total_m2(self) -> float:
+        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered."""
+        return sum(u.area_m2 for u in self.use_areas)
+
+    @property
+    def fire_lift_2_9_4_reasons(self) -> List[str]:
+        """Ch 2 #2.9.4.a (p.220): at least one Fire Lift in any building which is
+        'Highrise' with 23 m or more in height, 'High Depth' with more than 2
+        basements, Malls and multi storey Amusement Parks. One trigger for the FSA
+        Fire Lift line and the Ch 10 'NOT mandatory' line (owner ruling 12.10.2026,
+        Ch3 Q9)."""
+        hits = (("highrise of 23 m or more", self.height_m >= 23),
+                ("high depth with more than 2 basements", self.floors_below_grade > 2),
+                ("mall", self.occupancy in ("mall_covered", "mall_open", "mall_mixed")),
+                ("multi storey amusement park", self.is_theme_park and self.floors_above_grade > 1))
+        return [why for why, hit in hits if hit]
+
+    @property
+    def requires_fire_lift_2_9_4(self) -> bool:
+        return bool(self.fire_lift_2_9_4_reasons)
+
     @property
     def pump_head_height_m(self) -> float:
         """Height of the most remote landing valve above the fire pump
@@ -393,6 +522,11 @@ class OccupantLoadSummary(BaseModel):
     min_exits: int = 2
     exit_ref: str = ""
     note: str = ""
+    # Owner rulings 12.10.2026, Ch3 Q1-Q3: evaluated=False means no exit count is
+    # stated (min_exits 0); storey_* is the storey OL that Table 3.14 ran on.
+    evaluated: bool = True
+    storey_area_m2: float = 0.0
+    storey_occupant_load: int = 0
 
 
 class FireAccessSummary(BaseModel):

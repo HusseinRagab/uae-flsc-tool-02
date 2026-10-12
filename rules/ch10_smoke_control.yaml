@@ -278,10 +278,14 @@ branches:
         required: not_required
         detail: "Table 10.21 covers the above-grade floors. Underground and basement corridors follow Table 10.22 item 4 where the building has basements."
 
+  # Owner ruling 12.10.2026, Ch3 Q9: printed only where Ch 2 #2.9.4.a (p.220) does not
+  # require a Fire Lift (same trigger as the FSA Fire Lift line:
+  # Building.requires_fire_lift_2_9_4), so the report never says both.
   - id: sc_midrise_lowrise_ff_lift
     match:
       height_m_lt: 23
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
+      requires_fire_lift_2_9_4_is: false
     section: "Ch 10, #3.3 / Table 10.21 item 3"
     page: "p.858"
     systems:

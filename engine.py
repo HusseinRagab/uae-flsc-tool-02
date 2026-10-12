@@ -304,7 +304,8 @@ def _dedupe(items: List[Requirement]) -> List[Requirement]:
 def _pick_band(h: float) -> Optional[str]:
     # Table 9.29.A prints "10 m TO 13.5 m", "13.5 m TO 18 m", "18 m TO 30 m": the
     # shared edges 13.5 m and 18 m take the higher band (ruling R11, 12.10.2026).
-    if 10 <= h < 13.5: return "band_10_13_5"
+    # Table 9.29 row M (p.750) applies where the ceiling height EXCEEDS 10 m (CH9C-19).
+    if 10 < h < 13.5: return "band_10_13_5"
     if 13.5 <= h < 18: return "band_13_5_18"
     if 18 <= h <= 30: return "band_18_30"
     return None
@@ -317,10 +318,30 @@ def _sprinkler_required(items: List[Requirement]) -> bool:
                for it in items)
 
 
+def building_sprinklered(b: Building, fp_rules: Optional[Dict[str, Any]] = None) -> bool:
+    """Ch 2 'sprinkler protected' (Tables 2.3/2.4, 2.6/2.7): the building's Ch 9
+    general rules or table row require an automatic sprinkler system."""
+    rules = fp_rules if fp_rules is not None else load_rules("ch9_fire_protection.yaml")
+    if not rules:
+        return False
+    gen = _collect_general(rules, b)
+    branch_items = _collect_branch(rules.get("branches", []), b)[0]
+    return _sprinkler_required(list(gen) + list(branch_items))
+
+
 def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeilingSpec]:
     hc = rules.get("high_ceiling")
     if not hc: return None
     if not _eval_when(hc.get("trigger", {}), b): return None
+    if b.ceiling_height_m <= 10:
+        # Table 9.29 row M (p.750): "Where building ceiling height exceeds 10 m".
+        return HighCeilingSpec(
+            applies=True, not_required=True, ceiling_height_m=b.ceiling_height_m,
+            hazard_class=b.hazard_class,
+            note=(f"Not required: Table 9.29 row M applies where the building ceiling height "
+                  f"exceeds 10 m; this ceiling is {b.ceiling_height_m:g} m."),
+            code_ref="Ch 9, #4.13.1 / Table 9.29 row M", page_ref="p.750",
+        )
     gen = _collect_general(rules, b)
     branch_items = _collect_branch(rules.get("branches", []), b)[0]
     if not _sprinkler_required(list(gen) + list(branch_items)):
@@ -358,13 +379,79 @@ def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeili
     )
 
 
+# ---------------------------- Owner rulings 12.10.2026, Ch 9 Q1 / Q7 / Q9 ----
+
+_PARKING_OCCS = ("parking_enclosed", "parking_open")
+
+
+def _robotic_eh2_line() -> Requirement:
+    """Owner ruling 12.10.2026, Ch9 Q7: the report states the forced classification."""
+    return Requirement(
+        system="Hazard Classification - Extra Hazard Group 2 (robotic / mechanical parking)",
+        status="required",
+        spec="HH, Extra Hazard Group 2 (#1.1.13.5.b: Parking, Group B - robotic, mechanical parking)",
+        detail=("Robotic / mechanical parking is ticked. #1.1.13.5.b (p.530) lists 'Parking, "
+                "Group B (Robotic, Mechanical parking)' under Extra Hazard, Group 2, so the "
+                "sprinkler and storage evaluation uses hazard class HH with Extra Hazard "
+                "Group 2, whatever hazard was selected (owner ruling 12.10.2026, Ch9 Q7)."),
+        code_ref="Ch 9, #1.1.13.5.b", page_ref="p.530", source_rule="owner_ruling_ch9_q7",
+    )
+
+
+def _gf_bua_sum_not_evaluated_line() -> Requirement:
+    """Owner ruling 12.10.2026, Ch9 Q1: a blank plot GF BUA sum is named, never filled."""
+    return Requirement(
+        system="Sum of GF BUAs on the plot (#4.1.13) - NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: enter the plot GF BUA sum (#4.1.13)",
+        detail=("Table 9.27 row 4 applies where the sum of all ground floor built-up areas "
+                "on the plot is more than 3600 m2 (#4.1.13: all buildings on the same plot, "
+                "excluding separated service blocks, security guard house and separated "
+                "washrooms). The sum was not entered, so the tier is not evaluated: the row 4 "
+                "lines below are taken so the result is never under-provided. Enter the sum "
+                "(this building's GF BUA when it is the only building on the plot) to fix the "
+                "tier (owner ruling 12.10.2026, Ch9 Q1)."),
+        code_ref="Ch 9, #4.1.13 / Table 9.27", page_ref="p.695, p.724",
+        source_rule="owner_ruling_ch9_q1",
+    )
+
+
+def _storage_hazard_not_evaluated(ch: ChapterReport) -> ChapterReport:
+    """Owner ruling 12.10.2026, Ch9 Q9: a secondary storage occupancy with no hazard
+    chosen gets no Table 9.27 rows; one required line names the missing hazard."""
+    line = Requirement(
+        system="Storage / Industrial (secondary occupancy) - Table 9.27 NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: choose the storage hazard class (LH, OH1, OH2, HH or HH + EH2)",
+        detail=("Storage / industrial is listed as a secondary occupancy but its hazard "
+                "class was not chosen. Table 9.27 groups A-J depend on the stored materials "
+                "and activities (#1.1.13, Tables 9.1 and 9.2), so the tool does not assume "
+                "one: the storage Ch 9 lines are not evaluated (owner ruling 12.10.2026, "
+                "Ch9 Q9)."),
+        code_ref="Ch 9, #1.1.13 / #4.11 / Table 9.27", page_ref="p.526-530, p.724",
+        source_rule="owner_ruling_ch9_q9",
+    )
+    return ch.model_copy(update={
+        "blocks": [SectionBlock(title="FP - Branch Requirements (Ch 9)", items=[line])],
+        "selected_branch": None, "selected_branch_section": None})
+
+
+def _with_robotic_eh2(b: Building) -> Building:
+    """Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking evaluates at HH with
+    Extra Hazard Group 2 (#1.1.13.5.b, p.530)."""
+    if b.has_robotic_parking and b.occupancy in _PARKING_OCCS and not (
+            b.hazard_class == "HH" and b.is_extra_hazard_2):
+        return b.model_copy(update={"hazard_class": "HH", "is_extra_hazard_2": True})
+    return b
+
+
 # ---------------------------- Per-chapter evaluators -------------------------
 
 def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 9 - Fire Protection."""
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
-    branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    branch_items, sel_id, sel_section, _matched = _collect_branch(rules.get("branches", []), b)
     # One yard hydrant line: when the occupancy table already lists yard
     # hydrants (with its own exemption text), the #4.1.4 / #4.1.6 general
     # trigger is folded into that line instead of printing a second one.
@@ -379,6 +466,19 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         gen = [it for it in gen if it not in gen_yard]
     if gen:
         blocks.append(SectionBlock(title="FP - General Requirements (Ch 9, #4.1)", items=gen))
+
+    # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking is Extra Hazard
+    # Group 2 (#1.1.13.5.b, p.530); the building is evaluated at HH + EH2.
+    if b.has_robotic_parking and b.occupancy in _PARKING_OCCS:
+        blocks.append(SectionBlock(title="FP - Hazard Classification (Ch 9, #1.1.13)", items=[
+            _robotic_eh2_line()]))
+
+    # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum (#4.1.13) is required. A blank
+    # sum is taken above 3600 m2 (Table 9.27 row 4, never a lower row) and named here.
+    if (b.occupancy == "storage_industrial" and b.storage_gf_bua_sum_missing
+            and b.ground_floor_bua_m2 <= 3600
+            and any("storage_gf_bua_sum_m2" in str(br.get("match")) for br in _matched)):
+        branch_items = [_gf_bua_sum_not_evaluated_line()] + list(branch_items)
 
     if branch_items:
         blocks.append(SectionBlock(title="FP - Branch Requirements (Ch 9)", items=_dedupe(branch_items)))
@@ -395,7 +495,8 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     var_items = _collect_flag(
         [r for r in var_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
     if not sprinkler_required:
-        for it in _collect_flag([r for r in var_rules if r.get("requires_sprinkler_system")], b):
+        for it in _collect_flag([r for r in var_rules if r.get("requires_sprinkler_system")
+                                 and not r.get("silent_when_unsprinklered")], b):
             var_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: #4.13.1 extends the building sprinkler system to the "
@@ -414,7 +515,8 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     aux_items = _collect_flag(
         [r for r in aux_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
     if not sprinkler_required:
-        for it in _collect_flag([r for r in aux_rules if r.get("requires_sprinkler_system")], b):
+        for it in _collect_flag([r for r in aux_rules if r.get("requires_sprinkler_system")
+                                 and not r.get("silent_when_unsprinklered")], b):
             aux_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: Table 9.30 systems apply only when the main building is "
@@ -427,6 +529,11 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         blocks.append(SectionBlock(title="FP - Auxiliary Rooms (Table 9.30)", items=aux_items))
 
     eq_items = _dedupe(_collect_flag(rules.get("equipment", []), b))
+    # One room, one system (CH9D-10): a Table 9.31 line that names the same system
+    # as a required Table 9.30 line (diesel generator foam sprinklers, 9.30.G = 9.31.E)
+    # is already listed in the auxiliary-room block.
+    aux_required = {it.system for it in aux_items if it.status == "required"}
+    eq_items = [it for it in eq_items if it.system not in aux_required]
     if eq_items:
         blocks.append(SectionBlock(title="FP - Equipment (Table 9.31)", items=eq_items))
 
@@ -437,8 +544,42 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     )
 
 
-def evaluate_moe(b: Building, rules: Dict[str, Any]) -> ChapterReport:
+def _moe_sprinkler_columns(rules: Dict[str, Any], spr: bool) -> Dict[str, Any]:
+    """Owner ruling 12.10.2026, Ch3 Q8 (Table 3.16) and follow-up F7 (Tables 3.15.a and
+    3.15.b): a line carrying `spec_s` / `spec_ns` prints only the column of this
+    building's Ch 9 result (building_sprinklered, the sprinkler test of ruling R8) and
+    names it; a line tagged `sprinkler_column: S|NS` prints only in a building of that
+    kind."""
+    col = "S" if spr else "NS"
+    why = ("Column S (sprinklered) used: Ch 9 requires an automatic sprinkler "
+           "system in this building" if spr else
+           "Column NS (non-sprinklered) used: Ch 9 does not require an automatic "
+           "sprinkler system in this building")
+    why += " (the sprinkler test of ruling R8; owner rulings 12.10.2026, Ch3 Q8 and F7)."
+
+    def pick(systems):
+        out = []
+        for e in systems or []:
+            if e.get("sprinkler_column") and e["sprinkler_column"] != col:
+                continue
+            if "spec_s" in e:
+                e = dict(e)
+                e["spec"] = (f"Column S (sprinklered): {e['spec_s']}" if spr
+                             else f"Column NS (non-sprinklered): {e['spec_ns']}")
+                e["detail"] = why + (f" {e['detail']}" if e.get("detail") else "")
+            out.append(e)
+        return out
+
+    return {**rules,
+            "general": [{**g, "systems": pick(g.get("systems"))} for g in rules.get("general", []) or []],
+            "branches": [{**br, "systems": pick(br.get("systems"))} for br in rules.get("branches", []) or []]}
+
+
+def evaluate_moe(b: Building, rules: Dict[str, Any],
+                 sprinklered: Optional[bool] = None) -> ChapterReport:
     """Ch 3 - Means of Egress."""
+    spr = building_sprinklered(b) if sprinklered is None else sprinklered
+    rules = _moe_sprinkler_columns(rules, spr)
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
     if gen:
@@ -551,18 +692,22 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
 def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 8 - Fire Detection & Alarm."""
     blocks = []
-    gen = _dedupe(_collect_general(rules, b))
+    # Table 8.13 item 28 PLANT NURSERY (p.508): no FA system is required, so neither the
+    # Table 8.1 system lines nor the Table 8.14 / 8.15 lines apply (owner rulings
+    # 12.10.2026, Ch8 Q4 and follow-up F1).
+    nursery = b.occupancy == "storage_industrial" and b.is_plant_nursery
+    gen = [] if nursery else _dedupe(_collect_general(rules, b))
     if gen:
         blocks.append(SectionBlock(title="FA - General Requirements (Ch 8, #3 + #4 / Table 8.1.a)", items=gen))
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
     if branch_items:
         blocks.append(SectionBlock(title="FA - Detection & Alarm by Occupancy / Height (Ch 8, Table 8.13)", items=_dedupe(branch_items)))
 
-    aux = _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
+    aux = [] if nursery else _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
     if aux:
         blocks.append(SectionBlock(title="FA - Auxiliary Rooms (Ch 8, Table 8.14)", items=aux))
 
-    eq = _dedupe(_collect_flag(rules.get("equipment", []), b))
+    eq = [] if nursery else _dedupe(_collect_flag(rules.get("equipment", []), b))
     if eq:
         blocks.append(SectionBlock(title="FA - Equipment (Ch 8, Table 8.15)", items=eq))
 
@@ -727,7 +872,9 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
         ground_floor_bua_m2=parking_area,
         basement_bua_m2=parking_area if b.basement_bua_m2 > 0 else 0.0,
         plot_area_m2=b.plot_area_m2,
-        hazard_class="OH2" if synth_occ == "parking_enclosed" else "OH1",
+        hazard_class="HH" if b.has_robotic_parking else "OH1",   # #1.1.13.2 (p.528): parking garages, open or enclosed
+        # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking = HH + EH2 (#1.1.13.5.b).
+        is_extra_hazard_2=b.has_robotic_parking,
         has_high_ceiling=b.has_high_ceiling,
         ceiling_height_m=b.ceiling_height_m,
         has_diesel_generator_room=b.has_diesel_generator_room,
@@ -749,7 +896,10 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
     fa_rules  = load_rules("ch8_fire_alarm.yaml")
     fp_rules  = load_rules("ch9_fire_protection.yaml")
     sc_rules  = load_rules("ch10_smoke_control.yaml")
-    if moe_rules: chapters.append(evaluate_moe(synth, moe_rules))
+    # Attached parking takes the S / NS column from the parent building's Ch 9 result
+    # (owner ruling 12.10.2026, follow-up F8): it shares the parent's sprinkler system.
+    if moe_rules: chapters.append(evaluate_moe(synth, moe_rules,
+                                               sprinklered=building_sprinklered(b)))
     if fe_rules:  chapters.append(evaluate_fe(synth, fe_rules))
     if es_rules:  chapters.append(evaluate_es(synth, es_rules))
     if el_rules:  chapters.append(evaluate_el(synth, el_rules))
@@ -936,22 +1086,57 @@ def evaluate(b: Building) -> ComplianceReport:
     chapters are merged keeping the most onerous line per system."""
     if b.mixed_occupancy_mode == "most_restrictive" and b.secondary_occupancies:
         occs = [b.occupancy] + [o for o in dict.fromkeys(b.secondary_occupancies) if o != b.occupancy]
-        hz = max([b.hazard_class] + [default_hazard(o) for o in occs[1:]], key=lambda h: _HAZARD_RANK[h])
-        base = b.model_copy(update={"hazard_class": hz})
+        # Owner rulings 12.10.2026: a secondary storage occupancy brings the hazard chosen
+        # for it, never a default (Ch9 Q9); robotic / mechanical parking brings HH + EH2
+        # (Ch9 Q7).
+        sec_hz = [_secondary_hazard(o, b) for o in occs[1:]]
+        hz_all = [b.hazard_class] + [h for h in sec_hz if h]
+        eh2 = b.is_extra_hazard_2
+        if b.has_robotic_parking and any(o in _PARKING_OCCS for o in occs):
+            hz_all.append("HH")
+            eh2 = True
+        if "storage_industrial" in occs[1:] and b.secondary_storage_hazard == "EH2":
+            eh2 = True
+        hz = max(hz_all, key=lambda h: _HAZARD_RANK[h])
+        base = b.model_copy(update={"hazard_class": hz, "is_extra_hazard_2": eh2 and hz == "HH"})
         single = lambda o: base.model_copy(update={"occupancy": o, "secondary_occupancies": [],
                                                    "mixed_occupancy_mode": "none"})
         reps = [_evaluate_single(single(o)) for o in occs]
+        note = _mixed_occupancy_note(base)
+        storage_missing = "storage_industrial" in occs[1:] and b.secondary_storage_hazard is None
+        if storage_missing:
+            i = occs.index("storage_industrial")
+            reps[i] = reps[i].model_copy(update={"chapters": [
+                _storage_hazard_not_evaluated(c) if c.chapter_code == "FP" else c
+                for c in reps[i].chapters]})
+            note = (note or "") + (
+                f" Storage / industrial hazard class not chosen: its Table 9.27 lines are NOT "
+                f"EVALUATED, and its other chapters use {hz}, the highest class of the other "
+                f"occupancies (owner ruling 12.10.2026, Ch9 Q9).")
         r0 = reps[0]
         return r0.model_copy(update={
             "building": base,
             "chapters": _merge_most_restrictive([(o, r.chapters) for o, r in zip(occs, reps)]),
             "requires_wet_riser": any(r.requires_wet_riser for r in reps),
-            "mixed_occupancy_note": _mixed_occupancy_note(base),
+            "mixed_occupancy_note": note,
         })
     return _evaluate_single(b)
 
 
+def _secondary_hazard(o: str, b: Building) -> Optional[str]:
+    """Hazard class a secondary occupancy brings to the R13 most-restrictive run.
+    Storage / industrial: the class chosen for it, None when not chosen (owner ruling
+    12.10.2026, Ch9 Q9). Robotic / mechanical parking: HH (Ch9 Q7)."""
+    if o == "storage_industrial":
+        h = b.secondary_storage_hazard
+        return None if h is None else ("HH" if h == "EH2" else h)
+    if o in _PARKING_OCCS and b.has_robotic_parking:
+        return "HH"
+    return default_hazard(o)
+
+
 def _evaluate_single(b: Building) -> ComplianceReport:
+    b = _with_robotic_eh2(b)   # owner ruling 12.10.2026, Ch9 Q7
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
     fe_rules  = load_rules("ch4_fire_extinguishers.yaml")
@@ -964,11 +1149,12 @@ def _evaluate_single(b: Building) -> ComplianceReport:
     lpg_rules = load_rules("ch11_lpg.yaml")
 
     wet = _branch_requires_wet_riser(fp_rules, b)
-    chapters.append(evaluate_fire_access(b, requires_wet_riser=wet))
+    spr = building_sprinklered(b, fp_rules)
+    chapters.append(evaluate_fire_access(b, requires_wet_riser=wet, sprinklered=spr))
 
     # MOE -> FE -> ES -> EL -> EVC -> FA -> FP -> SC -> LPG - chapter-number order.
     if moe_rules:
-        chapters.append(evaluate_moe(b, moe_rules))
+        chapters.append(evaluate_moe(b, moe_rules, sprinklered=spr))
     if fe_rules:
         chapters.append(evaluate_fe(b, fe_rules))
     if es_rules:
@@ -1012,7 +1198,7 @@ def _evaluate_single(b: Building) -> ComplianceReport:
         _ensure_chapter_not_blank(ch, b)
 
     ol = compute_occupant_load(b)
-    fa_summary = compute_fire_access(b, requires_wet_riser=wet)
+    fa_summary = compute_fire_access(b, requires_wet_riser=wet, sprinklered=spr)
 
     return ComplianceReport(
         building=b,

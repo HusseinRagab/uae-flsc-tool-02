@@ -134,11 +134,18 @@ def test_R8_table_9_29_only_in_sprinklered_buildings_with_note():
 
 # ---------------------------------------------------------------- R9
 def test_R9_open_parking_non_sprinklered_travel_91_m_conflict_flagged():
-    r = report(occupancy="parking_open", height_m=12, ground_floor_bua_m2=3000, plot_area_m2=5000)
-    t = [it for it in items(r, "MOE") if it.system == "Travel Distance (Open Podium Parking)"]
-    assert len(t) == 1
-    assert "NS 91 m" in t[0].spec and "sprinklered or non-sprinklered" not in t[0].spec
-    assert "CODE CONFLICT" in t[0].detail and "Table 3.15.b item iv" in t[0].detail
+    # Re-pointed for owner ruling 12.10.2026 Ch3 Q8: Table 3.16 prints one column, chosen
+    # by the Ch 9 sprinkler result; the NS column carries the R9 91 m.
+    b = Building(occupancy="parking_open", height_m=12, floors_above_grade=3,
+                 ground_floor_bua_m2=3000, plot_area_m2=5000)
+    rules = engine.load_rules("ch3_means_of_egress.yaml")
+    for spr, want in ((False, "travel 91 m"), (True, "travel 122 m")):
+        ch = engine.evaluate_moe(b, rules, sprinklered=spr)
+        t = [it for blk in ch.blocks for it in blk.items
+             if it.system == "Travel Distance (Open Podium Parking)"]
+        assert len(t) == 1
+        assert want in t[0].spec and "sprinklered or non-sprinklered" not in t[0].spec
+        assert "CODE CONFLICT" in t[0].detail and "Table 3.15.b item iv" in t[0].detail
 
 
 # ---------------------------------------------------------------- R10

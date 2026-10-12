@@ -9,6 +9,68 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 2 follow-up answers coded (8 cards, 14:58Z)
+
+- **F1** plant nursery prints only the Table 8.13 item 28 line (no Table 8.1 lines).
+- **F7** Tables 3.15.a and 3.15.b print one S or NS column (values re-read on p.288, p.291).
+- **F8** attached parking takes the parent building's sprinkler status for its columns.
+- F2 robotic EH2 parking only, F3 densest-row default, F4 row 4.vi excluded, F5 mall OL on
+  floor area: as coded. F6 per-storey per-use input: phase 3.
+- Tests: 167 pytest (4 new in tests/test_phase2_followups.py, all fail without the change),
+  112 cases, structural 0.
+
+### 2026-10-12 — Phase 2 owner answers coded (24 cards, 12:29-12:30Z)
+
+All 24 phase 2 cards answered on the recommended option; log
+`phase2/ANSWERS_12.10.2026.md` (project files). Tests: 163 pytest, 112 cases, structural 0.
+
+- **Ch 8:** 10.0 m / 20.0 m ceilings take the higher Table 8.14 row, required (Q3); a plant
+  nursery prints no Table 8.14 / 8.15 lines (Q4); item 22 (vii) read as "shall not trigger
+  the evacuation alarm", enclosed and (by analogy) open parking (Q6). Q1, Q2, Q5 as coded.
+- **Ch 9:** plot GF BUA sum required for storage (app stops; engine blank = row 4 plus a
+  NOT EVALUATED line) (Q1); 900 m2 and Group U small yard edges cited (Q2, Q3); assembly B/C
+  LH with OH1 caption (Q5); robotic / mechanical parking forced HH + EH2 (Q7, parking only,
+  pending a follow-up card); secondary storage needs its own hazard, else Table 9.27 NOT
+  EVALUATED (Q9). Q4, Q8 as coded; Q6 (split animal housing) is phase 3.
+- **Ch 3 / Ch 2:** largest storey area input, blank = GFA (Q1, replaces the interim bound);
+  per-use (Table 3.13 row, m2) areas, blank = densest row, proxy occupancies "not evaluated"
+  (Q2); mall GLA factor 2.8 / 3.3 + 0.1 per full 1,290 m2 / max 5.1 m2 (Q3); Table 2.7 overlap
+  3/4 perimeter (Q4); building volume input (Q5); waterfront / theme park / tower set-back
+  checkboxes (Q6); villas get Tables 3.1, 3.2, 3.4 (Q7); Table 3.16 single S or NS column (Q8);
+  Ch 10 "Firefighting Lift (NOT mandatory)" gated on #2.9.4.a (Q9).
+- Pages still needed: p.255 (Table 3.4 widths), p.324 (Table 3.28).
+- Follow-up cards open: nursery general Table 8.1 lines; robotic box on a warehouse;
+  densest-row default; Table 3.13 row 4.vi; mall OL area; storey bound; Tables 3.15.a/b
+  columns; attached parking column.
+
+### 2026-10-12 — Phase 2 (Ch 8, Ch 9 storage/hazards, Ch 3 + Ch 2) merged on the branch (draft)
+
+Three packages built in parallel off master `f6ae7bb` and merged into
+`claude/project-thread-0zjltx`. Package reports (every finding, direction of change):
+`phase2/REPORT_ch8_12.10.2026.md`, `REPORT_ch9_...`, `REPORT_ch3_...` in the project files.
+Tests: 139 pytest (64 + 16 Ch 8 + 37 Ch 9 + 22 Ch 3), 112 cases, structural 0.
+Not merged: 24 owner questions are open (table below), and Ch 3 carries interim LESS-onerous
+exit counts until Ch 3 Q1-Q3 are answered.
+
+- **Ch 8** (17 findings): Table 8.1 general items (wiring, secondary power, audible/visual,
+  MCP), PAS 15/180/240 s escalation, System Interfaces lines, permitted options shown as
+  conditional, Civil Defence link per Ch 16 Table 16.1, converted villa row (item 14), new
+  inputs `has_roof_restaurant_assembly`, `has_food_trucks`.
+- **Ch 9** (34 findings): Table 9.27 storage rows A-U rebuilt (EH2, Groups F, K, L-O, P, R,
+  S, T, U, hangar Groups I-IV); new inputs storage commodity, largest unit area, plot GF BUA
+  sum, hangar group, aboveground tank storage, exterior balconies; the app stops until a
+  storage hazard is chosen; hazard defaults per #1.1.13 (hotels LH to OH1, animal housing
+  OH1 to OH2; assembly B/C, labour accommodation, detention to LH; mercantile B and enclosed
+  parking to OH1); Table 9.29 rows B, F.i, G.ii, G.iii; Table 9.29.M starts above 10 m;
+  tool-added text removed (VESDA, UL-300, NFPA 1/IFC).
+- **Ch 3 / Ch 2** (20 findings): occupant load rounded up (#4.1.2), Table 3.14 per storey,
+  OL by actual use for proxy occupancies, villa Tables 3.27/3.28, labour accommodation Table
+  3.16 row 7, sprinkler status from Ch 9 (`engine.building_sprinklered`), #2.8.4.a 45 m
+  rule for lowrise up to 15 m, Fire Lift and ECC lines, Table 2.1 and #2.5.1 items.
+- export.py prints Table 3.14 exits "per storey".
+- Grid diff vs master (6552 cases): no Fire Pump or Fire Water Tank line changes outside
+  storage; every case gains the new general FA, FSA and FP lines.
+
 ### 2026-10-12 — Rulings R1-R13 and R2b coded (rulings PR, draft)
 
 Branch `claude/project-thread-0zjltx` restarted on master `18a0342`. Hussein answered every
@@ -122,11 +184,15 @@ the 750 gpm row of 9.24.C.2.
 
 | Ruling | Question | State |
 | --- | --- | --- |
-| R1-R13, R2b | see audit and RULINGS_12.10.2026.md (project files) | ruled 12.10, coded in the rulings PR (draft, not merged) |
+| R1-R13, R2b | see audit and RULINGS_12.10.2026.md (project files) | ruled 12.10, merged (PR #21) |
+| P2 Ch 8 Q1-Q6 | MCP 25/16 m, cold storage lines, ceiling 10/20 m edges, nursery, cable trays, item 22 (vii) | answered 12.10, coded |
+| P2 Ch 9 Q1-Q9 | plot GF BUA sum blank, 900 m2 edge, Group U small yard, Table 9.29 H/I/J gate, assembly B/C LH, animal housing, robotic parking EH2, hotel G.ii/G.iii, secondary storage hazard | answered 12.10, coded (Q6 phase 3) |
+| P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | answered 12.10, coded |
+| P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | answered 12.10 14:58Z, coded (F6 phase 3) |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
-Phase 2 (the rest of the 189 findings) comes as its own PR after the rulings PR.
+Phase 3 (Ch 4-7, 10, 11, 15, 19, app items) follows phase 2.
 
 ## Known, not fixed in phase 1
 

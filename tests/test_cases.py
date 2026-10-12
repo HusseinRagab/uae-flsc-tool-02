@@ -302,7 +302,8 @@ CASES = [
          expect_fa_branch="fa_healthcare",
          expect_fa_systems=[
              "Annunciators at Nurse Stations (strategic locations)",
-             "Visual Notification Devices in Critical Care (in lieu of audible)",
+             # CH8-14 (phase 2): a permitted option, renamed and shown as conditional.
+             "Visual Notification Devices in Critical Care in lieu of audible (permitted)",
          ],
          expect_fa_aux=["Aspiration Air Sampling (Operation Theatre)"]),
 
@@ -529,6 +530,7 @@ CASES = [
 
     dict(name="AUDIT FP: Storage LH 500 m2 -> Tier 2 LH (Table 9.27 A.2 - 250 gpm pump)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=500,
+                     sum_gf_bua_m2=500,  # owner ruling 12.10.2026, Ch9 Q1: sum required
                      plot_area_m2=2000, hazard_class="LH"),
          expect_fp_branch="storage_industrial_tier2_lh",
          expect_fp_systems=[
@@ -546,31 +548,33 @@ CASES = [
              "Fire Pump (Tier 4 OH)",
          ]),
 
-    dict(name="AUDIT FP: Aircraft hanger -> foam deluge + 1500 gpm (Table 9.27 Group Q)",
+    dict(name="AUDIT FP: Aircraft hanger (Group I default) -> foam deluge + 3000 gpm (Table 9.27 Group Q.1)",
          inputs=dict(occupancy="storage_industrial", height_m=12, ground_floor_bua_m2=4000,
                      plot_area_m2=10000, hazard_class="OH2", is_aircraft_hanger=True),
          expect_fp_branch="storage_aircraft_hanger",
          expect_fp_systems=[
              "Foam-Water Deluge System",
              "Fire Pump (Aircraft Hanger)",
-             "Fire Water Tank + Foam Concentrate",
+             "Foam Concentrate",
          ]),
 
     dict(name="AUDIT FP: Cold storage -> dry-pipe sprinklers (Table 9.27 Group P)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000,
-                     plot_area_m2=5000, hazard_class="OH1", is_cold_storage=True),
-         expect_fp_branch="storage_cold_storage",
+                     plot_area_m2=5000, hazard_class="OH1", is_cold_storage=True,
+                     sum_gf_bua_m2=2000),  # owner ruling 12.10.2026, Ch9 Q1
+         expect_fp_branch="storage_cold_storage_r3",
          expect_fp_systems=[
-             "Automatic DRY-Pipe Sprinkler System (NOT wet pipe)",
+             "Automatic Dry Type Sprinkler System",
          ]),
 
     dict(name="AUDIT FP: Flammable liquid warehouse -> foam + 120-min tank (Table 9.27 Group R)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000,
-                     plot_area_m2=5000, hazard_class="HH", is_flammable_liquid_warehouse=True),
-         expect_fp_branch="storage_flammable_liquid_warehouse",
+                     plot_area_m2=5000, hazard_class="HH", is_flammable_liquid_warehouse=True,
+                     sum_gf_bua_m2=2000),  # owner ruling 12.10.2026, Ch9 Q1
+         expect_fp_branch="storage_flammable_liquid_warehouse_r3",
          expect_fp_systems=[
              "Sprinkler OR Foam-Water Sprinkler System",
-             "Fire Water Tank + Foam Reserve",
+             "Foam Solution Reserve",
          ]),
 
     dict(name="AUDIT FP: Plant nursery -> extinguishers only (Table 9.27 Group V)",
@@ -588,7 +592,8 @@ CASES = [
          expect_fa_general=[
              "Visible (Strobe) Notification Device Spacing - Table 8.1.a",
              "Addressable Fire Detection & Alarm Control Panel (FACP)",
-             "FACP Interface to Civil Defence Receiving Station",
+             # CH8-16 (phase 2): Ch 16 Table 16.1 Smart Monitoring System.
+             "FACP Signals to Civil Defence (Smart Monitoring System)",
          ]),
 
     dict(name="AUDIT FA: Bulk flammable liquid storage -> CD/HoE gating spec/detail",
@@ -728,13 +733,15 @@ CASES = [
     # ---- AUDIT FP: Single-tenant variants (Groups F-J) ----
     dict(name="AUDIT FP: Single-tenant LH 600 m2 -> Group F Tier 1 (45-min tank)",
          inputs=dict(occupancy="storage_industrial", is_single_tenant_storage=True,
-                     height_m=8, ground_floor_bua_m2=600, plot_area_m2=2000, hazard_class="LH"),
+                     height_m=8, ground_floor_bua_m2=600, plot_area_m2=2000, hazard_class="LH",
+                     sum_gf_bua_m2=600),  # owner ruling 12.10.2026, Ch9 Q1
          expect_fp_branch="storage_single_tenant_lh_tier1",
          expect_fp_systems=["Fire Pump (Single-Tenant LH Tier 1)"]),
 
     dict(name="AUDIT FP: Single-tenant OH2 1500 m2 -> 350 gpm pump (Group H Tier 2)",
          inputs=dict(occupancy="storage_industrial", is_single_tenant_storage=True,
-                     height_m=10, ground_floor_bua_m2=1500, plot_area_m2=4000, hazard_class="OH2"),
+                     height_m=10, ground_floor_bua_m2=1500, plot_area_m2=4000, hazard_class="OH2",
+                     sum_gf_bua_m2=1500),  # owner ruling 12.10.2026, Ch9 Q1
          expect_fp_branch="storage_single_tenant_oh2_tier2",
          expect_fp_systems=["Fire Pump (Single-Tenant OH2 Tier 2)"]),
 
@@ -746,8 +753,9 @@ CASES = [
 
     dict(name="AUDIT FP: Idle pallet warehouse (Table 9.27 Group K)",
          inputs=dict(occupancy="storage_industrial", is_idle_pallet_storage=True,
-                     height_m=10, ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="OH2"),
-         expect_fp_branch="storage_idle_pallet_warehouse",
+                     height_m=10, ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="OH2",
+                     sum_gf_bua_m2=2000),  # owner ruling 12.10.2026, Ch9 Q1
+         expect_fp_branch="storage_idle_pallet_warehouse_r2",
          expect_fp_systems=["Fire Pump (Idle Pallet Storage)"]),
 
     # ---- AUDIT FP: Tunnel (Table 9.28) ----

@@ -121,10 +121,8 @@ def _profile_rows(r: ComplianceReport, detailed: bool = False) -> list:
                  if getattr(b, "height_datum", "grade") == "grade"
                  else "Occupiable ceiling")
         rows.insert(2, ("Height datum", datum))
-        if r.occupant_load and r.occupant_load.occupant_load:
-            rows.append(("Occupant load",
-                         f"{r.occupant_load.occupant_load:,} persons  ->  "
-                         f">= {r.occupant_load.min_exits} exits (Table 3.14)"))
+        if r.occupant_load:
+            rows.append(("Occupant load", _ol_text(r.occupant_load)))
         if r.fire_access:
             rows.append(("Fire service access",
                          f"{r.fire_access.extent}  |  {r.fire_access.extent_ref}"))
@@ -135,6 +133,16 @@ def _profile_rows(r: ComplianceReport, detailed: bool = False) -> list:
     if r.requires_wet_riser:
         rows.append(("Wet riser standpipes", str(b.wet_riser_standpipes)))
     return rows
+
+
+def _ol_text(ol) -> str:
+    """Occupant load row. Not evaluated (villa; no Table 3.13 row and no per-use areas):
+    no exit count is printed (owner ruling 12.10.2026, Ch3 Q2)."""
+    if not ol.evaluated or not ol.occupant_load:
+        return f"not evaluated  ({ol.exit_ref})"
+    basis = ("whole-building OL" if ol.storey_area_m2 == ol.area_m2 else "largest storey OL")
+    return (f"{ol.occupant_load:,} persons  ->  >= {ol.min_exits} exits (Table 3.14 on the "
+            f"{basis} {ol.storey_occupant_load:,})")
 
 
 def _profile_rows_exec(r: ComplianceReport) -> list:
@@ -149,10 +157,8 @@ def _profile_rows_exec(r: ComplianceReport) -> list:
         ("Gross floor area", f"{b.gross_floor_area_m2:,.0f} m²"),
         ("Hazard class", b.hazard_class),
     ]
-    if r.occupant_load and r.occupant_load.occupant_load:
-        rows.append(("Occupant load",
-                     f"{r.occupant_load.occupant_load:,} persons  ->  "
-                     f">= {r.occupant_load.min_exits} exits (Table 3.14)"))
+    if r.occupant_load:
+        rows.append(("Occupant load", _ol_text(r.occupant_load)))
     if r.fire_access:
         rows.append(("Fire service access", r.fire_access.extent))
     return rows
@@ -1131,8 +1137,9 @@ def report_to_xlsx_bytes(r):
                  ("GFA m2", b.gross_floor_area_m2), ("Hazard", b.hazard_class)]:
         wp.append([k, v])
     if r.occupant_load:
-        wp.append(["Occupant load", r.occupant_load.occupant_load])
-        wp.append(["Min exits", r.occupant_load.min_exits])
+        _ev = r.occupant_load.evaluated
+        wp.append(["Occupant load", r.occupant_load.occupant_load if _ev else "not evaluated"])
+        wp.append(["Min exits (Table 3.14)", r.occupant_load.min_exits if _ev else "not evaluated"])
     if r.fire_access:
         wp.append(["Fire access", r.fire_access.extent])
 
