@@ -67,9 +67,11 @@ branches:
       - name: "Hose Reel System (basement + ground floor)"
         detail: "Hose reels throughout basement and ground floor per Section 3.3. 30 m coverage radius; 4.5 bar residual pressure at outlet."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: fixed_250
         detail: "Electric-driven fire pump set with jockey pump and controller. UL/FM listed."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Dedicated fire-water tank with low-level detection and instantaneous refill from utility supply. Two-compartment sectional tank preferred for maintenance continuity."
 
@@ -83,9 +85,11 @@ branches:
       - name: "Hose Reel System (basement + ground floor)"
         detail: "Hose reels throughout basement and ground floor per Section 3.3."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: fixed_250
         detail: "Electric-driven pump set UL/FM listed."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low water-level detection + instantaneous utility refill."
 
@@ -106,9 +110,11 @@ branches:
       - name: "Yard Fire Hydrant System"
         detail: "Yard hydrant loop per Section 3.11 around the commercial-villa development (plot >= 20,000 m2). Multiple breeching inlets along fire access road."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: fixed_1000
         detail: "Electric or diesel driven UL/FM listed pump set for yard hydrant network."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous utility refill."
 
@@ -122,8 +128,10 @@ branches:
       - name: "Hose Reel System (basement + ground floor)"
         detail: "Per Section 3.3 throughout basement and ground floor."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: fixed_250
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
 
   - id: villa_commercial_basement_1500
@@ -135,8 +143,10 @@ branches:
         detail: "Sprinklers throughout basements (open + closed) per Section 3.5. Triggered because basement BUA > 1,500 m2."
       - name: "Hose Reel System (basement + ground floor)"
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: fixed_250
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
 
   - id: mall_covered
@@ -158,9 +168,11 @@ branches:
       - name: "ESFR Sprinklers (supermarket / hypermarket / large clothing storage)"
         detail: "Supermarket / hypermarket / large clothing storage areas within the mall protected with ESFR sprinkler system per relevant sections."
       - name: "Fire Pump"
+        duty: pump
         spec: "Combined (hydrants + internal): 2000 gpm @ 6.9 bar | Internal only: 1500 gpm @ 6.9 bar"
         detail: "Electric or diesel driven UL/FM listed pump set. Fixed mall requirement - not dependent on standpipe count."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous utility refill."
 
@@ -172,9 +184,11 @@ branches:
       - name: "Hose Reel System (exterior type, open circulation)"
         detail: "Exterior-type hose reels along the fire access road serving the open circulation area per Section 3.3. Triggered because open mall plot area <= 900 m2."
       - name: "Fire Pump"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Small pump set sized for hose-reel duty only."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection + instantaneous utility refill."
 
@@ -188,9 +202,11 @@ branches:
       - name: "Breeching Inlets (min 2)"
         detail: "Two breeching inlets at separate locations along fire access road."
       - name: "Fire Pump"
+        duty: pump
         spec: "750 gpm @ 6.9 bar (or 1000 gpm where yard hydrants are included)"
         detail: "Electric/diesel UL/FM listed."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Dedicated breeching inlet, instantaneous refill."
 
@@ -204,9 +220,11 @@ branches:
       - name: "Breeching Inlets (min 2)"
         detail: "Two breeching inlets along fire access road."
       - name: "Fire Pump"
+        duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve"
         detail: "Electric/diesel UL/FM listed."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
 
   - id: mall_mixed
@@ -228,9 +246,11 @@ branches:
       - name: "ESFR Sprinklers (enclosed supermarket/hypermarket storage)"
         detail: "Enclosed large-storage hazards within the mall protected with ESFR sprinklers per relevant chapter sections."
       - name: "Fire Pump"
+        duty: pump
         spec: "Combined: 2000 gpm @ 6.9 bar | Internal only: 1500 gpm @ 6.9 bar"
         detail: "UL/FM listed."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
 
   - id: superhighrise_large_plot
@@ -250,12 +270,14 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 (Table 9.18.A vii). Not required where infrastructure yard hydrants are available within 60 m of the towers; tapping from the existing yard hydrant network is permitted to extend coverage (Table 9.18.A viii)."
       - name: "Fire Pump (first/lowest level)"
+        duty: pump
         spec: "1000 gpm @ 17 bar (combined yard + internal; irrespective of number of stairs and standpipes)"
         detail: "Where a fire pump set is combined and serves both yard hydrants and internal building systems, the first pump set at the lowest level is 1000 gpm irrespective of the number of stairs and standpipes, at 17 bar (Table 9.18.A ix)."
       - name: "Upper-level Pump Sets (every 90 m)"
         pump_spec_type: standpipe_dependent
         detail: "Where a pump set only serves internal building systems, the pump sets located vertically at every 90 m intermediate interval from the lowest level fire pump (Table 9.18.A xi)."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration (lowest level, combined)"
         detail: "Combined water tank at the lowest level: 60 minutes, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.18.A x)."
       - name: "Upper-level Fire Water Tanks (every 90 m)"
@@ -277,12 +299,14 @@ branches:
       - name: "Multi-level Pump Set (every 90 m)"
         detail: "Every 90 m height from the lowest fire pump set level per Table 9.6 item 13 (Table 9.18.B vi)."
       - name: "Fire Pump (first/lowest level)"
+        duty: pump
         spec: "1000 gpm @ 17 bar (irrespective of the number of standpipes)"
         detail: "First fire pump set at the lowest level of the building (Table 9.18.B vii)."
       - name: "Upper-level Pump Sets (every 90 m)"
         pump_spec_type: standpipe_dependent
         detail: "Upper-level pump sets located at every 90 m interval from the lowest level fire pump (Table 9.18.B ix)."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration (lowest level)"
         detail: "Water tank at the lowest level: 60 minutes, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.18.B viii)."
       - name: "Upper-level Fire Water Tanks (every 90 m)"
@@ -304,9 +328,11 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 (Table 9.19.A vi). Not required where infrastructure yard hydrants are available within 60 m of the towers; tapping from the existing network is permitted (Table 9.19.A vii)."
       - name: "Fire Pump"
+        duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve (combined yard + internal; irrespective of number of stairs)"
         detail: "Where a fire pump set is combined and serves yard hydrants and internal building systems (Table 9.19.A viii)."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.A ix)."
 
@@ -323,9 +349,11 @@ branches:
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
         detail: "Table 9.19.B v."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: standpipe_dependent
         detail: "Table 9.19.B vi."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.B vii)."
 
@@ -344,9 +372,11 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 (Table 9.19.C v). Not required where infrastructure yard hydrants are available within 60 m of the towers (Table 9.19.C vi)."
       - name: "Fire Pump"
+        duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve and yard hydrant (combined; irrespective of number of standpipes)"
         detail: "Where a fire pump set is combined and serves yard hydrants and internal building systems (Table 9.19.C vii)."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.C viii)."
 
@@ -363,9 +393,11 @@ branches:
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
         detail: "Table 9.19.D iv."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: standpipe_dependent
         detail: "Table 9.19.D v-vi."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.D vii)."
 
@@ -557,9 +589,11 @@ branches:
         requires_wet_riser: true
         detail: "Wet risers throughout per Section 3.4; interconnected at the highest level."
       - name: "Fire Pump (Midrise Single-Exit)"
+        duty: pump
         spec: "500 gpm @ 6.9 bar at most remote landing valve"
         detail: "Fixed 500 gpm duty per Table 9.20.c - independent of number of standpipes."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "45 minutes duration"
         detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
 
@@ -585,9 +619,11 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrant loop per Section 3.11. NOT required where infrastructure yard hydrants are available within 60 m of the towers; tapping into the existing infrastructure network is permitted to achieve coverage."
       - name: "Fire Pump (Detention Midrise - combined yard + internal)"
+        duty: pump
         spec: "Combined (yard + internal): 1000 gpm @ 6.9 bar at most remote landing valve and hydrant (irrespective of number of standpipes); OR internal-only: 750 gpm (2 standpipes) / 1000 gpm (more than 2 standpipes) @ 6.9 bar"
         detail: "Where the fire pump is combined (serves both yard hydrants and internal systems) the duty is fixed at 1000 gpm. Where it serves only internal building systems, the duty follows the standpipe-dependent bracket."
       - name: "Fire Water Tank (Detention Midrise)"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Combined yard + internal: dedicated direct breeching inlet, low-level detection, instantaneous utility refill. Internal-only configuration also 60 min."
 
@@ -602,9 +638,11 @@ branches:
         required: not_required
         detail: "Not required at this size - hose reel covers manual firefighting needs."
       - name: "Fire Pump"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Small pump set sized for hose-reel duty only; rooftop installation permitted if structure can bear load."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection + instantaneous utility refill."
 
@@ -621,9 +659,11 @@ branches:
         required: not_required
         detail: "Not required - sprinklers + hose reel cover this size."
       - name: "Fire Pump"
+        duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Combined sprinkler + hose-reel pump duty."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
 
   - id: lowrise_public_over_3600
@@ -637,11 +677,31 @@ branches:
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4, interconnected at highest level."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: standpipe_dependent
         detail: "750 gpm for 2 standpipes, 1000 gpm for more than 2; 6.9 bar."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Dedicated breeching inlet."
+
+  - id: lowrise_public_large_plot
+    # Table 9.21.a row 4 adds yard hydrants and the combined 1000 gpm / 60 min
+    # duty on top of the applicable row 1-3 (item i); rows 1-3 still fire.
+    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, plot_area_m2_gt: 20000}
+    section: "Ch 9, #4.5.1 / Table 9.21.a.4 (plot more than 20,000 m2)"
+    page: "p.706"
+    systems:
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 (Table 9.21.a.4 iii). Sprinklers, hose reels or wet risers follow Table 9.21.a.1, 2 or 3 as applicable (item i), shown in the row above. Not required where infrastructure yard hydrants are available within 60 m of the building; tapping from the existing yard hydrant network is permitted to extend coverage, and the code then says the requirements of Table 9.21.a.4.i apply (item iv)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "1000 gpm @ 6.9 bar at most remote landing valve and hydrant valve (combined yard + internal; irrespective of number of standpipes)"
+        detail: "Table 9.21.a.4 v."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration (combined)"
+        detail: "Combined tank: low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.21.a.4 vi)."
 
   # ---------------- LOWRISE RESIDENTIAL (Ch 9, #4.5.2 / Table 9.21.b) ------
   - id: lowrise_residential_upto_3600
@@ -659,9 +719,11 @@ branches:
         required: not_required
         detail: "Not required at this size."
       - name: "Fire Pump"
+        duty: pump
         spec: "50 gpm @ pressure to satisfy 4.5 bar at most remote hose-reel outlet valve"
         detail: "Small pump set sized for hose-reel duty only. Fire pump and/or tank permitted on roof if structure can bear load."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection + instantaneous refill from utility supply."
 
@@ -670,7 +732,6 @@ branches:
       height_m_lte: 15
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
       ground_floor_bua_m2_gt: 3600
-      plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.2"
     page: "p.707"
     systems:
@@ -680,9 +741,11 @@ branches:
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4 throughout, interconnected at highest level."
       - name: "Fire Pump"
+        duty: pump
         pump_spec_type: standpipe_dependent
         detail: "750 gpm for 2 standpipes, 1000 gpm for more than 2; 6.9 bar at most remote landing valve. UL/FM listed."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Dedicated direct breeching inlet, low-level detection, instantaneous refill."
 
@@ -699,9 +762,11 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrant network around plot per Section 3.11. Not required if infrastructure hydrants available within 60 m of building."
       - name: "Fire Pump"
+        duty: pump
         spec: "Combined (yard + internal): 1000 gpm @ 6.9 bar at most remote landing valve and hydrant valve"
         detail: "Plot > 20,000 m2 triggers the combined pump duty regardless of standpipe count."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Combined yard + internal tank with dedicated breeching inlet, low-level detection, instantaneous refill."
 
@@ -714,6 +779,7 @@ branches:
       occupancy_in: [residential, business, mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]
       ground_floor_bua_m2_lte: 500
       has_single_exit_stair_is: true
+    suppresses: [lowrise_public_upto_500, lowrise_residential_upto_3600]
     section: "Ch 9, #4.5.3 / Table 9.21.c.1"
     page: "p.709"
     systems:
@@ -723,9 +789,11 @@ branches:
         required: not_required
         detail: "Not required at this size."
       - name: "Fire Pump (Lowrise Single-Exit <=500 m2)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Small pump set sized for hose-reel duty only. Fire pump and/or fire water tank permitted on roof if existing structure can bear the additional load."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
 
@@ -735,6 +803,7 @@ branches:
       occupancy_in: [residential, business, mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]
       ground_floor_bua_m2_gt: 500
       has_single_exit_stair_is: true
+    suppresses: [lowrise_public_501_3600, lowrise_residential_upto_3600]
     section: "Ch 9, #4.5.3 / Table 9.21.c.2"
     page: "p.709"
     systems:
@@ -746,9 +815,11 @@ branches:
         required: not_required
         detail: "Not required - sprinklers + hose reel cover this size."
       - name: "Fire Pump (Lowrise Single-Exit >500 m2)"
+        duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Combined sprinkler + hose-reel pump duty. Fire pump and/or fire water tank permitted on roof if existing structure can bear the additional load."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
 
@@ -757,32 +828,83 @@ branches:
   # boutiques. <900 m2 = extinguishers only. >900 m2 with 2 stairs = extinguishers only.
   # >900 m2 with only 1 stair = highly recommended: add external 2nd stair OR
   # sprinklers + hose reel (with 250 gpm @ 4.5 bar / 30 min tank).
-  - id: lowrise_villa_converted
+  - id: lowrise_villa_converted_upto_900
+    # The table prints less than 900 m2 (row 1) and more than 900 m2 (rows 2-3);
+    # 900 m2 exactly is taken under row 1, matching the "more than" trigger.
     match:
       height_m_lte: 15
+      floors_above_grade_lte: 2
       villa_converted_use_is: true
-    section: "Ch 9, #4.5.4 / Table 9.21.d"
+      ground_floor_bua_m2_lte: 900
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    section: "Ch 9, #4.5.4 / Table 9.21.d.1 (GF BUA less than 900 m2, irrespective of stairs)"
     page: "p.710"
     systems:
       - name: "Portable Fire Extinguishers (Chapter 4)"
-        detail: "Extinguishers per Chapter 4 are the baseline requirement for all converted villa tiers. (Tier 1: <900 m2 irrespective of stairs. Tier 2: >900 m2 with 2 exit stairs. Tier 3: >900 m2 with only 1 exit stair.)"
-      - name: "Second Exit Stair (HIGHLY RECOMMENDED for >900 m2 single-stair villas)"
+        detail: "Fire extinguishers as per Chapter 4 (Table 9.21.d.1 i); fire pump and tank NA. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c for such a villa. The table prints less than 900 m2 and more than 900 m2; 900 m2 exactly is taken under this row."
+      - name: "Automatic Sprinkler System"
+        required: not_required
+        detail: "Not required by Table 9.21.d.1."
+      - name: "Fire Pump"
+        required: not_required
+        detail: "NA (Table 9.21.d.1)."
+      - name: "Fire Water Tank"
+        required: not_required
+        detail: "NA (Table 9.21.d.1)."
+
+  - id: lowrise_villa_converted_two_stairs
+    match:
+      height_m_lte: 15
+      floors_above_grade_lte: 2
+      villa_converted_use_is: true
+      ground_floor_bua_m2_gt: 900
+      has_single_exit_stair_is: false
+      exit_stairs_gte: 2
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    section: "Ch 9, #4.5.4 / Table 9.21.d.2 (GF BUA more than 900 m2, two exit stairs)"
+    page: "p.710"
+    systems:
+      - name: "Portable Fire Extinguishers (Chapter 4)"
+        detail: "Fire extinguishers as per Chapter 4 (Table 9.21.d.2 i); fire pump and tank NA. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c for such a villa."
+      - name: "Automatic Sprinkler System"
+        required: not_required
+        detail: "Not required by Table 9.21.d.2."
+      - name: "Fire Pump"
+        required: not_required
+        detail: "NA (Table 9.21.d.2)."
+      - name: "Fire Water Tank"
+        required: not_required
+        detail: "NA (Table 9.21.d.2)."
+
+  - id: lowrise_villa_converted_single_stair
+    match:
+      height_m_lte: 15
+      floors_above_grade_lte: 2
+      villa_converted_use_is: true
+      ground_floor_bua_m2_gt: 900
+      any_of:
+        - {has_single_exit_stair_is: true}
+        - {exit_stairs_lt: 2}
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    section: "Ch 9, #4.5.4 / Table 9.21.d.3 (GF BUA more than 900 m2, second exit stair not available)"
+    page: "p.710"
+    systems:
+      - name: "Portable Fire Extinguishers (Chapter 4)"
+        detail: "Fire extinguishers as per Chapter 4. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c for such a villa."
+      - name: "Second Exit Stair (external, from first floor)"
         required: recommended
-        detail: "Where GF BUA > 900 m2 AND only one exit stair is available: it is HIGHLY RECOMMENDED that the owner consider providing a second exit stair externally from the first floor."
-      - name: "Automatic Sprinkler System (full coverage incl. basements) - HIGHLY RECOMMENDED for >900 m2 single-stair villas"
+        detail: "It is highly recommended to the owner to consider providing a second exit stair externally from the first floor (Table 9.21.d.3 i)."
+      - name: "Automatic Sprinkler System (incl. basements) + Hose Reel System"
         required: recommended
-        detail: "Alternative to adding a second exit stair: provide automatic sprinklers throughout the building (including basements) per Section 3.5. Applies only where GF BUA > 900 m2 AND only one exit stair is available."
-      - name: "Hose Reel System (HIGHLY RECOMMENDED for >900 m2 single-stair villas if sprinklers added)"
-        required: recommended
-        detail: "Where sprinklers are added per the recommendation above, also provide hose reels per Section 3.3."
-      - name: "Fire Pump (if sprinklers are added per recommendation)"
+        detail: "OR (alternative to the second stair): it is highly recommended to consider providing automatic sprinklers throughout the building including basements per Section 3.5 and a hose reel system per Section 3.3 (Table 9.21.d.3 ii)."
+      - name: "Fire Pump (where sprinklers are provided)"
         required: conditional
-        spec: "250 gpm @ 4.5 bar at most remote hose-reel outlet"
-        detail: "Required only where the recommended sprinkler + hose-reel option is adopted for a >900 m2 single-stair converted villa. Fire pump and/or fire water tank permitted on roof if existing structure can bear the additional load."
-      - name: "Fire Water Tank (if sprinklers are added per recommendation)"
+        spec: "250 gpm @ 4.5 bar at most remote hose reel outlet"
+        detail: "Where an automatic sprinkler system is considered (Table 9.21.d.3 iii). Fire pump and/or tank may be installed on the roof if the existing structure can take the load (item v)."
+      - name: "Fire Water Tank (where sprinklers are provided)"
         required: conditional
         spec: "30 minutes duration"
-        detail: "Low-level detection, instantaneous utility refill."
+        detail: "Low water level detection and instantaneous refilling (Table 9.21.d.3 iv)."
 
   # ---------------- LOWRISE COMMERCIAL OUTLET ATTACHED (Ch 9, #4.5.5 / Table 9.21.e) ----
   # Villas / business / mosques with commercial / mercantile outlets attached or in the
@@ -804,9 +926,11 @@ branches:
         required: conditional
         detail: "Hose reels OR dry landing valves are NOT required if infrastructure yard hydrants are available and cover the commercial outlet."
       - name: "Fire Pump (Commercial Outlet Attached <=900 m2)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Pump sized for hose-reel duty only. Fire pump and/or fire water tank permitted on roof if structure can bear additional load."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
 
@@ -829,9 +953,11 @@ branches:
         required: conditional
         detail: "Hose reels OR dry landing valves are NOT required if infrastructure yard hydrants are available and cover the commercial outlet."
       - name: "Fire Pump (Commercial Outlet Attached >900 m2)"
+        duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Combined sprinkler + hose-reel pump duty. Fire pump and/or fire water tank permitted on roof if structure can bear additional load."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
 
@@ -873,9 +999,11 @@ branches:
         required: not_required
         detail: "Not required."
       - name: "Fire Pump (Tents / Marquees / Long-Duration Site Office)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
         detail: "Pump sized for hose-reel duty only."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low-level detection, instantaneous refill."
 
@@ -905,9 +1033,11 @@ branches:
         required: not_required
         detail: "Not required - hose reel system covers manual firefighting needs."
       - name: "Fire Pump (Group A)"
+        duty: pump
         spec: "300 gpm @ pressure to satisfy 4.5 bar at most remote hose-reel outlet valve"
         detail: "Group A pump duty (full-service station with separate buildings)."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous refilling arrangement."
       - name: "Underground Fuel Storage Tank Protection (cross-reference Ch 9 #4.15 / Ch 13)"
@@ -928,9 +1058,11 @@ branches:
         required: not_required
         detail: "Not required - hose reel system covers manual firefighting needs."
       - name: "Fire Pump (Group B)"
+        duty: pump
         spec: "50 gpm @ pressure to satisfy 6.9 bar at most remote hydrant outlet valve"
         detail: "Group B pump duty: lower flow (50 gpm) but higher pressure (6.9 bar) at the most remote hydrant outlet (NOTE the difference vs Group A: 6.9 bar / hydrant, not 4.5 bar / hose-reel). Applies to petrol stations with restaurants/bakeries WITHIN a single mini-mart, plus service/repair, fleet vehicle, and marine motor-fuel dispensing."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Low water-level detection, instantaneous refilling arrangement."
       - name: "Underground Fuel Storage Tank Protection (cross-reference Ch 9 #4.15 / Ch 13)"
@@ -973,10 +1105,12 @@ branches:
         spec: "Per Section 3.11 - dedicated loop along fire-access road; intervals per Table 3.13"
         detail: "Combined network with irrigation is NOT acceptable. Dedicated corridor / trench with strategic accessible manholes shall be provided for the hydrant piping. Fire pump room and fire water tank to be located in service blocks or facility-management areas."
       - name: "Fire Pump (Infrastructure)"
+        duty: pump
         pump_spec_type: fixed_1000
         spec: "1000 gpm @ 6.9 bar at most remote hydrant outlet valve"
         detail: "Stand-alone dedicated fire pump set serving ONLY the yard-hydrant network."
       - name: "Fire Water Tank (Infrastructure)"
+        duty: tank
         spec: "90 minutes capacity at full pump duty"
         detail: "Low water-level detection, dedicated direct breeching inlet, instantaneous refilling. TSE (treated sewage water) acceptable subject to testing; sweet water from lakes/ponds acceptable with adequate reserve."
       - name: "Marina / Waterfront - Cross-reference Chapter 21"
@@ -1001,8 +1135,10 @@ branches:
       - name: "Dry Landing Valves"
         required: not_required
       - name: "Fire Pump (Tier 1)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 1)"
+        duty: tank
         spec: "30 minutes duration"
         detail: "Low water-level detection, instantaneous refilling."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
@@ -1021,8 +1157,10 @@ branches:
       - name: "Dry Landing Valves"
         required: not_required
       - name: "Fire Pump (Tier 2 LH)"
+        duty: pump
         spec: "250 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 2)"
+        duty: tank
         spec: "45 minutes duration"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1037,8 +1175,10 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 3 LH)"
+        duty: pump
         spec: "250 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 3)"
+        duty: tank
         spec: "60 minutes duration with dedicated direct breeching inlet"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1055,9 +1195,11 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 4 LH)"
+        duty: pump
         spec: "750 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
         detail: "Tier 4 switches the remote outlet from hose-reel to yard hydrant; pressure rises to 6.9 bar."
       - name: "Fire Water Tank (Tier 4)"
+        duty: tank
         spec: "60 minutes duration with dedicated direct breeching inlet"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1074,8 +1216,10 @@ branches:
       - name: "Hose Reel System (throughout, incl. mezzanine)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 1 OH)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 1)"
+        duty: tank
         spec: "30 minutes duration"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1090,8 +1234,10 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 2 OH)"
+        duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 2)"
+        duty: tank
         spec: "45 minutes duration"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1106,8 +1252,10 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 3 OH)"
+        duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 3)"
+        duty: tank
         spec: "60 minutes duration with dedicated direct breeching inlet"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1124,8 +1272,10 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 4 OH)"
+        duty: pump
         spec: "750 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
       - name: "Fire Water Tank (Tier 4)"
+        duty: tank
         spec: "60 minutes duration with dedicated direct breeching inlet"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1141,8 +1291,10 @@ branches:
       - name: "Hose Reel System (throughout, incl. mezzanine)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 1 OH2)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 1)"
+        duty: tank
         spec: "30 minutes duration"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1157,9 +1309,11 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 2 OH2)"
+        duty: pump
         spec: "350 gpm @ 4.5 bar at most remote hose-reel outlet valve"
         detail: "OH2 pump is 350 gpm (50 gpm higher than OH1's 300 gpm) per Table 9.27 Group C."
       - name: "Fire Water Tank (Tier 2)"
+        duty: tank
         spec: "45 minutes duration"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1174,8 +1328,10 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 3 OH2)"
+        duty: pump
         spec: "350 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (Tier 3)"
+        duty: tank
         spec: "60 minutes duration with dedicated direct breeching inlet"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1192,8 +1348,10 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Tier 4 OH2)"
+        duty: pump
         spec: "750 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
       - name: "Fire Water Tank (Tier 4)"
+        duty: tank
         spec: "60 minutes duration with dedicated direct breeching inlet"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1218,8 +1376,10 @@ branches:
       - name: "Dry Landing Valves"
         required: not_required
       - name: "Fire Pump (Multi-Tenant EH1 Tier 1)"
+        duty: pump
         spec: "750 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank (EH1 Tier 1)"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Low water-level detection, instantaneous refilling arrangement."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
@@ -1237,8 +1397,10 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Multi-Tenant EH1 Tier 2)"
+        duty: pump
         spec: "1250 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
       - name: "Fire Water Tank (EH1 Tier 2)"
+        duty: tank
         spec: "90 minutes duration with dedicated direct breeching inlet"
         detail: "Note: EH1 Tier 2 tank is 90 min (not 60 min). Required for the elevated demand of extra-hazard storage > 3600 m2."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
@@ -1263,9 +1425,11 @@ branches:
       - name: "Dry Landing Valves"
         required: not_required
       - name: "Fire Pump (Multi-Tenant EH2 Tier 1)"
+        duty: pump
         spec: "1000 gpm @ 4.5 bar at most remote hose-reel outlet valve"
         detail: "EH2 Tier 1 pump is 1000 gpm (vs 750 gpm for EH1)."
       - name: "Fire Water Tank (EH2 Tier 1)"
+        duty: tank
         spec: "60 minutes duration"
         detail: "Low water-level detection, instantaneous refilling arrangement."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
@@ -1283,9 +1447,11 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Multi-Tenant EH2 Tier 2)"
+        duty: pump
         spec: "1500 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
         detail: "EH2 Tier 2 pump is 1500 gpm (vs 1250 gpm for EH1). HALF of code-mandated pump in earlier YAML revisions."
       - name: "Fire Water Tank (EH2 Tier 2)"
+        duty: tank
         spec: "120 minutes duration with dedicated direct breeching inlet"
         detail: "120-min tank (vs 90 min for EH1). Required for the elevated demand of EH2 storage > 3600 m2."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
@@ -1312,9 +1478,11 @@ branches:
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Commodity-Specific)"
+        duty: pump
         spec: "Sized to design density per Tables 9.7.M / X / DD / EE / GG - 750-2000 gpm typical"
         detail: "Pump duty scales with sprinkler design density per Tables 9.7.M-GG. NOT a fixed value."
       - name: "Fire Water Tank (Commodity-Specific)"
+        duty: tank
         spec: "60-90 minutes duration"
         detail: "Per commodity sub-table. Dedicated direct breeching inlet at Tier 3+."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
@@ -1340,6 +1508,7 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Water Tank (Cold Storage)"
+        duty: tank
         spec: "30 min (<230 m2) / 45 min (230-900 m2) / 60 min (900-3600 m2 and >3600 m2)"
         detail: "Tier-based per Table 9.27 Group P. Tier 3-4 require dedicated direct breeching inlet for refilling."
 
@@ -1357,8 +1526,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Aircraft Hanger)"
+        duty: pump
         spec: "1500 gpm @ 6.9 bar at most remote hydrant outlet valve"
       - name: "Fire Water Tank + Foam Concentrate"
+        duty: tank
         spec: "60 minutes water + 10 minutes foam concentrate"
         detail: "Foam concentrate sized for 10 minutes of full-design discharge; AFFF 3 percent or fluorine-free per Civil Defence approval."
 
@@ -1377,8 +1548,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Flammable Liquid Warehouse)"
+        duty: pump
         spec: "Variable per design density; 6.9 bar pressure at hydrant outlet (Tier 3-4) or hose reel (Tier 1-2)"
       - name: "Fire Water Tank + Foam Reserve"
+        duty: tank
         spec: "120 minutes water + 15 minutes foam concentrate"
         detail: "Significantly longer water duration and foam reserve than Class A commodities."
 
@@ -1397,8 +1570,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Industrial Process)"
+        duty: pump
         spec: "Variable per design; 6.9 bar at hydrant (Tier 3-4)"
       - name: "Fire Water Tank + Foam Reserve"
+        duty: tank
         spec: "120 minutes water + 15 minutes foam concentrate"
 
   # Group U - Open yard storage (no building envelope)
@@ -1432,8 +1607,10 @@ branches:
       - name: "Hose Reel System (single-tenant LH < 900 m2)"
         spec: "Per Section 3.3 - throughout building, NO dry landing valves"
       - name: "Fire Pump (Single-Tenant LH Tier 1)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "45 minutes duration (single-tenant tier 1 differs from multi-tenant 30 min)"
 
   - id: storage_single_tenant_lh_tier2
@@ -1446,8 +1623,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant LH Tier 2)"
+        duty: pump
         spec: "250 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes duration with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_lh_tier3
@@ -1462,8 +1641,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant LH Tier 3)"
+        duty: pump
         spec: "750 gpm @ 6.9 bar at most remote landing/hydrant valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes with dedicated direct breeching inlet"
 
   # Group G - Single-Tenant Ordinary Hazard 1
@@ -1476,8 +1657,10 @@ branches:
       - name: "Hose Reel System (single-tenant OH1 < 900 m2)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH1 Tier 1)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "45 minutes duration"
 
   - id: storage_single_tenant_oh1_tier2
@@ -1490,8 +1673,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH1 Tier 2)"
+        duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_oh1_tier3
@@ -1506,8 +1691,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH1 Tier 3)"
+        duty: pump
         spec: "750 gpm @ 6.9 bar at most remote landing valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes with dedicated direct breeching inlet"
 
   # Group H - Single-Tenant Ordinary Hazard 2 (350 gpm @ Tier 2 - distinct from OH1)
@@ -1519,8 +1706,10 @@ branches:
       - name: "Hose Reel System (single-tenant OH2 < 900 m2)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH2 Tier 1)"
+        duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "45 minutes duration"
 
   - id: storage_single_tenant_oh2_tier2
@@ -1533,8 +1722,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH2 Tier 2)"
+        duty: pump
         spec: "350 gpm @ 4.5 bar at most remote hose-reel outlet valve (50 gpm higher than Group G OH1)"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_oh2_tier3
@@ -1549,8 +1740,10 @@ branches:
       - name: "Hose Reel System"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH2 Tier 3)"
+        duty: pump
         spec: "750 gpm @ 6.9 bar at most remote landing valve"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60 minutes with dedicated direct breeching inlet"
 
   # Groups I + J - Single-Tenant Extra Hazard (EH1 + EH2 collapsed under HH)
@@ -1568,9 +1761,11 @@ branches:
         spec: "Per Section 3.11 - required when sum of all GF BUA > 3600 m2"
         required: conditional
       - name: "Fire Pump (Single-Tenant Extra Hazard)"
+        duty: pump
         spec: "EH1: 750 gpm @ 4.5 bar (<=3600 m2) -> 1250 gpm @ 6.9 bar (>3600 m2). EH2: 1000 gpm @ 4.5 bar (<=3600 m2) -> 1500 gpm @ 6.9 bar (>3600 m2)"
         detail: "Pump duty escalates by both hazard sub-group AND total area."
       - name: "Fire Water Tank"
+        duty: tank
         spec: "EH1 <=3600 m2: 60 min; EH1 >3600 m2: 90 min; EH2 <=3600 m2: 60 min; EH2 >3600 m2: 120 min. Dedicated direct breeching inlet at all >3600 m2 tiers."
         detail: "EH1 Tier 2 (>3600 m2) tank is 90 min (per Table 9.27 Group I, p.732) - NOT 60 min. EH2 Tier 2 (>3600 m2) tank is 120 min (per Table 9.27 Group J, p.733)."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
@@ -1591,8 +1786,10 @@ branches:
         spec: "Per Section 3.11 - required at facility BUA > 3600 m2"
         required: conditional
       - name: "Fire Pump (Idle Pallet Storage)"
+        duty: pump
         spec: "Sized to design density - typically 750+ gpm @ 6.9 bar at hydrant outlet at Tier 4"
       - name: "Fire Water Tank"
+        duty: tank
         spec: "60-90 minutes duration with dedicated direct breeching inlet"
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per Section 4.11 preamble"
@@ -1601,6 +1798,9 @@ branches:
   # Section 4.12 / Table 9.28 - TUNNEL FIRE PROTECTION SYSTEMS
   # Two occupancy types (cable vs road/rail) crossed with length tiers.
   # Triggered by has_tunnel + tunnel_kind + tunnel_length_m.
+  # Tunnel pumps and tanks carry no `duty:` tag: they serve the tunnel's own
+  # deluge / riser systems, so they are listed beside the building's pump
+  # instead of being merged into one governing line.
   # ============================================================================
   - id: tunnel_cable_short
     match: {has_tunnel: true, tunnel_kind: cable, tunnel_length_m_lt: 60}
@@ -1701,6 +1901,7 @@ branches:
       - name: "Hose Reel (per Section 3.3)"
         detail: "Where required by Section 3.3 travel distances."
       - name: "Fire Pump + Tank"
+        duty: pump
         spec: "Per associated main-building class (Ch 9, #4.2 - #4.5)"
         detail: "If parking is attached to a mall/highrise/residential tower, pump + tank follow the main-building branch."
       - name: "Smoke Control"
