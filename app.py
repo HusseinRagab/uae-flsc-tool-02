@@ -182,6 +182,9 @@ _SCENARIO_LIMITS = {
     "plot_area_input": ("Plot area", 0.0, False),
     "depth_below_grade_input": ("Depth below grade", 0.0, False),
     "parking_area_m2_input": ("Parking area", 0.0, False),
+    # Owner ruling 12.10.2026, P3 App Q2 (blank allowed: not entered)
+    "parking_height_m_input": ("Parking height above the fire access level", 0.0, False),
+    "parking_basement_levels_input": ("Parking basement levels", 0, True),
     "ceiling_height_m_input": ("Ceiling height", 0.0, False),
     "corridor_length_m": ("Corridor length", 0.0, False),
     "assembly_area_m2_input": ("Assembly-hall area", 0.0, False),
@@ -207,8 +210,9 @@ USE_AREA_KEYS = [k for i in range(USE_AREA_MAX)
                  for k in (f"use_area_row_{i}", f"use_area_m2_{i}")]
 
 
-# Owner answer 12.10.2026, F6: per-storey table <-> data editor frame.
-_STOREY_COLS = ("storey", "row", "area_m2")
+# Owner answer 12.10.2026, F6: per-storey table <-> data editor frame. "count" =
+# identical storeys (owner ruling 12.10.2026, P3 Storey Q1); a line without it is 1.
+_STOREY_COLS = ("storey", "row", "area_m2", "count")
 
 
 def _storey_table_frame(lines):
@@ -218,6 +222,7 @@ def _storey_table_frame(lines):
         "storey": pd.Series([ln.get("storey") for ln in lines], dtype="object"),
         "row": pd.Series([ln.get("row") for ln in lines], dtype="object"),
         "area_m2": pd.Series([ln.get("area_m2") for ln in lines], dtype="float64"),
+        "count": pd.Series([ln.get("count", 1) for ln in lines], dtype="Int64"),
     })
 
 
@@ -226,13 +231,35 @@ def _storey_table_records(df) -> list:
     any other line is kept as entered, and the report names what it lacks."""
     out = []
     for rec in df.to_dict("records"):
-        nm, rw, ar = (rec.get(k) for k in _STOREY_COLS)
+        nm, rw, ar, ct = (rec.get(k) for k in _STOREY_COLS)
         nm = nm.strip() if isinstance(nm, str) else ""
         rw = rw if isinstance(rw, str) and rw else None
         ar = float(ar) if isinstance(ar, (int, float)) and ar == ar else None
+        # Identical storeys (P3 Storey Q1): blank = 1; a whole number is stored as int;
+        # anything else is kept as entered and the app stops on it by name.
+        try:
+            blank = ct is None or bool(ct != ct)
+        except (TypeError, ValueError):     # pandas NA
+            blank = True
+        if blank:
+            ct = 1
+        elif isinstance(ct, (int, float)) and not isinstance(ct, bool) and float(ct).is_integer():
+            ct = int(ct)
         if nm or rw or ar is not None:
-            out.append({"storey": nm, "row": rw, "area_m2": ar})
+            out.append({"storey": nm, "row": rw, "area_m2": ar, "count": ct})
     return out
+
+
+def _storey_count(ct):
+    """Identical-storeys count of a saved line (owner ruling 12.10.2026, P3 Storey Q1):
+    None (a line saved before the column) = 1; a whole number (2 or 2.0) = int; anything
+    else is returned as is, and the app stops on it by name."""
+    if ct is None:
+        return 1
+    if (isinstance(ct, (int, float)) and not isinstance(ct, bool)
+            and ct == ct and abs(ct) != float("inf") and float(ct).is_integer()):
+        return int(ct)
+    return ct
 
 
 def _invalid_scenario_values(data: dict) -> list:
@@ -295,6 +322,9 @@ def _invalid_scenario_values(data: dict) -> list:
         # Owner ruling 12.10.2026, Ch9 Q9
         "secondary_storage_hazard_input": ("Secondary storage hazard class", (
             None, "LH", "OH1", "OH2", "HH", "EH2")),
+        # Owner ruling 12.10.2026, P3 Storey Q4
+        "secondary_animal_housing_group_input": ("Secondary animal housing group", (
+            None, "A", "B", "C")),
         # Phase 3 CH10-16: Table 10.27 item 8 / item 14
         "theater_cinema_kind_input": ("Theatre / cinema kind", (None, "cinema", "theatre", "both")),
     }
@@ -314,7 +344,8 @@ def _invalid_scenario_values(data: dict) -> list:
     if data.get("animal_housing_group_input") not in (None, "A", "B", "C"):
         bad.append(f"Animal housing group = {data['animal_housing_group_input']!r} "
                    "(not a listed option)")
-    # Owner answer 12.10.2026, F6: per-storey table, a list of {storey, row, area_m2}.
+    # Owner answer 12.10.2026, F6: per-storey table, a list of {storey, row, area_m2,
+    # count}.
     # A blank storey name or row is kept (the report names it); a wrong type, an
     # unknown row or a negative / non-numeric area is refused here.
     tbl = data.get("storey_table_input")
@@ -325,10 +356,18 @@ def _invalid_scenario_values(data: dict) -> list:
             bad.append(f"Per-storey table has {len(tbl)} lines (maximum 200)")
         else:
             for i, ln in enumerate(tbl, 1):
-                if not isinstance(ln, dict) or set(ln) - {"storey", "row", "area_m2"}:
+                if not isinstance(ln, dict) or set(ln) - {"storey", "row", "area_m2", "count"}:
                     bad.append(f"Per-storey table line {i} = {ln!r} (not a storey / row / "
-                               "area line)")
+                               "area / count line)")
                     continue
+                # Owner ruling 12.10.2026, P3 Storey Q1: identical storeys, a whole number
+                # of at least 1 (a file saved before the column has none: it loads as 1).
+                ct = ln.get("count")
+                if ct is not None and (isinstance(ct, bool) or not isinstance(ct, (int, float))
+                                       or not (1 <= ct < float("inf"))
+                                       or not float(ct).is_integer()):
+                    bad.append(f"Per-storey table line {i} identical storeys = {ct!r} (a whole "
+                               "number of at least 1)")
                 nm, rw, ar = ln.get("storey"), ln.get("row"), ln.get("area_m2")
                 if nm is not None and not isinstance(nm, str):
                     bad.append(f"Per-storey table line {i} storey = {nm!r} (not text)")
@@ -832,6 +871,7 @@ with st.sidebar:
             "occupancy_chosen", "mercantile_multi_tenant",
             # Parking
             "has_parking_area", "attached_parking_kind_radio", "parking_area_m2_input",
+            "parking_height_m_input", "parking_basement_levels_input",   # P3 App Q2
             # Special rooms / various / equipment / FE / ES / Gas / FP / SC
             *SPECIAL_ROOMS_KEYS, *VARIOUS_LOCATIONS_KEYS, *EQUIPMENT_KEYS,
             *FE_KEYS, *ES_FEATURE_KEYS, *ES_ZONE_KEYS,
@@ -855,8 +895,8 @@ with st.sidebar:
             "gf_beyond_100m_from_hydrant", "has_single_exit_stair",
             # Mixed occupancy (ruling R13)
             "mixed_occupancy_mode_input", "secondary_occupancies_input",
-            # Owner ruling 12.10.2026, Ch9 Q9
-            "secondary_storage_hazard_input",
+            # Owner ruling 12.10.2026, Ch9 Q9; P3 Storey Q4
+            "secondary_storage_hazard_input", "secondary_animal_housing_group_input",
             # Ch 3 / Ch 2 inputs (owner rulings 12.10.2026, Ch3 Q1-Q6)
             "largest_storey_area_m2_input", "mall_gla_m2_input", "use_area_count_input",
             *USE_AREA_KEYS, "building_volume_m3_input",
@@ -1203,6 +1243,21 @@ with st.sidebar:
                 help="#4.1.13: excludes separated service blocks, guard house and separated "
                      "washrooms. Enter this building's GF BUA when it is the only building "
                      "on the plot. Required (owner ruling 12.10.2026, Ch9 Q1).")
+        if (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
+                and "animal_housing" in (st.session_state.get("secondary_occupancies_input") or [])):
+            # Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9 for storage): the group of
+            # a secondary animal housing is chosen, never assumed (#1.1.13, p.528-529).
+            st.selectbox(
+                "Animal housing (other occupancy) group (required)", list(ANIMAL_HOUSING_GROUPS),
+                index=None,
+                format_func=lambda g: (f"Group {g} - {ANIMAL_HOUSING_GROUPS[g][3]} "
+                                       f"({ANIMAL_HOUSING_GROUPS[g][0]}, {ANIMAL_HOUSING_GROUPS[g][1]})"),
+                placeholder="Select the group (#1.1.13)",
+                key="secondary_animal_housing_group_input",
+                help="Ch 9 #1.1.13: Group A (animal market, pet shops, bird market, veterinary "
+                     "clinic) and Group C (zoo) are Light Hazard (#1.1.13.1.q, r, p.528); Group "
+                     "B (stable, animal sheds, livestock shelter, slaughter houses) is Ordinary "
+                     "Hazard Group 2 (#1.1.13.3.a, p.529). Owner ruling 12.10.2026, P3 Storey Q4.")
         st.selectbox(
             "Construction type (Ch 1 #2.6 — reporting aid)",
             options=["unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"],
@@ -1282,9 +1337,34 @@ with st.sidebar:
             if float(parking_area_m2_val) <= 0:
                 st.caption("Enter the parking footprint area: until then the attached parking "
                            "is not evaluated (the report says so).")
+            # Owner ruling 12.10.2026, P3 App Q2: the parking's own height and levels.
+            parking_height_m_val = st.number_input(
+                "Parking height above the fire access level (m)",
+                min_value=0.0, value=None, step=0.5, key="parking_height_m_input",
+                placeholder="Required for the height-keyed parking lines",
+                help="Height of the parking structure itself above the fire access level "
+                     "(0 = wholly below it), not the tower height. It sets the height-keyed "
+                     "parking rows, e.g. Ch 10 Table 10.23 item 1.iv (p.860, stairs of parking "
+                     "more than 23 m) and the Table 9.24 rows. Ch 9 sprinklers still follow the "
+                     "host building's table. Blank: those lines are NOT EVALUATED (owner ruling "
+                     "12.10.2026, P3 App Q2).")
+            parking_basement_levels_val = st.number_input(
+                "Parking basement levels",
+                min_value=0, value=None, step=1, key="parking_basement_levels_input",
+                placeholder="Required for the basement-keyed parking lines",
+                help="Number of basement levels the parking occupies (0 = none), at most the "
+                     "building's basements; the building's depth below grade is used for them. "
+                     "Blank: the lines keyed on the basement levels are NOT EVALUATED (owner "
+                     "ruling 12.10.2026, P3 App Q2).")
+            if parking_height_m_val is None or parking_basement_levels_val is None:
+                st.caption("Enter the parking height and basement levels: until then the "
+                           "parking lines that depend on them are NOT EVALUATED (the tower "
+                           "height is not used).")
         else:
             attached_parking_kind_val = "enclosed"
             parking_area_m2_val = 0.0
+            parking_height_m_val = None
+            parking_basement_levels_val = None
         st.markdown("---")
         st.markdown("**Special rooms checklist**")
         st.checkbox("Check all", key="rooms_all", on_change=rooms_cb)
@@ -1475,11 +1555,15 @@ with st.sidebar:
                                 step=50.0, key=f"use_area_m2_{_i}")
         # Owner answer 12.10.2026, F6: per-storey per-use table. When it has lines it
         # governs the OL and the Table 3.14 count (per storey, #4.3.1 / #4.1.3).
-        st.markdown("*Per-storey table (optional): storey, Table 3.13 row, area*")
+        st.markdown("*Per-storey table (optional): storey, Table 3.13 row, area, identical "
+                    "storeys*")
         st.caption("One line per use on each storey; lines with the same storey name form "
                    "one storey. Row blank = the densest Table 3.13 row of the occupancy. "
-                   "When the table has lines it replaces the largest storey area and the "
-                   "per-use areas above for the occupant load and Table 3.14.")
+                   "Identical storeys: how many storeys this one stands for (same count on "
+                   "every line of the storey); the counts must add up to the floors above "
+                   "grade plus the basements, or no exit count is stated. When the table has "
+                   "lines it replaces the largest storey area and the per-use areas above for "
+                   "the occupant load and Table 3.14.")
         if "storey_table_base" not in st.session_state:
             st.session_state["storey_table_base"] = list(
                 st.session_state.get("storey_table_input") or [])
@@ -1496,6 +1580,13 @@ with st.sidebar:
                 "area_m2": st.column_config.NumberColumn(
                     "Area (m2)", min_value=0.0, step=10.0,
                     help="Floor area of this use on this storey (#1.4.5)."),
+                # Owner ruling 12.10.2026, P3 Storey Q1
+                "count": st.column_config.NumberColumn(
+                    "Identical storeys", min_value=1, step=1, format="%d",
+                    help="Number of identical storeys this storey stands for (a typical "
+                         "floor), at least 1; give every line of the storey the same count. "
+                         "The storey counts that many times in the total occupant load; the "
+                         "governing storey is still the one with the highest OL. Blank = 1."),
             })
         st.session_state["storey_table_input"] = _storey_table_records(_edited)
 
@@ -1603,6 +1694,40 @@ if (occupancy == "storage_industrial" or _storage_secondary) \
              "or Mixed occupancy when storage is another occupancy). Table 9.27 row 4 applies "
              "above 3600 m2 (#4.1.13); enter this building's GF BUA when it is the only "
              "building on the plot (owner ruling 12.10.2026, Ch9 Q1).")
+    st.stop()
+
+# ---------- Owner ruling 12.10.2026, P3 App Q2 -----------------------------------
+if (st.session_state.get("has_parking_area") and parking_basement_levels_val is not None
+        and int(parking_basement_levels_val) > int(floors_below)):
+    st.error(f"Attached parking basement levels ({int(parking_basement_levels_val)}) cannot "
+             f"exceed the building's basements ({int(floors_below)}): the parking is in the "
+             "building (owner ruling 12.10.2026, P3 App Q2). Correct either input.")
+    st.stop()
+
+# ---------- Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9) ------------------
+_animal_secondary = (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
+                     and "animal_housing" in (st.session_state.get("secondary_occupancies_input") or [])
+                     and occupancy != "animal_housing")
+if _animal_secondary \
+        and st.session_state.get("secondary_animal_housing_group_input") not in ANIMAL_HOUSING_GROUPS:
+    st.error("Select the group of the animal housing occupancy listed under 'Other "
+             "occupancies' (sidebar, Mixed occupancy): Group A (animal market, pet shops, bird "
+             "market, veterinary clinic) and Group C (zoo) are Light Hazard (#1.1.13.1.q, r, "
+             "p.528); Group B (stable, animal sheds, livestock shelter, slaughter houses) is "
+             "Ordinary Hazard Group 2 (#1.1.13.3.a, p.529). The tool does not assume one (owner "
+             "ruling 12.10.2026, P3 Storey Q4).")
+    st.stop()
+
+# ---------- Owner ruling 12.10.2026, P3 Storey Q1 ------------------------------
+_bad_counts = [f"line {i} ({ln.get('storey') or 'no storey name'}): {ln.get('count')!r}"
+               for i, ln in enumerate(st.session_state.get("storey_table_input") or [], 1)
+               if not (isinstance(_storey_count(ln.get("count")), int)
+                       and not isinstance(ln.get("count"), bool)
+                       and _storey_count(ln.get("count")) >= 1)]
+if _bad_counts:
+    st.error("Per-storey table: the identical storeys count must be a whole number of at "
+             "least 1 (owner ruling 12.10.2026, P3 Storey Q1). Correct " +
+             "; ".join(_bad_counts) + ".")
     st.stop()
 
 if occupancy == "animal_housing" \
@@ -1894,6 +2019,9 @@ building = Building(
     # Owner ruling 12.10.2026, Ch9 Q9
     secondary_storage_hazard=st.session_state.get("secondary_storage_hazard_input")
     if _storage_secondary else None,
+    # Owner ruling 12.10.2026, P3 Storey Q4
+    secondary_animal_housing_group=st.session_state.get("secondary_animal_housing_group_input")
+    if _animal_secondary else None,
     hangar_group=st.session_state.get("hangar_group_input") or "I",
     is_aboveground_tank_storage=gs("is_aboveground_tank_storage") and occupancy == "storage_industrial",
     ast_storage_area_m2=float(st.session_state.get("ast_storage_area_m2_input") or 0.0),
@@ -1964,6 +2092,10 @@ building = Building(
     has_parking_area=gs("has_parking_area"),
     attached_parking_kind=attached_parking_kind_val,
     parking_area_m2=float(parking_area_m2_val),
+    # Owner ruling 12.10.2026, P3 App Q2 (None = not entered)
+    parking_height_m=None if parking_height_m_val is None else float(parking_height_m_val),
+    parking_basement_levels=(None if parking_basement_levels_val is None
+                             else int(parking_basement_levels_val)),
     # ES chapter-specific
     has_evacuation_elevator=gs("has_evacuation_elevator"),
     has_horizontal_exits=gs("has_horizontal_exits"),
@@ -2001,7 +2133,9 @@ building = Building(
     tower_setback_over_30m=gs("tower_setback_over_30m"),
     # Owner answer 12.10.2026, F6: per-storey table (blank = the inputs above)
     storey_uses=[{"storey": ln.get("storey") or "", "row": ln.get("row"),
-                  "area_m2": float(ln.get("area_m2") or 0.0)}
+                  "area_m2": float(ln.get("area_m2") or 0.0),
+                  # P3 Storey Q1: a line saved before the column counts once
+                  "count": _storey_count(ln.get("count"))}
                  for ln in (st.session_state.get("storey_table_input") or [])],
     # Owner answer 12.10.2026, Ch9 Q6
     animal_housing_group=(st.session_state.get("animal_housing_group_input")
