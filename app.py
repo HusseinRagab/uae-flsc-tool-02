@@ -24,7 +24,8 @@ from pathlib import Path
 import streamlit as st
 import yaml as _yaml
 
-from flsc_schema import Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER, HAZARD_NOT_CLASSIFIED
+from flsc_schema import (Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER,
+                         HAZARD_NOT_CLASSIFIED, ANIMAL_HOUSING_GROUPS)
 from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
@@ -263,6 +264,10 @@ def _invalid_scenario_values(data: dict) -> list:
     n_use = data.get("use_area_count_input")
     if isinstance(n_use, int) and not isinstance(n_use, bool) and n_use > n_max:
         bad.append(f"Number of per-use areas = {n_use} (maximum {n_max})")
+    # Owner answer 12.10.2026, Ch9 Q6: animal housing group A / B / C (#1.1.13).
+    if data.get("animal_housing_group_input") not in (None, "A", "B", "C"):
+        bad.append(f"Animal housing group = {data['animal_housing_group_input']!r} "
+                   "(not a listed option)")
     # Owner answer 12.10.2026, F6: per-storey table, a list of {storey, row, area_m2}.
     # A blank storey name or row is kept (the report names it); a wrong type, an
     # unknown row or a negative / non-numeric area is refused here.
@@ -774,8 +779,8 @@ with st.sidebar:
             "largest_storey_area_m2_input", "mall_gla_m2_input", "use_area_count_input",
             *USE_AREA_KEYS, "building_volume_m3_input",
             "is_waterfront", "is_theme_park", "tower_setback_over_30m",
-            # Owner answer 12.10.2026: F6 per-storey table
-            "storey_table_input",
+            # Owner answers 12.10.2026: F6 per-storey table, Ch9 Q6 animal housing group
+            "storey_table_input", "animal_housing_group_input",
         ]
         def _serializable(v):
             # Convert tuple to list for JSON; passthrough rest
@@ -822,12 +827,13 @@ with st.sidebar:
                     if k == "occupancy_chosen" and isinstance(v, list) and len(v) == 2:
                         v = tuple(v)
                     st.session_state[k] = v
-                # F6 (owner answer 12.10.2026): a file without the table (saved before
-                # phase 3) clears it, so no table from the previous project is carried
-                # over; the editor restarts from the file.
+                # F6 / Ch9 Q6 (owner answers 12.10.2026): a file without these keys
+                # (saved before phase 3) clears them, so no table or group from the
+                # previous project is carried over; the editor restarts from the file.
                 st.session_state["storey_table_input"] = list(_data.get("storey_table_input") or [])
                 st.session_state["storey_table_base"] = st.session_state["storey_table_input"]
                 st.session_state.pop("storey_table_editor", None)
+                st.session_state["animal_housing_group_input"] = _data.get("animal_housing_group_input")
                 st.session_state["_scenario_loaded_marker"] = True
                 st.success("Scenario loaded - sidebar widgets refreshed.")
                 st.rerun()
@@ -926,6 +932,19 @@ with st.sidebar:
     st.session_state["occupancy_chosen"] = (_chosen_cat, _chosen_sub)
     occupancy = _chosen_sub
     st.info(OCCUPANCY_DEFS.get(occupancy, ""))
+    if occupancy == "animal_housing":
+        # Owner answer 12.10.2026, Ch9 Q6: the three groups take their printed hazard
+        # class (#1.1.13.1.q / r, p.528; #1.1.13.3.a, p.529). No default group.
+        st.selectbox(
+            "Animal housing group (required)", list(ANIMAL_HOUSING_GROUPS), index=None,
+            format_func=lambda g: (f"Group {g} - {ANIMAL_HOUSING_GROUPS[g][3]} "
+                                   f"({ANIMAL_HOUSING_GROUPS[g][0]}, {ANIMAL_HOUSING_GROUPS[g][1]})"),
+            placeholder="Select the group (#1.1.13)",
+            key="animal_housing_group_input",
+            help="Ch 9 #1.1.13: Group A (animal market, pet shops, bird market, veterinary "
+                 "clinic) and Group C (zoo) are Light Hazard (#1.1.13.1.q, r, p.528); Group B "
+                 "(stable, animal sheds, livestock shelter, slaughter houses) is Ordinary "
+                 "Hazard Group 2 (#1.1.13.3.a, p.529).")
     if occupancy in INCOMPATIBLE_FLAGS_BY_OCC:
         st.caption(
             "💡 Special Rooms / Equipment that typically don't apply to this "
@@ -983,7 +1002,7 @@ with st.sidebar:
     for w in _warnings:
         st.caption(w)
 
-    derived_hazard = default_hazard(occupancy)
+    derived_hazard = default_hazard(occupancy, st.session_state.get("animal_housing_group_input"))
     # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking is Extra Hazard
     # Group 2 (#1.1.13.5.b, p.530); the hazard is forced to HH + EH2 when ticked.
     _robotic_eh2 = (bool(st.session_state.get("has_robotic_parking"))
@@ -993,6 +1012,12 @@ with st.sidebar:
         st.caption("Hazard class: **HH, Extra Hazard Group 2** (robotic / mechanical parking "
                    "is ticked: #1.1.13.5.b, p.530 lists 'Parking, Group B (Robotic, Mechanical "
                    "parking)' under Extra Hazard, Group 2; owner ruling 12.10.2026, Ch9 Q7).")
+    elif occupancy == "animal_housing":
+        _ahg = st.session_state.get("animal_housing_group_input")
+        if _ahg in ANIMAL_HOUSING_GROUPS:
+            _hz, _cl, _pg, _ = ANIMAL_HOUSING_GROUPS[_ahg]
+            st.caption(f"Hazard class (Animal Housing Group {_ahg}, {_cl}, {_pg}): **{_hz}** "
+                       "(owner answer 12.10.2026, Ch9 Q6)")
     elif occupancy != "storage_industrial":
         st.caption(f"Hazard class (auto-derived from occupancy, #1.1.13): **{derived_hazard}**")
     if occupancy in ("assembly_b", "assembly_c"):
@@ -1431,6 +1456,16 @@ if (occupancy == "storage_industrial" or _storage_secondary) \
              "building on the plot (owner ruling 12.10.2026, Ch9 Q1).")
     st.stop()
 
+if occupancy == "animal_housing" \
+        and st.session_state.get("animal_housing_group_input") not in ANIMAL_HOUSING_GROUPS:
+    st.error("Select the animal housing group (sidebar, under the occupancy): Group A (animal "
+             "market, pet shops, bird market, veterinary clinic) and Group C (zoo) are Light "
+             "Hazard (#1.1.13.1.q, r, p.528); Group B (stable, animal sheds, livestock shelter, "
+             "slaughter houses) is Ordinary Hazard Group 2 (#1.1.13.3.a, p.529). A project "
+             "saved before the split has no group, and the tool does not assume one (owner "
+             "answer 12.10.2026, Ch9 Q6).")
+    st.stop()
+
 # ---------- Pre-evaluate to detect wet riser requirement ---------------------
 prelim = _cached_evaluate(Building(
     project_name=project_name, occupancy=occupancy, height_m=height_m,
@@ -1760,6 +1795,9 @@ building = Building(
     storey_uses=[{"storey": ln.get("storey") or "", "row": ln.get("row"),
                   "area_m2": float(ln.get("area_m2") or 0.0)}
                  for ln in (st.session_state.get("storey_table_input") or [])],
+    # Owner answer 12.10.2026, Ch9 Q6
+    animal_housing_group=(st.session_state.get("animal_housing_group_input")
+                          if occupancy == "animal_housing" else None),
 )
 report = _cached_evaluate(building.model_dump_json())
 
@@ -1791,7 +1829,9 @@ st.markdown(
     ),
     unsafe_allow_html=True,
 )
-st.caption(f"**Occupancy:** `{occupancy}` - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
+_ahg_txt = (f" **Group {building.animal_housing_group}**" if building.animal_housing_group
+            else "")   # owner answer 12.10.2026, Ch9 Q6
+st.caption(f"**Occupancy:** `{occupancy}`{_ahg_txt} - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
 
 _ol = report.occupant_load
 _fa = report.fire_access
@@ -1852,7 +1892,7 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
             b_building = building.model_copy(update={
                 "occupancy": b_occ,
                 "height_m": float(b_h),
-                "hazard_class": default_hazard(b_occ),
+                "hazard_class": default_hazard(b_occ, building.animal_housing_group),
             })
             b_report = evaluate(b_building)
             b_tot = b_report.count_status()

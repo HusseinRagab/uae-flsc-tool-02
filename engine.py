@@ -1222,7 +1222,9 @@ def report_to_markdown(r: ComplianceReport) -> str:
         L.append(f"**Project:** {b.project_name}")
     L.append("")
     L.append("## Building profile")
-    L.append(f"- Occupancy: `{b.occupancy}`")
+    _grp = (f" (Group {b.animal_housing_group}, #1.1.13)"   # owner answer 12.10.2026, Ch9 Q6
+            if b.occupancy == "animal_housing" and b.animal_housing_group else "")
+    L.append(f"- Occupancy: `{b.occupancy}`{_grp}")
     L.append(f"- Height: {b.height_m} m  ->  class: **{b.height_class}**")
     L.append(f"- Storeys: {b.floors_above_grade} above + {b.floors_below_grade} basement")
     L.append(f"- Plot area: {b.plot_area_m2} m²  |  GF BUA: {b.ground_floor_bua_m2} m²  |  Basement BUA: {b.basement_bua_m2} m²")

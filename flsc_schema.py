@@ -66,7 +66,7 @@ OCCUPANCY_DEFS = {
     "labour_accommodation": "Labour Accommodation - Dormitory-style housing for construction/industrial workers with shared facilities.",
     "staff_accommodation": "Staff Accommodation - Housing for employees of a single institution (hospital/hotel/airport staff).",
     "hostel": "Hostel - Shared lodging, bunk-bed dormitories, youth hostels, pilgrim accommodation.",
-    "animal_housing": "Animal Housing - Stables, kennels, veterinary boarding, livestock pens.",
+    "animal_housing": "Animal Housing - Group A (animal market, pet shops, bird market, veterinary clinic), Group B (stable, animal sheds, livestock shelter, slaughter houses), Group C (zoo), as listed in Ch 9 #1.1.13 (p.528-529). Choose the group.",
     "detention_a": "Detention & Correctional Group A - Maximum security; occupants restrained and require supervised evacuation.",
     "detention_b": "Detention & Correctional Group B - Medium security correctional facilities.",
     "detention_c": "Detention & Correctional Group C - Minimum security, police holding cells, short-term detention.",
@@ -93,8 +93,10 @@ OCCUPANCY_DEFS = {
 #   OH2 #1.1.13.3: Animal Housing B (stables, animal sheds, livestock shelter),
 #       Malls Group A (covered malls).
 #   EH2 #1.1.13.5.b: robotic / mechanical parking.
-# Animal Housing A and C are LH; the tool's single animal_housing occupancy takes the
-# highest of its three groups (OH2) until the group is chosen (override in the app).
+# Animal Housing A and C are LH (#1.1.13.1.q, r, p.528), B is OH2 (#1.1.13.3.a, p.529):
+# see ANIMAL_HOUSING_GROUPS. The animal_housing value below (OH2, the highest of the
+# three) is used only where no group is known (a secondary occupancy in R13 mode); the
+# app requires the group for the primary occupancy (owner answer 12.10.2026, Ch9 Q6).
 # Storage / industrial has no default: the app makes the user choose (Table 9.27).
 # HAZARD_NOT_CLASSIFIED lists the occupancies #1.1.13 does not name; their value
 # here is the tool's working default and the app says the designer must select.
@@ -150,7 +152,18 @@ def occupancy_group(occ: str) -> Optional[str]:
     return None
 
 
-def default_hazard(occ: str) -> str:
+# Owner answer 12.10.2026, Ch9 Q6 (phase 3): animal housing split into its three groups.
+# group: (hazard class, #1.1.13 clause, page, examples as printed).
+ANIMAL_HOUSING_GROUPS = {
+    "A": ("LH", "#1.1.13.1.q", "p.528", "Animal Market, Pet Shops, Bird Market, Veterinary Clinic"),
+    "B": ("OH2", "#1.1.13.3.a", "p.529", "Stable, Animal sheds, Livestock Shelter, Slaughter Houses"),
+    "C": ("LH", "#1.1.13.1.r", "p.528", "Zoo"),
+}
+
+
+def default_hazard(occ: str, animal_housing_group: Optional[str] = None) -> str:
+    if occ == "animal_housing" and animal_housing_group in ANIMAL_HOUSING_GROUPS:
+        return ANIMAL_HOUSING_GROUPS[animal_housing_group][0]
     return HAZARD_BY_OCCUPANCY.get(occ, "OH1")
 
 
@@ -209,6 +222,9 @@ class Building(BaseModel):
     ] = "unspecified"
 
     hazard_class: Literal["LH", "OH1", "OH2", "HH"] = "OH1"
+    # Owner answer 12.10.2026, Ch9 Q6: Animal Housing Group A / B / C (#1.1.13). With a
+    # group and no hazard_class given, the hazard is the group's printed class.
+    animal_housing_group: Optional[Literal["A", "B", "C"]] = None
 
     # --- FP (Ch 9) - High Ceiling
     has_high_ceiling: bool = False
@@ -377,6 +393,15 @@ class Building(BaseModel):
         if self.occupancy == "motor_fuel_dispensing":
             return "fuel_dispensing"
         return "general"
+
+    @model_validator(mode="after")
+    def _animal_housing_hazard(self):
+        """Ch 9 #1.1.13 (p.528-529): the chosen animal housing group sets the hazard
+        class unless one was given explicitly (an override)."""
+        if (self.occupancy == "animal_housing" and self.animal_housing_group
+                and "hazard_class" not in self.model_fields_set):
+            self.hazard_class = ANIMAL_HOUSING_GROUPS[self.animal_housing_group][0]
+        return self
 
     @model_validator(mode="after")
     def _height_stated(self):
