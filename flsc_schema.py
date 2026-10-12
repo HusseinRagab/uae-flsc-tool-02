@@ -403,6 +403,11 @@ class Building(BaseModel):
     # is wholly below the fire access level. Ch 9 sprinklers still follow the host table.
     parking_height_m: Optional[float] = Field(None, ge=0)
     parking_basement_levels: Optional[int] = Field(None, ge=0)
+    # Owner ruling 12.10.2026, P3 follow-up F-a3: the attached parking's own depth below
+    # the fire access level (m), at most the building's depth (#1.7.45 p.45: more than 7 m
+    # = high depth). None = not entered: the building's depth is used and the report says
+    # so by name.
+    parking_depth_m: Optional[float] = Field(None, ge=0)
 
     # --- FP (Ch 9) - Motor Fuel Dispensing sub-group (Table 9.25 A/B/C)
     motor_fuel_group: Literal["A", "B", "C"] = "A"
@@ -429,7 +434,10 @@ class Building(BaseModel):
     # Owner ruling 12.10.2026, P3 Ch11 Q3: #2.2.4 cylinders not allowed in new / modified
     # buildings; #2.2.5 Civil Defence approval (p.884). The app stops a cylinder choice for
     # a new or modified building unless the approval is ticked.
-    is_new_or_modified_building: bool = True
+    # Follow-up 12.10.2026 (owner ruling 12.10.2026, P3 follow-up F-a1-1): a REQUIRED
+    # choice with no pre-fill. True = new or modified, False = existing (not modified),
+    # None = not stated: with cylinders the app stops and the #2.2.4 line is NOT EVALUATED.
+    is_new_or_modified_building: Optional[bool] = None
     has_cd_cylinder_approval: bool = False
     # Owner ruling 12.10.2026, P3 Ch11 Q6: #3.2.2 (p.923) no indoor flame effect show in a
     # building that is not fully sprinkler protected. None = not stated.
@@ -467,6 +475,12 @@ class Building(BaseModel):
             raise ValueError(
                 f"Attached parking basement levels ({self.parking_basement_levels}) cannot "
                 f"exceed the building's basements ({self.floors_below_grade}).")
+        # P3 follow-up F-a3: nor its depth the building's depth.
+        if (self.has_parking_area and self.parking_depth_m is not None
+                and self.parking_depth_m > self.depth_below_grade_m):
+            raise ValueError(
+                f"Attached parking depth below the fire access level ({self.parking_depth_m:g} m) "
+                f"cannot exceed the building's depth below grade ({self.depth_below_grade_m:g} m).")
         return self
 
     @model_validator(mode="after")

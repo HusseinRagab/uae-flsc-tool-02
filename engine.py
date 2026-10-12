@@ -389,6 +389,42 @@ def building_sprinklered(b: Building, fp_rules: Optional[Dict[str, Any]] = None)
     return _sprinkler_required(list(gen) + list(branch_items))
 
 
+def _fa_row_automatic_detection(b: Building, fa_rules: Dict[str, Any]) -> bool:
+    """One occupancy: its Table 8.13 row (the Ch 8 branch lines) requires an automatic
+    detection system. Enclosed parking (item 22, p.506, open parking by analogy, ruling
+    R10): fully sprinklered = no fire detectors, a Manual Fire Detection and Alarm System
+    (items i-ii); not sprinklered = a Heat Detection and Alarm System (item iii)."""
+    for it in _collect_branch(fa_rules.get("branches", []), b)[0]:
+        if it.status != "required":
+            continue
+        name = (it.system or "").lower()
+        if name.startswith("conditional fa system"):
+            if not building_sprinklered(b):
+                return True
+        elif ("detection" in name or "aspiration" in name) and "manual" not in name:
+            return True
+    return False
+
+
+def fa_automatic_detection_required(b: Building, fa_rules: Optional[Dict[str, Any]] = None) -> bool:
+    """Ch 8 result read-only (no FA line is changed): the building's Table 8.13 row
+    requires an automatic fire detection and alarm system. Not required for a plant
+    nursery (item 28, p.508) or a sprinklered enclosed / open parking (item 22 i-ii,
+    p.506). Under ruling R13 most restrictive, any listed occupancy that requires it
+    counts. Used by the Ch 11 #3.2.2 flame-effect stop (owner ruling 12.10.2026, P3
+    follow-up F-a1-3)."""
+    rules = fa_rules if fa_rules is not None else load_rules("ch8_fire_alarm.yaml")
+    if not rules:
+        return False
+    occs = [b.occupancy]
+    if b.mixed_occupancy_mode == "most_restrictive":
+        occs += [o for o in dict.fromkeys(b.secondary_occupancies) if o != b.occupancy]
+    return any(_fa_row_automatic_detection(
+        b if o == b.occupancy else b.model_copy(update={
+            "occupancy": o, "secondary_occupancies": [], "mixed_occupancy_mode": "none"}),
+        rules) for o in occs)
+
+
 def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeilingSpec]:
     hc = rules.get("high_ceiling")
     if not hc: return None
@@ -800,6 +836,21 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         blocks.append(SectionBlock(title="EL - General Specs + Coverage Locations (Ch 6, Tables 6.1 + 6.6)", items=gen))
 
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    # Owner ruling 12.10.2026, P3 follow-up F-a2: a Business / Mercantile Group C
+    # stand-alone building with the amusement box ticked takes Table 6.5 item 4; item 11
+    # / 12 (stand-alone) is not applied (the YAML rows already exclude it).
+    group_c = ((b.occupancy == "business" and b.is_business_group_c)
+               or (b.occupancy in ("mercantile_a", "mercantile_b") and b.is_mercantile_group_c))
+    if group_c and b.has_amusement_confounding:
+        item = "11" if b.occupancy == "business" else "12"
+        kind = "Business" if b.occupancy == "business" else "Mercantile"
+        note = (f" {kind} Group C (stand-alone) is also ticked: Table 6.5 item 4 AMUSEMENT "
+                f"BUILDINGS governs and item {item} (stand-alone self-contained, Section 3.4) is "
+                f"not applied (owner ruling 12.10.2026, P3 follow-up F-a2).")
+        branch_items = [it.model_copy(update={"detail": (it.detail or "") + note})
+                        if it.source_rule == "el_amusement_standalone"
+                        and it.system.startswith("Central Battery") else it
+                        for it in branch_items]
     if branch_items:
         blocks.append(SectionBlock(title="EL - System Type Selection (Ch 6, Table 6.5)", items=_dedupe(branch_items)))
 
@@ -857,25 +908,64 @@ def evaluate_sc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     )
 
 
-def lpg_input_stops(b: Building) -> List[str]:
-    """Input combinations Ch 11 prohibits outright; the app stops on each (st.error +
-    st.stop) and the LPG report line states the same prohibition.
-    Owner rulings 12.10.2026, P3 Ch11 Q3 (#2.2.4-#2.2.5, p.884) and Q6 (#3.2.2, p.923)."""
+def _flame_show_missing(b: Building) -> List[str]:
+    """The #3.2.2 (p.923) conditions for an indoor flame effect show that this building
+    does not meet, by name: fully sprinkler protected (Ch 9 result) and provided with an
+    automatic fire detection and alarm system (Ch 8 result; owner ruling 12.10.2026, P3
+    follow-up F-a1-3)."""
     out = []
-    if b.has_gas_cylinders_villa and b.is_new_or_modified_building and not b.has_cd_cylinder_approval:
+    if not building_sprinklered(b):
+        out.append("it is not fully sprinkler protected per its Ch 9 result")
+    if not fa_automatic_detection_required(b):
+        fa_rules = load_rules("ch8_fire_alarm.yaml") or {}
+        row = _collect_branch(fa_rules.get("branches", []), b)[1]
+        why = {
+            "fa_nursery_plants": ("Table 8.13 item 28, p.508: 'Fire Detection and Alarm System "
+                                  "shall not be required'"),
+            "fa_parking_enclosed": ("Table 8.13 item 22 i-ii, p.506: no fire detectors in a "
+                                    "parking fully provided with automatic sprinklers, a Manual "
+                                    "Fire Detection and Alarm System only"),
+            "fa_parking_open": ("Table 8.13 item 22 i-ii, p.506, applied by analogy under "
+                                "ruling R10: no fire detectors in a parking fully provided with "
+                                "automatic sprinklers, a Manual Fire Detection and Alarm "
+                                "System only"),
+        }.get(row)
+        out.append("its Ch 8 result does not require an automatic fire detection and alarm "
+                   "system" + (f" ({why})" if why else ""))
+    return out
+
+
+def lpg_input_stops(b: Building) -> List[str]:
+    """Input combinations Ch 11 prohibits outright, or a required input left blank; the
+    app stops on each (st.error + st.stop) and the LPG report line states the same.
+    Owner rulings 12.10.2026, P3 Ch11 Q3 (#2.2.4-#2.2.5, p.884) and Q6 (#3.2.2, p.923);
+    P3 follow-ups F-a1-1 (new or modified building is a required choice) and F-a1-3
+    (#3.2.2 also needs automatic fire detection and alarm)."""
+    out = []
+    if b.has_gas_cylinders_villa and b.is_new_or_modified_building is None:
+        out.append("Choose 'New or modified building' or 'Existing building' under Gas "
+                   "cylinders: cylinder type LPG installations in all new and modified "
+                   "buildings are not allowed (Ch 11 #2.2.4, p.884) and permission to install "
+                   "LPG cylinders is strictly subject to Civil Defence approval (#2.2.5), so "
+                   "the tool does not assume either (owner ruling 12.10.2026, P3 follow-up "
+                   "F-a1-1).")
+    elif (b.has_gas_cylinders_villa and b.is_new_or_modified_building
+            and not b.has_cd_cylinder_approval):
         out.append("Cylinder type LPG installations in all new and modified buildings are not "
                    "allowed (Ch 11 #2.2.4, p.884); permission to install LPG cylinders is "
                    "strictly subject to Civil Defence approval based on site and building "
-                   "inspection (#2.2.5). Choose a centralized LPG system, untick 'New or "
-                   "modified building' for an existing building, or tick 'Civil Defence "
-                   "approval obtained (#2.2.5)' (owner ruling 12.10.2026, P3 Ch11 Q3).")
-    if (b.has_lpg_flame_effect and b.lpg_flame_effect_show in ("indoor", "both")
-            and not building_sprinklered(b)):
-        out.append("No indoor flame effect show shall be allowed if the building is not fully "
-                   "sprinkler protected and provided with an automatic fire detection and alarm "
-                   "system (Ch 11 #3.2.2, p.923). This building is not sprinkler protected per "
-                   "its Ch 9 result: choose an outdoor show, or a building that is sprinkler "
-                   "protected (owner ruling 12.10.2026, P3 Ch11 Q6).")
+                   "inspection (#2.2.5). Choose a centralized LPG system, choose 'Existing "
+                   "building' for an existing building that is not modified, or tick 'Civil "
+                   "Defence approval obtained (#2.2.5)' (owner ruling 12.10.2026, P3 Ch11 Q3).")
+    if b.has_lpg_flame_effect and b.lpg_flame_effect_show in ("indoor", "both"):
+        missing = _flame_show_missing(b)
+        if missing:
+            out.append("No indoor flame effect show shall be allowed if the building is not "
+                       "fully sprinkler protected and provided with automatic fire detection "
+                       "and alarm system (Ch 11 #3.2.2, p.923). This building does not meet "
+                       "it: " + "; and ".join(missing) + ". Choose an outdoor show, or a "
+                       "building that meets both conditions (owner ruling 12.10.2026, P3 "
+                       "Ch11 Q6 and follow-up F-a1-3).")
     return out
 
 
@@ -893,7 +983,11 @@ def evaluate_lpg(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     if b.has_gas_cylinders_villa and branch_items:
         # Owner ruling 12.10.2026, P3 Ch11 Q3: #2.2.4-#2.2.5 (p.884) per the new / modified
         # building and Civil Defence approval inputs.
-        if b.is_new_or_modified_building and not b.has_cd_cylinder_approval:
+        if b.is_new_or_modified_building is None:
+            pre = ("NOT EVALUATED: 'New or modified building' / 'Existing building' is not "
+                   "chosen, so whether #2.2.4 (new and modified buildings) applies is not "
+                   "evaluated; choose one (owner ruling 12.10.2026, P3 follow-up F-a1-1). ")
+        elif b.is_new_or_modified_building and not b.has_cd_cylinder_approval:
             pre = ("This building is entered as new or modified with no Civil Defence approval "
                    "recorded: a cylinder type LPG installation is NOT allowed (#2.2.4); provide "
                    "a centralized LPG system, or record the Civil Defence approval (#2.2.5). ")
@@ -923,17 +1017,20 @@ def evaluate_lpg(b: Building, rules: Dict[str, Any]) -> ChapterReport:
             upd = {"status": "not_required",
                    "detail": ("Outdoor show only: #3.2.2 applies to indoor flame effect shows "
                               "(owner ruling 12.10.2026, P3 Ch11 Q6).")}
-        elif not building_sprinklered(b):
+        elif _flame_show_missing(b):
+            # P3 follow-up F-a1-3: #3.2.2 needs BOTH full sprinkler protection (Ch 9) and
+            # automatic fire detection and alarm (Ch 8); each missing one is named.
+            why = "; and ".join(_flame_show_missing(b))
             if show in ("indoor", "both"):
-                upd = {"detail": ("An indoor show is entered and this building is not sprinkler "
-                                  "protected per the Ch 9 result above: the indoor flame effect "
-                                  "show is NOT allowed (#3.2.2, p.923; owner ruling 12.10.2026, "
-                                  "P3 Ch11 Q6).")}
+                upd = {"detail": (f"An indoor show is entered and this building does not meet "
+                                  f"#3.2.2: {why}. The indoor flame effect show is NOT allowed "
+                                  f"(#3.2.2, p.923; owner ruling 12.10.2026, P3 Ch11 Q6 and "
+                                  f"follow-up F-a1-3).")}
             else:
-                upd = {"detail": ("This building is not sprinkler protected per the Ch 9 result "
-                                  "above, so an indoor flame effect show is NOT allowed here "
-                                  "(#3.2.2); outdoor shows only. State whether the show is "
-                                  "indoor or outdoor in the gas systems inputs.")}
+                upd = {"detail": (f"This building does not meet #3.2.2: {why}. An indoor flame "
+                                  f"effect show is NOT allowed here (#3.2.2, p.923); outdoor "
+                                  f"shows only. State whether the show is indoor or outdoor in "
+                                  f"the gas systems inputs.")}
         if upd:
             addons = [it.model_copy(update=upd)
                       if it.system.startswith("Indoor Flame Effect Shows") else it for it in addons]
@@ -1108,6 +1205,31 @@ def _with_host_sprinklers(ch: ChapterReport, host: Requirement) -> ChapterReport
     return ch.model_copy(update={"blocks": blocks})
 
 
+def _parking_depth(b: Building) -> float:
+    """P3 follow-up F-a3: the attached parking's own depth below the fire access level;
+    blank = the building's depth (the report says so by name)."""
+    return b.depth_below_grade_m if b.parking_depth_m is None else b.parking_depth_m
+
+
+def _parking_depth_note(b: Building) -> ChapterReport:
+    """P3 follow-up F-a3: a blank parking depth is named, with the depth used."""
+    return ChapterReport(
+        chapter_code="PARK", chapter_title="Attached parking inputs",
+        blocks=[SectionBlock(title="Attached parking - inputs used", items=[Requirement(
+            system="Parking depth not entered: building depth used",
+            status="conditional",
+            spec=(f"Parking depth below the fire access level taken as the building's depth "
+                  f"below grade, {b.depth_below_grade_m:g} m"),
+            detail=("The attached parking's own depth below the fire access level was not "
+                    "entered, so its basement lines use the building's depth (owner ruling "
+                    "12.10.2026, P3 follow-up F-a3). High depth is more than 7 m below or more "
+                    "than two basements below the level of exit discharge (Ch 1 #1.7.45, "
+                    "p.45). Enter the parking depth when the parking does not reach the "
+                    "building's lowest level."),
+            code_ref="Ch 1, #1.7.45", page_ref="p.45",
+            source_rule="owner_ruling_p3_f_a3")])])
+
+
 def _attached_parking_run(b: Building, height: float, levels: int) -> List[ChapterReport]:
     """One sub-evaluation of the attached parking at the given own height and levels."""
     synth_occ = "parking_open" if b.attached_parking_kind == "open" else "parking_enclosed"
@@ -1124,7 +1246,7 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         has_water_reactive_materials=False,
     )
     # P3 App Q2: the parking's own height (0 m = wholly below the fire access level) and
-    # basement levels; its basements reach the building's depth below grade.
+    # basement levels; P3 follow-up F-a3: its own depth (blank = the building's depth).
     geo = {"height_m": height} if height > 0 else {}
     synth = Building(
         **flags, **geo,
@@ -1132,7 +1254,7 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         occupancy=synth_occ,
         floors_above_grade=b.floors_above_grade,
         floors_below_grade=levels,
-        depth_below_grade_m=b.depth_below_grade_m if levels > 0 else 0.0,
+        depth_below_grade_m=_parking_depth(b) if levels > 0 else 0.0,
         gross_floor_area_m2=parking_area,
         ground_floor_bua_m2=parking_area,
         basement_bua_m2=parking_area if levels > 0 else 0.0,
@@ -1236,6 +1358,8 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
     default. Owner ruling 12.10.2026, P3 App Q2: the parking's own height above the fire
     access level and its basement levels are used (never the tower's); a blank one leaves
     the lines keyed on it NOT EVALUATED by name; Ch 9 sprinklers follow the host table.
+    P3 follow-up F-a3: the parking's own depth below the fire access level; blank = the
+    building's depth, named in a PARK note line.
     """
     if b.parking_area_m2 <= 0:
         return [_parking_area_not_evaluated()]
@@ -1248,12 +1372,16 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
               else list(_PARK_PROBE_LEVELS))
     runs = []
     for lv in levels:
-        depth = b.depth_below_grade_m if lv > 0 and not b.pump_room_at_grade else 0.0
+        depth = _parking_depth(b) if lv > 0 and not b.pump_room_at_grade else 0.0
         hs = [b.parking_height_m] if b.parking_height_m is not None else _park_probe_heights(depth)
         runs += [_attached_parking_run(b, h, lv) for h in hs]
-    if len(runs) == 1:
-        return runs[0]
-    return _probe_not_evaluated(runs, missing)
+    out = runs[0] if len(runs) == 1 else _probe_not_evaluated(runs, missing)
+    # P3 follow-up F-a3: the depth is used only where the parking has (or may have)
+    # basement levels, in a building that has basements.
+    if (b.parking_depth_m is None and b.parking_basement_levels != 0
+            and b.floors_below_grade > 0):
+        out = [_parking_depth_note(b)] + list(out)
+    return out
 
 
 # ---------------------------- Empty-chapter explanatory note -----------------

@@ -242,7 +242,8 @@ branches:
   # height row (items 5-6) is not printed. At 23 m or more the height rows (items 1-2)
   # govern and no item 11 / 12 line is printed. Unticked below 23 m: the height row
   # governs and item 11 / 12 is shown as a conditional prompt. An amusement building
-  # (item 4) keeps item 4 (open point in the a2 report).
+  # (item 4) keeps item 4 (owner ruling 12.10.2026, P3 follow-up F-a2; engine
+  # evaluate_el cites it on the item 4 line).
   - id: el_business_group_c
     match:
       occupancy: business

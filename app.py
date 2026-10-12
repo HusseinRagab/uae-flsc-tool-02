@@ -185,6 +185,8 @@ _SCENARIO_LIMITS = {
     # Owner ruling 12.10.2026, P3 App Q2 (blank allowed: not entered)
     "parking_height_m_input": ("Parking height above the fire access level", 0.0, False),
     "parking_basement_levels_input": ("Parking basement levels", 0, True),
+    # Owner ruling 12.10.2026, P3 follow-up F-a3 (blank allowed: building depth used)
+    "parking_depth_m_input": ("Parking depth below the fire access level", 0.0, False),
     "ceiling_height_m_input": ("Ceiling height", 0.0, False),
     "corridor_length_m": ("Corridor length", 0.0, False),
     "assembly_area_m2_input": ("Assembly-hall area", 0.0, False),
@@ -329,6 +331,8 @@ def _invalid_scenario_values(data: dict) -> list:
         "theater_cinema_kind_input": ("Theatre / cinema kind", (None, "cinema", "theatre", "both")),
         # Owner ruling 12.10.2026, P3 Ch11 Q6: #3.2.2
         "lpg_flame_effect_show_input": ("Flame effect show", (None, "indoor", "outdoor", "both")),
+        # Owner ruling 12.10.2026, P3 follow-up F-a1-1: #2.2.4, required, no pre-fill
+        "new_or_modified_building_input": ("New or modified building", (None, "new", "existing")),
     }
     # Ch3 Q2 per-use areas (owner ruling 12.10.2026): known Table 3.13 rows, at most
     # as many rows as the sidebar offers.
@@ -466,8 +470,8 @@ FIRST_LOAD_DEFAULTS = {
     "gfa_input": 8000.0,
     "plot_area_input": 4000.0,
     "depth_below_grade_input": 0.0,
-    # Owner ruling 12.10.2026, P3 Ch11 Q3: a building is taken as new unless unticked.
-    "is_new_or_modified_building": True,
+    # Owner ruling 12.10.2026, P3 follow-up F-a1-1: "New or modified building" is a
+    # required choice with no pre-fill (new_or_modified_building_input starts blank).
 }
 for key, default in FIRST_LOAD_DEFAULTS.items():
     st.session_state.setdefault(key, default)
@@ -888,6 +892,7 @@ with st.sidebar:
             # Parking
             "has_parking_area", "attached_parking_kind_radio", "parking_area_m2_input",
             "parking_height_m_input", "parking_basement_levels_input",   # P3 App Q2
+            "parking_depth_m_input",                                     # P3 F-a3
             # Special rooms / various / equipment / FE / ES / Gas / FP / SC
             *SPECIAL_ROOMS_KEYS, *VARIOUS_LOCATIONS_KEYS, *EQUIPMENT_KEYS,
             *FE_KEYS, *ES_FEATURE_KEYS, *ES_ZONE_KEYS,
@@ -897,7 +902,8 @@ with st.sidebar:
             "has_lpg_tank_roof_mounted", "has_lpg_tank_underground_mounded",
             "has_lpg_cylinders_indoor", "has_lpg_cylinders_food_truck", "has_lpg_flame_effect",
             # Owner rulings 12.10.2026, P3 Ch11 Q3, Q4, Q6
-            "has_lpg_tank_at_grade", "is_new_or_modified_building", "has_cd_cylinder_approval",
+            # P3 follow-up F-a1-1: the choice replaced the "is_new_or_modified_building" box
+            "has_lpg_tank_at_grade", "new_or_modified_building_input", "has_cd_cylinder_approval",
             "lpg_flame_effect_show_input",
             "wet_riser_radio", "motor_fuel_group_radio",
             "is_single_tenant_storage", "is_idle_pallet_storage",
@@ -1394,11 +1400,22 @@ with st.sidebar:
                 st.caption("Enter the parking height and basement levels: until then the "
                            "parking lines that depend on them are NOT EVALUATED (the tower "
                            "height is not used).")
+            # Owner ruling 12.10.2026, P3 follow-up F-a3: the parking's own depth.
+            parking_depth_m_val = st.number_input(
+                "Parking depth below the fire access level (m)",
+                min_value=0.0, value=None, step=0.5, key="parking_depth_m_input",
+                placeholder="Blank: the building's depth is used",
+                help="Depth of the parking's lowest level below the fire access level, at "
+                     "most the building's depth below grade. More than 7 m is high depth "
+                     "(Ch 1 #1.7.45, p.45). Used where the parking has basement levels. "
+                     "Blank: the building's depth is used and the report says so (owner "
+                     "ruling 12.10.2026, P3 follow-up F-a3).")
         else:
             attached_parking_kind_val = "enclosed"
             parking_area_m2_val = 0.0
             parking_height_m_val = None
             parking_basement_levels_val = None
+            parking_depth_m_val = None
         st.markdown("---")
         st.markdown("**Special rooms checklist**")
         st.checkbox("Check all", key="rooms_all", on_change=rooms_cb)
@@ -1506,9 +1523,18 @@ with st.sidebar:
             st.checkbox("Indoor cylinder room (Table 11.2)",
                         key="has_lpg_cylinders_indoor",
                         help="Table 11.2: indoor cylinders only for residential / apartments / villas where Civil Defence permits (#2.4.2.1). Ventilated masonry compartment on an external wall, 1 x 24 kg, no ignition source within 1.5 m, detector at most 30 cm above floor.")
-            st.checkbox("New or modified building",
-                        key="is_new_or_modified_building",
-                        help="Cylinder type LPG installations in all new and modified buildings are not allowed (Ch 11 #2.2.4, p.884). Untick only for an existing building that is not modified. A new or modified building stops here unless the Civil Defence approval below is ticked (owner ruling 12.10.2026, P3 Ch11 Q3).")
+            st.selectbox(
+                "New or modified building",
+                options=[None, "new", "existing"],
+                format_func=lambda v: {None: "Not chosen (required)",
+                                       "new": "New or modified building",
+                                       "existing": "Existing building (not modified)"}[v],
+                key="new_or_modified_building_input",
+                help="Required, no default. Cylinder type LPG installations in all new and "
+                     "modified buildings are not allowed (Ch 11 #2.2.4, p.884). A new or "
+                     "modified building stops here unless the Civil Defence approval below is "
+                     "ticked; with no choice the tool stops until one is made (owner rulings "
+                     "12.10.2026, P3 Ch11 Q3 and follow-up F-a1-1).")
             st.checkbox("Civil Defence approval obtained (#2.2.5)",
                         key="has_cd_cylinder_approval",
                         help="Permission to install LPG cylinders is strictly subject to approval of Civil Defence based on site and building inspection (Ch 11 #2.2.5, p.884). Tick only when that approval is held.")
@@ -1760,6 +1786,14 @@ if (st.session_state.get("has_parking_area") and parking_basement_levels_val is 
     st.error(f"Attached parking basement levels ({int(parking_basement_levels_val)}) cannot "
              f"exceed the building's basements ({int(floors_below)}): the parking is in the "
              "building (owner ruling 12.10.2026, P3 App Q2). Correct either input.")
+    st.stop()
+# Owner ruling 12.10.2026, P3 follow-up F-a3: nor its depth the building's depth.
+if (st.session_state.get("has_parking_area") and parking_depth_m_val is not None
+        and float(parking_depth_m_val) > float(depth_below_grade)):
+    st.error(f"Attached parking depth below the fire access level ({float(parking_depth_m_val):g} m) "
+             f"cannot exceed the building's depth below grade ({float(depth_below_grade):g} m): "
+             "the parking is in the building (owner ruling 12.10.2026, P3 follow-up F-a3). "
+             "Correct either input.")
     st.stop()
 
 # ---------- Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9) ------------------
@@ -2131,7 +2165,10 @@ building = Building(
     has_lpg_flame_effect=gs("has_lpg_flame_effect"),
     # Owner rulings 12.10.2026, P3 Ch11 Q3, Q4, Q6
     has_lpg_tank_at_grade=gs("has_lpg_tank_at_grade") and gs("has_lpg_tanks"),
-    is_new_or_modified_building=bool(st.session_state.get("is_new_or_modified_building", True)),
+    # P3 follow-up F-a1-1: None = not chosen (the app stops below for cylinders)
+    is_new_or_modified_building=({"new": True, "existing": False}.get(
+        st.session_state.get("new_or_modified_building_input"))
+        if gs("has_gas_cylinders_villa") else None),
     has_cd_cylinder_approval=gs("has_cd_cylinder_approval") and gs("has_gas_cylinders_villa"),
     lpg_flame_effect_show=(st.session_state.get("lpg_flame_effect_show_input")
                            if gs("has_lpg_flame_effect") else None),
@@ -2160,6 +2197,8 @@ building = Building(
     parking_height_m=None if parking_height_m_val is None else float(parking_height_m_val),
     parking_basement_levels=(None if parking_basement_levels_val is None
                              else int(parking_basement_levels_val)),
+    # Owner ruling 12.10.2026, P3 follow-up F-a3 (None = building depth used, named)
+    parking_depth_m=None if parking_depth_m_val is None else float(parking_depth_m_val),
     # ES chapter-specific
     has_evacuation_elevator=gs("has_evacuation_elevator"),
     has_horizontal_exits=gs("has_horizontal_exits"),
