@@ -21,6 +21,16 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
             page_ref="p.1090",
             source_rule="acc_villa",
         ))
+        # Owner ruling 12.10.2026, P3 Ch11 Q2: conditional until the scope page is read.
+        items.append(Requirement(
+            system="Foldable wheelchairs (minimum 2)",
+            status="conditional",
+            spec="Foldable wheelchairs provided in every facility, stored in an easily accessible location; minimum of 2 in all occupancies (#5.2.8)",
+            detail="Villa: conditional. #5.2.8 (p.1119) reads 'minimum of 2 such wheel chairs shall be available in all occupancies'; the Ch 15 scope page (#2.2, p.1090) is not yet read, so whether private / commercial villas fall in scope is not confirmed (owner ruling 12.10.2026, P3 Ch11 Q2).",
+            code_ref="Ch 15, #5.2.8",
+            page_ref="p.1119",
+            source_rule="acc_wheelchairs",
+        ))
     else:
         items.extend([
             Requirement(

@@ -400,6 +400,18 @@ class Building(BaseModel):
     has_lpg_cylinders_indoor: bool = False         # Indoor cylinder room (Table 11.2)
     has_lpg_cylinders_food_truck: bool = False     # Food truck LPG (Table 11.3)
     has_lpg_flame_effect: bool = False             # Flame-effect shows in front of audience (Table 11.12)
+    # Owner ruling 12.10.2026, P3 Ch11 Q4: tanks above ground at grade beside roof /
+    # underground tanks (Table 11.5, p.906). With neither roof nor underground ticked the
+    # tanks are taken at grade, as before.
+    has_lpg_tank_at_grade: bool = False
+    # Owner ruling 12.10.2026, P3 Ch11 Q3: #2.2.4 cylinders not allowed in new / modified
+    # buildings; #2.2.5 Civil Defence approval (p.884). The app stops a cylinder choice for
+    # a new or modified building unless the approval is ticked.
+    is_new_or_modified_building: bool = True
+    has_cd_cylinder_approval: bool = False
+    # Owner ruling 12.10.2026, P3 Ch11 Q6: #3.2.2 (p.923) no indoor flame effect show in a
+    # building that is not fully sprinkler protected. None = not stated.
+    lpg_flame_effect_show: Optional[Literal["indoor", "outdoor", "both"]] = None
 
     @property
     def building_category(self) -> str:
@@ -525,9 +537,13 @@ class Building(BaseModel):
         'Highrise' with 23 m or more in height, 'High Depth' with more than 2
         basements, Malls and multi storey Amusement Parks. One trigger for the FSA
         Fire Lift line and the Ch 10 'NOT mandatory' line (owner ruling 12.10.2026,
-        Ch3 Q9)."""
+        Ch3 Q9). The high-depth underground occupancy (Ch 1 #1.7.45, p.45) counts as
+        'High Depth' with no basement count entered (owner ruling 12.10.2026, P3 Ch10 Q4),
+        matching the Ch 10 lift line."""
         hits = (("highrise of 23 m or more", self.height_m >= 23),
                 ("high depth with more than 2 basements", self.floors_below_grade > 2),
+                ("high depth underground (Ch 1 #1.7.45)",
+                 self.occupancy == "high_depth_underground" and self.floors_below_grade <= 2),
                 ("mall", self.occupancy in ("mall_covered", "mall_open", "mall_mixed")),
                 ("multi storey amusement park", self.is_theme_park and self.floors_above_grade > 1))
         return [why for why, hit in hits if hit]

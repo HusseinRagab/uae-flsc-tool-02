@@ -26,7 +26,7 @@ import yaml as _yaml
 
 from flsc_schema import (Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER,
                          HAZARD_NOT_CLASSIFIED, ANIMAL_HOUSING_GROUPS)
-from engine import evaluate, report_to_markdown, build_rule_lookup
+from engine import evaluate, report_to_markdown, build_rule_lookup, lpg_input_stops
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
 from submission_checklist import build_submission_checklist
@@ -297,6 +297,8 @@ def _invalid_scenario_values(data: dict) -> list:
             None, "LH", "OH1", "OH2", "HH", "EH2")),
         # Phase 3 CH10-16: Table 10.27 item 8 / item 14
         "theater_cinema_kind_input": ("Theatre / cinema kind", (None, "cinema", "theatre", "both")),
+        # Owner ruling 12.10.2026, P3 Ch11 Q6: #3.2.2
+        "lpg_flame_effect_show_input": ("Flame effect show", (None, "indoor", "outdoor", "both")),
     }
     # Ch3 Q2 per-use areas (owner ruling 12.10.2026): known Table 3.13 rows, at most
     # as many rows as the sidebar offers.
@@ -425,6 +427,8 @@ FIRST_LOAD_DEFAULTS = {
     "gfa_input": 8000.0,
     "plot_area_input": 4000.0,
     "depth_below_grade_input": 0.0,
+    # Owner ruling 12.10.2026, P3 Ch11 Q3: a building is taken as new unless unticked.
+    "is_new_or_modified_building": True,
 }
 for key, default in FIRST_LOAD_DEFAULTS.items():
     st.session_state.setdefault(key, default)
@@ -840,6 +844,9 @@ with st.sidebar:
             "gas_system_radio",
             "has_lpg_tank_roof_mounted", "has_lpg_tank_underground_mounded",
             "has_lpg_cylinders_indoor", "has_lpg_cylinders_food_truck", "has_lpg_flame_effect",
+            # Owner rulings 12.10.2026, P3 Ch11 Q3, Q4, Q6
+            "has_lpg_tank_at_grade", "is_new_or_modified_building", "has_cd_cylinder_approval",
+            "lpg_flame_effect_show_input",
             "wet_riser_radio", "motor_fuel_group_radio",
             "is_single_tenant_storage", "is_idle_pallet_storage",
             "is_cold_storage", "is_aircraft_hanger",
@@ -1379,17 +1386,28 @@ with st.sidebar:
             st.checkbox("Underground / mounded tank (Tables 11.9/11.10)",
                         key="has_lpg_tank_underground_mounded",
                         help="Different rule set: ASME container, cathodic protection, separation measured from PRV / fill connections (not tank surface). ASME-listed containers may qualify for separation reduction per Table 11.10.b.")
+            st.checkbox("Aboveground at-grade LPG tanks (Table 11.5)",
+                        key="has_lpg_tank_at_grade",
+                        help="Tick when the project also has tanks above ground at grade beside roof or underground tanks: the Table 11.5 items (72,000 Gal per location, Table 11.6.a separations, fixed water spray) then print as required. With neither roof nor underground ticked, the tanks are taken at grade (owner ruling 12.10.2026, P3 Ch11 Q4).")
         else:
             st.session_state["has_lpg_tank_roof_mounted"] = False
             st.session_state["has_lpg_tank_underground_mounded"] = False
+            st.session_state["has_lpg_tank_at_grade"] = False
 
         if gas_choice.startswith("Gas cylinders"):
             st.markdown("*Cylinder variants (tick all that apply):*")
             st.checkbox("Indoor cylinder room (Table 11.2)",
                         key="has_lpg_cylinders_indoor",
                         help="Table 11.2: indoor cylinders only for residential / apartments / villas where Civil Defence permits (#2.4.2.1). Ventilated masonry compartment on an external wall, 1 x 24 kg, no ignition source within 1.5 m, detector at most 30 cm above floor.")
+            st.checkbox("New or modified building",
+                        key="is_new_or_modified_building",
+                        help="Cylinder type LPG installations in all new and modified buildings are not allowed (Ch 11 #2.2.4, p.884). Untick only for an existing building that is not modified. A new or modified building stops here unless the Civil Defence approval below is ticked (owner ruling 12.10.2026, P3 Ch11 Q3).")
+            st.checkbox("Civil Defence approval obtained (#2.2.5)",
+                        key="has_cd_cylinder_approval",
+                        help="Permission to install LPG cylinders is strictly subject to approval of Civil Defence based on site and building inspection (Ch 11 #2.2.5, p.884). Tick only when that approval is held.")
         else:
             st.session_state["has_lpg_cylinders_indoor"] = False
+            st.session_state["has_cd_cylinder_approval"] = False
 
         # Food truck is independent from the radio (mobile food truck is a separate scenario)
         st.markdown("*Food truck (independent option):*")
@@ -1400,6 +1418,19 @@ with st.sidebar:
         st.checkbox("Flame-effect LPG installation (Table 11.12)",
                     key="has_lpg_flame_effect",
                     help="LPG used for indoor / outdoor flame-effect shows (Ch 11 #3, Table 11.12): cylinders 6 m from the audience and stage, no piping within 3 m of the audience, 24 kg maximum indoors, indoor shows only in fully sprinklered buildings with fire alarm (#3.2.2).")
+        if st.session_state.get("has_lpg_flame_effect"):
+            st.selectbox(
+                "Indoor / outdoor show",
+                options=[None, "indoor", "outdoor", "both"],
+                format_func=lambda v: {None: "Not stated", "indoor": "Indoor show",
+                                       "outdoor": "Outdoor show",
+                                       "both": "Indoor and outdoor shows"}[v],
+                key="lpg_flame_effect_show_input",
+                help="No indoor flame effect show shall be allowed if the building is not fully "
+                     "sprinkler protected and provided with automatic fire detection and alarm "
+                     "(Ch 11 #3.2.2, p.923). An indoor show in a building that is not sprinkler "
+                     "protected stops here (owner ruling 12.10.2026, P3 Ch11 Q6).",
+            )
 
     with st.expander("⚙️ Equipment (FP Table 9.31 + FA Table 8.15)", expanded=False):
         st.checkbox("Check all", key="eq_all", on_change=eq_cb)
@@ -1943,6 +1974,12 @@ building = Building(
     has_lpg_cylinders_indoor=gs("has_lpg_cylinders_indoor"),
     has_lpg_cylinders_food_truck=gs("has_lpg_cylinders_food_truck"),
     has_lpg_flame_effect=gs("has_lpg_flame_effect"),
+    # Owner rulings 12.10.2026, P3 Ch11 Q3, Q4, Q6
+    has_lpg_tank_at_grade=gs("has_lpg_tank_at_grade") and gs("has_lpg_tanks"),
+    is_new_or_modified_building=bool(st.session_state.get("is_new_or_modified_building", True)),
+    has_cd_cylinder_approval=gs("has_cd_cylinder_approval") and gs("has_gas_cylinders_villa"),
+    lpg_flame_effect_show=(st.session_state.get("lpg_flame_effect_show_input")
+                           if gs("has_lpg_flame_effect") else None),
     has_flammable_liquid_tanks=gs("has_flammable_liquid_tanks"),
     has_cable_spread_areas=gs("has_cable_spread_areas"),
     has_boilers=gs("has_boilers"),
@@ -2018,6 +2055,13 @@ building = Building(
 )
 # Read back by tests (round trip of every input, audit ENG-23); not saved.
 st.session_state["_building_json"] = building.model_dump_json()
+
+# ---------- Ch 11 prohibitions (owner rulings 12.10.2026, P3 Ch11 Q3 and Q6) ----
+_lpg_stops = lpg_input_stops(building)
+if _lpg_stops:
+    for _msg in _lpg_stops:
+        st.error(_msg)
+    st.stop()
 report = _cached_evaluate(building.model_dump_json())
 
 
@@ -2232,6 +2276,7 @@ def _ticked_chips(building_obj: Building) -> str:
         "has_lpg_cylinders_indoor": "LPG indoor cyl",
         "has_lpg_cylinders_food_truck": "Food-truck LPG",
         "has_lpg_flame_effect": "Flame-effect LPG",
+        "has_lpg_tank_at_grade": "LPG at-grade tank",
         # ES feature/zone
         "has_evacuation_elevator": "Evac. elevator",
         "has_horizontal_exits": "Horizontal exits",

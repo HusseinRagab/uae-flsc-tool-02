@@ -70,12 +70,16 @@ general:
 
 # ---------- BRANCHES: by gas-system type --------------------------------
 branches:
-  # ----- Aboveground LPG Tank at grade (Table 11.5); roof / underground variants have their own tables
+  # ----- Aboveground LPG Tank at grade (Table 11.5); roof / underground variants have their own tables.
+  # Owner ruling 12.10.2026, P3 Ch11 Q4: the at-grade items print when "Aboveground at-grade
+  # LPG tanks" is ticked, or when neither roof nor underground is ticked (the plain "LPG tanks"
+  # choice stays at grade, unchanged).
   - id: lpg_aboveground_tank
     match:
       has_lpg_tanks_is: true
-      has_lpg_tank_roof_mounted_is: false
-      has_lpg_tank_underground_mounded_is: false
+      any_of:
+        - {has_lpg_tank_at_grade_is: true}
+        - {has_lpg_tank_roof_mounted_is: false, has_lpg_tank_underground_mounded_is: false}
     section: "Ch 11, #2.5.3 / Table 11.5 + Tables 11.6.a-d"
     page: "p.905-907"
     systems:
@@ -114,22 +118,24 @@ branches:
         page_ref: "p.906"
         detail: "Fixed water spray system on every aboveground LPG tank, fed from the fire pump and water tank of the building it serves (item 5.i); where none is available, a dry-type water spray ring with open nozzles connected to a Civil Defence breeching inlet (item 5.ii). Design per Chapter 9. Ch 9 Table 9.31.B iii (p.756) prints a 6 m proximity clause that conflicts; ruling R5 (12.10.2026): Chapter 11 governs and no exemption is applied."
 
-  # ----- Roof or underground variant ticked: the at-grade Table 11.5 items apply only to tanks at grade (CH10-18/19)
+  # ----- Roof or underground variant ticked, no tank at grade: the at-grade Table 11.5 items do
+  # not print (CH10-18/19; owner ruling 12.10.2026, P3 Ch11 Q4 replaced the conditional line).
   - id: lpg_aboveground_tank_with_variant
     match:
       has_lpg_tanks_is: true
+      has_lpg_tank_at_grade_is: false
       any_of:
         - {has_lpg_tank_roof_mounted_is: true}
         - {has_lpg_tank_underground_mounded_is: true}
     section: "Ch 11, #2.5.3 / Table 11.5"
     page: "p.906"
     systems:
-      - name: "Aboveground (at-grade) LPG Tanks - Only Where the Project Also Has Them"
-        required: conditional
-        code_ref: "Ch 11, #2.5.3 / Table 11.5 #3-#5; Table 11.6.a"
-        page_ref: "p.906-907"
-        spec: "Applies only to tanks installed above ground at grade. Roof / podium tanks follow Tables 11.7-11.8 and underground / mounded tanks Tables 11.9-11.10 (add-ons below)."
-        detail: "For any tank at grade: maximum 72,000 Gal per location (Table 11.5 #3.i); separations per Table 11.6.a from the tank surface; 6 m to air intakes / AC units / flue outlets, 10 m to fire hydrants / fire fighting equipment / fire command centers, 1.8 m from the vertical plane beneath power lines over 600 volts, 3 m free of vegetation (#4.vi-ix); fixed water spray system (#5.i), or a dry-type water spray ring with open nozzles and a Civil Defence breeching inlet where the building has no fire pump and water tank (#5.ii). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
+      - name: "Aboveground (at-grade) LPG Tanks (Table 11.5) - None Declared"
+        required: not_required
+        code_ref: "Ch 11, #2.5.3 / Table 11.5"
+        page_ref: "p.906"
+        spec: "No tank above ground at grade is declared: the Table 11.5 items (72,000 Gal per location, Table 11.6.a separations, fixed water spray) are not printed. Roof / podium tanks follow Tables 11.7-11.8 and underground / mounded tanks Tables 11.9-11.10 (add-ons below)."
+        detail: "Tick 'Aboveground at-grade LPG tanks' when the project also has tanks above ground at grade; the Table 11.5 items then print as required (owner ruling 12.10.2026, P3 Ch11 Q4)."
 
   # ----- Table 11.4 piping distribution: any LPG tank installation (#2.5.2.1) or infrastructure connection
   - id: lpg_central_distribution
@@ -330,7 +336,7 @@ addons:
         code_ref: "Ch 11, #2.5.4 / Table 11.7 #3.iii"
         page_ref: "p.909"
         spec: "Malls and developments larger than 20,000 m2 with central LPG tanks: up to 4000 Gal on roof, as two 2000 Gal LPG tanks installed 15 m apart."
-        detail: "Such approvals are based on the Civil Defence assessment of the project and evaluation of the proposal (Table 11.7 #3.iii). Does not allow a single tank above 2000 Gal."
+        detail: "Such approvals are based on the Civil Defence assessment of the project and evaluation of the proposal (Table 11.7 #3.iii). Does not allow a single tank above 2000 Gal. 'Developments larger than 20,000 m2' is read as a GFA or a plot area above 20,000 m2, or any mall (owner ruling 12.10.2026, P3 Ch11 Q5)."
 
   - id: lpg_addon_roof_super_highrise
     flag: has_lpg_tank_roof_mounted

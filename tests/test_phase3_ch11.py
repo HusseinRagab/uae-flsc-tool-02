@@ -123,7 +123,9 @@ def test_CH10_18_roof_tank_drops_at_grade_items_and_gates_mall_line():
     assert "Aboveground LPG Tank Installation" not in n
     assert "Mall 4,000 Gal Allowance" not in n
     assert "2000 Gal aggregate" in get(r, "LPG", "Roof-Mounted LPG Tank Maximum Quantity").spec
-    assert get(r, "LPG", "Aboveground (at-grade) LPG Tanks").status == "conditional"
+    # Re-pointed: owner ruling 12.10.2026, P3 Ch11 Q4 replaced the conditional line with a
+    # not_required "none declared" line (tests/test_phase3_answers_a1.py).
+    assert get(r, "LPG", "Aboveground (at-grade) LPG Tanks").status == "not_required"
     mall = report(occupancy="mall_covered", height_m=20, has_lpg_tanks=True,
                   has_lpg_tank_roof_mounted=True, ground_floor_bua_m2=10000, plot_area_m2=30000)
     m = get(mall, "LPG", "Mall 4,000 Gal Allowance")
