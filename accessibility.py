@@ -18,7 +18,7 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
             spec="Private villas: accessible features apply where the project opts into public/visitor access or is commercial villa with common facilities",
             detail="Confirm with Civil Defence / Municipality for commercial villa clusters with shared amenities.",
             code_ref="Ch 15, #2.2 Scope",
-            page_ref="p.1088+",
+            page_ref="p.1090",
             source_rule="acc_villa",
         ))
     else:
@@ -43,17 +43,19 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
             Requirement(
                 system="Accessible parking",
                 status="required" if b.has_parking_area else "conditional",
-                spec="Accessible bays + access aisles per Table 15.2; aisles adjoin accessible route",
-                code_ref="Ch 15, Table 15.2",
-                page_ref="p.1095+",
+                spec="Car spaces at least 2440 mm wide, van spaces 3350 mm (or 2440 mm beside a 2440 mm aisle); access aisles at least 1525 mm, adjoining an accessible route, full length of the spaces (Table 15.2)",
+                detail="Spaces closest to the destination; 2490 mm vertical clearance for van spaces, their aisles and vehicular routes; Arabic and English signs at least 1525 mm above the floor of the space, measured to the bottom of the sign.",
+                code_ref="Ch 15, #3.2 / Table 15.2",
+                page_ref="p.1097",
                 source_rule="acc_parking",
             ),
             Requirement(
                 system="Accessible stair features",
                 status="required" if b.has_stairs else "not_required",
-                spec="Nosings, handrails, contrast, and tactile warning per Table 15.3",
-                code_ref="Ch 15, Table 15.3",
-                page_ref="p.1096+",
+                spec="Uniform risers 100-180 mm, treads at least 280 mm, no open risers; leading 51 mm of the tread in visual contrast; 108 lux (10 foot-candles) lighting; raised-character and braille stair level signs at each floor landing (Table 15.3 #1)",
+                detail="Nosing radius of curvature at most 13 mm (#1.vii). Handrails on both sides of stairs and ramps, continuous, top of gripping surface 865-965 mm above nosing, 38 mm clearance to adjacent surfaces, ramp handrails extending 305 mm beyond the top and bottom (#2).",
+                code_ref="Ch 15, #3.3 / Table 15.3",
+                page_ref="p.1098",
                 source_rule="acc_stair",
             ),
             Requirement(
@@ -61,18 +63,27 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
                 status="required",
                 spec="Visual/audible alarms and directional signage to accessible elements per Table 15.4",
                 code_ref="Ch 15, Table 15.4",
-                page_ref="p.1098+",
+                page_ref="p.1099-1100",
                 source_rule="acc_av_signs",
+            ),
+            Requirement(
+                system="Foldable wheelchairs (minimum 2)",
+                status="required",
+                spec="Foldable wheelchairs provided in every facility, stored in an easily accessible location; minimum of 2 in all occupancies (#5.2.8)",
+                detail="More spare wheelchairs in accordance with the number of mobility impaired people in the building. Facility management trained in usage, maintenance and storing of the wheelchairs.",
+                code_ref="Ch 15, #5.2.8",
+                page_ref="p.1119",
+                source_rule="acc_wheelchairs",
             ),
         ])
         if b.height_class in ("highrise", "super_highrise") or b.has_evacuation_elevator:
             items.append(Requirement(
                 system="Area of refuge / evacuation elevator access",
-                status="required",
-                spec="Areas of refuge and accessible route to evacuation elevators where provided (ties to Ch 3 #3.9 / Ch 5)",
-                detail="Confirm refuge sizing (0.28 m²/person, min spaces per 200 occupants) against Ch 3.",
-                code_ref="Ch 15 #3.5 · Ch 3 area of refuge",
-                page_ref="p.1100+",
+                status="conditional",
+                spec="Area of refuge is not mandated by Civil Defence; where the overall fire strategy provides one (super highrise above 90 m or large complex buildings), it complies with Ch 3 #3.8 and Table 3.10 (#3.8.1)",
+                detail="Table 3.10: 1-hr fire barrier; 45 minute doors; protected stair access, stair width for the occupant load served and never less than 1200 mm; area on a clear fire strategy or the occupants of 3 floors; one 760 mm x 1220 mm wheelchair space for every 200 occupants or portion thereof; Arabic and English \"AREA OF REFUGE\" sign.",
+                code_ref="Ch 3, #3.8.1 / Table 3.10",
+                page_ref="p.279",
                 source_rule="acc_refuge",
             ))
 
