@@ -162,6 +162,16 @@ class UseArea(BaseModel):
     area_m2: float = Field(0.0, ge=0)
 
 
+class StoreyUse(BaseModel):
+    """One line of the per-storey table (owner answer 12.10.2026, F6): the storey it
+    belongs to, a Table 3.13 row id (None = the densest row of the occupancy, Ch3 Q2)
+    and the floor area of that use on that storey. Lines with the same storey name
+    form one storey."""
+    storey: str = ""
+    row: Optional[str] = None
+    area_m2: float = Field(0.0, ge=0)
+
+
 class Building(BaseModel):
     project_name: str = Field("", description="Project reference")
     occupancy: Occupancy
@@ -187,6 +197,7 @@ class Building(BaseModel):
     # 0 / empty = not entered; each fallback is named in the report line.
     largest_storey_area_m2: float = Field(0.0, ge=0)   # Q1: Table 3.14 per storey (#4.3.1); 0 -> whole GFA
     use_areas: List[UseArea] = Field(default_factory=list)  # Q2: per-use areas (#1.4.5); empty -> densest Table 3.13 row
+    storey_uses: List[StoreyUse] = Field(default_factory=list)  # F6: per-storey per-use table; empty -> the inputs above
     mall_gla_m2: float = Field(0.0, ge=0)              # Q3: mall gross leasable area (Table 3.13 row 14); 0 -> GFA
     building_volume_m3: float = Field(0.0, ge=0)       # Q5: gross cubical extent (#2.8.8.a / #2.8.9.a); 0 -> footprint x height
     is_waterfront: bool = False                        # Q6: waterfront property (#2.8.10, Table 2.8)
@@ -438,7 +449,11 @@ class Building(BaseModel):
 
     @property
     def use_area_total_m2(self) -> float:
-        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered."""
+        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered. When the
+        per-storey table has lines it governs (owner answer 12.10.2026, F6) and its
+        areas are summed instead."""
+        if self.storey_uses:
+            return sum(u.area_m2 for u in self.storey_uses)
         return sum(u.area_m2 for u in self.use_areas)
 
     @property
@@ -527,6 +542,20 @@ class OccupantLoadSummary(BaseModel):
     evaluated: bool = True
     storey_area_m2: float = 0.0
     storey_occupant_load: int = 0
+    # Owner answer 12.10.2026, F6: per-storey table results. governing_storey is the
+    # storey whose OL sets the Table 3.14 count; warnings are input checks to show.
+    governing_storey: str = ""
+    storeys: List["StoreyLoad"] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+
+
+class StoreyLoad(BaseModel):
+    """One storey of the per-storey table (F6): area, OL and Table 3.14 exits."""
+    storey: str
+    area_m2: float = 0.0
+    occupant_load: int = 0
+    min_exits: int = 0
+    parts: List[str] = Field(default_factory=list)
 
 
 class FireAccessSummary(BaseModel):
