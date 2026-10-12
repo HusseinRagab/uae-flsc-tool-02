@@ -400,6 +400,18 @@ class Building(BaseModel):
     has_lpg_cylinders_indoor: bool = False         # Indoor cylinder room (Table 11.2)
     has_lpg_cylinders_food_truck: bool = False     # Food truck LPG (Table 11.3)
     has_lpg_flame_effect: bool = False             # Flame-effect shows in front of audience (Table 11.12)
+    # Owner ruling 12.10.2026, P3 Ch11 Q4: tanks above ground at grade beside roof /
+    # underground tanks (Table 11.5, p.906). With neither roof nor underground ticked the
+    # tanks are taken at grade, as before.
+    has_lpg_tank_at_grade: bool = False
+    # Owner ruling 12.10.2026, P3 Ch11 Q3: #2.2.4 cylinders not allowed in new / modified
+    # buildings; #2.2.5 Civil Defence approval (p.884). The app stops a cylinder choice for
+    # a new or modified building unless the approval is ticked.
+    is_new_or_modified_building: bool = True
+    has_cd_cylinder_approval: bool = False
+    # Owner ruling 12.10.2026, P3 Ch11 Q6: #3.2.2 (p.923) no indoor flame effect show in a
+    # building that is not fully sprinkler protected. None = not stated.
+    lpg_flame_effect_show: Optional[Literal["indoor", "outdoor", "both"]] = None
 
     @property
     def building_category(self) -> str:

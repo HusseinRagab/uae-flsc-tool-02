@@ -771,6 +771,28 @@ def evaluate_sc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     )
 
 
+def lpg_input_stops(b: Building) -> List[str]:
+    """Input combinations Ch 11 prohibits outright; the app stops on each (st.error +
+    st.stop) and the LPG report line states the same prohibition.
+    Owner rulings 12.10.2026, P3 Ch11 Q3 (#2.2.4-#2.2.5, p.884) and Q6 (#3.2.2, p.923)."""
+    out = []
+    if b.has_gas_cylinders_villa and b.is_new_or_modified_building and not b.has_cd_cylinder_approval:
+        out.append("Cylinder type LPG installations in all new and modified buildings are not "
+                   "allowed (Ch 11 #2.2.4, p.884); permission to install LPG cylinders is "
+                   "strictly subject to Civil Defence approval based on site and building "
+                   "inspection (#2.2.5). Choose a centralized LPG system, untick 'New or "
+                   "modified building' for an existing building, or tick 'Civil Defence "
+                   "approval obtained (#2.2.5)' (owner ruling 12.10.2026, P3 Ch11 Q3).")
+    if (b.has_lpg_flame_effect and b.lpg_flame_effect_show in ("indoor", "both")
+            and not building_sprinklered(b)):
+        out.append("No indoor flame effect show shall be allowed if the building is not fully "
+                   "sprinkler protected and provided with an automatic fire detection and alarm "
+                   "system (Ch 11 #3.2.2, p.923). This building is not sprinkler protected per "
+                   "its Ch 9 result: choose an outdoor show, or a building that is sprinkler "
+                   "protected (owner ruling 12.10.2026, P3 Ch11 Q6).")
+    return out
+
+
 def evaluate_lpg(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 11 - LPG Code of Practice."""
     blocks = []
@@ -782,17 +804,53 @@ def evaluate_lpg(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         gen = _dedupe(_collect_general(rules, b))
         if gen:
             blocks.append(SectionBlock(title="LPG - General Universal Requirements (Ch 11, Tables 11.1, 11.2, 11.4, 11.14)", items=gen))
+    if b.has_gas_cylinders_villa and branch_items:
+        # Owner ruling 12.10.2026, P3 Ch11 Q3: #2.2.4-#2.2.5 (p.884) per the new / modified
+        # building and Civil Defence approval inputs.
+        if b.is_new_or_modified_building and not b.has_cd_cylinder_approval:
+            pre = ("This building is entered as new or modified with no Civil Defence approval "
+                   "recorded: a cylinder type LPG installation is NOT allowed (#2.2.4); provide "
+                   "a centralized LPG system, or record the Civil Defence approval (#2.2.5). ")
+        elif b.is_new_or_modified_building:
+            pre = ("Civil Defence approval recorded (#2.2.5): the cylinder installation follows "
+                   "that approval and the items below. ")
+        else:
+            pre = ("Existing building, not modified: #2.2.4 (new and modified buildings) does not "
+                   "apply; the installation is still strictly subject to Civil Defence approval "
+                   "(#2.2.5). ")
+        pre += "(Owner ruling 12.10.2026, P3 Ch11 Q3.) "
+        branch_items = [it.model_copy(update={"detail": pre + (it.detail or "")})
+                        if it.system.startswith("Cylinder Installations Not Allowed") else it
+                        for it in branch_items]
     if branch_items:
         blocks.append(SectionBlock(title="LPG - Base Gas-System Requirements (Ch 11, Tables 11.1, 11.4, 11.5, 11.6)", items=_dedupe(branch_items)))
 
     addons = _dedupe(_collect_flag(rules.get("addons", []), b))
-    if b.has_lpg_flame_effect and addons and not building_sprinklered(b):
+    if b.has_lpg_flame_effect and addons:
         # Ch 11 #3.2.2 / Table 11.12 #1.iii (p.923): no indoor flame effect show
-        # unless the building is fully sprinkler protected (audit CH10-09).
-        note = ("This building is not sprinkler protected per the Ch 9 result above, so an "
-                "indoor flame effect show is NOT allowed here (#3.2.2); outdoor shows only.")
-        addons = [it.model_copy(update={"detail": note})
-                  if it.system.startswith("Indoor Flame Effect Shows") else it for it in addons]
+        # unless the building is fully sprinkler protected (audit CH10-09). Owner
+        # ruling 12.10.2026, P3 Ch11 Q6: indoor / outdoor show input; an indoor show
+        # in an unsprinklered building stops the app (lpg_input_stops).
+        show = b.lpg_flame_effect_show
+        upd = None
+        if show == "outdoor":
+            upd = {"status": "not_required",
+                   "detail": ("Outdoor show only: #3.2.2 applies to indoor flame effect shows "
+                              "(owner ruling 12.10.2026, P3 Ch11 Q6).")}
+        elif not building_sprinklered(b):
+            if show in ("indoor", "both"):
+                upd = {"detail": ("An indoor show is entered and this building is not sprinkler "
+                                  "protected per the Ch 9 result above: the indoor flame effect "
+                                  "show is NOT allowed (#3.2.2, p.923; owner ruling 12.10.2026, "
+                                  "P3 Ch11 Q6).")}
+            else:
+                upd = {"detail": ("This building is not sprinkler protected per the Ch 9 result "
+                                  "above, so an indoor flame effect show is NOT allowed here "
+                                  "(#3.2.2); outdoor shows only. State whether the show is "
+                                  "indoor or outdoor in the gas systems inputs.")}
+        if upd:
+            addons = [it.model_copy(update=upd)
+                      if it.system.startswith("Indoor Flame Effect Shows") else it for it in addons]
     if addons:
         blocks.append(SectionBlock(title="LPG - Variant Add-ons (Roof / Underground / Indoor / Food Truck / PRDP)", items=addons))
 
