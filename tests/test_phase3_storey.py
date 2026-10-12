@@ -99,13 +99,17 @@ def test_F6_per_storey_ol_and_table_3_14_name_the_governing_storey():
                               {"row": "13.ii", "area_m2": 1000}], **BIZ).occupant_load
     assert whole.min_exits == 4
     # The same use twice on one storey is one area (#1.4.5 'the floor area assigned to
-    # that use'): 50 + 50 m2 / 9.3 -> 11, not 6 + 6.
-    ol = report(storey_uses=[{"storey": "GF", "row": "2.i", "area_m2": 50},
-                             {"storey": "GF", "row": "2.i", "area_m2": 50}], **BIZ).occupant_load
-    assert ol.occupant_load == math.ceil(100 / 9.3) == 11
+    # that use'): 50 + 50 m2 / 9.3 -> 11, not 6 + 6. (Re-pointed for P3 Storey Q1: the
+    # storey stands for the 3 storeys of the building, so the counts cover them.)
+    ol = report(storey_uses=[{"storey": "GF", "row": "2.i", "area_m2": 50, "count": 3},
+                             {"storey": "GF", "row": "2.i", "area_m2": 50, "count": 3}],
+                **BIZ).occupant_load
+    assert ol.storeys[0].occupant_load == math.ceil(100 / 9.3) == 11
+    assert ol.occupant_load == 3 * 11
     # A tie names the first storey listed.
     ol = report(storey_uses=[{"storey": "L3", "row": "2.i", "area_m2": 930},
-                             {"storey": "L4", "row": "2.i", "area_m2": 930}], **BIZ).occupant_load
+                             {"storey": "L4", "row": "2.i", "area_m2": 930, "count": 2}],
+                **BIZ).occupant_load
     assert ol.governing_storey == "L3"
 
 
@@ -140,17 +144,20 @@ def test_F6_table_input_checks_warn_by_name():
                 **BIZ).occupant_load
     assert ol.evaluated
     assert any("add up to 9,500 m2, more than the GFA of 9,000 m2" in w for w in ol.warnings)
-    ol = report(storey_uses=TABLE[:1], largest_storey_area_m2=2000,
+    # Re-pointed for P3 Storey Q1 (owner ruling 12.10.2026): fewer or more storeys than
+    # the building is no longer a warning but NOT EVALUATED (tests/test_phase3_answers_a3.py);
+    # here the one storey stands for all 3 (identical storeys count 3).
+    ol = report(storey_uses=[dict(TABLE[0], count=3)], largest_storey_area_m2=2000,
                 use_areas=[{"row": "2.i", "area_m2": 9000}], **BIZ).occupant_load
     w = " ".join(ol.warnings)
-    assert "1 storey(s) listed; the building has 3" in w
+    assert ol.evaluated
     assert "whole-building per-use areas are not used" in w
     assert "largest storey area input (2,000 m2) is not used" in w
     assert "a storey of 3,000 m2, larger than it" in w
     assert "Check:" in ol.note
     ol = report(storey_uses=[dict(ln, storey=f"S{i}") for i, ln in enumerate(TABLE)],
                 **BIZ).occupant_load
-    assert any("4 storeys listed, more than the 3" in w for w in ol.warnings)
+    assert not ol.evaluated and "1 storey(s) more than the building has" in ol.exit_ref
 
 
 def test_F6_app_saves_and_validates_the_table():
@@ -181,8 +188,9 @@ def test_F6_app_saves_and_validates_the_table():
     df = ns["_storey_table_frame"](TABLE + [{"storey": None, "row": None, "area_m2": None},
                                             {"storey": " L9 ", "row": "2.i", "area_m2": None}])
     out = ns["_storey_table_records"](df)
-    assert out[:4] == [dict(ln, area_m2=float(ln["area_m2"])) for ln in TABLE]
-    assert out[4:] == [{"storey": "L9", "row": "2.i", "area_m2": None}]
+    # (Re-pointed for P3 Storey Q1: every saved line carries its identical-storeys count.)
+    assert out[:4] == [dict(ln, area_m2=float(ln["area_m2"]), count=1) for ln in TABLE]
+    assert out[4:] == [{"storey": "L9", "row": "2.i", "area_m2": None, "count": 1}]
 
 
 def test_F6_app_table_drives_the_occupant_load_card():
@@ -195,7 +203,7 @@ def test_F6_app_table_drives_the_occupant_load_card():
     caps = [c.value for c in at.caption]
     assert any("Table 3.14 on the governing storey 'L1' OL 899" in c for c in caps)
     assert at.session_state["storey_table_input"][1] == {"storey": "L1", "row": None,
-                                                         "area_m2": 2000.0}
+                                                         "area_m2": 2000.0, "count": 1}
     assert not at.warning
     at = _app_test({"occupancy_chosen": ("Business / Office", "business"),
                     "occupancy_category_select": "Business / Office",
