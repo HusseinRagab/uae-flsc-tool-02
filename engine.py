@@ -24,7 +24,7 @@ import yaml
 
 from flsc_schema import (
     Building, ChapterReport, ComplianceReport, HighCeilingSpec,
-    Requirement, SectionBlock, occupancy_group, default_hazard,
+    Requirement, SectionBlock, occupancy_group, default_hazard, ANIMAL_HOUSING_GROUPS,
 )
 from occupant_load import compute_occupant_load
 from fire_access import evaluate_fire_access, compute_fire_access
@@ -205,7 +205,7 @@ def _collect_general(rules: Dict[str, Any], b: Building) -> List[Requirement]:
 
 def _collect_branch(branches: List[Dict[str, Any]], b: Building):
     matched = _select_branches(branches, b)
-    out = []
+    out, tags = [], []
     selected_id = None
     selected_section = None
     for br in matched:
@@ -214,7 +214,9 @@ def _collect_branch(branches: List[Dict[str, Any]], b: Building):
             selected_section = br.get("section")
         for e in br.get("systems", []):
             out.append(_as_req(e, branch=br, b=b))
-    return _merge_duties(out), selected_id, selected_section, matched
+            tags.append((e.get("merge_system"), br.get("merge_family"))
+                        if e.get("merge_system") and br.get("merge_family") else None)
+    return _merge_duties(_merge_tables(out, tags)), selected_id, selected_section, matched
 
 
 _NUM = r"(\d[\d,]*(?:\.\d+)?)"
@@ -266,6 +268,64 @@ def _merge_duties(items: List[Requirement]) -> List[Requirement]:
             if hi_bar > _max_num(w.spec, "bar"):
                 extra += f" The pump must also meet {hi_bar:g} bar where that table requires it."
         replace[best] = w.model_copy(update={"detail": (w.detail or "") + extra})
+        drop.update(i for i in idx if i != best)
+    return [replace.get(i, it) for i, it in enumerate(items) if i not in drop]
+
+
+# Owner ruling 12.10.2026, P3 App Q6: a parking building of 23 m or more takes Table 9.18 /
+# 9.19 (#4.2.1 / #4.3.1, "of any occupancy classification") and Table 9.24 (#4.8.1). As
+# ruling R6 did for tall malls, one line per system is printed: the most onerous, citing
+# both tables. Lines carry `merge_system` and their branch `merge_family` in the YAML.
+_MERGE_FAMILY_RANK = {"tall": 2, "parking": 1}
+_MERGE_WHY = {
+    "sprinkler": ("Table 9.18 / 9.19 sprinklers run throughout the building including "
+                  "basements and podiums (open as well as closed), which includes the "
+                  "Table 9.24 sprinklers throughout the parking structure."),
+    "wet_riser": ("Table 9.18 / 9.19 wet risers run throughout the building and are "
+                  "interconnected at the lowest and the highest level of each zone (next line), "
+                  "which includes the Table 9.24 interconnection at the highest level."),
+}
+
+
+def _merge_tables(items: List[Requirement], tags: List[Optional[tuple]]) -> List[Requirement]:
+    """P3 App Q6: one sprinkler, wet riser, fire pump and fire water tank line when lines of
+    both the tall-building family (Tables 9.18 / 9.19) and the parking family (Table 9.24)
+    are required. Pump / tank: the most onerous flow then pressure, or minutes (ties keep
+    the tall-building line); a pump whose flow is not a printed number (robotic deluge) is
+    not ranked and every line stays, as in `_merge_duties`. Sprinkler / wet riser: the
+    tall-building line. The kept line cites every table and quotes what the others say."""
+    groups: Dict[str, List[int]] = {}
+    for i, (it, tag) in enumerate(zip(items, tags)):
+        if tag and it.status == "required":
+            groups.setdefault(tag[0], []).append(i)
+    drop, replace = set(), {}
+    for kind, idx in groups.items():
+        if len({tags[i][1] for i in idx}) < 2:
+            continue
+        numeric = kind in ("pump", "tank")
+        key = (lambda i: _duty_key(items[i].model_copy(update={"duty": kind}))) if numeric \
+            else (lambda i: ())
+        if numeric and any(key(i)[0] == 0 for i in idx):
+            continue
+        best = max(idx, key=lambda i: (key(i), _MERGE_FAMILY_RANK.get(tags[i][1], 0), -i))
+        w, others = items[best], [items[i] for i in idx if i != best]
+        refs = list(dict.fromkeys([w.code_ref] + [o.code_ref for o in others]))
+        pages = list(dict.fromkeys(p for p in [w.page_ref] + [o.page_ref for o in others] if p))
+        also = " ".join(
+            f"Also required by {o.code_ref}: {o.system}" + (f", {o.spec}" if o.spec else "")
+            + (f" - {o.detail}" if o.detail else ".") for o in others)
+        why = _MERGE_WHY.get(kind, "")
+        extra = (f" One line per system (owner ruling 12.10.2026, P3 App Q6, merged as ruling "
+                 f"R6 for tall malls): a parking building of 23 m or more takes Table 9.18 / "
+                 f"9.19 (#4.2.1 / #4.3.1, any occupancy) and Table 9.24 (#4.8.1); this line is "
+                 f"the most onerous.{(' ' + why) if why else ''} {also}")
+        if kind == "pump":
+            hi_bar = max((_max_num(o.spec, "bar") for o in others), default=0.0)
+            if hi_bar > _max_num(w.spec, "bar"):
+                extra += f" The pump must also meet {hi_bar:g} bar where that table requires it."
+        replace[best] = w.model_copy(update={
+            "detail": (w.detail or "") + extra, "code_ref": " + ".join(r for r in refs if r),
+            "page_ref": ", ".join(pages) or w.page_ref})
         drop.update(i for i in idx if i != best)
     return [replace.get(i, it) for i, it in enumerate(items) if i not in drop]
 
@@ -416,6 +476,29 @@ def _gf_bua_sum_not_evaluated_line() -> Requirement:
     )
 
 
+def _animal_group_not_evaluated(ch: ChapterReport) -> ChapterReport:
+    """Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9 for storage): a secondary animal
+    housing occupancy with no group chosen gets no Ch 9 lines of its own; one required
+    line names the missing group."""
+    line = Requirement(
+        system="Animal Housing (secondary occupancy) - Ch 9 NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: choose the animal housing group (A, B or C)",
+        detail=("Animal housing is listed as a secondary occupancy but its group was not "
+                "chosen. The group sets the hazard class (#1.1.13: Group A animal market, pet "
+                "shops, bird market, veterinary clinic and Group C zoo are Light Hazard, "
+                "#1.1.13.1.q, r, p.528; Group B stable, animal sheds, livestock shelter, "
+                "slaughter houses is Ordinary Hazard Group 2, #1.1.13.3.a, p.529), so the tool "
+                "does not assume one: the animal housing Ch 9 lines are not evaluated (owner "
+                "ruling 12.10.2026, P3 Storey Q4)."),
+        code_ref="Ch 9, #1.1.13", page_ref="p.528-529",
+        source_rule="owner_ruling_p3_storey_q4",
+    )
+    return ch.model_copy(update={
+        "blocks": [SectionBlock(title="FP - Branch Requirements (Ch 9)", items=[line])],
+        "selected_branch": None, "selected_branch_section": None})
+
+
 def _storage_hazard_not_evaluated(ch: ChapterReport) -> ChapterReport:
     """Owner ruling 12.10.2026, Ch9 Q9: a secondary storage occupancy with no hazard
     chosen gets no Table 9.27 rows; one required line names the missing hazard."""
@@ -472,8 +555,11 @@ def _with_robotic_eh2(b: Building) -> Building:
 
 # ---------------------------- Per-chapter evaluators -------------------------
 
-def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
-    """Ch 9 - Fire Protection."""
+def evaluate_fp(b: Building, rules: Dict[str, Any],
+                host_sprinklered: bool = False) -> ChapterReport:
+    """Ch 9 - Fire Protection. `host_sprinklered`: an attached parking in a host building
+    whose table requires sprinklers (owner ruling 12.10.2026, P3 App Q2); the Table 9.29 /
+    9.30 #4.13.1 / #4.1.5 gate then treats the parking as sprinklered."""
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
     branch_items, sel_id, sel_section, _matched = _collect_branch(rules.get("branches", []), b)
@@ -512,7 +598,7 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     # Various-locations items annotated with `requires_sprinkler_system: true` are suppressed
     # when the building's branch does not mandate sprinklers (e.g. small villas where
     # sprinklers are only "recommended").
-    sprinkler_required = _sprinkler_required(list(gen) + list(branch_items))
+    sprinkler_required = host_sprinklered or _sprinkler_required(list(gen) + list(branch_items))
     # #4.13.1 (p.749): Table 9.29 extends the building sprinkler system. Ruling R8
     # (12.10.2026): gated rows print a #4.13.1 not_required note in a building whose
     # table row gives no automatic sprinkler system.
@@ -964,19 +1050,66 @@ def _parking_area_not_evaluated() -> ChapterReport:
             source_rule="audit_eng_11_parking_area")])])
 
 
-def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
-    """Build a synthetic parking Building (preserving height / parking area) and run every
-    chapter against it, returning a per-chapter list. Used to surface parking sub-occupancy
-    requirements when the main occupancy is non-parking but has an in-building parking area.
+# Owner ruling 12.10.2026, P3 App Q2: the attached parking's own height and basement
+# levels. With either one blank, the sub-evaluation is run at every height (and level
+# count) the printed thresholds can tell apart; a line that is the same in every run does
+# not depend on the blank input and is printed, every other line is NOT EVALUATED by name.
+# Heights: Ch 1 / Ch 3-10 rows at 10, 15, 20, 23 and 90 m; the Table 9.6 item 13 / 9.19
+# pump head at 45 and 90 m (height + depth). Levels: rows at more than 0, more than 2 and
+# 3 or more basements (#1.7.45 high depth).
+_PARK_HEIGHT_EDGES = (10.0, 15.0, 20.0, 23.0, 90.0)
+_PARK_PUMP_HEAD_EDGES = (45.0, 90.0)
+_PARK_PROBE_LEVELS = (0, 1, 2, 3)
+_P3_Q2 = "owner ruling 12.10.2026, P3 App Q2"
 
-    The PARKING AREA (parking_area_m2) drives Ch 10 SC area-based thresholds (e.g. 3600 m^2
-    make-up-air exception for enclosed parking; 4000 m^2 small-vs-large open parking split).
-    Audit ENG-11: a blank parking area is NOT EVALUATED (no fallback), and every yes/no
-    flag the user set carries over, so an unticked room is never brought back by a schema
-    default.
-    """
-    if b.parking_area_m2 <= 0:
-        return [_parking_area_not_evaluated()]
+
+def _park_probe_heights(depth: float) -> List[float]:
+    hs = {0.0, 3.0, 120.0}
+    for t in _PARK_HEIGHT_EDGES:
+        hs.update((t - 0.5, t, t + 0.5))
+    for t in _PARK_PUMP_HEAD_EDGES:
+        hs.update((t - depth - 0.5, t - depth, t - depth + 0.5))
+    return sorted(h for h in hs if h >= 0)
+
+
+def _host_sprinkler_line(b: Building, fp_rules: Dict[str, Any]) -> Optional[Requirement]:
+    """The host building's required automatic sprinkler line, if any (P3 App Q2: the
+    attached parking takes the host table's sprinklers)."""
+    items = list(_collect_general(fp_rules, b)) + list(_collect_branch(fp_rules.get("branches", []), b)[0])
+    return next((it for it in items if it.status == "required"
+                 and (it.system or "").startswith("Automatic Sprinkler System")), None)
+
+
+def _with_host_sprinklers(ch: ChapterReport, host: Requirement) -> ChapterReport:
+    """P3 App Q2: in a sprinklered host building the attached parking's Ch 9 sprinklers
+    follow the host table (e.g. Table 9.19 'throughout the building including basements'):
+    one sprinkler line citing the host table replaces the parking rows' own lines."""
+    own = [it for blk in ch.blocks for it in blk.items
+           if blk.title.startswith("FP - Branch") and (it.system or "").startswith("Automatic Sprinkler System")]
+    said = "; ".join(f"{it.system} ({it.code_ref}): {it.status.replace('_', ' ')}" for it in own)
+    line = Requirement(
+        system="Automatic Sprinkler System (as the host building)",
+        status="required", spec=host.spec,
+        detail=(f"The attached parking is part of the host building, whose Ch 9 table requires "
+                f"an automatic sprinkler system ({host.system}, {host.code_ref}): the parking "
+                f"is sprinklered under that table ({_P3_Q2}). "
+                + (f"The parking's own rows say: {said}." if said else "")),
+        code_ref=host.code_ref, page_ref=host.page_ref, source_rule="owner_ruling_p3_app_q2")
+    blocks, done = [], False
+    for blk in ch.blocks:
+        if blk.title.startswith("FP - Branch"):
+            kept = [it for it in blk.items if it not in own]
+            blocks.append(blk.model_copy(update={"items": [line] + kept}))
+            done = True
+        else:
+            blocks.append(blk)
+    if not done:
+        blocks.insert(0, SectionBlock(title="FP - Branch Requirements (Ch 9)", items=[line]))
+    return ch.model_copy(update={"blocks": blocks})
+
+
+def _attached_parking_run(b: Building, height: float, levels: int) -> List[ChapterReport]:
+    """One sub-evaluation of the attached parking at the given own height and levels."""
     synth_occ = "parking_open" if b.attached_parking_kind == "open" else "parking_enclosed"
     parking_area = b.parking_area_m2
     # Every user flag (bool) carries over (audit ENG-11); areas, uses and mixed-occupancy
@@ -990,17 +1123,19 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
         mercantile_multi_tenant=False, villa_converted_use=False,
         has_water_reactive_materials=False,
     )
+    # P3 App Q2: the parking's own height (0 m = wholly below the fire access level) and
+    # basement levels; its basements reach the building's depth below grade.
+    geo = {"height_m": height} if height > 0 else {}
     synth = Building(
-        **flags,
+        **flags, **geo,
         project_name=b.project_name + " (parking sub-occupancy)" if b.project_name else "",
         occupancy=synth_occ,
-        height_m=b.height_m,
         floors_above_grade=b.floors_above_grade,
-        floors_below_grade=b.floors_below_grade,
-        depth_below_grade_m=b.depth_below_grade_m,
+        floors_below_grade=levels,
+        depth_below_grade_m=b.depth_below_grade_m if levels > 0 else 0.0,
         gross_floor_area_m2=parking_area,
         ground_floor_bua_m2=parking_area,
-        basement_bua_m2=parking_area if b.basement_bua_m2 > 0 else 0.0,
+        basement_bua_m2=parking_area if levels > 0 else 0.0,
         plot_area_m2=b.plot_area_m2,
         hazard_class="HH" if b.has_robotic_parking else "OH1",   # #1.1.13.2 (p.528): parking garages, open or enclosed
         ceiling_height_m=b.ceiling_height_m,
@@ -1020,15 +1155,105 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
     sc_rules  = load_rules("ch10_smoke_control.yaml")
     # Attached parking takes the S / NS column from the parent building's Ch 9 result
     # (owner ruling 12.10.2026, follow-up F8): it shares the parent's sprinkler system.
-    if moe_rules: chapters.append(evaluate_moe(synth, moe_rules,
-                                               sprinklered=building_sprinklered(b)))
+    host_spr = building_sprinklered(b)
+    if moe_rules: chapters.append(evaluate_moe(synth, moe_rules, sprinklered=host_spr))
     if fe_rules:  chapters.append(evaluate_fe(synth, fe_rules))
     if es_rules:  chapters.append(evaluate_es(synth, es_rules))
     if el_rules:  chapters.append(evaluate_el(synth, el_rules))
     if fa_rules:  chapters.append(evaluate_fa(synth, fa_rules))
-    if fp_rules:  chapters.append(evaluate_fp(synth, fp_rules))
+    if fp_rules:
+        # P3 App Q2: Ch 9 sprinklers still follow the host building's table.
+        host_line = _host_sprinkler_line(b, fp_rules) if host_spr else None
+        fp = evaluate_fp(synth, fp_rules, host_sprinklered=bool(host_line))
+        chapters.append(_with_host_sprinklers(fp, host_line) if host_line else fp)
     if sc_rules:  chapters.append(evaluate_sc(synth, sc_rules))
     return chapters
+
+
+def _line_key(title: str, it: Requirement) -> tuple:
+    return (title, it.system, it.status, it.spec, it.code_ref)
+
+
+def _probe_not_evaluated(runs: List[List[ChapterReport]], missing: List[str]) -> List[ChapterReport]:
+    """P3 App Q2: lines the same in every probe run are printed; every other line is named
+    NOT EVALUATED (one line per system), with the values it takes across the runs."""
+    what = " and ".join(missing)
+    out = []
+    for ci, ch in enumerate(runs[0]):
+        per_run = [[(blk.title, it) for blk in r[ci].blocks for it in blk.items] for r in runs]
+        keysets = [{_line_key(t, it) for t, it in pr} for pr in per_run]
+        stable = set.intersection(*keysets)
+        blocks = []
+        for blk in ch.blocks:
+            items = [it for it in blk.items if _line_key(blk.title, it) in stable]
+            if items:
+                blocks.append(blk.model_copy(update={"items": items}))
+        variants: Dict[str, List[str]] = {}
+        for pr in per_run:
+            for t, it in pr:
+                if _line_key(t, it) in stable:
+                    continue
+                v = f"{it.status.replace('_', ' ')}" + (f", {it.spec}" if it.spec else "") + \
+                    (f" ({it.code_ref})" if it.code_ref else "")
+                vs = variants.setdefault(it.system, [])
+                if v not in vs:
+                    vs.append(v)
+        if variants:
+            lines = []
+            for name, vs in variants.items():
+                absent = any(not any(it.system == name for _, it in pr) for pr in per_run)
+                lines.append(Requirement(
+                    system=f"{name} - NOT EVALUATED",
+                    status="required",
+                    spec=f"Not evaluated: enter the attached parking {what}",
+                    detail=(f"This line depends on the attached parking's own {what}, which "
+                            f"{'were' if len(missing) > 1 else 'was'} not entered; the tower's "
+                            f"values are not used ({_P3_Q2}). Across the values the code tells "
+                            f"apart it reads: " + " | ".join(vs)
+                            + ("; at some values it is not printed at all." if absent else ".")),
+                    source_rule="owner_ruling_p3_app_q2"))
+            blocks.append(SectionBlock(
+                title=f"{ch.chapter_code} - Lines keyed on the parking {what} - NOT EVALUATED",
+                items=lines))
+        same = {r[ci].selected_branch for r in runs}
+        upd = {"blocks": blocks}
+        if len(same) > 1:
+            upd.update(selected_branch=None, selected_branch_section=(
+                f"Depends on the attached parking {what} (not entered; {_P3_Q2})"))
+        out.append(ch.model_copy(update=upd))
+    return out
+
+
+def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
+    """Build a synthetic parking Building and run every chapter against it, returning a
+    per-chapter list. Used to surface parking sub-occupancy requirements when the main
+    occupancy is non-parking but has an in-building parking area.
+
+    The PARKING AREA (parking_area_m2) drives Ch 10 SC area-based thresholds (e.g. 3600 m^2
+    make-up-air exception for enclosed parking; 4000 m^2 small-vs-large open parking split).
+    Audit ENG-11: a blank parking area is NOT EVALUATED (no fallback), and every yes/no
+    flag the user set carries over, so an unticked room is never brought back by a schema
+    default. Owner ruling 12.10.2026, P3 App Q2: the parking's own height above the fire
+    access level and its basement levels are used (never the tower's); a blank one leaves
+    the lines keyed on it NOT EVALUATED by name; Ch 9 sprinklers follow the host table.
+    """
+    if b.parking_area_m2 <= 0:
+        return [_parking_area_not_evaluated()]
+    missing = []
+    if b.parking_height_m is None:
+        missing.append("height above the fire access level")
+    if b.parking_basement_levels is None:
+        missing.append("basement levels")
+    levels = ([b.parking_basement_levels] if b.parking_basement_levels is not None
+              else list(_PARK_PROBE_LEVELS))
+    runs = []
+    for lv in levels:
+        depth = b.depth_below_grade_m if lv > 0 and not b.pump_room_at_grade else 0.0
+        hs = [b.parking_height_m] if b.parking_height_m is not None else _park_probe_heights(depth)
+        runs += [_attached_parking_run(b, h, lv) for h in hs]
+    if len(runs) == 1:
+        return runs[0]
+    return _probe_not_evaluated(runs, missing)
 
 
 # ---------------------------- Empty-chapter explanatory note -----------------
@@ -1235,6 +1460,22 @@ def evaluate(b: Building) -> ComplianceReport:
                 f" Storage / industrial hazard class not chosen: its Table 9.27 lines are NOT "
                 f"EVALUATED, and its other chapters use {hz}, the highest class of the other "
                 f"occupancies (owner ruling 12.10.2026, Ch9 Q9).")
+        # Owner ruling 12.10.2026, P3 Storey Q4: the same for a secondary animal housing.
+        if "animal_housing" in occs[1:] and b.secondary_animal_housing_group is None:
+            i = occs.index("animal_housing")
+            reps[i] = reps[i].model_copy(update={"chapters": [
+                _animal_group_not_evaluated(c) if c.chapter_code == "FP" else c
+                for c in reps[i].chapters]})
+            note = (note or "") + (
+                f" Animal housing group not chosen: its Ch 9 lines are NOT EVALUATED, and its "
+                f"other chapters use {hz}, the highest class of the other occupancies (owner "
+                f"ruling 12.10.2026, P3 Storey Q4).")
+        elif "animal_housing" in occs[1:]:
+            g = b.secondary_animal_housing_group
+            note = (note or "") + (
+                f" Animal housing (other occupancy): Group {g}, {ANIMAL_HOUSING_GROUPS[g][0]} "
+                f"({ANIMAL_HOUSING_GROUPS[g][1]}, {ANIMAL_HOUSING_GROUPS[g][2]}; owner ruling "
+                f"12.10.2026, P3 Storey Q4).")
         r0 = reps[0]
         return r0.model_copy(update={
             "building": base,
@@ -1248,10 +1489,16 @@ def evaluate(b: Building) -> ComplianceReport:
 def _secondary_hazard(o: str, b: Building) -> Optional[str]:
     """Hazard class a secondary occupancy brings to the R13 most-restrictive run.
     Storage / industrial: the class chosen for it, None when not chosen (owner ruling
-    12.10.2026, Ch9 Q9). Robotic / mechanical parking: HH (Ch9 Q7)."""
+    12.10.2026, Ch9 Q9). Animal housing: its group's class, None when not chosen (P3
+    Storey Q4). Robotic / mechanical parking: HH (Ch9 Q7)."""
     if o == "storage_industrial":
         h = b.secondary_storage_hazard
         return None if h is None else ("HH" if h == "EH2" else h)
+    if o == "animal_housing":
+        # Owner ruling 12.10.2026, P3 Storey Q4: the group's #1.1.13 class, None (no
+        # hazard brought) when no group is chosen, never the OH2 default.
+        g = b.secondary_animal_housing_group
+        return None if g is None else ANIMAL_HOUSING_GROUPS[g][0]
     if o in _PARKING_OCCS and b.has_robotic_parking:
         return "HH"
     return default_hazard(o)

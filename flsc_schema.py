@@ -99,8 +99,10 @@ OCCUPANCY_DEFS = {
 #   EH2 #1.1.13.5.b: robotic / mechanical parking.
 # Animal Housing A and C are LH (#1.1.13.1.q, r, p.528), B is OH2 (#1.1.13.3.a, p.529):
 # see ANIMAL_HOUSING_GROUPS. The animal_housing value below (OH2, the highest of the
-# three) is used only where no group is known (a secondary occupancy in R13 mode); the
-# app requires the group for the primary occupancy (owner answer 12.10.2026, Ch9 Q6).
+# three) is the hazard of the occupancy with no group known; the app requires the group
+# for the primary occupancy (owner answer 12.10.2026, Ch9 Q6) and for a secondary one
+# in R13 most-restrictive mode (`secondary_animal_housing_group`, owner ruling
+# 12.10.2026, P3 Storey Q4; the engine never uses OH2 for a secondary with no group).
 # Storage / industrial has no default: the app makes the user choose (Table 9.27).
 # HAZARD_NOT_CLASSIFIED lists the occupancies #1.1.13 does not name; their value
 # here is the tool's working default and the app says the designer must select.
@@ -187,6 +189,10 @@ class StoreyUse(BaseModel):
     storey: str = ""
     row: Optional[str] = None
     area_m2: float = Field(0.0, ge=0)
+    # Owner ruling 12.10.2026, P3 Storey Q1: number of identical storeys this storey
+    # stands for (a whole number, at least 1; a bool or a fraction is refused). Every
+    # line of one storey carries the same count. Old files without it load with 1.
+    count: int = Field(1, ge=1, strict=True)
 
 
 class Building(BaseModel):
@@ -343,6 +349,10 @@ class Building(BaseModel):
     # (R13 most-restrictive mode). None = not chosen: its Table 9.27 rows are not evaluated.
     # "EH2" = HH with Extra Hazard Group 2 (#1.1.13.5).
     secondary_storage_hazard: Optional[Literal["LH", "OH1", "OH2", "HH", "EH2"]] = None
+    # Owner ruling 12.10.2026, P3 Storey Q4: group of an animal_housing SECONDARY occupancy
+    # (R13 most-restrictive mode), hazard per #1.1.13 (A LH, B OH2, C LH, p.528-529).
+    # None = not chosen: its Ch 9 lines are not evaluated (as Ch9 Q9 for storage).
+    secondary_animal_housing_group: Optional[Literal["A", "B", "C"]] = None
     hangar_group: Literal["I", "II_III", "IV"] = "I"  # Table 9.27 Group Q.1 / Q.2 / Q.3; default Group I (most onerous)
     is_aboveground_tank_storage: bool = False       # Table 9.27 Group T - flammable / combustible liquids in aboveground storage tanks
     ast_storage_area_m2: float = Field(0.0, ge=0)   # Group T storage area; 0 = not stated -> row 2
@@ -386,6 +396,13 @@ class Building(BaseModel):
     has_parking_area: bool = False                # in-building parking area
     attached_parking_kind: Literal["enclosed", "open"] = "enclosed"  # ATTACHED parking sub-occupancy: open vs enclosed (drives MOE/FP/FA/SC parking sub-evaluation)
     parking_area_m2: float = Field(0.0, ge=0)   # Footprint area of the attached parking - used as GFA / GF BUA in the parking sub-evaluation. 0 = not entered: the parking sub-evaluation is NOT EVALUATED (audit ENG-11; no fallback to the basement or ground-floor BUA).
+    # Owner ruling 12.10.2026, P3 App Q2: the attached parking's OWN height above the fire
+    # access level (m) and its basement levels drive the height- and level-keyed parking
+    # rows (e.g. Ch 10 Table 10.23 item 1.iv, p.860; Table 9.24 rows). None = not entered:
+    # those lines are NOT EVALUATED by name, never taken from the tower. 0 m = the parking
+    # is wholly below the fire access level. Ch 9 sprinklers still follow the host table.
+    parking_height_m: Optional[float] = Field(None, ge=0)
+    parking_basement_levels: Optional[int] = Field(None, ge=0)
 
     # --- FP (Ch 9) - Motor Fuel Dispensing sub-group (Table 9.25 A/B/C)
     motor_fuel_group: Literal["A", "B", "C"] = "A"
@@ -439,6 +456,17 @@ class Building(BaseModel):
         if (self.occupancy == "animal_housing" and self.animal_housing_group
                 and "hazard_class" not in self.model_fields_set):
             self.hazard_class = ANIMAL_HOUSING_GROUPS[self.animal_housing_group][0]
+        return self
+
+    @model_validator(mode="after")
+    def _parking_levels_within_building(self):
+        """P3 App Q2: the attached parking is in the building, so its basement levels
+        cannot exceed the building's basements."""
+        if (self.has_parking_area and self.parking_basement_levels is not None
+                and self.parking_basement_levels > self.floors_below_grade):
+            raise ValueError(
+                f"Attached parking basement levels ({self.parking_basement_levels}) cannot "
+                f"exceed the building's basements ({self.floors_below_grade}).")
         return self
 
     @model_validator(mode="after")
@@ -533,7 +561,7 @@ class Building(BaseModel):
         per-storey table has lines it governs (owner answer 12.10.2026, F6) and its
         areas are summed instead."""
         if self.storey_uses:
-            return sum(u.area_m2 for u in self.storey_uses)
+            return sum(u.area_m2 * u.count for u in self.storey_uses)
         return sum(u.area_m2 for u in self.use_areas)
 
     @property
@@ -640,6 +668,7 @@ class StoreyLoad(BaseModel):
     occupant_load: int = 0
     min_exits: int = 0
     parts: List[str] = Field(default_factory=list)
+    count: int = 1   # identical storeys (owner ruling 12.10.2026, P3 Storey Q1)
 
 
 class FireAccessSummary(BaseModel):

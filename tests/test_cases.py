@@ -714,7 +714,10 @@ CASES = [
          inputs=dict(occupancy="hotel_a", height_m=18, floors_above_grade=5,
                      ground_floor_bua_m2=1000, plot_area_m2=2000,
                      has_parking_area=True, attached_parking_kind="enclosed",
-                     parking_area_m2=1000),   # phase 3 (ENG-11): area required, no fallback
+                     parking_area_m2=1000,    # phase 3 (ENG-11): area required, no fallback
+                     # P3 App Q2 (owner ruling 12.10.2026): the parking's own height and
+                     # levels, never the tower's (re-pointed: was the hotel height 18 m)
+                     parking_height_m=18, parking_basement_levels=0),
          expect_attached_parking_count=7,
          expect_attached_parking_branch_for=("FP", "parking_enclosed_a3")),
 

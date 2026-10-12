@@ -64,7 +64,10 @@ def test_F7_table_3_15_b_prints_one_column():
 def test_F8_attached_parking_uses_parent_sprinkler_status(monkeypatch):
     b = Building(occupancy="business", height_m=40, floors_above_grade=11,
                  floors_below_grade=2, gross_floor_area_m2=11000, ground_floor_bua_m2=1000,
-                 has_parking_area=True, parking_area_m2=2000)
+                 has_parking_area=True, parking_area_m2=2000,
+                 # P3 App Q2 (owner ruling 12.10.2026): one run at the parking's own
+                 # height and levels (blank ones are probed over every printed edge).
+                 parking_height_m=6, parking_basement_levels=2)
     seen = []
     real = engine.evaluate_moe
 
