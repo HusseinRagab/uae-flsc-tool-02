@@ -37,39 +37,43 @@ Occupancy = Literal[
     "high_depth_underground", "low_depth_underground",
 ]
 
+# Definitions follow Ch 1 Table 1.1 (p.48-50): occupancy groups are defined by USE
+# (audit ENG-16). Ch 1 #1.7.9 (p.41) mercantile Class A/B/C (area and storeys) is a
+# separate classification, not the Table 1.1 group. The client-count wording of the
+# daycare groups (Ch 3) and the education notes are unchanged.
 OCCUPANCY_DEFS = {
-    "assembly_a": "Assembly Group A - Occupant load > 1,000. Concert halls, large auditoriums, stadiums, arenas, exhibition halls, mosques > 1,000 capacity.",
-    "assembly_b": "Assembly Group B - Occupant load 301 to 1,000. Cinemas, theatres, banquet halls, conference halls, mid-size mosques, ballrooms.",
-    "assembly_c": "Assembly Group C - Occupant load 50 to 300. Restaurants, cafes, small meeting rooms, small mosques, community halls, bars, nightclubs.",
-    "business": "Business - Offices, non-inpatient clinics, government offices, banks, courthouses, professional services.",
+    "assembly_a": "Assembly Group A - Table 1.1 row 1 (p.48): banquet halls, night clubs, discos, restaurants with more than 50 people, pubs, bars, theaters, concert halls, cinemas, indoor stadiums, studios with audience, exhibition halls, casinos.",
+    "assembly_b": "Assembly Group B - Table 1.1 row 1 (p.48): amusement parks, grandstands, outdoor stadiums, bleachers, swimming pools, skating rinks, indoor kid's play areas, bowling alleys, pool/billiard parlors, waiting areas in transportation terminals, airport terminal buildings, food courts and seating areas.",
+    "assembly_c": "Assembly Group C - Table 1.1 row 1 (p.48): art galleries, community halls, mosques, churches, temples, courtrooms, funeral parlors, gymnasiums, fitness centers, seminar halls, libraries, museums, open air theaters, amphitheaters, parks, beaches.",
+    "business": "Business - Table 1.1 row 2 (p.48), Groups A, B and C together: A electronic data processing, telephone exchanges, radio and television stations, laboratories, testing and research, airport traffic control towers; B offices, modular site offices, banks, government offices, post offices, money exchange centers, sales and marketing offices, professional / consultancy services; C barber shops, beauty shops, massage centers, typing centers, translation centers, print shops, photo studios.",
     # NOTE: Education group letters swapped 2026-05 to match UAE FLSC Ch 3 #5.3 / Table 3.13.3.
     # Per code: Group A = Nurseries / KG / Preschool (Table 3.20); Group B/C = Schools and Colleges
     # / Universities (Table 3.21). Schema IDs preserved (education_a/_b/_c) for backward compat
     # with saved scenarios; their meaning is the code's meaning, not the schema's original.
-    "education_a": "Educational Group A - Nurseries, KG1/KG2, Preschool, Talent Centers (Table 3.20).",
-    "education_b": "Educational Group B - Schools: Grade 1 through 12 (Table 3.21).",
-    "education_c": "Educational Group C - Colleges, Universities, adult education (Table 3.21).",
-    "mercantile_a": "Mercantile Group A - Retail up to 2 storeys and less than 2,800 m2. Shops, showrooms, boutiques.",
-    "mercantile_b": "Mercantile Group B - Retail more than 2 storeys or exceeding 2,800 m2. Department stores, hypermarkets (stand-alone).",
-    "healthcare_a": "Healthcare Group A - Hospitals, nursing homes, inpatient medical facilities where occupants require assistance for evacuation (Table 3.22).",
-    "healthcare_b": "Healthcare Group B - Clinics, day-surgery and outpatient medical facilities (Table 3.22). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with residential / business), NOT the public-assembly Table 9.20.a / 9.21.a used by Healthcare Group A hospitals.",
-    "healthcare_c": "Healthcare Group C - Ambulatory healthcare, walk-in clinics, dental/eye/diagnostic centres (Table 3.23). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with Healthcare Group B), not Table 9.20.a / 9.21.a.",
-    "hotel_a": "Hotel Group A - Luxury / 4-5 star hotels.",
-    "hotel_b": "Hotel Group B - Mid-range hotels (2-3 star).",
-    "hotel_c": "Hotel Group C - Budget hotels, apartment hotels, furnished apartments.",
+    "education_a": "Educational Group A - Table 1.1 row 3 (p.48): nurseries, kindergarten, preschool center, talent grooming centers for kids (Table 3.20).",
+    "education_b": "Educational Group B - Table 1.1 row 3 (p.48): schools for up to 12th grade students (Table 3.21).",
+    "education_c": "Educational Group C - Table 1.1 row 3 (p.48): colleges, universities, training centers for adults (Table 3.21).",
+    "mercantile_a": "Mercantile Group A - Table 1.1 row 11 (p.50): hardware stores, paint stores, chemical stores, furniture stores, motor vehicle showrooms, restaurants with less than 50 people. (Ch 1 #1.7.9 Class A/B/C by area and storeys, p.41, is a separate classification.)",
+    "mercantile_b": "Mercantile Group B - Table 1.1 row 11 (p.50): department stores, supermarkets, hypermarkets, shopping centers, anchor stores, showrooms, retail stores, whole sale stores, boutiques, drugstores, gift shops. (Ch 1 #1.7.9 Class A/B/C by area and storeys, p.41, is a separate classification.)",
+    "healthcare_a": "Healthcare Group A - Table 1.1 row 4 (p.48): hospitals, limited care facilities, nursing homes, mental asylums (Table 3.22).",
+    "healthcare_b": "Healthcare Group B - Table 1.1 row 4 (p.48): clinics (Table 3.22). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with residential / business), NOT the public-assembly Table 9.20.a / 9.21.a used by Healthcare Group A hospitals.",
+    "healthcare_c": "Healthcare Group C - Table 1.1 row 4 (p.48): ambulatory health care center (Table 3.23). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with Healthcare Group B), not Table 9.20.a / 9.21.a.",
+    "hotel_a": "Hotel Group A - Table 1.1 row 9 (p.50): hotels, hotel apartments, time share properties.",
+    "hotel_b": "Hotel Group B - Table 1.1 row 9 (p.50): dormitory, motels, lodging.",
+    "hotel_c": "Hotel Group C - Table 1.1 row 9 (p.50): resorts.",
     "daycare_a": "Daycare Group A - Daycare for more than 12 clients.",
     "daycare_b": "Daycare Group B - Daycare for 7 to 12 clients.",
     # daycare_c: UAE FLSC Ch 3 #5.10 only defines Daycare Groups A and B. Schema keeps _c as a
     # UI convenience for family daycare (4-6 clients); Ch 3 rules treat it the same as Group B.
     "daycare_c": "Daycare Group C - Family daycare for 4 to 6 clients (UI category; Ch 3 falls back to Group B rules).",
-    "residential": "Residential - Apartment buildings, flats, condominiums. Multi-family dwellings.",
-    "labour_accommodation": "Labour Accommodation - Dormitory-style housing for construction/industrial workers with shared facilities.",
-    "staff_accommodation": "Staff Accommodation - Housing for employees of a single institution (hospital/hotel/airport staff).",
-    "hostel": "Hostel - Shared lodging, bunk-bed dormitories, youth hostels, pilgrim accommodation.",
+    "residential": "Residential Group A - Table 1.1 row 5 (p.49): residential buildings, residential apartments, assisted living homes.",
+    "labour_accommodation": "Labour Accommodation - Residential Group C, Table 1.1 row 5 (p.49): labor accommodation.",
+    "staff_accommodation": "Staff Accommodation - Residential Group B, Table 1.1 row 5 (p.49): staff accommodation.",
+    "hostel": "Hostel - Residential Group B, Table 1.1 row 5 (p.49): hostels, monasteries, school boarding house.",
     "animal_housing": "Animal Housing - Stables, kennels, veterinary boarding, livestock pens.",
-    "detention_a": "Detention & Correctional Group A - Maximum security; occupants restrained and require supervised evacuation.",
-    "detention_b": "Detention & Correctional Group B - Medium security correctional facilities.",
-    "detention_c": "Detention & Correctional Group C - Minimum security, police holding cells, short-term detention.",
+    "detention_a": "Detention & Correctional Group A - Table 1.1 row 8 (p.49): adult prisons, adult detention centers, adult jails, adult correctional centers, adult pre-release centers.",
+    "detention_b": "Detention & Correctional Group B - Table 1.1 row 8 (p.49): juvenile prisons, juvenile detention centers, juvenile correctional centers.",
+    "detention_c": "Detention & Correctional Group C - Table 1.1 row 8 (p.49): medical quarantines, airport quarantines.",
     "villa_private": "Private Villa (Ch 1 #1.7.34) - Single-family dwelling unit, generally ground with first floor, built and solely owned by an individual on an individual plot.",
     "villa_commercial": "Commercial Villa (Ch 1 #1.7.35) - One- or two-family dwelling units built in a group by a developer and sold, leased or rented to individual families. Mosques, community halls and recreation facilities may also be part of this development. NOT a private villa converted to a shop/clinic - use the 'villa converted to other use' flag for that (Table 8.13 item 14 / Table 9.21.d).",
     "mall_covered": "Covered Mall - Fully enclosed/climatised shopping mall with common internal circulation; tenants accessed from internal mall.",
@@ -79,10 +83,10 @@ OCCUPANCY_DEFS = {
     "parking_open": "Open Parking (UAE FLSC Ch 1, Table 1.1, def. 15) - A parking occupancy where in each parking level, any part of the carpark is within 30 m of permanent natural ventilation wall openings open to the atmosphere; not less than 0.4 m^2 per linear meter distributed over 40 percent of the building perimeter or uniformly over two opposing sides; interior wall lines and column lines at least 20 percent open with openings distributed to provide ventilation.",
     "storage_industrial": "Storage / Warehouse / Industrial - Warehouses, logistics, manufacturing, processing, workshops. Ch 9 #4.11 (Tables 9.24-9.28).",
     "motor_fuel_dispensing": "Motor Fuel Dispensing - Petrol stations, truck fuelling, ADNOC/ENOC/EPPCO with fuel storage and dispensing pumps.",
-    "infrastructure": "Infrastructure - new developments' infrastructure, marina/waterfront, theme/amusement parks, commercial developments. Ch 9 #4.10 / Table 9.26 (yard-hydrant network only).",
+    "infrastructure": "Infrastructure - Ch 9 #4.10.1 (p.723): new developments' infrastructure, marina developments, waterfront developments, theme parks, amusement parks and commercial developments. Table 9.26 (yard-hydrant network only).",
     "mixed_multiple": "Mixed and Multiple Occupancies - Two or more occupancies intermingled. Treated by most-restrictive occupancy unless separated per Ch 1.",
-    "high_depth_underground": "High-Depth Underground - 3 or more basements.",
-    "low_depth_underground": "Low-Depth Underground - 2 or fewer basements.",
+    "high_depth_underground": "High-Depth Underground (Ch 1 #1.7.45, p.45) - An underground structure or a building more than 7 m below or having more than two basements below the level of exit discharge.",
+    "low_depth_underground": "Low-Depth Underground (Ch 1 #1.7.44, p.45) - An underground structure or a building up to 7 m below or having up to two basements below the level of exit discharge.",
 }
 
 # Ch 9 #1.1.13 (p.526-530) hazard classification for sprinkler protection.
@@ -319,10 +323,21 @@ class Building(BaseModel):
     # `villa_converted_use` flag defined in the ES Ch 5 section above.)
     has_single_exit_stair: bool = False             # Tables 9.20.c, 9.21.c - building has only one exit stair
     has_attached_commercial_outlet: bool = False    # Table 9.21.e - villa/mosque/business with commercial outlet attached or in same plot
+    # Table 9.21.e (p.711) rows are keyed on the built-up ground floor area OF THE
+    # COMMERCIAL OUTLET, not the host building (audit CH9B-14). 0 = not entered: the
+    # Table 9.21.e row is not evaluated and the report names the missing input.
+    commercial_outlet_gf_bua_m2: float = Field(0.0, ge=0)
     tent_marquee_kind: Literal["none", "temporary", "permanent", "commercial_desert", "site_office_short", "site_office_long", "small_detached"] = "none"
     # Table 9.21.f - tents, marquees, site offices, site dwellings sub-types.
     # --- FP (Ch 9) - Tunnel Fire Protection (Table 9.28)
     tunnel_kind: Literal["road_rail", "cable"] = "road_rail"
+    # Ch 9 #4.1.2 (p.694): water based systems shall not be installed or used where water
+    # reactive materials are stored and handled (audit CH9A-20).
+    has_water_reactive_materials: bool = False
+    # Ch 1 Table 1.1 row 11 (p.50): a group of mercantile occupancies under a single roof or
+    # not separated, with a ground floor built up area of more than 3600 m2, irrespective of
+    # the number of storeys, shall be considered as Malls (audit ENG-02).
+    mercantile_multi_tenant: bool = False
     tunnel_length_m: float = 0.0
 
 
@@ -330,9 +345,11 @@ class Building(BaseModel):
     has_class_b_storage_zones: bool = False       # chemical / linen / waste / flammable liquid / solvent / lab stores
     has_combustible_metals: bool = False          # magnesium / titanium / zirconium / sodium / lithium / potassium
     has_hv_or_heavy_electrical: bool = False      # HV room / heavy electrical machinery
-    has_parking_area: bool = True                 # in-building parking area (most occupancies have one)
+    # Audit ENG-11: off unless the user ticks it (a default True added a whole parking
+    # sub-evaluation the user had not chosen, e.g. to a G+1 villa).
+    has_parking_area: bool = False                # in-building parking area
     attached_parking_kind: Literal["enclosed", "open"] = "enclosed"  # ATTACHED parking sub-occupancy: open vs enclosed (drives MOE/FP/FA/SC parking sub-evaluation)
-    parking_area_m2: float = 0.0      # Footprint area of the attached parking - used as GFA / GF BUA in the parking sub-evaluation. If 0, falls back to basement_bua_m2 then ground_floor_bua_m2.
+    parking_area_m2: float = Field(0.0, ge=0)   # Footprint area of the attached parking - used as GFA / GF BUA in the parking sub-evaluation. 0 = not entered: the parking sub-evaluation is NOT EVALUATED (audit ENG-11; no fallback to the basement or ground-floor BUA).
 
     # --- FP (Ch 9) - Motor Fuel Dispensing sub-group (Table 9.25 A/B/C)
     motor_fuel_group: Literal["A", "B", "C"] = "A"
@@ -372,6 +389,23 @@ class Building(BaseModel):
         if self.height_m <= 0 and "height_m" in self.model_fields_set \
                 and self.occupancy != "infrastructure":
             raise ValueError("Building height must be more than 0 m.")
+        return self
+
+    @property
+    def mercantile_is_mall(self) -> bool:
+        """Ch 1 Table 1.1 row 11 (p.50): a group of mercantile occupancies under a single
+        roof or not separated, ground floor built up area more than 3600 m2 -> a Mall."""
+        return (self.occupancy in ("mercantile_a", "mercantile_b")
+                and self.mercantile_multi_tenant and self.ground_floor_bua_m2 > 3600)
+
+    @model_validator(mode="after")
+    def _mercantile_group_is_a_mall(self):
+        # Audit ENG-02: refused, never evaluated as a mercantile building.
+        if self.mercantile_is_mall:
+            raise ValueError(
+                "A group of mercantile occupancies under a single roof or not separated, with "
+                "a ground floor built up area of more than 3600 m2, shall be considered as a "
+                "Mall (Ch 1 Table 1.1 row 11, p.50): choose a Mall occupancy.")
         return self
 
     @property

@@ -37,6 +37,21 @@ general:
         code_ref: "Ch 9, #4.1.6"
         page_ref: "p.694"
         detail: "Yard hydrant loop per Section 3.11. Required because total storage/industrial built-up area across all floors > 3,600 m2 (#4.1.6, p.694). This companion trigger catches multi-storey storage buildings whose ground-floor footprint alone is below 3,600 m2."
+  - id: g_yard_hydrant_storage_total_bua_missing
+    # Audit CH9A-17: #4.1.6 keys on the built-up area of all floors (#4.1.11). With the
+    # total GFA not entered on a storage building of more than one floor, the total is
+    # unknown: named, never taken as the ground floor alone.
+    when:
+      building_category_is: storage_industrial
+      gross_floor_area_m2_lte: 0
+      floors_above_grade_gt: 1
+      ground_floor_bua_m2_lte: 3600
+    systems:
+      - name: "Yard Fire Hydrant System (#4.1.6 total built-up area) - NOT EVALUATED"
+        spec: "Not evaluated: enter the total GFA (all floors, including mezzanines)"
+        code_ref: "Ch 9, #4.1.6 / #4.1.11"
+        page_ref: "p.694, p.695"
+        detail: "#4.1.6 requires yard fire hydrants for storage and industrial occupancies with more than 3600 m2 built-up area; #4.1.11 defines built-up area as the total floor areas of all the floors, including mezzanines. The total GFA was not entered for this multi-storey building, so this trigger is not evaluated (audit CH9A-17)."
   - id: g_yard_hydrant_storage_remote
     when:
       building_category_is: storage_industrial
@@ -474,7 +489,11 @@ branches:
     # fewer basements) also takes row H.
     match:
       any_of:
-        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
+        # Audit CH9A-19: Table 9.20.a (p.700) does not list low depth underground
+        # buildings; a midrise one is NOT EVALUATED (branch midrise_low_depth_not_in_code)
+        # unless it is high depth (row H).
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c, low_depth_underground], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: true}
         - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
@@ -511,7 +530,11 @@ branches:
     # fewer basements) also takes row H.
     match:
       any_of:
-        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
+        # Audit CH9A-19: Table 9.20.a (p.700) does not list low depth underground
+        # buildings; a midrise one is NOT EVALUATED (branch midrise_low_depth_not_in_code)
+        # unless it is high depth (row H).
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c, low_depth_underground], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: true}
         - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
@@ -535,6 +558,17 @@ branches:
         duty: tank
         spec: "60 minutes duration (combined)"
         detail: "Combined tank: low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.a.2 vii)."
+
+  # Audit CH9A-19: #4.4.1 / #4.4.2 and Tables 9.20.a-d (p.700-704) do not list low
+  # depth underground buildings, so a midrise one is not evaluated: the report names it.
+  - id: midrise_low_depth_not_in_code
+    match: {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: false}
+    section: "Ch 9, #4.4 / Tables 9.20.a-9.20.d"
+    page: "p.700-704"
+    systems:
+      - name: "Midrise Low Depth Underground - NOT EVALUATED"
+        spec: "Not evaluated: choose the occupancy of the building above grade"
+        detail: "Table 9.20.a (p.700) lists the #4.4.1 occupancies and row H (high depth underground buildings or buildings with 3 or more basements); Tables 9.20.b-9.20.d (p.701-704) list residential, business, healthcare B/C, mercantile C, animal housing and detention. None lists a low depth underground building (#1.7.44, p.45) at midrise height, so the tool does not pick a row: select the occupancy of the building above grade and enter the basements (audit CH9A-19)."
 
   # ---- Midrise residential group (Table 9.20.b, #4.4.2, p.701-702) ----
   # Rows 1-3 are tiers on the ground-floor built-up area; row 4 (plot more
@@ -1015,16 +1049,38 @@ branches:
   # ---------------- LOWRISE COMMERCIAL OUTLET ATTACHED (Ch 9, #4.5.5 / Table 9.21.e) ----
   # Villas / business / mosques with commercial / mercantile outlets attached or in the
   # same plot. Tiers keyed off the commercial-outlet BUA, not the host building.
+  # Audit CH9B-14: #4.5.5 (p.711) covers lowrise villas (G+1), business (Groups A, B, C)
+  # and mosques (Assembly Group C in this tool) with commercial / mercantile outlets
+  # attached or in the same plot; the rows are keyed on the built-up ground floor area OF
+  # THE COMMERCIAL OUTLET (`commercial_outlet_gf_bua_m2`), and Table 9.21.e replaces the
+  # generic Table 9.21.a / 9.21.b / 9.21.c tiers of the host building. The table prints
+  # "upto 900 m2" and "more than 900 m2", so 900 m2 is row 1.
+  - id: lowrise_commercial_outlet_area_missing
+    match:
+      height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
+      has_attached_commercial_outlet_is: true
+      commercial_outlet_gf_bua_m2_lte: 0
+    section: "Ch 9, #4.5.5 / Table 9.21.e"
+    page: "p.711"
+    systems:
+      - name: "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area of the commercial outlet"
+        detail: "Table 9.21.e rows 1 (up to 900 m2) and 2 (more than 900 m2) are keyed on the built-up ground floor area of the commercial outlet, not of the host building. The outlet area was not entered, so the Table 9.21.e row is not evaluated (audit CH9B-14)."
+
   - id: lowrise_commercial_outlet_attached_small
     match:
       height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
       has_attached_commercial_outlet_is: true
-      ground_floor_bua_m2_lte: 900
+      commercial_outlet_gf_bua_m2_gt: 0
+      commercial_outlet_gf_bua_m2_lte: 900
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.5 / Table 9.21.e.1"
     page: "p.711"
     systems:
       - name: "Hose Reel System (throughout)"
-        detail: "Hose reels throughout the building per Section 3.3. Triggered because attached/same-plot commercial outlet BUA <= 900 m2."
+        detail: "Hose reels throughout the building per Section 3.3. Triggered because the built-up ground floor area of the attached / same-plot commercial outlet is up to 900 m2 (Table 9.21.e.1). Table 9.21.e replaces the generic Table 9.21.a / 9.21.b tiers of the host building (#4.5.5)."
       - name: "Dry Landing Valves"
         required: not_required
         detail: "Not required at this tier."
@@ -1043,13 +1099,15 @@ branches:
   - id: lowrise_commercial_outlet_attached_large
     match:
       height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
       has_attached_commercial_outlet_is: true
-      ground_floor_bua_m2_gt: 900
+      commercial_outlet_gf_bua_m2_gt: 900
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.5 / Table 9.21.e.2"
     page: "p.711"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements)"
-        detail: "Full sprinkler coverage throughout the building including basements per Section 3.5. Triggered because attached/same-plot commercial outlet BUA > 900 m2."
+        detail: "Sprinklers throughout the building including basements per Section 3.5. Triggered because the built-up ground floor area of the attached / same-plot commercial outlet is more than 900 m2 (Table 9.21.e.2). Table 9.21.e replaces the generic Table 9.21.a / 9.21.b tiers of the host building (#4.5.5)."
       - name: "Hose Reel System (throughout)"
         detail: "Hose reels throughout per Section 3.3."
       - name: "Dry Landing Valves"
@@ -1075,9 +1133,12 @@ branches:
   #   site_office_short   -> extinguishers only (used <6 months)
   #   site_office_long    -> hose reel + 50 gpm @ 4.5 bar / 30 min tank (used >6 months)
   #   small_detached      -> extinguishers only (detached G+1 <=150 m2 any occupancy)
+  # Audit CH9B-14: #4.5.6 (p.712) gives tents, marquees, site offices and site dwellings
+  # their own Table 9.21.f; it replaces the generic Table 9.21.a / 9.21.b / 9.21.c tiers.
   - id: lowrise_tent_marquee_extinguishers_only
     match:
       tent_marquee_kind_in: [temporary, site_office_short, small_detached]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows A / D / F)"
     page: "p.712"
     systems:
@@ -1096,6 +1157,7 @@ branches:
   - id: lowrise_tent_marquee_hose_reel
     match:
       tent_marquee_kind_in: [permanent, commercial_desert, site_office_long]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows B / C / E)"
     page: "p.712"
     systems:
