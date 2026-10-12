@@ -2378,6 +2378,7 @@ auxiliary_rooms:
 
   - id: aux_M_lift_machine
     flag: has_lift_machine_room
+    requires_sprinkler_system: true   # #4.1.5, ruling R14 (12.10.2026)
     systems:
       - name: "Lift Machine Room - Automatic Sprinkler System (Section 3.5)"
         code_ref: "Ch 9, #4.14 / Table 9.30.M"
