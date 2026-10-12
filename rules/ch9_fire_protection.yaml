@@ -1886,37 +1886,250 @@ branches:
       - name: "Fire Pump"
         required: not_required
 
-  - id: parking_enclosed
-    match: {occupancy: parking_enclosed}
-    section: "Ch 9, #4.8"
+  # ---------------- PARKING (Ch 9, #4.8.1 / Table 9.24, p.718-721) ----------
+  # A = enclosed (4 rows), B = mechanical / robotic (2 rows, replaces A and C),
+  # C = open (4 rows), D = covered / shaded one-level (2 rows, replaces C).
+  # The plot > 20,000 m2 rows add hydrants and the 1000 gpm / 60 min duty on
+  # top of the area/height row. Smoke control is Ch 10, not Table 9.24.
+  - id: parking_enclosed_a1
+    match: {occupancy: parking_enclosed, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 900, height_m_lte: 15}
+    section: "Ch 9, #4.8.1 / Table 9.24.A.1 (GF BUA up to 900 m2, height up to 15 m)"
+    page: "p.718"
+    systems:
+      - name: "Dry Riser + Hose Reel System (throughout)"
+        detail: "Dry riser and hose reel system throughout per Section 3.2 and Section 3.3 (Table 9.24.A.1 i)."
+      - name: "Dry Risers Interconnected at Highest Level"
+        detail: "Table 9.24.A.1 ii."
+      - name: "Automatic Sprinkler System"
+        required: not_required
+        detail: "Not required by Table 9.24.A.1."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "50 gpm @ 4.5 bar at most remote hose reel outlet valve"
+        detail: "Table 9.24.A.1 iii."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "30 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (Table 9.24.A.1 iv)."
+
+  - id: parking_enclosed_a2
+    match: {occupancy: parking_enclosed, has_robotic_parking_is: false, ground_floor_bua_m2_gt: 900, ground_floor_bua_m2_lte: 3600, height_m_lte: 15}
+    section: "Ch 9, #4.8.1 / Table 9.24.A.2 (GF BUA 901 to 3,600 m2, height up to 15 m)"
     page: "p.718"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
-        detail: "Full sprinkler coverage throughout enclosed car park per Section 3.5."
-      - name: "Wet Riser / Dry Riser (height-dependent)"
-        requires_wet_riser: true
-        detail: "Wet riser required for multi-storey enclosed car park; dry riser allowed for short buildings per Section 3.4/3.2."
-      - name: "Standpipe with Class I outlets"
-        detail: "Class I landing valves at every floor; 64 mm outlets."
-      - name: "Hose Reel (per Section 3.3)"
-        detail: "Where required by Section 3.3 travel distances."
-      - name: "Fire Pump + Tank"
+        detail: "Sprinklers throughout the parking structure per Section 3.5 (Table 9.24.A.2 i). The table prints up to 900 m2 and 901 m2 to 3,600 m2; any area above 900 m2 is taken under this row."
+      - name: "Dry Riser + Hose Reel System (throughout)"
+        detail: "Dry riser and hose reel system throughout per Section 3.2 and Section 3.3 (Table 9.24.A.2 iii)."
+      - name: "Dry Risers Interconnected at Highest Level"
+        detail: "Table 9.24.A.2 iv."
+      - name: "Fire Pump"
         duty: pump
-        spec: "Per associated main-building class (Ch 9, #4.2 - #4.5)"
-        detail: "If parking is attached to a mall/highrise/residential tower, pump + tank follow the main-building branch."
-      - name: "Smoke Control"
-        detail: "Mechanical smoke ventilation/exhaust required per Ch 10 for enclosed parking."
+        spec: "300 gpm @ 4.5 bar at most remote hose valve"
+        detail: "Table 9.24.A.2 v."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "30 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (Table 9.24.A.2 vi)."
 
-  - id: parking_open
-    match: {occupancy: parking_open}
-    section: "Ch 9, #4.8"
+  - id: parking_enclosed_a3
+    match:
+      occupancy: parking_enclosed
+      has_robotic_parking_is: false
+      any_of:
+        - {ground_floor_bua_m2_gt: 3600}
+        - {height_m_gt: 15}
+    section: "Ch 9, #4.8.1 / Table 9.24.A.3 (GF BUA more than 3,600 m2 or height more than 15 m)"
     page: "p.718"
     systems:
-      - name: "Hose Reel System (per Section 3.3)"
-        detail: "Hose reels sized to cover all parking bays per Section 3.3 coverage radius."
-      - name: "Sprinklers"
+      - name: "Automatic Sprinkler System (full coverage)"
+        detail: "Sprinklers throughout the parking structure per Section 3.5 (Table 9.24.A.3 i)."
+      - name: "Wet Riser System (interconnected at highest level)"
+        requires_wet_riser: true
+        detail: "Wet riser system throughout per Section 3.4, interconnected at the highest level (Table 9.24.A.3 iii-iv)."
+      - name: "Fire Pump"
+        duty: pump
+        pump_spec_type: standpipe_dependent
+        detail: "Table 9.24.A.3 v prints 750 gpm for 2 standpipes and 1000 gpm for more than 3 standpipes; 3 standpipes is not printed. The tool takes 1000 gpm for 3 standpipes (ruling R3 pending)."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (Table 9.24.A.3 vi)."
+
+  - id: parking_enclosed_a4
+    match: {occupancy: parking_enclosed, has_robotic_parking_is: false, plot_area_m2_gt: 20000}
+    section: "Ch 9, #4.8.1 / Table 9.24.A.4 (plot more than 20,000 m2)"
+    page: "p.719"
+    systems:
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 in a loop covering the entire development (Table 9.24.A.4 i). Not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure; tapping from the existing yard hydrant network is permitted to extend coverage (item ii). Sprinklers, wet risers and hose reels follow Table 9.24.A.1, 2 or 3 as applicable (item iii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "1000 gpm @ 6.9 bar at most remote hydrant valve and hose outlet (combined yard + internal, or yard hydrants only)"
+        detail: "Table 9.24.A.4 iii (combined pump set) and iv (pump set serving only the yard hydrants)."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (combined tank, dedicated direct breeching inlet; Table 9.24.A.4 v)."
+
+  - id: parking_robotic_b1
+    match: {occupancy_in: [parking_enclosed, parking_open], has_robotic_parking_is: true}
+    suppresses: [parking_enclosed_a1, parking_enclosed_a2, parking_enclosed_a3, parking_enclosed_a4, parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
+    section: "Ch 9, #4.8.1 / Table 9.24.B.1 (mechanical / robotic parking, irrespective of area)"
+    page: "p.719"
+    systems:
+      - name: "Deluge Water Spray System (each vehicle covered)"
+        detail: "Deluge water spray system per Section 3.8 such that each vehicle is under the deluge spray coverage (Table 9.24.B.1 i)."
+      - name: "Wet Riser System (near stairs and access walkways)"
+        requires_wet_riser: true
+        detail: "Wet riser system throughout the building, near stairs and on access walkways, per Section 3.4; interconnected at the highest level (Table 9.24.B.1 ii-iii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "Sized for at least 2 adjacent deluge water spray zones @ 6.9 bar at most remote hose reel outlet valve"
+        detail: "Table 9.24.B.1 iv. The flow depends on the deluge zone design; it is not a fixed table value, so this line is listed beside any other pump line rather than ranked against it."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (Table 9.24.B.1 v)."
+
+  - id: parking_robotic_b2
+    match: {occupancy_in: [parking_enclosed, parking_open], has_robotic_parking_is: true, plot_area_m2_gt: 20000}
+    section: "Ch 9, #4.8.1 / Table 9.24.B.2 (plot more than 20,000 m2)"
+    page: "p.719"
+    systems:
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 in a loop covering the entire development; the fire hose for the interior of the building is tapped from the hydrant loop (Table 9.24.B.2 i). Not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure; tapping from the existing yard hydrant network is permitted to extend coverage (item ii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "1000 gpm @ 6.9 bar at most remote landing valve and hydrant outlet (combined yard + internal, or yard hydrants only)"
+        detail: "Table 9.24.B.2 iii (combined pump set) and iv (pump set serving only the yard hydrants)."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (combined tank, dedicated direct breeching inlet; Table 9.24.B.2 v)."
+
+  - id: parking_open_c1
+    match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 2000, height_m_lt: 15}
+    section: "Ch 9, #4.8.1 / Table 9.24.C.1 (GF BUA up to 2,000 m2, height less than 15 m)"
+    page: "p.720"
+    systems:
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reel system throughout per Section 3.3 (Table 9.24.C.1 i)."
+      - name: "Dry Risers"
+        required: not_required
+        detail: "Dry risers shall not be required (Table 9.24.C.1 ii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "50 gpm @ 4.5 bar at most remote hose reel outlet valve"
+        detail: "Table 9.24.C.1 iii."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "45 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (Table 9.24.C.1 iv)."
+
+  - id: parking_open_c2
+    match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 2000, height_m_gte: 15, height_m_lt: 23}
+    section: "Ch 9, #4.8.1 / Table 9.24.C.2 (GF BUA up to 2,000 m2, height 15 m to less than 23 m)"
+    page: "p.720"
+    systems:
+      - name: "Wet Riser System (interconnected at highest level)"
+        requires_wet_riser: true
+        detail: "Wet riser system throughout per Section 3.4, interconnected at the highest level (Table 9.24.C.2 i-ii)."
+      - name: "Fire Pump"
+        duty: pump
+        pump_spec_type: stairs_dependent
+        detail: "Table 9.24.C.2 iii: 750 gpm for 2 stairs, 1000 gpm for 3 or more stairs."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (dedicated direct breeching inlet; Table 9.24.C.2 iv)."
+
+  - id: parking_open_c3
+    match:
+      occupancy: parking_open
+      has_robotic_parking_is: false
+      any_of:
+        - {ground_floor_bua_m2_gt: 2000}
+        - {height_m_gte: 23}
+    section: "Ch 9, #4.8.1 / Table 9.24.C.3 (GF BUA more than 2,000 m2 or height 23 m and above)"
+    page: "p.720"
+    systems:
+      - name: "Automatic Sprinkler System (full coverage)"
+        detail: "Sprinklers throughout the parking structure per Section 3.5 (Table 9.24.C.3 i)."
+      - name: "Wet Riser System (interconnected at highest level)"
+        requires_wet_riser: true
+        detail: "Wet riser system throughout per Section 3.4, interconnected at the highest level (Table 9.24.C.3 ii-iii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "1000 gpm @ 6.9 bar at most remote landing valve"
+        detail: "Table 9.24.C.3 iv."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (dedicated direct breeching inlet; Table 9.24.C.3 v)."
+
+  - id: parking_open_c4
+    match: {occupancy: parking_open, has_robotic_parking_is: false, plot_area_m2_gt: 20000}
+    section: "Ch 9, #4.8.1 / Table 9.24.C.4 (plot more than 20,000 m2)"
+    page: "p.720"
+    systems:
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 in a loop covering the entire development (Table 9.24.C.4 i). Not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure; tapping from the existing yard hydrant network is permitted to extend coverage (item ii). Sprinklers, wet risers or hose reels follow Table 9.24.C.1, 2 or 3 as applicable (item iii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "1000 gpm @ 6.9 bar at most remote landing valve and yard hydrant (combined yard + internal, or yard hydrants only)"
+        detail: "Table 9.24.C.4 iv (combined pump set) and v (pump set serving only the yard hydrants)."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (combined tank, dedicated direct breeching inlet; Table 9.24.C.4 vi)."
+
+  - id: parking_covered_below_3600
+    match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_lt: 3600}
+    suppresses: [parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
+    section: "Ch 9, #4.8.1 / Table 9.24.D (covered / shaded one-level parking below 3,600 m2)"
+    page: "p.721"
+    systems:
+      - name: "Table 9.24.D - no printed requirement below 3,600 m2"
         required: conditional
-        detail: "Required only where open parking is part of a mall/highrise/super-highrise; standalone open parking does not require sprinklers."
+        detail: "Table 9.24.D starts at a covered/shaded parking area of 3,600 m2; the code prints nothing for a smaller covered/shaded one-level parking. Not evaluated by the tool: confirm with the Authority."
+
+  - id: parking_covered_d1
+    match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_gte: 3600, ground_floor_bua_m2_lte: 20000}
+    suppresses: [parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
+    section: "Ch 9, #4.8.1 / Table 9.24.D.1 (covered / shaded parking 3,600 m2 to less than 20,000 m2)"
+    page: "p.721"
+    systems:
+      - name: "Hose Reel System (throughout)"
+        detail: "Hose reel system throughout per Section 3.3 (Table 9.24.D.1 i). The table prints 3,600 to less than 20,000 m2 and more than 20,000 m2; 20,000 m2 exactly is taken under this row."
+      - name: "Dry Risers"
+        required: not_required
+        detail: "Dry riser shall not be required (Table 9.24.D.1 ii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "50 gpm @ 4.5 bar at most remote hose reel outlet valve"
+        detail: "Table 9.24.D.1 iii."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling (Table 9.24.D.1 iv)."
+
+  - id: parking_covered_d2
+    match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_gt: 20000}
+    suppresses: [parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
+    section: "Ch 9, #4.8.1 / Table 9.24.D.2 (covered / shaded parking more than 20,000 m2)"
+    page: "p.721"
+    systems:
+      - name: "Yard Fire Hydrants"
+        detail: "Yard hydrants per Section 3.11 in a loop covering the entire development; where yard hydrants are provided, the hose reel system is not required (Table 9.24.D.2 i). Yard hydrants or hose reels are not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure (item ii)."
+      - name: "Fire Pump"
+        duty: pump
+        spec: "1000 gpm"
+        detail: "Table 9.24.D.2 iii prints 1000 gpm with no pressure; size the pressure for the most remote hydrant valve per Section 3.11."
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "60 minutes duration"
+        detail: "Low water level detection, dedicated direct breeching inlet and instantaneous refilling (Table 9.24.D.2 iv)."
 
 various_locations:
   # NOTE: Exterior balcony sprinklers (Table 9.29.B, p.749) not encoded - user explicitly

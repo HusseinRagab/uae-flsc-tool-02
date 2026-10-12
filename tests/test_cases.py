@@ -699,7 +699,7 @@ CASES = [
                      ground_floor_bua_m2=1000, plot_area_m2=2000,
                      has_parking_area=True, attached_parking_kind="enclosed"),
          expect_attached_parking_count=7,
-         expect_attached_parking_branch_for=("FP", "parking_enclosed")),
+         expect_attached_parking_branch_for=("FP", "parking_enclosed_a3")),
 
     dict(name="AUDIT Parking: Residential + open attached parking -> sub-evaluation parking_open",
          inputs=dict(occupancy="residential", height_m=20, floors_above_grade=6,
