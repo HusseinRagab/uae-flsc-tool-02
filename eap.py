@@ -1,10 +1,13 @@
 """UAE FLSC 2018 Chapter 19 — Emergency Action Plans (light module).
 
 Every non-villa building gets the Table 19.1 item 8 assembly point and the
-Table 19.2 drills (audit CH10-12, 12.10.2026). The full written EAP document
-stays tiered: required for midrise+ and high-risk occupancies, recommended
-otherwise (owner question open). Pages: Table 19.1 items 1-4 p.1234-1237,
-item 8 p.1243; Table 19.2 p.1245-1248 (drills read on p.1246).
+Table 19.2 drills (audit CH10-12, 12.10.2026), and the written EAP document
+(Table 19.2 #3.1.i, p.1246; owner ruling 12.10.2026, P3 Ch11 Q1). The
+evacuation strategy and response team lines stay with midrise+ and high-risk
+occupancies. Villas: assembly point and drills conditional until the Ch 19
+scope page p.1233 is read (owner ruling 12.10.2026, P3 Ch11 Q2). Pages:
+Table 19.1 items 1-4 p.1234-1237, item 8 p.1243; Table 19.2 p.1245-1248
+(drills read on p.1246).
 """
 from __future__ import annotations
 from typing import List
@@ -25,8 +28,33 @@ def _drill_spec(b: Building) -> str:
             "management team only, not the occupants (#3.1.iii)")
 
 
+_VILLA_SCOPE_NOTE = (
+    "Villa: conditional. Table 19.1 item 8.1.i (p.1243) reads 'Each building shall have an "
+    "assembly point' and Table 19.2 #3.1.ii (p.1246) the facility management team of 'every "
+    "building'; the Ch 19 scope page (p.1233) is not yet read, so whether private / "
+    "commercial villas fall in scope is not confirmed (owner ruling 12.10.2026, P3 Ch11 Q2). ")
+
+
+def _written_eap(b: Building) -> Requirement:
+    # Owner ruling 12.10.2026, P3 Ch11 Q1: required for every non-villa building.
+    return Requirement(
+        system="Written Emergency Action Plan (Table 19.1)",
+        status="required",
+        spec="Documented EAP covering roles, alarm response, Civil Defence call-out, assembly points",
+        detail=("Facility management shall have an emergency action plan in accordance with "
+                "Chapter 19 (Table 19.2 #3.1.i, p.1246), and the facility management team of "
+                "every building drills as per the building emergency action plan (#3.1.ii); "
+                "required for every non-villa building (owner ruling 12.10.2026, P3 Ch11 Q1). "
+                "Include approved floor plans with electrical switchboard, FF equipment, and "
+                "BMS/control locations."),
+        code_ref="Ch 19, Table 19.1 items 1-4",
+        page_ref="p.1234-1237",
+        source_rule="eap_table_19_1",
+    )
+
+
 def _assembly_and_drills(b: Building) -> List[Requirement]:
-    return [
+    reqs = [
         Requirement(
             system="Assembly point",
             status="required",
@@ -58,6 +86,11 @@ def _assembly_and_drills(b: Building) -> List[Requirement]:
             source_rule="eap_drills",
         ),
     ]
+    if b.occupancy.startswith("villa_"):
+        reqs = [r.model_copy(update={"status": "conditional",
+                                     "detail": _VILLA_SCOPE_NOTE + (r.detail or "")})
+                for r in reqs]
+    return reqs
 
 
 def evaluate_eap(b: Building) -> ChapterReport:
@@ -76,28 +109,14 @@ def evaluate_eap(b: Building) -> ChapterReport:
             page_ref="p.1233",
             source_rule="eap_villa_na",
         ))
+        items.extend(_assembly_and_drills(b))
     elif not needs:
-        items.append(Requirement(
-            system="Emergency Action Plan",
-            status="recommended",
-            spec="Prepare a basic EAP aligned with Table 19.1 even where not strictly mandated",
-            code_ref="Ch 19, Table 19.1",
-            page_ref="p.1234-1237",
-            source_rule="eap_recommended",
-        ))
+        items.append(_written_eap(b))
         items.extend(_assembly_and_drills(b))
     else:
         partial = b.height_class in ("highrise", "super_highrise") or b.occupancy == "healthcare_a"
         items.extend([
-            Requirement(
-                system="Written Emergency Action Plan (Table 19.1)",
-                status="required",
-                spec="Documented EAP covering roles, alarm response, Civil Defence call-out, assembly points",
-                detail="Include approved floor plans with electrical switchboard, FF equipment, and BMS/control locations.",
-                code_ref="Ch 19, Table 19.1 items 1-4",
-                page_ref="p.1234-1237",
-                source_rule="eap_table_19_1",
-            ),
+            _written_eap(b),
             Requirement(
                 system="Evacuation strategy",
                 status="required",
