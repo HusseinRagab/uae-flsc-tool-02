@@ -247,3 +247,73 @@ def test_CH10_39_roof_super_highrise_line_only_above_90_m():
     tall = report(occupancy="residential", height_m=95, has_lpg_tanks=True,
                   has_lpg_tank_roof_mounted=True, **BASE)
     assert get(tall, "LPG", "Roof LPG Tank Not Allowed - Building Higher than 90 m").status == "required"
+
+
+# ------------------------------------------------------------------ Ch 19
+def test_CH10_12_assembly_point_and_drills_for_every_non_villa_building():
+    r = report(occupancy="business", height_m=12, **BASE)
+    ap = get(r, "EAP", "Assembly point")
+    assert ap.status == "required" and "at least 15 m" in ap.spec and "height of the building" in ap.spec
+    dr = get(r, "EAP", "Drills and training")
+    assert dr.status == "required" and "every 6 months" in dr.spec
+    assert "48 hours" in dr.detail and "1 hour" in dr.detail
+    asm = report(occupancy="assembly_b", height_m=12, **BASE)
+    assert "twice every 6 months" in get(asm, "EAP", "Drills and training").spec
+    edu = report(occupancy="education_b", height_m=12, **BASE)
+    assert "once every 6 months" in get(edu, "EAP", "Drills and training").spec
+    hosp = report(occupancy="healthcare_a", height_m=12, **BASE)
+    assert get(hosp, "EAP", "Evacuation strategy").spec.startswith("Partial evacuation")
+    assert "minimum 4 personnel" in get(hosp, "EAP", "Emergency response team").spec
+
+
+def test_CH10_34_ch19_citations():
+    r = report(occupancy="hotel_a", height_m=30, **BASE)
+    refs = {it.system: (it.code_ref, it.page_ref) for it in items(r, "EAP")}
+    assert refs["Assembly point"] == ("Ch 19, Table 19.1 item 8", "p.1243")
+    assert refs["Drills and training"] == ("Ch 19, Table 19.2", "p.1245-1248")
+    assert refs["Written Emergency Action Plan (Table 19.1)"][1] == "p.1234-1237"
+    assert "\u00a7" not in str(refs) and "p.1230" not in str(refs)
+
+
+# ------------------------------------------------------------------ Ch 15
+def test_CH10_13_two_foldable_wheelchairs_required():
+    r = report(occupancy="business", height_m=12, **BASE)
+    wc = get(r, "ACC", "Foldable wheelchairs")
+    assert wc.status == "required" and "minimum of 2" in wc.spec and wc.code_ref == "Ch 15, #5.2.8"
+
+
+def test_CH10_24_area_of_refuge_conditional_per_ch3_3_8_1():
+    r = report(occupancy="residential", height_m=40, **BASE)
+    ref = get(r, "ACC", "Area of refuge")
+    assert ref.status == "conditional" and ref.code_ref.startswith("Ch 3, #3.8.1")
+    assert "760 mm x 1220 mm" in ref.detail and "0.28" not in ref.detail
+
+
+def test_CH10_33_ch15_citations_and_stair_content():
+    r = report(occupancy="business", height_m=12, **BASE)
+    pages = {it.source_rule: it.page_ref for it in items(r, "ACC")}
+    assert pages["acc_parking"] == "p.1097" and pages["acc_stair"] == "p.1098"
+    assert pages["acc_av_signs"] == "p.1099-1100"
+    st = get(r, "ACC", "Accessible stair features").spec
+    assert "tactile" not in st and "51 mm" in st and "108 lux" in st and "braille" in st
+    villa = report(occupancy="villa_private", height_m=6, ground_floor_bua_m2=300)
+    assert items(villa, "ACC")[0].page_ref == "p.1090"
+
+
+# ------------------------------------------------------------ Annexure 2
+def _cl(r):
+    return {pkg: (note, req) for pkg, note, req in build_submission_checklist(r)}
+
+
+def test_CH10_25_checklist_follows_annexure_2_files_and_letters():
+    r = report(occupancy="business", height_m=12, **BASE)
+    cl = _cl(r)
+    assert cl["Clarifying letter of LPG / natural gas usage (Table A2.1 #5.i.i)"][1] is True
+    assert "no LPG" in cl["Clarifying letter of LPG / natural gas usage (Table A2.1 #5.i.i)"][0]
+    assert cl["Fire access road layout (Table A2.1 #5.ii.a)"][1] is True
+    assert cl["Material / activity / storage method letter (Table A2.1 #5.i.h)"][1] is False
+    assert "4 to 6 separate files" in cl["Number of files (Table A2.1 #2.i)"][0]
+    assert "50 MB" in cl["File format and size (Table A2.1 #1)"][0]
+    assert not [k for k in cl if k.startswith(("Voice Evacuation", "Exit Sign layout", "Fire Extinguisher layout"))]
+    st = report(occupancy="storage_industrial", height_m=10, **BASE)
+    assert _cl(st)["Material / activity / storage method letter (Table A2.1 #5.i.h)"][1] is True
