@@ -9,6 +9,34 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 2 (Ch 8, Ch 9 storage/hazards, Ch 3 + Ch 2) merged on the branch (draft)
+
+Three packages built in parallel off master `f6ae7bb` and merged into
+`claude/project-thread-0zjltx`. Package reports (every finding, direction of change):
+`phase2/REPORT_ch8_12.10.2026.md`, `REPORT_ch9_...`, `REPORT_ch3_...` in the project files.
+Tests: 139 pytest (64 + 16 Ch 8 + 37 Ch 9 + 22 Ch 3), 112 cases, structural 0.
+Not merged: 24 owner questions are open (table below), and Ch 3 carries interim LESS-onerous
+exit counts until Ch 3 Q1-Q3 are answered.
+
+- **Ch 8** (17 findings): Table 8.1 general items (wiring, secondary power, audible/visual,
+  MCP), PAS 15/180/240 s escalation, System Interfaces lines, permitted options shown as
+  conditional, Civil Defence link per Ch 16 Table 16.1, converted villa row (item 14), new
+  inputs `has_roof_restaurant_assembly`, `has_food_trucks`.
+- **Ch 9** (34 findings): Table 9.27 storage rows A-U rebuilt (EH2, Groups F, K, L-O, P, R,
+  S, T, U, hangar Groups I-IV); new inputs storage commodity, largest unit area, plot GF BUA
+  sum, hangar group, aboveground tank storage, exterior balconies; the app stops until a
+  storage hazard is chosen; hazard defaults per #1.1.13 (hotels LH to OH1, animal housing
+  OH1 to OH2; assembly B/C, labour accommodation, detention to LH; mercantile B and enclosed
+  parking to OH1); Table 9.29 rows B, F.i, G.ii, G.iii; Table 9.29.M starts above 10 m;
+  tool-added text removed (VESDA, UL-300, NFPA 1/IFC).
+- **Ch 3 / Ch 2** (20 findings): occupant load rounded up (#4.1.2), Table 3.14 per storey,
+  OL by actual use for proxy occupancies, villa Tables 3.27/3.28, labour accommodation Table
+  3.16 row 7, sprinkler status from Ch 9 (`engine.building_sprinklered`), #2.8.4.a 45 m
+  rule for lowrise up to 15 m, Fire Lift and ECC lines, Table 2.1 and #2.5.1 items.
+- export.py prints Table 3.14 exits "per storey".
+- Grid diff vs master (6552 cases): no Fire Pump or Fire Water Tank line changes outside
+  storage; every case gains the new general FA, FSA and FP lines.
+
 ### 2026-10-12 — Rulings R1-R13 and R2b coded (rulings PR, draft)
 
 Branch `claude/project-thread-0zjltx` restarted on master `18a0342`. Hussein answered every
@@ -122,11 +150,14 @@ the 750 gpm row of 9.24.C.2.
 
 | Ruling | Question | State |
 | --- | --- | --- |
-| R1-R13, R2b | see audit and RULINGS_12.10.2026.md (project files) | ruled 12.10, coded in the rulings PR (draft, not merged) |
+| R1-R13, R2b | see audit and RULINGS_12.10.2026.md (project files) | ruled 12.10, merged (PR #21) |
+| P2 Ch 8 Q1-Q6 | MCP 25/16 m, cold storage lines, ceiling 10/20 m edges, nursery, cable trays, item 22 (vii) | open (decision cards) |
+| P2 Ch 9 Q1-Q9 | plot GF BUA sum blank, 900 m2 edge, Group U small yard, Table 9.29 H/I/J gate, assembly B/C LH, animal housing, robotic parking EH2, hotel G.ii/G.iii, secondary storage hazard | open (decision cards) |
+| P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | open (decision cards); Q1-Q3 block the merge |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
-Phase 2 (the rest of the 189 findings) comes as its own PR after the rulings PR.
+Phase 3 (Ch 4-7, 10, 11, 15, 19, app items) follows phase 2.
 
 ## Known, not fixed in phase 1
 
