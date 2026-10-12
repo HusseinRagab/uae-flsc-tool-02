@@ -9,6 +9,37 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 3 (Ch 4-7, 10, 11, 15, 19, Annexure 2, app, per-storey egress, animal housing) on the branch (draft)
+
+Five packages built off master 825e900 and merged on `claude/project-thread-0zjltx`; reports in
+the project files `uae_flsc_tool/phase3/REPORT_<pkg>_12.10.2026.md`.
+- **Ch 4-7** (CH47-01, 03-05, 07-09, 11-19): Class B by occupancy (Table 4.3 row 2), Class A by printed
+  page, nursery strips conditional, EVC 75 dB sleeping areas and Table 7.1/7.2 items, one EL system
+  type for offices/shops, EL wiring per system, Table 6.7/6.8 tests, printed exit-sign colours.
+- **Ch 10** (CH10-05, 14-17, 27, 28, 35, 38, 39): corridor rule for any lowrise/midrise, hospital rows
+  for healthcare_a only, schools below 23 m stair not mandatory, hall-area purge, tunnel length tiers,
+  parking stair at 23 m. New input: theatre / cinema kind.
+- **Ch 11, 15, 19, Annexure 2** (CH10-06 to 13, 18-26, 29-34, 36, 39 LPG part): Ch 11 re-read against
+  Tables 11.1-11.14, refuge conditional (#3.8.1), drills/assembly point/wheelchairs in every non-villa
+  building, Table A2.1 checklist.
+- **App** (ENG-02, 11, 12, 13, 16, 17, 19, 21, 22, 23; CH9A-17, 19, 20; CH9B-14; Scenario B): Load
+  replaces the session, occupancy restored, category change resets flags, infrastructure selectable,
+  mercantile over 3600 m2 multi-tenant = Mall, attached parking OFF by default (no fallback area),
+  water-reactive #4.1.2 input, Table 9.21.e outlet and 9.21.f tent inputs, Scenario B asks the
+  storage hazard.
+- **F6** optional per-storey per-use table (OL and Table 3.14 per storey, governing storey named);
+  **Ch9 Q6** animal housing Groups A (LH), B (OH2), C (LH) per #1.1.13 p.528-529, group required.
+- Merge fix: Ch 9 LPG spray required for roof tanks beside underground tanks (matches Ch 11).
+- Grid (6552 cases vs 825e900): fire pump / tank change only in 16 midrise low-depth underground
+  cases (now NOT EVALUATED, CH9A-19); attached-parking chapters drop out because parking is now
+  opt-in; every case changes in FE, most in EAP/EL/ACC/ES/EVC.
+- Tests: 247 pytest, 112 cases, structural 0 (538 rule IDs).
+- Open: 24 owner cards (below); needs PDF pages listed in the reports.
+
+### 2026-10-12 — Phase 2 merged to master on Hussein's go (PR #22, 825e900)
+
+Card "Merge, then phase 3". Master verified: 167 pytest, 112 cases, structural 0. PC clone: `git pull`.
+
 ### 2026-10-12 — Phase 2 follow-up answers coded (8 cards, 14:58Z)
 
 - **F1** plant nursery prints only the Table 8.13 item 28 line (no Table 8.1 lines).
@@ -189,10 +220,11 @@ the 750 gpm row of 9.24.C.2.
 | P2 Ch 9 Q1-Q9 | plot GF BUA sum blank, 900 m2 edge, Group U small yard, Table 9.29 H/I/J gate, assembly B/C LH, animal housing, robotic parking EH2, hotel G.ii/G.iii, secondary storage hazard | answered 12.10, coded (Q6 phase 3) |
 | P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | answered 12.10, coded |
 | P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | answered 12.10 14:58Z, coded (F6 phase 3) |
+| P3 cards (24) | Ch 10 Q1-Q4, Ch 11 Q1-Q7, Ch 4-7 Q1-Q3, storey Q1-Q4, app Q1-Q6 | open 12.10, coded on the recommended option where noted in the reports |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
-Phase 3 (Ch 4-7, 10, 11, 15, 19, app items) follows phase 2.
+Phase 3 is on the branch (draft PR); see the log entry.
 
 ## Known, not fixed in phase 1
 
