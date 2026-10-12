@@ -544,8 +544,41 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     )
 
 
-def evaluate_moe(b: Building, rules: Dict[str, Any]) -> ChapterReport:
+def _moe_sprinkler_columns(rules: Dict[str, Any], spr: bool) -> Dict[str, Any]:
+    """Owner ruling 12.10.2026, Ch3 Q8: a Table 3.16 line carrying `spec_s` / `spec_ns`
+    prints only the column of this building's Ch 9 result (building_sprinklered, the
+    sprinkler test of ruling R8) and names it; a line tagged `sprinkler_column: S|NS`
+    prints only in a building of that kind."""
+    col = "S" if spr else "NS"
+    why = ("Table 3.16 column S (sprinklered) used: Ch 9 requires an automatic sprinkler "
+           "system in this building" if spr else
+           "Table 3.16 column NS (non-sprinklered) used: Ch 9 does not require an automatic "
+           "sprinkler system in this building")
+    why += " (the sprinkler test of ruling R8; owner ruling 12.10.2026, Ch3 Q8)."
+
+    def pick(systems):
+        out = []
+        for e in systems or []:
+            if e.get("sprinkler_column") and e["sprinkler_column"] != col:
+                continue
+            if "spec_s" in e:
+                e = dict(e)
+                e["spec"] = (f"Column S (sprinklered): {e['spec_s']}" if spr
+                             else f"Column NS (non-sprinklered): {e['spec_ns']}")
+                e["detail"] = why + (f" {e['detail']}" if e.get("detail") else "")
+            out.append(e)
+        return out
+
+    return {**rules,
+            "general": [{**g, "systems": pick(g.get("systems"))} for g in rules.get("general", []) or []],
+            "branches": [{**br, "systems": pick(br.get("systems"))} for br in rules.get("branches", []) or []]}
+
+
+def evaluate_moe(b: Building, rules: Dict[str, Any],
+                 sprinklered: Optional[bool] = None) -> ChapterReport:
     """Ch 3 - Means of Egress."""
+    spr = building_sprinklered(b) if sprinklered is None else sprinklered
+    rules = _moe_sprinkler_columns(rules, spr)
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
     if gen:
@@ -1116,7 +1149,7 @@ def _evaluate_single(b: Building) -> ComplianceReport:
 
     # MOE -> FE -> ES -> EL -> EVC -> FA -> FP -> SC -> LPG - chapter-number order.
     if moe_rules:
-        chapters.append(evaluate_moe(b, moe_rules))
+        chapters.append(evaluate_moe(b, moe_rules, sprinklered=spr))
     if fe_rules:
         chapters.append(evaluate_fe(b, fe_rules))
     if es_rules:

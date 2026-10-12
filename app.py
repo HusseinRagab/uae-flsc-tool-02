@@ -29,6 +29,7 @@ from engine import evaluate, report_to_markdown, build_rule_lookup
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
 from submission_checklist import build_submission_checklist
+from occupant_load import TABLE_3_13_ROWS
 import ui
 
 # Bilingual chapter titles (EN / AR) for report headings
@@ -188,7 +189,17 @@ _SCENARIO_LIMITS = {
     "ast_storage_area_m2_input": ("Aboveground tank storage area", 0.0, False),
     "ast_tank_capacity_m3_input": ("Aboveground tank capacity", 0.0, False),
     "exit_stairs_input": ("Exit stairs", 1, True),
+    # Ch 3 / Ch 2 inputs, owner rulings 12.10.2026 (Ch3 Q1-Q5)
+    "largest_storey_area_m2_input": ("Largest storey area", 0.0, False),
+    "mall_gla_m2_input": ("Mall gross leasable area", 0.0, False),
+    "building_volume_m3_input": ("Building volume", 0.0, False),
+    "use_area_count_input": ("Number of per-use areas", 0, True),
+    # Ch3 Q2 per-use areas: up to 10 rows of (Table 3.13 row, area m2).
+    **{f"use_area_m2_{i}": (f"Per-use area {i + 1}", 0.0, False) for i in range(10)},
 }
+USE_AREA_MAX = sum(1 for k in _SCENARIO_LIMITS if k.startswith("use_area_m2_"))
+USE_AREA_KEYS = [k for i in range(USE_AREA_MAX)
+                 for k in (f"use_area_row_{i}", f"use_area_m2_{i}")]
 
 
 def _invalid_scenario_values(data: dict) -> list:
@@ -212,9 +223,18 @@ def _invalid_scenario_values(data: dict) -> list:
         "secondary_storage_hazard_input": ("Secondary storage hazard class", (
             None, "LH", "OH1", "OH2", "HH", "EH2")),
     }
+    # Ch3 Q2 per-use areas (owner ruling 12.10.2026): known Table 3.13 rows, at most
+    # as many rows as the sidebar offers.
+    from occupant_load import TABLE_3_13_ROWS as _rows
+    n_max = sum(1 for k in _SCENARIO_LIMITS if k.startswith("use_area_m2_"))
+    _enums.update({f"use_area_row_{i}": (f"Per-use area {i + 1} Table 3.13 row", tuple(_rows))
+                   for i in range(n_max)})
     for key, (label, allowed) in _enums.items():
         if key in data and data[key] not in allowed:
             bad.append(f"{label} = {data[key]!r} (not a listed option)")
+    n_use = data.get("use_area_count_input")
+    if isinstance(n_use, int) and not isinstance(n_use, bool) and n_use > n_max:
+        bad.append(f"Number of per-use areas = {n_use} (maximum {n_max})")
     mode = data.get("mixed_occupancy_mode_input")
     if mode is not None and mode not in ("none", "most_restrictive", "separated"):
         bad.append(f"Mixed occupancy mode = {mode!r} (not a listed mode)")
@@ -697,6 +717,10 @@ with st.sidebar:
             "mixed_occupancy_mode_input", "secondary_occupancies_input",
             # Owner ruling 12.10.2026, Ch9 Q9
             "secondary_storage_hazard_input",
+            # Ch 3 / Ch 2 inputs (owner rulings 12.10.2026, Ch3 Q1-Q6)
+            "largest_storey_area_m2_input", "mall_gla_m2_input", "use_area_count_input",
+            *USE_AREA_KEYS, "building_volume_m3_input",
+            "is_waterfront", "is_theme_park", "tower_setback_over_30m",
         ]
         def _serializable(v):
             # Convert tuple to list for JSON; passthrough rest
@@ -1177,11 +1201,54 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### ⚙️ Chapter-specific inputs")
 
-    # ----- MOE (Ch 3) -----
+    # ----- FSA (Ch 2) -----  owner rulings 12.10.2026, Ch3 Q5 / Q6
+    with st.expander("🚒 FSA - Settings (Ch 2 Fire Service Access)", expanded=False):
+        st.number_input(
+            "Building volume (m3)", min_value=0.0, value=0.0, step=1000.0,
+            key="building_volume_m3_input",
+            help="Gross cubical extent for storage / industrial fire access (#2.8.8.a, "
+                 "#2.8.9.a, Tables 2.6 / 2.7). 0 = not entered: footprint x height is used "
+                 "and labelled as the fallback.")
+        st.checkbox("Waterfront property (Table 2.8)", key="is_waterfront",
+                    help="#2.8.10: the Table 2.8 line is printed as required when ticked.")
+        st.checkbox("Theme / amusement park (Table 2.5, #2.9.3, #2.9.4)", key="is_theme_park",
+                    help="Table 2.5 extent (3/4 perimeter, not less than Table 2.3 / 2.4), "
+                         "Emergency Command Centre, and a Fire Lift when multi storey.")
+        st.checkbox("Tower set back more than 30 m from the fire access road "
+                    "(#2.8.6.b / #2.8.7.b)", key="tower_setback_over_30m",
+                    help="Highrise / super highrise tower facade more than 30 m from the fire "
+                         "access road: access to 1/4 of the tower perimeter above the podium.")
+
+    # ----- MOE (Ch 3) -----  owner rulings 12.10.2026, Ch3 Q1-Q3
     with st.expander("🚶 MOE - Settings (Ch 3 Means of Egress)", expanded=False):
-        st.info("MOE auto-derives from occupancy + geometry + hazard class (Tables 3.13 / 3.14 / 3.15 / 3.16). "
-                "No additional inputs needed - travel distance, common-path, dead-end, exit count and stair "
-                "capacity all come from the building profile above.")
+        st.number_input(
+            "Largest storey area (m2)", min_value=0.0, value=0.0, step=100.0,
+            key="largest_storey_area_m2_input",
+            help="Table 3.14 runs on the occupant load of the largest storey (#4.3.1, "
+                 "#4.1.3). 0 = not entered: the whole GFA is used and the report says so.")
+        if occupancy in ("mall_covered", "mall_open", "mall_mixed"):
+            st.number_input(
+                "Mall gross leasable area, GLA (m2)", min_value=0.0, value=0.0, step=1000.0,
+                key="mall_gla_m2_input",
+                help="Table 3.13 row 14: GLA less than 14,000 m2 -> 2.8 m2; from 14,000 m2, "
+                     "3.3 m2 + 0.1 m2 per full 1,290 m2, maximum 5.1 m2. 0 = GFA, labelled.")
+        st.markdown("*Per-use areas (#1.4.5): Table 3.13 row and floor area*")
+        _n_use = st.number_input(
+            "Number of per-use areas", min_value=0, max_value=USE_AREA_MAX, value=0, step=1,
+            key="use_area_count_input",
+            help="0 = none: the densest Table 3.13 row of the occupancy is used; fuel "
+                 "station, infrastructure, mixed and underground are not evaluated until "
+                 "per-use areas are entered.")
+        _row_ids = list(TABLE_3_13_ROWS)
+        for _i in range(int(_n_use or 0)):
+            _c1, _c2 = st.columns([3, 2])
+            with _c1:
+                st.selectbox(f"Use {_i + 1}: Table 3.13 row", options=_row_ids,
+                             format_func=lambda r: f"{r} - {TABLE_3_13_ROWS[r][0]}",
+                             key=f"use_area_row_{_i}")
+            with _c2:
+                st.number_input(f"Use {_i + 1}: area (m2)", min_value=0.0, value=0.0,
+                                step=50.0, key=f"use_area_m2_{_i}")
 
     # ----- FE (Ch 4) -----
     with st.expander("🧯 FE - Settings (Ch 4)", expanded=False):
@@ -1590,6 +1657,18 @@ building = Building(
     has_single_exit_stair=gs("has_single_exit_stair") and float(height_m) < 23,
     pump_room_at_grade=gs("pump_room_at_grade") and int(floors_below) > 0,
     gf_beyond_100m_from_hydrant=gs("gf_beyond_100m_from_hydrant") and occupancy == "storage_industrial",
+    # Ch 3 / Ch 2 inputs (owner rulings 12.10.2026, Ch3 Q1-Q6)
+    largest_storey_area_m2=float(st.session_state.get("largest_storey_area_m2_input") or 0.0),
+    mall_gla_m2=(float(st.session_state.get("mall_gla_m2_input") or 0.0)
+                 if occupancy in ("mall_covered", "mall_open", "mall_mixed") else 0.0),
+    use_areas=[{"row": st.session_state.get(f"use_area_row_{i}"),
+                "area_m2": float(st.session_state.get(f"use_area_m2_{i}") or 0.0)}
+               for i in range(int(st.session_state.get("use_area_count_input") or 0))
+               if st.session_state.get(f"use_area_row_{i}") in TABLE_3_13_ROWS],
+    building_volume_m3=float(st.session_state.get("building_volume_m3_input") or 0.0),
+    is_waterfront=gs("is_waterfront"),
+    is_theme_park=gs("is_theme_park"),
+    tower_setback_over_30m=gs("tower_setback_over_30m"),
 )
 report = _cached_evaluate(building.model_dump_json())
 
@@ -1631,9 +1710,14 @@ with d1:
     st.metric("Height class", building.height_class.replace("_", " "))
     st.caption(f"Datum: {getattr(building, 'height_datum', 'grade').replace('_', ' ')}")
 with d2:
-    # OL 0 = not evaluated (villa, no Table 3.13 row, mall GLA unknown): see the OL note.
-    st.metric("Occupant load", f"{_ol.occupant_load:,}" if _ol and _ol.occupant_load else "not evaluated")
-    st.caption(f"≥ {_ol.min_exits} exits per storey (Table 3.14)" if _ol else "")
+    # Not evaluated (villa; no Table 3.13 row and no per-use areas): no exit count is
+    # shown (owner ruling 12.10.2026, Ch3 Q2). See the OL note.
+    _ol_ok = bool(_ol and _ol.evaluated and _ol.occupant_load)
+    st.metric("Occupant load", f"{_ol.occupant_load:,}" if _ol_ok else "not evaluated")
+    st.caption((f"≥ {_ol.min_exits} exits (Table 3.14 on the "
+                f"{'whole-building' if _ol.storey_area_m2 == _ol.area_m2 else 'largest storey'}"
+                f" OL {_ol.storey_occupant_load:,})") if _ol_ok else
+               (_ol.exit_ref if _ol else ""))
 with d3:
     st.metric("Required systems", _tot.get("required", 0))
     st.caption(f"Conditional {_tot.get('conditional', 0)}")
@@ -1656,7 +1740,8 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
         st.write(f"Height: {building.height_m:g} m → **{building.height_class}**")
         st.write(f"Required systems: **{_tot.get('required', 0)}**")
         if _ol:
-            st.write(f"OL: {_ol.occupant_load or 'not evaluated'} → ≥ {_ol.min_exits} exits per storey")
+            st.write(f"OL: {_ol.occupant_load:,} → ≥ {_ol.min_exits} exits per storey"
+                     if _ol.evaluated else "OL: not evaluated (no exit count)")
     with sc2:
         st.markdown("**Scenario B**")
         b_occ = st.selectbox("B occupancy", options=list(OCCUPANCY_DEFS.keys()),
@@ -1680,10 +1765,11 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
                 f"B → **{b_building.height_class}** · Required **{b_tot.get('required', 0)}** "
                 f"(Δ {b_tot.get('required', 0) - _tot.get('required', 0):+d} vs A)"
             )
-            if b_report.occupant_load:
+            _bol = b_report.occupant_load
+            if _bol:
                 st.caption(
-                    f"B OL: {b_report.occupant_load.occupant_load or 'not evaluated'} → "
-                    f"≥ {b_report.occupant_load.min_exits} exits per storey"
+                    f"B OL: {_bol.occupant_load:,} → ≥ {_bol.min_exits} exits per storey"
+                    if _bol.evaluated else "B OL: not evaluated (no exit count)"
                 )
 
 

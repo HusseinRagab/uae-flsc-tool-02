@@ -154,6 +154,14 @@ def default_hazard(occ: str) -> str:
     return HAZARD_BY_OCCUPANCY.get(occ, "OH1")
 
 
+class UseArea(BaseModel):
+    """One actual use of floor area (Ch 3 #1.4.5, #4.1.2): a Table 3.13 row id
+    (see occupant_load.TABLE_3_13_ROWS) and the floor area assigned to it.
+    Owner ruling 12.10.2026, Ch3 Q2."""
+    row: str
+    area_m2: float = Field(0.0, ge=0)
+
+
 class Building(BaseModel):
     project_name: str = Field("", description="Project reference")
     occupancy: Occupancy
@@ -174,6 +182,16 @@ class Building(BaseModel):
     plot_area_m2: float = Field(0.0, ge=0)
     corridor_length_m: float = Field(0.0, ge=0)     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
     assembly_area_m2: float = Field(0.0, ge=0)      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
+
+    # --- MOE (Ch 3) / FSA (Ch 2) inputs - owner rulings 12.10.2026, Ch3 Q1-Q6.
+    # 0 / empty = not entered; each fallback is named in the report line.
+    largest_storey_area_m2: float = Field(0.0, ge=0)   # Q1: Table 3.14 per storey (#4.3.1); 0 -> whole GFA
+    use_areas: List[UseArea] = Field(default_factory=list)  # Q2: per-use areas (#1.4.5); empty -> densest Table 3.13 row
+    mall_gla_m2: float = Field(0.0, ge=0)              # Q3: mall gross leasable area (Table 3.13 row 14); 0 -> GFA
+    building_volume_m3: float = Field(0.0, ge=0)       # Q5: gross cubical extent (#2.8.8.a / #2.8.9.a); 0 -> footprint x height
+    is_waterfront: bool = False                        # Q6: waterfront property (#2.8.10, Table 2.8)
+    is_theme_park: bool = False                        # Q6: theme / amusement park (#2.8.7, Table 2.5, #2.9.3, #2.9.4)
+    tower_setback_over_30m: bool = False               # Q6: tower facade more than 30 m from the fire access road (#2.8.6.b / #2.8.7.b)
 
     construction_type: Literal[
         "unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"
@@ -408,12 +426,37 @@ class Building(BaseModel):
 
     @property
     def largest_storey_area_min_m2(self) -> float:
-        """Lower bound on the largest storey area (no per-storey input): the
-        ground-floor BUA, or the GFA spread evenly over every storey above and
-        below grade, whichever is larger. Used by Table 3.27 item 2.iii (villa
-        floor over 400 m2)."""
+        """Largest storey area for Table 3.27 item 2.iii (villa floor over 400 m2):
+        the entered largest storey area (owner ruling 12.10.2026, Ch3 Q1), never
+        less than the ground-floor BUA; without it, a lower bound: the ground-floor
+        BUA, or the GFA spread evenly over every storey above and below grade,
+        whichever is larger."""
+        if self.largest_storey_area_m2 > 0:
+            return max(self.largest_storey_area_m2, self.ground_floor_bua_m2)
         n = self.floors_above_grade + self.floors_below_grade
         return max(self.ground_floor_bua_m2, self.gross_floor_area_m2 / n if n else 0.0)
+
+    @property
+    def use_area_total_m2(self) -> float:
+        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered."""
+        return sum(u.area_m2 for u in self.use_areas)
+
+    @property
+    def fire_lift_2_9_4_reasons(self) -> List[str]:
+        """Ch 2 #2.9.4.a (p.220): at least one Fire Lift in any building which is
+        'Highrise' with 23 m or more in height, 'High Depth' with more than 2
+        basements, Malls and multi storey Amusement Parks. One trigger for the FSA
+        Fire Lift line and the Ch 10 'NOT mandatory' line (owner ruling 12.10.2026,
+        Ch3 Q9)."""
+        hits = (("highrise of 23 m or more", self.height_m >= 23),
+                ("high depth with more than 2 basements", self.floors_below_grade > 2),
+                ("mall", self.occupancy in ("mall_covered", "mall_open", "mall_mixed")),
+                ("multi storey amusement park", self.is_theme_park and self.floors_above_grade > 1))
+        return [why for why, hit in hits if hit]
+
+    @property
+    def requires_fire_lift_2_9_4(self) -> bool:
+        return bool(self.fire_lift_2_9_4_reasons)
 
     @property
     def pump_head_height_m(self) -> float:
@@ -479,6 +522,11 @@ class OccupantLoadSummary(BaseModel):
     min_exits: int = 2
     exit_ref: str = ""
     note: str = ""
+    # Owner rulings 12.10.2026, Ch3 Q1-Q3: evaluated=False means no exit count is
+    # stated (min_exits 0); storey_* is the storey OL that Table 3.14 ran on.
+    evaluated: bool = True
+    storey_area_m2: float = 0.0
+    storey_occupant_load: int = 0
 
 
 class FireAccessSummary(BaseModel):
