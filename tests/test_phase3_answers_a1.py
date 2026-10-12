@@ -88,8 +88,9 @@ def test_P3_Ch11_Q1_written_eap_required_for_every_non_villa_building():
         assert eap.status == "required", occ
         assert "Table 19.2 #3.1.i" in eap.detail and "P3 Ch11 Q1" in eap.detail
         assert not [it for it in items(r, "EAP") if it.status == "recommended"]
+    # Re-pointed by P3 follow-up F-a1-2: the villa written EAP is conditional (was not_required).
     villa = report(occupancy="villa_private", height_m=6, ground_floor_bua_m2=300)
-    assert get(villa, "EAP", "Emergency Action Plan").status == "not_required"
+    assert get(villa, "EAP", "Written Emergency Action Plan").status == "conditional"
 
 
 def test_P3_Ch11_Q2_villa_assembly_point_drills_and_wheelchairs_conditional():
@@ -111,7 +112,10 @@ def test_P3_Ch11_Q2_villa_assembly_point_drills_and_wheelchairs_conditional():
 
 # ------------------------------------------------------------------ Ch 11
 def test_P3_Ch11_Q3_cylinders_in_new_or_modified_building_stop_unless_cd_approval():
-    kw = dict(occupancy="residential", height_m=12, has_gas_cylinders_villa=True, **BASE)
+    # Re-pointed by P3 follow-up F-a1-1: "new or modified" is a required choice with no
+    # pre-fill (was a box ticked by default); the new-building case states it explicitly.
+    kw = dict(occupancy="residential", height_m=12, has_gas_cylinders_villa=True,
+              is_new_or_modified_building=True, **BASE)
     new = Building(**kw)
     assert new.is_new_or_modified_building is True and new.has_cd_cylinder_approval is False
     stops = engine.lpg_input_stops(new)
@@ -128,15 +132,16 @@ def test_P3_Ch11_Q3_cylinders_in_new_or_modified_building_stop_unless_cd_approva
     assert engine.lpg_input_stops(Building(occupancy="residential", height_m=12, **BASE)) == []
     # app: inputs saved, Load type-checked, and the app stops
     keys = _save_keys()
-    assert "is_new_or_modified_building" in keys and "has_cd_cylinder_approval" in keys
-    bad = _guard()({"is_new_or_modified_building": "yes", "has_cd_cylinder_approval": 1})
+    assert "new_or_modified_building_input" in keys and "has_cd_cylinder_approval" in keys
+    bad = _guard()({"new_or_modified_building_input": "yes", "has_cd_cylinder_approval": 1})
     assert len(bad) == 2
-    state = {**_GEO, **_occ("Residential", "residential"), "gas_system_radio": CYL}
+    state = {**_GEO, **_occ("Residential", "residential"), "gas_system_radio": CYL,
+             "new_or_modified_building_input": "new"}
     at = _app_test(state)
     assert any("#2.2.4" in e.value and "p.884" in e.value for e in at.error)
     at = _app_test({**state, "has_cd_cylinder_approval": True})
     assert not [e for e in at.error if "#2.2.4" in e.value]
-    at = _app_test({**state, "is_new_or_modified_building": False})
+    at = _app_test({**state, "new_or_modified_building_input": "existing"})
     assert not [e for e in at.error if "#2.2.4" in e.value]
 
 
