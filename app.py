@@ -242,6 +242,7 @@ VARIOUS_LOCATIONS_KEYS = [
     "has_bathrooms_with_heaters", "has_laundry_storage_rooms", "has_pantries",
     "has_permanent_stages", "has_roof_lpg_or_restaurant", "has_garbage_chute",
     "has_high_ceiling", "has_tunnel",
+    "has_roof_restaurant_assembly", "has_food_trucks",
 ]
 EQUIPMENT_KEYS = [
     "has_commercial_kitchen", "has_flammable_liquid_tanks",
@@ -313,7 +314,7 @@ VILLA_INCOMPATIBLE_FLAGS = [
     "has_stairs", "has_elevator",
     "has_atrium", "has_rain_screen_glazing", "has_bathrooms_with_heaters",
     "has_laundry_storage_rooms", "has_pantries", "has_permanent_stages",
-    "has_roof_lpg_or_restaurant", "has_garbage_chute", "has_tunnel",
+    "has_roof_lpg_or_restaurant", "has_roof_restaurant_assembly", "has_garbage_chute", "has_tunnel",
     # Equipment / commercial / industrial
     "has_commercial_kitchen", "has_flammable_liquid_tanks",
     "has_cable_spread_areas", "has_boilers", "has_cooling_towers",
@@ -990,6 +991,12 @@ with st.sidebar:
         st.checkbox("Pantries (business/commercial)", key="has_pantries")
         st.checkbox("Permanent stages (assembly)", key="has_permanent_stages")
         st.checkbox("Roof LPG / restaurant / assembly / sheesha", key="has_roof_lpg_or_restaurant")
+        st.checkbox("Roof restaurant / assembly / sheesha (FA Table 8.14 item 36)",
+                    key="has_roof_restaurant_assembly",
+                    help="Building roof used for restaurant seating, assembly or as Sheesha bars: "
+                         "Manual Fire Detection and Alarm System per Ch 8 Table 8.14 item 36 (p.511).")
+        st.checkbox("Food trucks, any fuel (FA Table 8.14 item 34)", key="has_food_trucks",
+                    help="Heat detector per Section 4.7 in each food truck, Ch 8 Table 8.14 item 34 (p.511).")
         st.checkbox("Garbage chute", key="has_garbage_chute")
         st.checkbox("High ceiling (> 10 m)", key="has_high_ceiling")
         if st.session_state.get("has_high_ceiling"):
@@ -1350,6 +1357,8 @@ building = Building(
     has_pantries=gs("has_pantries"),
     has_permanent_stages=gs("has_permanent_stages"),
     has_roof_lpg_or_restaurant=gs("has_roof_lpg_or_restaurant"),
+    has_roof_restaurant_assembly=gs("has_roof_restaurant_assembly"),
+    has_food_trucks=gs("has_food_trucks"),
     has_garbage_chute=gs("has_garbage_chute"),
     has_tunnel=gs("has_tunnel"),
     # Equipment + Gas
@@ -1541,6 +1550,8 @@ def _ticked_chips(building_obj: Building) -> str:
         "has_pantries": "Pantries",
         "has_permanent_stages": "Permanent stages",
         "has_roof_lpg_or_restaurant": "Roof LPG/restaurant",
+        "has_roof_restaurant_assembly": "Roof restaurant (FA)",
+        "has_food_trucks": "Food trucks",
         "has_garbage_chute": "Garbage chute",
         "has_high_ceiling": "High ceiling",
         "has_tunnel": "Tunnel",

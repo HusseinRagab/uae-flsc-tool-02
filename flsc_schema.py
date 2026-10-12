@@ -212,6 +212,8 @@ class Building(BaseModel):
     has_pantries: bool = False
     has_permanent_stages: bool = False
     has_roof_lpg_or_restaurant: bool = False
+    has_roof_restaurant_assembly: bool = False     # FA Table 8.14 item 36: roof used for restaurant seating / assembly / sheesha
+    has_food_trucks: bool = False                  # FA Table 8.14 item 34: food trucks of any fuel
     has_garbage_chute: bool = False
 
     # --- FP (Ch 9) - Equipment (Table 9.31)
