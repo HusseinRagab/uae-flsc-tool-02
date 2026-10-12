@@ -292,7 +292,7 @@ EQUIPMENT_KEYS = [
 
 # Per-chapter unique groups
 FE_KEYS = [
-    "has_class_b_storage_zones", "has_combustible_metals",
+    "has_class_b_storage_zones", "has_combustible_metals", "has_group_a_plastic_storage",
     "has_hv_or_heavy_electrical", "has_parking_area",
 ]
 ES_FEATURE_KEYS = ["has_evacuation_elevator", "has_horizontal_exits", "has_dead_end_paths"]
@@ -360,7 +360,7 @@ VILLA_INCOMPATIBLE_FLAGS = [
     "has_bulk_flammable_solid_storage", "has_high_hazard_logistics",
     "has_chemical_warehouse", "has_explosives", "has_processing_plant",
     # FE hazard add-ons
-    "has_class_b_storage_zones", "has_combustible_metals",
+    "has_class_b_storage_zones", "has_combustible_metals", "has_group_a_plastic_storage",
     "has_hv_or_heavy_electrical",
     # ES special zones
     "has_amusement_confounding", "has_nightclub_disco", "has_theater_cinema",
@@ -1260,6 +1260,9 @@ with st.sidebar:
             "Combustible metals storage / activity (Class D)",
             key="has_combustible_metals")
         st.checkbox(
+            "Group A plastic storage / activity (wheeled foam, Table 4.3 row 3)",
+            key="has_group_a_plastic_storage")
+        st.checkbox(
             "HV room or heavy electrical machinery",
             key="has_hv_or_heavy_electrical")
         # has_parking_area moved to "Special rooms and usage" - removed from here
@@ -1632,6 +1635,7 @@ building = Building(
     # FE chapter-specific
     has_class_b_storage_zones=gs("has_class_b_storage_zones"),
     has_combustible_metals=gs("has_combustible_metals"),
+    has_group_a_plastic_storage=gs("has_group_a_plastic_storage"),
     has_hv_or_heavy_electrical=gs("has_hv_or_heavy_electrical"),
     has_parking_area=gs("has_parking_area"),
     attached_parking_kind=attached_parking_kind_val,
@@ -1866,6 +1870,7 @@ def _ticked_chips(building_obj: Building) -> str:
         # FE-specific
         "has_class_b_storage_zones": "Class B storage",
         "has_combustible_metals": "Combustible metals",
+        "has_group_a_plastic_storage": "Group A plastics",
         "has_hv_or_heavy_electrical": "HV/heavy electrical",
         "has_parking_area": "Parking area",
     }
