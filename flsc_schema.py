@@ -286,7 +286,11 @@ class Building(BaseModel):
     storage_commodity: Literal["none", "class_i_iv", "plastics_rubber", "tires", "rolled_paper"] = "none"
     # Groups L (Class I-IV), M (plastic, rubber), N (tires), O (rolled paper); "none" routes by hazard class.
     max_unit_area_m2: float = Field(0.0, ge=0)      # #4.1.14 largest unit compartment area; 0 = not stated -> the ground-floor BUA (one unit)
-    sum_gf_bua_m2: float = Field(0.0, ge=0)         # #4.1.13 sum of built-up ground floor areas of all buildings on the plot; 0 = this building only
+    sum_gf_bua_m2: float = Field(0.0, ge=0)         # #4.1.13 sum of built-up ground floor areas of all buildings on the plot; 0 = not entered (owner ruling 12.10.2026, Ch9 Q1: required; blank takes Table 9.27 row 4, never a lower row)
+    # Owner ruling 12.10.2026, Ch9 Q9: hazard of a storage_industrial SECONDARY occupancy
+    # (R13 most-restrictive mode). None = not chosen: its Table 9.27 rows are not evaluated.
+    # "EH2" = HH with Extra Hazard Group 2 (#1.1.13.5).
+    secondary_storage_hazard: Optional[Literal["LH", "OH1", "OH2", "HH", "EH2"]] = None
     hangar_group: Literal["I", "II_III", "IV"] = "I"  # Table 9.27 Group Q.1 / Q.2 / Q.3; default Group I (most onerous)
     is_aboveground_tank_storage: bool = False       # Table 9.27 Group T - flammable / combustible liquids in aboveground storage tanks
     ast_storage_area_m2: float = Field(0.0, ge=0)   # Group T storage area; 0 = not stated -> row 2
@@ -369,8 +373,18 @@ class Building(BaseModel):
     @property
     def storage_gf_bua_sum_m2(self) -> float:
         """#4.1.13 sum of built-up ground floor areas of the buildings on the plot;
-        never less than this building's own ground-floor BUA."""
+        never less than this building's own ground-floor BUA. Owner ruling 12.10.2026,
+        Ch9 Q1: the sum is required; when it is not entered (0) the tier is unknown, so
+        it is taken above every printed tier limit (Table 9.27 row 4) and never a lower
+        row. The engine prints a 'not evaluated' line naming the missing input."""
+        if self.sum_gf_bua_m2 <= 0:
+            return float("inf")
         return max(self.sum_gf_bua_m2, self.ground_floor_bua_m2)
+
+    @property
+    def storage_gf_bua_sum_missing(self) -> bool:
+        """Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum (#4.1.13) is not entered."""
+        return self.sum_gf_bua_m2 <= 0
 
     @property
     def storage_total_bua_m2(self) -> float:

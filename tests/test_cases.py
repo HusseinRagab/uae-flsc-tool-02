@@ -530,6 +530,7 @@ CASES = [
 
     dict(name="AUDIT FP: Storage LH 500 m2 -> Tier 2 LH (Table 9.27 A.2 - 250 gpm pump)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=500,
+                     sum_gf_bua_m2=500,  # owner ruling 12.10.2026, Ch9 Q1: sum required
                      plot_area_m2=2000, hazard_class="LH"),
          expect_fp_branch="storage_industrial_tier2_lh",
          expect_fp_systems=[
@@ -559,7 +560,8 @@ CASES = [
 
     dict(name="AUDIT FP: Cold storage -> dry-pipe sprinklers (Table 9.27 Group P)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000,
-                     plot_area_m2=5000, hazard_class="OH1", is_cold_storage=True),
+                     plot_area_m2=5000, hazard_class="OH1", is_cold_storage=True,
+                     sum_gf_bua_m2=2000),  # owner ruling 12.10.2026, Ch9 Q1
          expect_fp_branch="storage_cold_storage_r3",
          expect_fp_systems=[
              "Automatic Dry Type Sprinkler System",
@@ -567,7 +569,8 @@ CASES = [
 
     dict(name="AUDIT FP: Flammable liquid warehouse -> foam + 120-min tank (Table 9.27 Group R)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000,
-                     plot_area_m2=5000, hazard_class="HH", is_flammable_liquid_warehouse=True),
+                     plot_area_m2=5000, hazard_class="HH", is_flammable_liquid_warehouse=True,
+                     sum_gf_bua_m2=2000),  # owner ruling 12.10.2026, Ch9 Q1
          expect_fp_branch="storage_flammable_liquid_warehouse_r3",
          expect_fp_systems=[
              "Sprinkler OR Foam-Water Sprinkler System",
@@ -730,13 +733,15 @@ CASES = [
     # ---- AUDIT FP: Single-tenant variants (Groups F-J) ----
     dict(name="AUDIT FP: Single-tenant LH 600 m2 -> Group F Tier 1 (45-min tank)",
          inputs=dict(occupancy="storage_industrial", is_single_tenant_storage=True,
-                     height_m=8, ground_floor_bua_m2=600, plot_area_m2=2000, hazard_class="LH"),
+                     height_m=8, ground_floor_bua_m2=600, plot_area_m2=2000, hazard_class="LH",
+                     sum_gf_bua_m2=600),  # owner ruling 12.10.2026, Ch9 Q1
          expect_fp_branch="storage_single_tenant_lh_tier1",
          expect_fp_systems=["Fire Pump (Single-Tenant LH Tier 1)"]),
 
     dict(name="AUDIT FP: Single-tenant OH2 1500 m2 -> 350 gpm pump (Group H Tier 2)",
          inputs=dict(occupancy="storage_industrial", is_single_tenant_storage=True,
-                     height_m=10, ground_floor_bua_m2=1500, plot_area_m2=4000, hazard_class="OH2"),
+                     height_m=10, ground_floor_bua_m2=1500, plot_area_m2=4000, hazard_class="OH2",
+                     sum_gf_bua_m2=1500),  # owner ruling 12.10.2026, Ch9 Q1
          expect_fp_branch="storage_single_tenant_oh2_tier2",
          expect_fp_systems=["Fire Pump (Single-Tenant OH2 Tier 2)"]),
 
@@ -748,7 +753,8 @@ CASES = [
 
     dict(name="AUDIT FP: Idle pallet warehouse (Table 9.27 Group K)",
          inputs=dict(occupancy="storage_industrial", is_idle_pallet_storage=True,
-                     height_m=10, ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="OH2"),
+                     height_m=10, ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="OH2",
+                     sum_gf_bua_m2=2000),  # owner ruling 12.10.2026, Ch9 Q1
          expect_fp_branch="storage_idle_pallet_warehouse_r2",
          expect_fp_systems=["Fire Pump (Idle Pallet Storage)"]),
 

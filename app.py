@@ -208,6 +208,9 @@ def _invalid_scenario_values(data: dict) -> list:
         "storage_commodity_input": ("Storage commodity", (
             "none", "class_i_iv", "plastics_rubber", "tires", "rolled_paper")),
         "hangar_group_input": ("Aircraft hangar group", ("I", "II_III", "IV")),
+        # Owner ruling 12.10.2026, Ch9 Q9
+        "secondary_storage_hazard_input": ("Secondary storage hazard class", (
+            None, "LH", "OH1", "OH2", "HH", "EH2")),
     }
     for key, (label, allowed) in _enums.items():
         if key in data and data[key] not in allowed:
@@ -692,6 +695,8 @@ with st.sidebar:
             "gf_beyond_100m_from_hydrant", "has_single_exit_stair",
             # Mixed occupancy (ruling R13)
             "mixed_occupancy_mode_input", "secondary_occupancies_input",
+            # Owner ruling 12.10.2026, Ch9 Q9
+            "secondary_storage_hazard_input",
         ]
         def _serializable(v):
             # Convert tuple to list for JSON; passthrough rest
@@ -894,8 +899,24 @@ with st.sidebar:
         st.caption(w)
 
     derived_hazard = default_hazard(occupancy)
-    if occupancy != "storage_industrial":
+    # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking is Extra Hazard
+    # Group 2 (#1.1.13.5.b, p.530); the hazard is forced to HH + EH2 when ticked.
+    _robotic_eh2 = (bool(st.session_state.get("has_robotic_parking"))
+                    and occupancy in ("parking_enclosed", "parking_open"))
+    if _robotic_eh2:
+        derived_hazard = "HH"
+        st.caption("Hazard class: **HH, Extra Hazard Group 2** (robotic / mechanical parking "
+                   "is ticked: #1.1.13.5.b, p.530 lists 'Parking, Group B (Robotic, Mechanical "
+                   "parking)' under Extra Hazard, Group 2; owner ruling 12.10.2026, Ch9 Q7).")
+    elif occupancy != "storage_industrial":
         st.caption(f"Hazard class (auto-derived from occupancy, #1.1.13): **{derived_hazard}**")
+    if occupancy in ("assembly_b", "assembly_c"):
+        # Owner ruling 12.10.2026, Ch9 Q5: Assembly B/C stay LH (#1.1.13.1 a-b).
+        st.caption("Assembly Groups B and C are Light Hazard (#1.1.13.1 a-b, p.526-527). "
+                   "Where the space has a kitchen, a stage or similar, choose **OH1** under "
+                   "'Override hazard class': #1.1.13.2 a (p.528) lists Assembly Group A "
+                   "(banquet halls, restaurants with more than 50 people, theaters, concert "
+                   "halls, cinemas) as Ordinary Hazard Group 1 (owner ruling 12.10.2026, Ch9 Q5).")
     if occupancy in HAZARD_NOT_CLASSIFIED:
         st.caption("#1.1.13 does not name this occupancy: the hazard class above is the "
                    "tool's working value. Select the class for the actual contents under "
@@ -927,6 +948,27 @@ with st.sidebar:
                  "system is kept; lines a secondary occupancy brings say so. Separated: "
                  "listed in the report note only.",
         )
+        if (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
+                and "storage_industrial" in (st.session_state.get("secondary_occupancies_input") or [])):
+            # Owner ruling 12.10.2026, Ch9 Q9: the hazard of a secondary storage occupancy
+            # is chosen, never assumed (Table 9.27 groups follow #1.1.13, Tables 9.1 / 9.2).
+            st.selectbox(
+                "Storage / industrial (other occupancy) hazard class (required)",
+                ["LH", "OH1", "OH2", "HH", "EH2"], index=None,
+                format_func=lambda x: {"LH": "LH", "OH1": "OH1", "OH2": "OH2",
+                                       "HH": "HH (Extra Hazard Group 1)",
+                                       "EH2": "HH + Extra Hazard Group 2 (#1.1.13.5)"}[x],
+                placeholder="Select from the stored materials and activities",
+                key="secondary_storage_hazard_input",
+                help="Table 9.27 groups A-J are chosen by hazard class per #1.1.13, Table 9.1 "
+                     "(materials) and Table 9.2 (activities). Owner ruling 12.10.2026, Ch9 Q9.")
+            # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum is required for storage.
+            st.number_input(
+                "Sum of GF BUAs of all buildings on the plot (m2) (required)", min_value=0.0,
+                value=0.0, step=100.0, key="sum_gf_bua_m2_input",
+                help="#4.1.13: excludes separated service blocks, guard house and separated "
+                     "washrooms. Enter this building's GF BUA when it is the only building "
+                     "on the plot. Required (owner ruling 12.10.2026, Ch9 Q1).")
         st.selectbox(
             "Construction type (Ch 1 #2.6 — reporting aid)",
             options=["unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"],
@@ -948,11 +990,21 @@ with st.sidebar:
                              "Group D / I. Ticked = Group E / J.")
         else:
             st.session_state["is_extra_hazard_2"] = False
+        if st.session_state.get("has_robotic_parking"):
+            st.caption("Robotic / mechanical parking is ticked: the attached parking is "
+                       "evaluated at HH, Extra Hazard Group 2 (#1.1.13.5.b, p.530; owner "
+                       "ruling 12.10.2026, Ch9 Q7). The warehouse keeps the class chosen here.")
     else:
         st.session_state["is_extra_hazard_2"] = False
         with st.expander("Override hazard class (advanced)"):
             hazard = st.selectbox("Hazard class", ["LH", "OH1", "OH2", "HH"],
-                                  index=["LH", "OH1", "OH2", "HH"].index(derived_hazard))
+                                  index=["LH", "OH1", "OH2", "HH"].index(derived_hazard),
+                                  disabled=_robotic_eh2,
+                                  help="Fixed at HH (Extra Hazard Group 2) while robotic / "
+                                       "mechanical parking is ticked (#1.1.13.5.b; owner "
+                                       "ruling 12.10.2026, Ch9 Q7)." if _robotic_eh2 else None)
+        if _robotic_eh2:
+            hazard = "HH"
 
     # =========================================================================
     # SHARED: Special Rooms & Equipment (drives FE / FA / FP / SC / LPG / EL)
@@ -1163,6 +1215,10 @@ with st.sidebar:
         st.checkbox("HH storage / robotic / cold / cable spread / industrial basement", key="has_hh_storage_zones")
         st.checkbox("Mall play / food court / cinema zones", key="has_mall_play_food_cinema")
         st.checkbox("Robotic / mechanical parking", key="has_robotic_parking")
+        if st.session_state.get("has_robotic_parking"):
+            st.caption("Robotic / mechanical parking is Extra Hazard Group 2 (#1.1.13.5.b, "
+                       "p.530): the parking is evaluated at HH + EH2 (owner ruling "
+                       "12.10.2026, Ch9 Q7).")
         st.checkbox("Villa converted to other use", key="villa_converted_use")
         st.checkbox("Fuel dispensing multi-storey", key="fuel_dispensing_multistorey")
 
@@ -1201,6 +1257,24 @@ if occupancy == "storage_industrial" and hazard is None:
     st.error("Select the storage hazard class in the sidebar. Table 9.27 "
              "groups depend on the stored materials and activities (#1.1.13, Tables 9.1 "
              "and 9.2), so the tool does not assume one.")
+    st.stop()
+
+# ---------- Owner rulings 12.10.2026, Ch9 Q1 and Q9 -------------------------
+_storage_secondary = (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
+                      and "storage_industrial" in (st.session_state.get("secondary_occupancies_input") or [])
+                      and occupancy != "storage_industrial")
+if _storage_secondary and not st.session_state.get("secondary_storage_hazard_input"):
+    st.error("Select the hazard class of the storage / industrial occupancy listed under "
+             "'Other occupancies' (sidebar, Mixed occupancy). Table 9.27 groups depend on the "
+             "stored materials and activities (#1.1.13, Tables 9.1 and 9.2), so the tool does "
+             "not assume one (owner ruling 12.10.2026, Ch9 Q9).")
+    st.stop()
+if (occupancy == "storage_industrial" or _storage_secondary) \
+        and float(st.session_state.get("sum_gf_bua_m2_input") or 0.0) <= 0:
+    st.error("Enter the sum of GF BUAs of all buildings on the plot (sidebar: FP - Settings, "
+             "or Mixed occupancy when storage is another occupancy). Table 9.27 row 4 applies "
+             "above 3600 m2 (#4.1.13); enter this building's GF BUA when it is the only "
+             "building on the plot (owner ruling 12.10.2026, Ch9 Q1).")
     st.stop()
 
 # ---------- Pre-evaluate to detect wet riser requirement ---------------------
@@ -1285,10 +1359,11 @@ with st.sidebar:
                 help="#4.1.14: built-up GF area of the largest unit separated by fire "
                      "resistance rated construction. 0 = the whole ground floor is one unit.")
             st.number_input(
-                "Sum of GF BUAs of all buildings on the plot (m2)", min_value=0.0,
+                "Sum of GF BUAs of all buildings on the plot (m2) (required)", min_value=0.0,
                 value=0.0, step=100.0, key="sum_gf_bua_m2_input",
                 help="#4.1.13: excludes separated service blocks, guard house and separated "
-                     "washrooms. 0 = this building is the only one on the plot.")
+                     "washrooms. Enter this building's GF BUA when it is the only building "
+                     "on the plot. Required (owner ruling 12.10.2026, Ch9 Q1).")
 
         # Tunnel Fire Protection (Table 9.28) - shown when has_tunnel ticked
         if st.session_state.get("has_tunnel"):
@@ -1414,13 +1489,17 @@ building = Building(
     is_plant_nursery=gs("is_plant_nursery"),
     is_single_tenant_storage=gs("is_single_tenant_storage"),
     is_idle_pallet_storage=gs("is_idle_pallet_storage"),
-    is_extra_hazard_2=gs("is_extra_hazard_2") and occupancy == "storage_industrial",
+    is_extra_hazard_2=(gs("is_extra_hazard_2") and occupancy == "storage_industrial")
+    or _robotic_eh2,   # owner ruling 12.10.2026, Ch9 Q7
     storage_commodity=(st.session_state.get("storage_commodity_input") or "none")
     if occupancy == "storage_industrial" else "none",
     max_unit_area_m2=float(st.session_state.get("max_unit_area_m2_input") or 0.0)
     if occupancy == "storage_industrial" else 0.0,
     sum_gf_bua_m2=float(st.session_state.get("sum_gf_bua_m2_input") or 0.0)
-    if occupancy == "storage_industrial" else 0.0,
+    if (occupancy == "storage_industrial" or _storage_secondary) else 0.0,
+    # Owner ruling 12.10.2026, Ch9 Q9
+    secondary_storage_hazard=st.session_state.get("secondary_storage_hazard_input")
+    if _storage_secondary else None,
     hangar_group=st.session_state.get("hangar_group_input") or "I",
     is_aboveground_tank_storage=gs("is_aboveground_tank_storage") and occupancy == "storage_industrial",
     ast_storage_area_m2=float(st.session_state.get("ast_storage_area_m2_input") or 0.0),

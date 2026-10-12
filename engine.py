@@ -379,13 +379,79 @@ def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeili
     )
 
 
+# ---------------------------- Owner rulings 12.10.2026, Ch 9 Q1 / Q7 / Q9 ----
+
+_PARKING_OCCS = ("parking_enclosed", "parking_open")
+
+
+def _robotic_eh2_line() -> Requirement:
+    """Owner ruling 12.10.2026, Ch9 Q7: the report states the forced classification."""
+    return Requirement(
+        system="Hazard Classification - Extra Hazard Group 2 (robotic / mechanical parking)",
+        status="required",
+        spec="HH, Extra Hazard Group 2 (#1.1.13.5.b: Parking, Group B - robotic, mechanical parking)",
+        detail=("Robotic / mechanical parking is ticked. #1.1.13.5.b (p.530) lists 'Parking, "
+                "Group B (Robotic, Mechanical parking)' under Extra Hazard, Group 2, so the "
+                "sprinkler and storage evaluation uses hazard class HH with Extra Hazard "
+                "Group 2, whatever hazard was selected (owner ruling 12.10.2026, Ch9 Q7)."),
+        code_ref="Ch 9, #1.1.13.5.b", page_ref="p.530", source_rule="owner_ruling_ch9_q7",
+    )
+
+
+def _gf_bua_sum_not_evaluated_line() -> Requirement:
+    """Owner ruling 12.10.2026, Ch9 Q1: a blank plot GF BUA sum is named, never filled."""
+    return Requirement(
+        system="Sum of GF BUAs on the plot (#4.1.13) - NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: enter the plot GF BUA sum (#4.1.13)",
+        detail=("Table 9.27 row 4 applies where the sum of all ground floor built-up areas "
+                "on the plot is more than 3600 m2 (#4.1.13: all buildings on the same plot, "
+                "excluding separated service blocks, security guard house and separated "
+                "washrooms). The sum was not entered, so the tier is not evaluated: the row 4 "
+                "lines below are taken so the result is never under-provided. Enter the sum "
+                "(this building's GF BUA when it is the only building on the plot) to fix the "
+                "tier (owner ruling 12.10.2026, Ch9 Q1)."),
+        code_ref="Ch 9, #4.1.13 / Table 9.27", page_ref="p.695, p.724",
+        source_rule="owner_ruling_ch9_q1",
+    )
+
+
+def _storage_hazard_not_evaluated(ch: ChapterReport) -> ChapterReport:
+    """Owner ruling 12.10.2026, Ch9 Q9: a secondary storage occupancy with no hazard
+    chosen gets no Table 9.27 rows; one required line names the missing hazard."""
+    line = Requirement(
+        system="Storage / Industrial (secondary occupancy) - Table 9.27 NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: choose the storage hazard class (LH, OH1, OH2, HH or HH + EH2)",
+        detail=("Storage / industrial is listed as a secondary occupancy but its hazard "
+                "class was not chosen. Table 9.27 groups A-J depend on the stored materials "
+                "and activities (#1.1.13, Tables 9.1 and 9.2), so the tool does not assume "
+                "one: the storage Ch 9 lines are not evaluated (owner ruling 12.10.2026, "
+                "Ch9 Q9)."),
+        code_ref="Ch 9, #1.1.13 / #4.11 / Table 9.27", page_ref="p.526-530, p.724",
+        source_rule="owner_ruling_ch9_q9",
+    )
+    return ch.model_copy(update={
+        "blocks": [SectionBlock(title="FP - Branch Requirements (Ch 9)", items=[line])],
+        "selected_branch": None, "selected_branch_section": None})
+
+
+def _with_robotic_eh2(b: Building) -> Building:
+    """Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking evaluates at HH with
+    Extra Hazard Group 2 (#1.1.13.5.b, p.530)."""
+    if b.has_robotic_parking and b.occupancy in _PARKING_OCCS and not (
+            b.hazard_class == "HH" and b.is_extra_hazard_2):
+        return b.model_copy(update={"hazard_class": "HH", "is_extra_hazard_2": True})
+    return b
+
+
 # ---------------------------- Per-chapter evaluators -------------------------
 
 def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 9 - Fire Protection."""
     blocks = []
     gen = _dedupe(_collect_general(rules, b))
-    branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    branch_items, sel_id, sel_section, _matched = _collect_branch(rules.get("branches", []), b)
     # One yard hydrant line: when the occupancy table already lists yard
     # hydrants (with its own exemption text), the #4.1.4 / #4.1.6 general
     # trigger is folded into that line instead of printing a second one.
@@ -400,6 +466,19 @@ def evaluate_fp(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         gen = [it for it in gen if it not in gen_yard]
     if gen:
         blocks.append(SectionBlock(title="FP - General Requirements (Ch 9, #4.1)", items=gen))
+
+    # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking is Extra Hazard
+    # Group 2 (#1.1.13.5.b, p.530); the building is evaluated at HH + EH2.
+    if b.has_robotic_parking and b.occupancy in _PARKING_OCCS:
+        blocks.append(SectionBlock(title="FP - Hazard Classification (Ch 9, #1.1.13)", items=[
+            _robotic_eh2_line()]))
+
+    # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum (#4.1.13) is required. A blank
+    # sum is taken above 3600 m2 (Table 9.27 row 4, never a lower row) and named here.
+    if (b.occupancy == "storage_industrial" and b.storage_gf_bua_sum_missing
+            and b.ground_floor_bua_m2 <= 3600
+            and any("storage_gf_bua_sum_m2" in str(br.get("match")) for br in _matched)):
+        branch_items = [_gf_bua_sum_not_evaluated_line()] + list(branch_items)
 
     if branch_items:
         blocks.append(SectionBlock(title="FP - Branch Requirements (Ch 9)", items=_dedupe(branch_items)))
@@ -758,7 +837,9 @@ def evaluate_attached_parking(b: Building) -> List[ChapterReport]:
         ground_floor_bua_m2=parking_area,
         basement_bua_m2=parking_area if b.basement_bua_m2 > 0 else 0.0,
         plot_area_m2=b.plot_area_m2,
-        hazard_class="OH1",   # #1.1.13.2 (p.528): parking garages, open or enclosed
+        hazard_class="HH" if b.has_robotic_parking else "OH1",   # #1.1.13.2 (p.528): parking garages, open or enclosed
+        # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking = HH + EH2 (#1.1.13.5.b).
+        is_extra_hazard_2=b.has_robotic_parking,
         has_high_ceiling=b.has_high_ceiling,
         ceiling_height_m=b.ceiling_height_m,
         has_diesel_generator_room=b.has_diesel_generator_room,
@@ -967,22 +1048,57 @@ def evaluate(b: Building) -> ComplianceReport:
     chapters are merged keeping the most onerous line per system."""
     if b.mixed_occupancy_mode == "most_restrictive" and b.secondary_occupancies:
         occs = [b.occupancy] + [o for o in dict.fromkeys(b.secondary_occupancies) if o != b.occupancy]
-        hz = max([b.hazard_class] + [default_hazard(o) for o in occs[1:]], key=lambda h: _HAZARD_RANK[h])
-        base = b.model_copy(update={"hazard_class": hz})
+        # Owner rulings 12.10.2026: a secondary storage occupancy brings the hazard chosen
+        # for it, never a default (Ch9 Q9); robotic / mechanical parking brings HH + EH2
+        # (Ch9 Q7).
+        sec_hz = [_secondary_hazard(o, b) for o in occs[1:]]
+        hz_all = [b.hazard_class] + [h for h in sec_hz if h]
+        eh2 = b.is_extra_hazard_2
+        if b.has_robotic_parking and any(o in _PARKING_OCCS for o in occs):
+            hz_all.append("HH")
+            eh2 = True
+        if "storage_industrial" in occs[1:] and b.secondary_storage_hazard == "EH2":
+            eh2 = True
+        hz = max(hz_all, key=lambda h: _HAZARD_RANK[h])
+        base = b.model_copy(update={"hazard_class": hz, "is_extra_hazard_2": eh2 and hz == "HH"})
         single = lambda o: base.model_copy(update={"occupancy": o, "secondary_occupancies": [],
                                                    "mixed_occupancy_mode": "none"})
         reps = [_evaluate_single(single(o)) for o in occs]
+        note = _mixed_occupancy_note(base)
+        storage_missing = "storage_industrial" in occs[1:] and b.secondary_storage_hazard is None
+        if storage_missing:
+            i = occs.index("storage_industrial")
+            reps[i] = reps[i].model_copy(update={"chapters": [
+                _storage_hazard_not_evaluated(c) if c.chapter_code == "FP" else c
+                for c in reps[i].chapters]})
+            note = (note or "") + (
+                f" Storage / industrial hazard class not chosen: its Table 9.27 lines are NOT "
+                f"EVALUATED, and its other chapters use {hz}, the highest class of the other "
+                f"occupancies (owner ruling 12.10.2026, Ch9 Q9).")
         r0 = reps[0]
         return r0.model_copy(update={
             "building": base,
             "chapters": _merge_most_restrictive([(o, r.chapters) for o, r in zip(occs, reps)]),
             "requires_wet_riser": any(r.requires_wet_riser for r in reps),
-            "mixed_occupancy_note": _mixed_occupancy_note(base),
+            "mixed_occupancy_note": note,
         })
     return _evaluate_single(b)
 
 
+def _secondary_hazard(o: str, b: Building) -> Optional[str]:
+    """Hazard class a secondary occupancy brings to the R13 most-restrictive run.
+    Storage / industrial: the class chosen for it, None when not chosen (owner ruling
+    12.10.2026, Ch9 Q9). Robotic / mechanical parking: HH (Ch9 Q7)."""
+    if o == "storage_industrial":
+        h = b.secondary_storage_hazard
+        return None if h is None else ("HH" if h == "EH2" else h)
+    if o in _PARKING_OCCS and b.has_robotic_parking:
+        return "HH"
+    return default_hazard(o)
+
+
 def _evaluate_single(b: Building) -> ComplianceReport:
+    b = _with_robotic_eh2(b)   # owner ruling 12.10.2026, Ch9 Q7
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
     fe_rules  = load_rules("ch4_fire_extinguishers.yaml")
