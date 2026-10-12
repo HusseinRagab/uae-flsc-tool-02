@@ -49,15 +49,31 @@ general:
   - id: g_second_pump_set_90m
     # Table 9.6 item 13.iv (p.584): measured from the fire pump, not from
     # grade. Super highrise rows already carry their upper-level pump sets.
+    # Ruling R6 (12.10.2026): malls of 23 m or more keep their Table 9.22 flows
+    # and take the Table 9.6 item 13 zoning and second pump set by height; the
+    # super highrise rows exclude malls, so a mall above 90 m is covered here.
     when:
-      height_m_gte: 23
-      height_m_lte: 90
       pump_head_height_m_gte: 90
+      any_of:
+        - {height_m_gte: 23, height_m_lte: 90}
+        - {building_category_is: mall, height_m_gte: 23}
     systems:
       - name: "Second Fire Pump Set + Dedicated Water Tank"
         code_ref: "Ch 9, Table 9.6 item 13.iv"
         page_ref: "p.584"
         detail: "The most remote landing valve is 90 m or more above the lowest fire pump set (building height plus depth to the pump room). Table 9.6 item 13.iv: where the most remote landing valve is located at a height of 90 m from the fire pump location, a second set of fire pumps and dedicated water tanks shall be provided."
+  - id: g_mall_riser_zoning_45m
+    # Ruling R6 (12.10.2026): Table 9.22 has no zoning items; tall buildings of
+    # any occupancy take Table 9.6 item 13 (#4.2.1 / #4.3.1).
+    when:
+      building_category_is: mall
+      height_m_gte: 23
+      pump_head_height_m_gte: 45
+    systems:
+      - name: "Wet Riser Zoning - High Zone and Low Zone, looped"
+        code_ref: "Ch 9, Table 9.6 item 13.iii"
+        page_ref: "p.584"
+        detail: "The most remote landing valve is 45 m or more above the fire pump (building height plus depth to the pump room). Table 9.6 item 13.iii: when the most remote landing valve is located at a height of 45 m from the fire pump location, the risers shall be zoned into High Zone and Low Zone with looping (Figure 9.8.B). Item 13.i: maximum pressure anywhere in the wet riser system 24 bar with the pump set to cut off at 140% of rated pressure. Mall flows stay per Table 9.22 (ruling R6, 12.10.2026)."
   - id: g_storage_sprinkler_over_3floors
     when:
       building_category_is: storage_industrial
@@ -2537,10 +2553,10 @@ equipment:
   - id: eq_B_lpg_tanks
     flag: has_lpg_tanks
     systems:
-      - name: "LPG Tanks - Water Deluge Spray (Section 3.8) if building sprinklered; Dry-Type Deluge Spray with breeching inlet otherwise"
-        code_ref: "Ch 9, #4.15 / Table 9.31.B"
-        page_ref: "p.756"
-        detail: "Aboveground / rooftop / podium LPG tanks: if the building is sprinklered, provide an AUTOMATIC water deluge spray system cooling the tank shell (Section 3.8). If the building is NOT sprinklered, provide a DRY-type deluge spray system with a Civil Defence breeching inlet (charged by the fire truck on arrival). Exception: no protection required where aboveground tanks are > 6 m from any point of structure."
+      - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
+        code_ref: "Ch 11, #2.5.3 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
+        page_ref: "p.906, p.756"
+        detail: "Fixed water spray system on every aboveground LPG tank, fed from the fire pump and water tank of the building the LPG tank serves, designed per Chapter 9 (Table 11.5 item 5.i). Where that building has no fire pump and water tank, a dry-type water spray ring with open nozzles connected to a Civil Defence breeching inlet (Table 11.5 item 5.ii; Table 9.31.B ii gives the same dry deluge with breeching inlet for a building that is not sprinklered). Code conflict: Table 9.31.B iii (p.756) reads 'Where LPG tanks are installed aboveground, no protection shall be required, unless the proximity of such tanks is more than 6 m from any point of structure', while Table 11.5 item 5.i (p.906) requires the fixed water spray with no exemption. Ruling R5 (12.10.2026): Chapter 11 governs, so no distance exemption is applied."
 
   - id: eq_C_flammable_liquid_tanks
     flag: has_flammable_liquid_tanks
