@@ -9,6 +9,30 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-12 — Phase 2 owner answers coded (24 cards, 12:29-12:30Z)
+
+All 24 phase 2 cards answered on the recommended option; log
+`phase2/ANSWERS_12.10.2026.md` (project files). Tests: 163 pytest, 112 cases, structural 0.
+
+- **Ch 8:** 10.0 m / 20.0 m ceilings take the higher Table 8.14 row, required (Q3); a plant
+  nursery prints no Table 8.14 / 8.15 lines (Q4); item 22 (vii) read as "shall not trigger
+  the evacuation alarm", enclosed and (by analogy) open parking (Q6). Q1, Q2, Q5 as coded.
+- **Ch 9:** plot GF BUA sum required for storage (app stops; engine blank = row 4 plus a
+  NOT EVALUATED line) (Q1); 900 m2 and Group U small yard edges cited (Q2, Q3); assembly B/C
+  LH with OH1 caption (Q5); robotic / mechanical parking forced HH + EH2 (Q7, parking only,
+  pending a follow-up card); secondary storage needs its own hazard, else Table 9.27 NOT
+  EVALUATED (Q9). Q4, Q8 as coded; Q6 (split animal housing) is phase 3.
+- **Ch 3 / Ch 2:** largest storey area input, blank = GFA (Q1, replaces the interim bound);
+  per-use (Table 3.13 row, m2) areas, blank = densest row, proxy occupancies "not evaluated"
+  (Q2); mall GLA factor 2.8 / 3.3 + 0.1 per full 1,290 m2 / max 5.1 m2 (Q3); Table 2.7 overlap
+  3/4 perimeter (Q4); building volume input (Q5); waterfront / theme park / tower set-back
+  checkboxes (Q6); villas get Tables 3.1, 3.2, 3.4 (Q7); Table 3.16 single S or NS column (Q8);
+  Ch 10 "Firefighting Lift (NOT mandatory)" gated on #2.9.4.a (Q9).
+- Pages still needed: p.255 (Table 3.4 widths), p.324 (Table 3.28).
+- Follow-up cards open: nursery general Table 8.1 lines; robotic box on a warehouse;
+  densest-row default; Table 3.13 row 4.vi; mall OL area; storey bound; Tables 3.15.a/b
+  columns; attached parking column.
+
 ### 2026-10-12 — Phase 2 (Ch 8, Ch 9 storage/hazards, Ch 3 + Ch 2) merged on the branch (draft)
 
 Three packages built in parallel off master `f6ae7bb` and merged into
@@ -151,9 +175,10 @@ the 750 gpm row of 9.24.C.2.
 | Ruling | Question | State |
 | --- | --- | --- |
 | R1-R13, R2b | see audit and RULINGS_12.10.2026.md (project files) | ruled 12.10, merged (PR #21) |
-| P2 Ch 8 Q1-Q6 | MCP 25/16 m, cold storage lines, ceiling 10/20 m edges, nursery, cable trays, item 22 (vii) | open (decision cards) |
-| P2 Ch 9 Q1-Q9 | plot GF BUA sum blank, 900 m2 edge, Group U small yard, Table 9.29 H/I/J gate, assembly B/C LH, animal housing, robotic parking EH2, hotel G.ii/G.iii, secondary storage hazard | open (decision cards) |
-| P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | open (decision cards); Q1-Q3 block the merge |
+| P2 Ch 8 Q1-Q6 | MCP 25/16 m, cold storage lines, ceiling 10/20 m edges, nursery, cable trays, item 22 (vii) | answered 12.10, coded |
+| P2 Ch 9 Q1-Q9 | plot GF BUA sum blank, 900 m2 edge, Group U small yard, Table 9.29 H/I/J gate, assembly B/C LH, animal housing, robotic parking EH2, hotel G.ii/G.iii, secondary storage hazard | answered 12.10, coded (Q6 phase 3) |
+| P2 Ch 3 Q1-Q9 | storey area input, OL by actual use, mall GLA, Table 2.7 overlap, volume input, site flags, villa tables, S/NS column, Ch 10 lift line | answered 12.10, coded |
+| P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | open (decision cards) |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
