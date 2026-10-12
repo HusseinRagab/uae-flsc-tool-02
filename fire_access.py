@@ -38,9 +38,15 @@ def _footprint_m2(b: Building) -> Tuple[float, str]:
     return 0.0, "no area entered"
 
 
-def _volume_m3(b: Building, footprint: float) -> float:
-    """Gross cubical extent (#2.8.8.a / #2.8.9.a, p.215): footprint x building height."""
-    return footprint * float(b.height_m or 0)
+def _volume_m3(b: Building, footprint: float) -> Tuple[float, str]:
+    """Gross cubical extent (#2.8.8.a / #2.8.9.a, p.215): the entered building volume,
+    else footprint x building height, labelled as the fallback (owner ruling
+    12.10.2026, Ch3 Q5)."""
+    if b.building_volume_m3 and b.building_volume_m3 > 0:
+        return float(b.building_volume_m3), "building volume entered"
+    return (footprint * float(b.height_m or 0),
+            f"fallback, building volume not entered: {footprint:,.0f} m2 footprint x "
+            f"{b.height_m:g} m height (owner ruling 12.10.2026, Ch3 Q5)")
 
 
 def _table_2_3(footprint: float) -> Extent:
@@ -88,10 +94,17 @@ def _table_2_6_2_7(volume: float, sprinklered: bool) -> Extent:
         return "Minimum 1/6 perimeter (at least 15 m)", "Table 2.7 less than 56,800 m3", cr, pg
     if volume <= 85200:
         return "1/4 perimeter", "Table 2.7 56,801 - 85,200 m3", cr, pg
-    if volume <= 113600:
+    # Printed rows "85,201 m3 to 113,600 m3" (1/2) and "113,001 m3 to 170,400 m2" (3/4)
+    # overlap from 113,001 to 113,600 m3: the higher band (3/4) is taken, owner ruling
+    # 12.10.2026, Ch3 Q4.
+    if volume <= 113000:
         return "1/2 perimeter", "Table 2.7 85,201 - 113,600 m3", cr, pg
+    if volume <= 113600:
+        return ("3/4 perimeter", "Table 2.7 113,001 - 170,400 m3 (113,001 - 113,600 m3 is also "
+                "in the printed 85,201 - 113,600 m3 row: the higher band is taken, owner ruling "
+                "12.10.2026, Ch3 Q4)", cr, pg)
     if volume <= 170400:
-        return "3/4 perimeter", "Table 2.7 113,601 - 170,400 m3", cr, pg
+        return "3/4 perimeter", "Table 2.7 113,001 - 170,400 m3 (printed '170,400 m2')", cr, pg
     return "Whole perimeter (100%)", "Table 2.7 more than 170,400 m3", cr, pg
 
 
@@ -113,22 +126,20 @@ def _compute(b: Building, sprinklered: Optional[bool]) -> Tuple[FireAccessSummar
     occ = b.occupancy
     is_mall = occ in _MALLS
     is_super = b.height_class == "super_highrise"
+    is_theme = b.is_theme_park           # owner ruling 12.10.2026, Ch3 Q6
     is_low = b.height_m <= 15
     if occ == "storage_industrial":
-        vol = _volume_m3(b, fp)
+        vol, vol_basis = _volume_m3(b, fp)
         ext = _table_2_6_2_7(vol, spr)
         if is_super and _rank(ext[0]) < _rank("3/4"):
             # #2.8.7.a (p.214) also covers every super highrise: Table 2.5 3/4 perimeter.
             ext = ("3/4 perimeter", f"Table 2.5 super highrise ({ext[1]} gives {ext[0]})",
                    "Ch 2, #2.8.7.a / Table 2.5", "p.214")
-        notes.append(f"Gross cubical extent taken as {fp:,.0f} m2 footprint x {b.height_m:g} m "
-                     f"height = {vol:,.0f} m3 (use the measured volume where the building is "
-                     "not a single prism).")
-        if spr and 113001 <= vol <= 113600:
-            notes.append("Table 2.7 prints '85,201 m3 to 113,600 m3' (1/2) and '113,001 m3 to "
-                         "170,400 m2' (3/4): the rows overlap from 113,001 to 113,600 m3. The "
-                         "tool uses 1/2 (owner question; confirm with Civil Defence).")
-    elif is_super or is_mall:
+        short = ("entered" if b.building_volume_m3 > 0
+                 else "footprint x height, fallback: building volume not entered")
+        ext = (ext[0], f"{ext[1]}; volume {vol:,.0f} m3 ({short})", ext[2], ext[3])
+        notes.append(f"Gross cubical extent {vol:,.0f} m3 ({vol_basis}).")
+    elif is_super or is_mall or is_theme:
         # #2.8.7.a (p.214): Table 2.5 "but not less than as required in Table 2.3 or Table 2.4".
         floor = _table_2_4(fp) if spr else _table_2_3(fp)
         if _rank(floor[0]) > _rank("3/4"):
@@ -137,6 +148,9 @@ def _compute(b: Building, sprinklered: Optional[bool]) -> Tuple[FireAccessSummar
         else:
             ext = ("3/4 perimeter", f"Table 2.5 any area or height ({floor[1]} gives "
                    f"{floor[0]})", "Ch 2, #2.8.7.a / Table 2.5", "p.214")
+        why = [w for w, hit in (("super highrise", is_super), ("mall", is_mall),
+                                ("theme park", is_theme)) if hit]
+        notes.append(f"Table 2.5 applies: {' / '.join(why)} (#2.8.7.a).")
     elif occ == "villa_commercial" and is_low:
         ext = ("Access road within 60 m of every point",
                "#2.8.3.a commercial villa cluster: 6 m accessway within 60 m",
@@ -212,36 +226,55 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
             "Accessway within 18 m of breeching inlet",
             "Required for midrise and highrise buildings exceeding 15 m habitable height",
             "Ch 2, #2.6.2", "p.207", "fsa_breeching_18m"))
-    if b.height_class in ("highrise", "super_highrise"):
-        sup = b.height_class == "super_highrise"
+    # Site flags (owner ruling 12.10.2026, Ch3 Q6): each line is required when its box is
+    # ticked and left out when it is not.
+    if b.tower_setback_over_30m:
+        if b.height_class in ("highrise", "super_highrise"):
+            sup = b.height_class == "super_highrise"
+            items.append(_req(
+                "Tower set back more than 30 m from the fire access road",
+                "The fire access road shall extend and reach the tower perimeter above the "
+                "podium; such access a minimum of 1/4 (25 percent) of the tower perimeter; "
+                "building facade per #2.8.10.b.1",
+                "Ch 2, #2.8.7.b" if sup else "Ch 2, #2.8.6.b", "p.214" if sup else "p.213",
+                "fsa_tower_setback",
+                detail=("Ticked: the tower facade is more than 30 m of horizontal separation "
+                        "distance from the fire access road (podium, parking structure or "
+                        "architectural feature); owner ruling 12.10.2026, Ch3 Q6.")))
+        else:
+            items.append(_req(
+                "Tower set back more than 30 m from the fire access road",
+                "Not applicable: #2.8.6.b and #2.8.7.b cover highrise and super highrise "
+                "towers only", "Ch 2, #2.8.6.b / #2.8.7.b", "p.213-214", "fsa_tower_setback",
+                status="not_required",
+                detail="Ticked, but the building is below 23 m (owner ruling 12.10.2026, Ch3 Q6)."))
+    if b.is_waterfront:
+        if occ == "villa_commercial":
+            wf = "Commercial villas: maximum distance from fire access road shall not exceed 60 m"
+        elif b.height_class == "lowrise" and not occ.startswith("villa_"):
+            wf = "Lowrise buildings: maximum distance from fire access road shall not exceed 60 m"
+        elif b.height_class == "highrise":
+            wf = "Highrise buildings: shall comply with Table 2.3 and Table 2.4"
+        elif b.height_class == "super_highrise":
+            wf = "Superhighrise buildings: shall comply with Table 2.5"
+        else:
+            wf = ("Table 2.8 has no row for this building: the fire access road shall comply "
+                  "with this chapter (#2.8.10.a)")
         items.append(_req(
-            "Tower set back more than 30 m from the fire access road",
-            "Where the tower facade is more than 30 m (horizontal) from the fire access road "
-            "(podium, parking structure, architectural feature): the fire access road shall "
-            "extend and reach the tower perimeter above the podium, minimum 1/4 (25 percent) "
-            "of the tower perimeter; facade per #2.8.10.b.1",
-            "Ch 2, #2.8.7.b" if sup else "Ch 2, #2.8.6.b", "p.214" if sup else "p.213",
-            "fsa_tower_setback", status="conditional"))
-    wf = None
-    if occ == "villa_commercial":
-        wf = "Commercial villas: maximum distance from fire access road 60 m"
-    elif b.height_class == "lowrise" and not occ.startswith("villa_"):
-        wf = "Lowrise buildings: maximum distance from fire access road 60 m"
-    elif b.height_class == "highrise":
-        wf = "Highrise buildings: comply with Table 2.3 and Table 2.4"
-    elif b.height_class == "super_highrise":
-        wf = "Superhighrise buildings: comply with Table 2.5"
-    if wf:
-        items.append(_req("Waterfront property fire access", f"If waterfront: {wf} (Table 2.8)",
-                          "Ch 2, #2.8.10.a / Table 2.8", "p.217", "fsa_waterfront",
-                          status="conditional"))
-    if occ == "infrastructure":
+            "Waterfront property fire access", f"{wf} (Table 2.8)",
+            "Ch 2, #2.8.10.a / Table 2.8", "p.217", "fsa_waterfront",
+            detail=("Ticked: waterfront property; owner ruling 12.10.2026, Ch3 Q6. #2.8.10.a: "
+                    "the fire access road shall comply with this chapter and Table 2.8. Where it "
+                    "does not, #2.8.10.b.1 (building facade) and #2.8.10.b.2 apply.")))
+    if b.is_theme_park:
         items.append(_req(
             "Theme park fire access",
-            "If a theme park: accessway irrespective of area or height; extent 3/4 perimeter "
-            "(Table 2.5), not less than Table 2.3 or Table 2.4",
-            "Ch 2, #2.8.7.a / Table 2.5", "p.214", "fsa_theme_park", status="conditional"))
-    ecc = [why for why, hit in (("highrise of 23 m or more", h >= 23), ("mall", is_mall)) if hit]
+            "Accessway shall be provided irrespective of the area or height; extent 3/4 "
+            "perimeter (Table 2.5), but not less than Table 2.3 or Table 2.4",
+            "Ch 2, #2.8.7.a / Table 2.5", "p.214", "fsa_theme_park",
+            detail="Ticked: theme / amusement park; owner ruling 12.10.2026, Ch3 Q6."))
+    ecc = [why for why, hit in (("highrise of 23 m or more", h >= 23), ("mall", is_mall),
+                                ("amusement park", b.is_theme_park)) if hit]
     if ecc:
         items.append(_req(
             "Emergency Command Centre",
@@ -254,13 +287,8 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
                    "Features per #2.9.3.f (plans, EVC unit, two-way telephone, FA annunciator, "
                    "lift annunciator, HVAC / smoke control panel, door unlocking, fire pump and "
                    "sprinkler status, generator status, PA, work table, lift recall)."))
-    elif occ == "infrastructure":
-        items.append(_req("Emergency Command Centre",
-                          "If an amusement park: Emergency Command Centre per #2.9.3",
-                          "Ch 2, #2.9.3.a", "p.219", "fsa_ecc", status="conditional"))
-    lift = [why for why, hit in (("highrise of 23 m or more", h >= 23),
-                                 ("high depth with more than 2 basements", b.floors_below_grade > 2),
-                                 ("mall", is_mall)) if hit]
+    # One trigger with the Ch 10 'NOT mandatory' line (Building.fire_lift_2_9_4_reasons).
+    lift = b.fire_lift_2_9_4_reasons
     if lift:
         items.append(_req(
             "Fire Lift",
@@ -271,9 +299,6 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
                "storey" if b.height_class == "super_highrise" else ""),
             "Ch 2, #2.9.4.a-j", "p.220", "fsa_fire_lift",
             detail=f"#2.9.4.a: required in any building which is {' / '.join(lift)}."))
-    elif occ == "infrastructure":
-        items.append(_req("Fire Lift", "If a multi storey amusement park: Fire Lift per #2.9.4",
-                          "Ch 2, #2.9.4.a", "p.220", "fsa_fire_lift", status="conditional"))
     return ChapterReport(
         chapter_code="FSA", chapter_title="Fire Service Access (Ch 2)",
         selected_branch="fsa_auto", selected_branch_section=f"{ext_code} ({ext_page})",
