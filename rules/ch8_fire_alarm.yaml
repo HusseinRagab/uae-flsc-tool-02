@@ -31,14 +31,24 @@ general:
         page_ref: "p.458"
         spec: "2 hour fire rated and Civil Defence listed; Class A; loop isolators"
         detail: "Table 8.1 item 13, p.458: (i) all Fire Detection and Alarm wiring shall be 2 hour fire rated and Civil Defence listed; (v) all fire detection alarm wiring shall be Class A type where circuit redundancy is ensured and operational capability continues even when single open condition, single ground fault and single fault in the circuitry exists, and such faults are annunciated in the control panel; (vi) loop isolators shall be installed to monitor and maintain wiring integrity and safeguard from short circuits, as per manufacturer's guidelines."
+  # Owner ruling 13.10.2026 (card "Add all", Phase 5 G6): Table 8.1 item 15 (i)-(x).
+  - id: fa_general_power_sources
+    when: {}
+    systems:
+      - name: "FA Power Supplies - Primary and Secondary Sources"
+        code_ref: "Ch 8, Table 8.1 item 15 (i)-(x)"
+        page_ref: "p.461"
+        spec: "At least two power supply sources (one primary, one secondary) fully supervised by FACP; primary directly from the Electric Utility Supply on a branch serving the Fire Alarm System only; disconnecting means secured and marked 'FIRE ALARM/DO NOT DISCONNECT'; wiring from the utility branch to FACP 2 hour fire rated and protected from mechanical damages; overcurrent protective device per NFPA 70; secondary either approved UPS per NFPA 111 or batteries dedicated to the FACP"
+        detail: "Owner ruling 13.10.2026. Table 8.1 item 15 POWER SUPPLIES, p.461: (i) at least two power supply sources shall be provided for any Fire Detection and Alarm System, one primary and one secondary, fully supervised by FACP for failure, loss of power, trouble, short circuit conditions; (ii) each power supply shall be of adequate capacity for the full functionality of the System; (iii) Primary Supply shall be directly from the Electric Utility Supply; (iv) the supply from Electric Utility branch shall be direct to Fire Alarm System only and shall not serve any other loads; (v) the system circuit disconnecting means shall be permanently identified as to its purpose, shall be secured and shall be accessible only to authorized personnel; (vi) such disconnecting switch shall be clearly marked 'FIRE ALARM/DO NOT DISCONNECT'; (vii) all wiring from Electric Utility branch to Fire Alarm Control Panel shall be 2 hour fire rated and protected from mechanical damages; (viii) an overcurrent protective device shall be provided in accordance with NFPA 70; (ix) the secondary means of Power Supply shall be permitted to be either approved UPS in accordance with NFPA 111 or Batteries dedicated to the FACP; (x) operation on secondary power shall not affect the required performance of a system or supervising station facility, including alarm, supervisory, and trouble signals and indications."
+  # Item 15 (xiii)-(xv) added by owner ruling 13.10.2026 (card "Add all", Phase 5 G6).
   - id: fa_general_power_supply
     when: {}
     systems:
       - name: "FA Secondary Power Supply and Battery Calculations"
-        code_ref: "Ch 8, Table 8.1 item 15 (xi)-(xii)"
+        code_ref: "Ch 8, Table 8.1 item 15 (xi)-(xv)"
         page_ref: "p.462"
-        spec: "Secondary supply: minimum 24 hours, then 30 minutes in fire or emergency condition at maximum connected load; battery calculations with a minimum 20 percent safety margin"
-        detail: "Table 8.1 item 15, p.462: (xi) the secondary power supply capacity for supervising station facilities and equipment shall be capable of supporting operations for a minimum of 24 hours and then shall be capable of operating the system during a fire or other emergency condition for a period of 30 minutes at maximum connected load; (xii) battery calculations shall include a minimum 20 percent safety margin above the calculated amp-hour capacity required. Item 15 (i)-(x) on p.461 also apply."
+        spec: "Secondary supply: minimum 24 hours, then 30 minutes in fire or emergency condition at maximum connected load; battery calculations with a minimum 20 percent safety margin; batteries marked with the month and year of manufacture; storage batteries per Article 480 of NFPA 70; recharge within 48 hours after a single discharge cycle"
+        detail: "Table 8.1 item 15, p.462: (xi) the secondary power supply capacity for supervising station facilities and equipment shall be capable of supporting operations for a minimum of 24 hours and then shall be capable of operating the system during a fire or other emergency condition for a period of 30 minutes at maximum connected load; (xii) battery calculations shall include a minimum 20 percent safety margin above the calculated amp-hour capacity required; (xiii) batteries shall be marked with the month and year of manufacture using the month/year format; (xiv) storage batteries shall comply with the requirements of Article 480 of NFPA 70; (xv) battery charging equipment shall be provided to recharge batteries within 48 hours after fully charged batteries have been subject to a single discharge cycle. Item 15 (i)-(x), p.461: see 'FA Power Supplies - Primary and Secondary Sources'."
   - id: fa_general_facp_addressable
     when: {}
     systems:
