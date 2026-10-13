@@ -1341,8 +1341,9 @@ branches:
   #   storage_compartment_floor_area_m2  'total built-up floor area of the compartment'
   # Rows are made mutually exclusive, highest row first. Where a value falls on a
   # printed edge or in a gap between two printed rows (e.g. exactly 900 m2 in Groups A-C,
-  # owner ruling 12.10.2026, Ch9 Q2; a Group U yard of 1000 m2 or less, non-LH, Ch9 Q3),
-  # the higher row is used and the detail says so.
+  # owner ruling 12.10.2026, Ch9 Q2; a Group U yard of 1000 m2 or less, non-LH, Ch9 Q3;
+  # exactly 3600 m2 in Groups D, E, I and J, owner ruling 13.10.2026), the higher row is
+  # used and the detail says so.
   # Base groups A-J apply only when no specialty group (K, P-V) and no commodity
   # (L-O) is selected. #4.11.1 (p.724): designers shall first consult the MSDS.
   # ============================================================================
@@ -1609,7 +1610,7 @@ branches:
 
   # ---- Group D - multi-tenant, Extra Hazard Group 1 (#1.1.13.4) (p.727) ----
   - id: storage_industrial_eh1_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_lte: 3600}
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_lt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group D row 1 (Multi-Tenant EH1)"
     page: "p.727"
     systems:
@@ -1631,13 +1632,13 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_eh1_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_gte: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group D row 2 (Multi-Tenant EH1)"
     page: "p.727"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.30 gpm / 232 m2 (EH1)"
-        detail: "Row 2: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13)."
+        detail: "Row 2: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13). Exactly 3600 m2 sits on the printed edge ('less than' / 'more than' 3600 m2) and is taken under this row (higher row, owner ruling 13.10.2026)."
       - name: "Yard Fire Hydrants (loop covering entire facility)"
         spec: "Per Section 3.11"
       - name: "Hose Reel System (throughout)"
@@ -1655,7 +1656,7 @@ branches:
 
   # ---- Group E - multi-tenant, Extra Hazard Group 2 (#1.1.13.5) (p.728) ----
   - id: storage_industrial_eh2_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lte: 3600}
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group E row 1 (Multi-Tenant EH2)"
     page: "p.728"
     systems:
@@ -1677,13 +1678,13 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_eh2_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gte: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group E row 2 (Multi-Tenant EH2)"
     page: "p.728"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
         spec: "Per Section 3.5; design density 0.40 gpm / 232 m2 (EH2)"
-        detail: "Row 2: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13)."
+        detail: "Row 2: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13). Exactly 3600 m2 sits on the printed edge ('less than' / 'more than' 3600 m2) and is taken under this row (higher row, owner ruling 13.10.2026)."
       - name: "Yard Fire Hydrants (loop covering entire facility)"
         spec: "Per Section 3.11"
       - name: "Hose Reel System (throughout)"
@@ -1848,32 +1849,66 @@ branches:
         spec: "60 minutes with dedicated direct breeching inlet"
 
   # ---- Group I - single tenant, Extra Hazard Group 1 (p.732) ----
-  # Values as carried by the tool before phase 2; p.732 not re-read in the phase 2 audit.
-  - id: storage_single_tenant_extra_hazard
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: false}
-    section: "Ch 9, #4.11 / Table 9.27 Group I (Single-Tenant Extra Hazard Group 1)"
+  # Read off p.732: two rows, split as printed (owner ruling 13.10.2026). Exactly 3600 m2
+  # takes row 2 (owner ruling 13.10.2026, higher row); a blank plot GF BUA sum takes row 2
+  # with the 'not evaluated' line (owner ruling 12.10.2026, Ch9 Q1), as in Group J.
+  - id: storage_single_tenant_eh1_tier1
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_lt: 3600}
+    section: "Ch 9, #4.11 / Table 9.27 Group I row 1 (Single-Tenant Extra Hazard Group 1)"
     page: "p.732"
     systems:
-      - name: "Automatic Sprinkler System (Extra Hazard)"
-        spec: "Per Section 3.5; density 0.30 gpm / 232 m2 (2500 ft2) per Table 9.27 Group I (EH1)"
-        detail: "Where MSDS demands foam sprinklers per Section 3.9, foam-water sprinklers shall be provided throughout. Extra Hazard Group 2 activities (#1.1.13.5) take Table 9.27 Group J instead."
-      - name: "Hose Reel System"
-        spec: "Per Section 3.3 (no dry landing valves)"
-      - name: "Yard Fire Hydrants (loop)"
-        spec: "Per Section 3.11 - required when sum of all GF BUA > 3600 m2"
+      - name: "Automatic Sprinkler System (Extra Hazard Group 1)"
+        spec: "Per Section 3.5; design density 0.30 gpm / 232 m2 (2500 ft2) per Table 9.27 Group I"
+        detail: "Extra Hazard Group 1 activities (#1.1.13.4.a). Row 1: total ground floor built-up area less than 3600 m2 (rows split as printed, owner ruling 13.10.2026). Extra Hazard Group 2 activities (#1.1.13.5) take Table 9.27 Group J instead."
+      - name: "Foam Sprinklers (where activity and material MSDS demands)"
         required: conditional
-      - name: "Fire Pump (Single-Tenant Extra Hazard)"
+        spec: "Per Section 3.9 - throughout the facility"
+        detail: "Where activity and material MSDS demands foam sprinkler system, foam sprinklers shall be provided throughout the facility as per Section 3.9 (Table 9.27 Group I row 1 iii)."
+      - name: "Hose Reel System"
+        spec: "Per Section 3.3"
+      - name: "Dry Landing Valves"
+        required: not_required
+      - name: "Fire Pump (Single-Tenant EH1 Tier 1)"
         duty: pump
-        spec: "750 gpm @ 4.5 bar (<=3600 m2) -> 1250 gpm @ 6.9 bar (>3600 m2)"
+        spec: "750 gpm @ 4.5 bar at most remote hose-reel outlet valve"
       - name: "Fire Water Tank"
         duty: tank
-        spec: "60 min (<=3600 m2); 90 min with dedicated direct breeching inlet (>3600 m2)"
+        spec: "60 minutes duration"
+        detail: "Low water level detection and instantaneous refilling arrangement (Table 9.27 Group I row 1 vi)."
+      - name: "MSDS Review (DESIGNER OBLIGATION)"
+        spec: "Per #4.11.1 (p.724)"
+
+  - id: storage_single_tenant_eh1_tier2
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_gte: 3600}
+    section: "Ch 9, #4.11 / Table 9.27 Group I row 2 (Single-Tenant Extra Hazard Group 1)"
+    page: "p.732"
+    systems:
+      - name: "Automatic Sprinkler System (Extra Hazard Group 1)"
+        spec: "Per Section 3.5; design density 0.30 gpm / 232 m2 (2500 ft2) per Table 9.27 Group I"
+        detail: "Row 2: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13; rows split as printed, owner ruling 13.10.2026). Exactly 3600 m2 sits on the printed edge ('less than' / 'more than' 3600 m2) and is taken under this row (higher row, owner ruling 13.10.2026)."
+      - name: "Foam Sprinklers (where activity and material MSDS demands)"
+        required: conditional
+        spec: "Per Section 3.9 - throughout the facility"
+        detail: "Where activity and material MSDS demands foam sprinkler system, foam sprinklers shall be provided throughout the facility as per Section 3.9 (Table 9.27 Group I row 2 iii)."
+      - name: "Yard Fire Hydrants (loop covering entire facility)"
+        spec: "Per Section 3.11"
+      - name: "Hose Reel System"
+        spec: "Per Section 3.3"
+      - name: "Dry Riser and Wet Riser System"
+        required: not_required
+      - name: "Fire Pump (Single-Tenant EH1 Tier 2)"
+        duty: pump
+        spec: "1250 gpm @ 6.9 bar at most remote landing valve"
+      - name: "Fire Water Tank"
+        duty: tank
+        spec: "90 minutes with dedicated direct breeching inlet"
+        detail: "Low water level detection, dedicated direct breeching inlet and instantaneous refilling arrangement (Table 9.27 Group I row 2 viii)."
       - name: "MSDS Review (DESIGNER OBLIGATION)"
         spec: "Per #4.11.1 (p.724)"
 
   # ---- Group J - single tenant, Extra Hazard Group 2 (p.733) ----
   - id: storage_single_tenant_eh2_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lte: 3600}
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group J row 1 (Single-Tenant Extra Hazard Group 2)"
     page: "p.733"
     systems:
@@ -1899,13 +1934,13 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_single_tenant_eh2_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gte: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group J row 3 (Single-Tenant Extra Hazard Group 2)"
     page: "p.733"
     systems:
       - name: "Automatic Sprinkler System (Extra Hazard Group 2)"
         spec: "Per Section 3.5; design density 0.40 gpm / 232 m2 (2500 ft2) per Table 9.27 Group J"
-        detail: "Sum of all ground floor built-up areas more than 3600 m2 (#4.1.13)."
+        detail: "Sum of all ground floor built-up areas more than 3600 m2 (#4.1.13). Exactly 3600 m2 sits on the printed edge ('less than' / 'more than' 3600 m2) and is taken under this row (higher row, owner ruling 13.10.2026)."
       - name: "Foam Sprinklers (where activity and material MSDS demands)"
         required: conditional
         spec: "Per Section 3.9 - throughout the facility"
@@ -2781,7 +2816,7 @@ branches:
     systems:
       - name: "Portable Fire Extinguishers (only)"
         spec: "Per Chapter 4"
-        detail: "Plant nurseries (vegetation, garden centres) require extinguishers per Ch 4 only - no fixed water-based fire-protection system."
+        detail: "Table 9.27 Group V, Nurseries (plants and vegetation): i. fire extinguishers as per Chapter 4. The row prints no other system and no fire pump or tank capacity. Wording per owner ruling 13.10.2026."
       - name: "Automatic Sprinkler System"
         required: not_required
       - name: "Hose Reel System"
