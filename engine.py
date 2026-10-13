@@ -17,8 +17,9 @@ Currently implemented:
 from __future__ import annotations
 
 import re
+from contextvars import ContextVar
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional, Callable, Tuple
 
 import yaml
 
@@ -908,14 +909,48 @@ def evaluate_sc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     )
 
 
+# The whole building of an R13 most-restrictive run, while its single-occupancy sub-runs
+# are evaluated, so the #3.2.2 flame-effect line sees every listed occupancy (owner ruling
+# 13.10.2026, P3 follow-up F-a4-1).
+_R13_SOURCE: ContextVar[Optional[Building]] = ContextVar("_R13_SOURCE", default=None)
+
+
+def _flame_unsprinklered(b: Building) -> List[str]:
+    """#3.2.2 'fully sprinkler protected', checked on every listed occupancy under ruling R13
+    most restrictive (owner ruling 13.10.2026, P3 follow-up F-a4-1): the main occupancy and
+    each other listed occupancy whose own Ch 9 result (at the R13 hazard class) gives no
+    automatic sprinkler system, by name. A listed occupancy whose Ch 9 lines are NOT
+    EVALUATED (storage hazard or animal housing group not chosen) is named too, never
+    passed."""
+    if b.mixed_occupancy_mode != "most_restrictive" or not b.secondary_occupancies:
+        return [] if building_sprinklered(b) else [
+            "it is not fully sprinkler protected per its Ch 9 result"]
+    occs, base = _r13_base(b)
+    out = [] if building_sprinklered(_r13_single(base, occs[0])) else [
+        "it is not fully sprinkler protected per its Ch 9 result"]
+    for o in occs[1:]:
+        if o == "storage_industrial" and b.secondary_storage_hazard is None:
+            out.append(f"its listed occupancy '{o}' has its Ch 9 lines NOT EVALUATED (storage "
+                       f"hazard class not chosen), so full sprinkler protection is not shown")
+        elif o == "animal_housing" and b.secondary_animal_housing_group is None:
+            out.append(f"its listed occupancy '{o}' has its Ch 9 lines NOT EVALUATED (animal "
+                       f"housing group not chosen), so full sprinkler protection is not shown")
+        elif not building_sprinklered(_r13_single(base, o)):
+            out.append(f"its listed occupancy '{o}' is not sprinkler protected per its own Ch 9 "
+                       f"result (ruling R13 most restrictive; owner ruling 13.10.2026, P3 "
+                       f"follow-up F-a4-1)")
+    return out
+
+
 def _flame_show_missing(b: Building) -> List[str]:
     """The #3.2.2 (p.923) conditions for an indoor flame effect show that this building
-    does not meet, by name: fully sprinkler protected (Ch 9 result) and provided with an
+    does not meet, by name: fully sprinkler protected (Ch 9 result, every listed occupancy
+    under R13; owner ruling 13.10.2026, P3 follow-up F-a4-1) and provided with an
     automatic fire detection and alarm system (Ch 8 result; owner ruling 12.10.2026, P3
-    follow-up F-a1-3)."""
-    out = []
-    if not building_sprinklered(b):
-        out.append("it is not fully sprinkler protected per its Ch 9 result")
+    follow-up F-a1-3). Inside an R13 sub-run the whole building is checked, so every
+    sub-report prints the same line."""
+    b = _R13_SOURCE.get() or b
+    out = _flame_unsprinklered(b)
     if not fa_automatic_detection_required(b):
         fa_rules = load_rules("ch8_fire_alarm.yaml") or {}
         row = _collect_branch(fa_rules.get("branches", []), b)[1]
@@ -1555,28 +1590,42 @@ def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
     return out
 
 
+def _r13_base(b: Building) -> Tuple[List[str], Building]:
+    """Ruling R13 most restrictive: the listed occupancies (main first) and the building at
+    the highest hazard class of those listed, on which each occupancy is evaluated."""
+    occs = [b.occupancy] + [o for o in dict.fromkeys(b.secondary_occupancies) if o != b.occupancy]
+    # Owner rulings 12.10.2026: a secondary storage occupancy brings the hazard chosen
+    # for it, never a default (Ch9 Q9); robotic / mechanical parking brings HH + EH2
+    # (Ch9 Q7).
+    sec_hz = [_secondary_hazard(o, b) for o in occs[1:]]
+    hz_all = [b.hazard_class] + [h for h in sec_hz if h]
+    eh2 = b.is_extra_hazard_2
+    if b.has_robotic_parking and any(o in _PARKING_OCCS for o in occs):
+        hz_all.append("HH")
+        eh2 = True
+    if "storage_industrial" in occs[1:] and b.secondary_storage_hazard == "EH2":
+        eh2 = True
+    hz = max(hz_all, key=lambda h: _HAZARD_RANK[h])
+    return occs, b.model_copy(update={"hazard_class": hz, "is_extra_hazard_2": eh2 and hz == "HH"})
+
+
+def _r13_single(base: Building, o: str) -> Building:
+    return base.model_copy(update={"occupancy": o, "secondary_occupancies": [],
+                                   "mixed_occupancy_mode": "none"})
+
+
 def evaluate(b: Building) -> ComplianceReport:
     """Ruling R13 (12.10.2026): in most_restrictive mixed mode every listed occupancy is
     evaluated on the same building, at the highest hazard class of those listed, and the
     chapters are merged keeping the most onerous line per system."""
     if b.mixed_occupancy_mode == "most_restrictive" and b.secondary_occupancies:
-        occs = [b.occupancy] + [o for o in dict.fromkeys(b.secondary_occupancies) if o != b.occupancy]
-        # Owner rulings 12.10.2026: a secondary storage occupancy brings the hazard chosen
-        # for it, never a default (Ch9 Q9); robotic / mechanical parking brings HH + EH2
-        # (Ch9 Q7).
-        sec_hz = [_secondary_hazard(o, b) for o in occs[1:]]
-        hz_all = [b.hazard_class] + [h for h in sec_hz if h]
-        eh2 = b.is_extra_hazard_2
-        if b.has_robotic_parking and any(o in _PARKING_OCCS for o in occs):
-            hz_all.append("HH")
-            eh2 = True
-        if "storage_industrial" in occs[1:] and b.secondary_storage_hazard == "EH2":
-            eh2 = True
-        hz = max(hz_all, key=lambda h: _HAZARD_RANK[h])
-        base = b.model_copy(update={"hazard_class": hz, "is_extra_hazard_2": eh2 and hz == "HH"})
-        single = lambda o: base.model_copy(update={"occupancy": o, "secondary_occupancies": [],
-                                                   "mixed_occupancy_mode": "none"})
-        reps = [_evaluate_single(single(o)) for o in occs]
+        occs, base = _r13_base(b)
+        hz = base.hazard_class
+        tok = _R13_SOURCE.set(b)
+        try:
+            reps = [_evaluate_single(_r13_single(base, o)) for o in occs]
+        finally:
+            _R13_SOURCE.reset(tok)
         note = _mixed_occupancy_note(base)
         storage_missing = "storage_industrial" in occs[1:] and b.secondary_storage_hazard is None
         if storage_missing:

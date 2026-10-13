@@ -1407,7 +1407,8 @@ with st.sidebar:
                 placeholder="Blank: the building's depth is used",
                 help="Depth of the parking's lowest level below the fire access level, at "
                      "most the building's depth below grade. More than 7 m is high depth "
-                     "(Ch 1 #1.7.45, p.45). Used where the parking has basement levels. "
+                     "(Ch 1 #1.7.45, p.45). Used where the parking has basement levels; "
+                     "more than 0 m with 0 levels is refused (F-a4-2). "
                      "Blank: the building's depth is used and the report says so (owner "
                      "ruling 12.10.2026, P3 follow-up F-a3).")
         else:
@@ -1794,6 +1795,15 @@ if (st.session_state.get("has_parking_area") and parking_depth_m_val is not None
              f"cannot exceed the building's depth below grade ({float(depth_below_grade):g} m): "
              "the parking is in the building (owner ruling 12.10.2026, P3 follow-up F-a3). "
              "Correct either input.")
+    st.stop()
+# Owner ruling 13.10.2026, P3 follow-up F-a4-2: no depth without basement levels.
+if (st.session_state.get("has_parking_area") and parking_basement_levels_val is not None
+        and int(parking_basement_levels_val) == 0 and parking_depth_m_val is not None
+        and float(parking_depth_m_val) > 0):
+    st.error(f"Attached parking depth below the fire access level ({float(parking_depth_m_val):g} m) "
+             "is entered with 0 parking basement levels: a parking with no basement levels has "
+             "no depth below the fire access level (owner ruling 13.10.2026, P3 follow-up "
+             "F-a4-2). Enter the parking basement levels, or clear the depth.")
     st.stop()
 
 # ---------- Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9) ------------------

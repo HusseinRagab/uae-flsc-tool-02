@@ -9,6 +9,21 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-13 — Phase 3 last two follow-up answers coded (2 cards, 00:08Z)
+
+- F-a4-1 "All occupancies": the #3.2.2 (p.923) indoor flame-effect sprinkler condition is checked
+  on every R13-listed occupancy (each at the R13 hazard class); each unsprinklered one is named,
+  and a listed storage / animal housing with its Ch 9 lines NOT EVALUATED is named, never passed.
+  More onerous (example: 12 m mercantile + business now stops). The report line now reads the
+  whole R13 building, as the app stop already did: 24 of 540 R13 check cases (sprinklered
+  enclosed parking listed with an occupancy that needs automatic detection) lose a "NOT
+  allowed" line text that contradicted the stop (F-a1-3 rule unchanged).
+- F-a4-2 "Refuse it": parking depth above 0 m with 0 parking basement levels is refused (schema
+  validator + named app stop).
+- Engine: `_r13_base` / `_r13_single` factored out of `evaluate()` (no result change: 6552-case
+  grid 0 differences); `_R13_SOURCE` context for the flame line in R13 sub-runs.
+- Tests: 275 pytest (2 new, both fail without the change), 112 cases, structural 0.
+
 ### 2026-10-12 — Phase 3 follow-up answers coded (5 cards, 17:07Z)
 
 - Cylinders: "new or modified / existing" is a required choice with no pre-fill (app stops,
@@ -258,7 +273,7 @@ the 750 gpm row of 9.24.C.2.
 | P2 follow-ups (8) | nursery Table 8.1 lines, robotic warehouse, densest-row default, row 4.vi, mall OL area, storey bound, Tables 3.15.a/b columns, attached parking column | answered 12.10 14:58Z, coded (F6 phase 3) |
 | P3 cards (24) | Ch 10 Q1-Q4, Ch 11 Q1-Q7, Ch 4-7 Q1-Q3, storey Q1-Q4, app Q1-Q6 | answered 12.10 16:27Z, coded (App Q4 = phase 4) |
 | P3 follow-ups (5) | cylinder new-building default, villa EAP, flame effect alarm, amusement vs Group C, parking depth | answered 17:07Z, coded |
-| P3 follow-ups (2) | flame-effect sprinkler check across R13 occupancies; parking depth with 0 levels | open |
+| P3 follow-ups (2) | flame-effect sprinkler check across R13 occupancies; parking depth with 0 levels | ruled 13.10 (All occupancies; Refuse it), coded |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 

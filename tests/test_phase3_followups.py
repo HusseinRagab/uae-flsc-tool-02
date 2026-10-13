@@ -218,3 +218,71 @@ def test_F_a3_attached_parking_own_depth_below_the_fire_access_level():
     at = _app_test({**state, "parking_depth_m_input": 4.0})
     assert not [e for e in at.error if "F-a3" in e.value]
     assert json.loads(at.session_state["_building_json"])["parking_depth_m"] == 4.0
+
+
+# ------------------------------------------------------------------ F-a4-1
+def test_F_a4_1_flame_show_sprinkler_check_covers_every_listed_occupancy():
+    """#3.2.2 p.923: 'No indoor flame effect shows shall be allowed if the building is not fully
+    sprinkler protected ...'. Owner ruling 13.10.2026, P3 follow-up F-a4-1: under R13 most
+    restrictive the sprinkler condition is checked on every listed occupancy, as the detection
+    condition already was; each one whose own Ch 9 result gives no sprinklers is named."""
+    show = dict(has_lpg_flame_effect=True, lpg_flame_effect_show="indoor", **BASE)
+    # 12 m mercantile alone is sprinklered: no sprinkler condition named
+    merc = Building(occupancy="mercantile_a", height_m=12, **show)
+    assert engine.building_sprinklered(merc)
+    assert not [m for m in engine.lpg_input_stops(merc) if "sprinkler" in m]
+    # the same with an unsprinklered business listed (R13): the business is named
+    mixed = dict(occupancy="mercantile_a", height_m=12, mixed_occupancy_mode="most_restrictive",
+                 secondary_occupancies=["business"], **show)
+    stops = engine.lpg_input_stops(Building(**mixed))
+    assert len(stops) == 1 and "#3.2.2" in stops[0]
+    assert "listed occupancy 'business' is not sprinkler protected" in stops[0]
+    assert "F-a4-1" in stops[0] and "not fully sprinkler protected per its Ch 9" not in stops[0]
+    # the merged report prints the same, whichever sub-run the line came from
+    line = get(report(**mixed), "LPG", "Indoor Flame Effect Shows")
+    assert "NOT allowed (#3.2.2" in line.detail and "'business'" in line.detail
+    # show not stated: the line still names it, no stop
+    unk = dict(mixed, lpg_flame_effect_show=None)
+    assert engine.lpg_input_stops(Building(**unk)) == []
+    assert "'business'" in get(report(**unk), "LPG", "Indoor Flame Effect Shows").detail
+    # every listed occupancy sprinklered: no sprinkler condition named
+    tall = Building(occupancy="mercantile_a", height_m=40, mixed_occupancy_mode="most_restrictive",
+                    secondary_occupancies=["business"], **show)
+    assert not engine._flame_unsprinklered(tall)
+    # a listed storage occupancy with no hazard chosen is named, never passed
+    sto = Building(occupancy="business", height_m=40, mixed_occupancy_mode="most_restrictive",
+                   secondary_occupancies=["storage_industrial"], sum_gf_bua_m2=1000, **show)
+    assert any("'storage_industrial'" in m and "NOT EVALUATED" in m
+               for m in engine._flame_unsprinklered(sto))
+    # the report line now reads the whole R13 building, as the stop always did: a sprinklered
+    # enclosed parking listed with a business (automatic detection, F-a1-3) is allowed in both
+    pk = dict(occupancy="parking_enclosed", height_m=30, mixed_occupancy_mode="most_restrictive",
+              secondary_occupancies=["business"], **show)
+    assert engine.lpg_input_stops(Building(**pk)) == []
+    assert "NOT allowed" not in (get(report(**pk), "LPG", "Indoor Flame Effect Shows").detail or "")
+    # outdoor-only shows are unaffected
+    out = Building(**dict(mixed, lpg_flame_effect_show="outdoor"))
+    assert engine.lpg_input_stops(out) == []
+
+
+# ------------------------------------------------------------------ F-a4-2
+def test_F_a4_2_parking_depth_refused_with_zero_parking_basement_levels():
+    """Owner ruling 13.10.2026, P3 follow-up F-a4-2: a parking depth above 0 m with 0 parking
+    basement levels is refused, in the schema and as a named app stop."""
+    kw = dict(occupancy="residential", height_m=40, floors_above_grade=12, floors_below_grade=3,
+              depth_below_grade_m=12, ground_floor_bua_m2=1000, plot_area_m2=3000,
+              has_parking_area=True, parking_area_m2=2000, parking_height_m=0)
+    with pytest.raises(ValueError, match="needs parking basement levels"):
+        Building(**kw, parking_basement_levels=0, parking_depth_m=5)
+    Building(**kw, parking_basement_levels=0, parking_depth_m=0)       # 0 m stays valid
+    Building(**kw, parking_basement_levels=0)                          # blank stays valid
+    Building(**kw, parking_basement_levels=None, parking_depth_m=5)    # levels blank: not refused here
+    Building(**kw, parking_basement_levels=1, parking_depth_m=5)
+    state = {**_GEO, **_occ("Residential / Lodging", "residential"), "floors_below_input": 2,
+             "depth_below_grade_input": 6.0, "has_parking_area": True,
+             "parking_area_m2_input": 1500.0, "parking_height_m_input": 0.0,
+             "parking_basement_levels_input": 0}
+    at = _app_test({**state, "parking_depth_m_input": 4.0})
+    assert any("0 parking basement levels" in e.value and "F-a4-2" in e.value for e in at.error)
+    at = _app_test({**state, "parking_depth_m_input": 0.0})
+    assert not [e for e in at.error if "F-a4-2" in e.value]

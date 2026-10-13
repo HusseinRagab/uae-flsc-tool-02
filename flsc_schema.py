@@ -481,6 +481,14 @@ class Building(BaseModel):
             raise ValueError(
                 f"Attached parking depth below the fire access level ({self.parking_depth_m:g} m) "
                 f"cannot exceed the building's depth below grade ({self.depth_below_grade_m:g} m).")
+        # Owner ruling 13.10.2026, P3 follow-up F-a4-2: a parking with no basement levels
+        # has no depth below the fire access level to state.
+        if (self.has_parking_area and self.parking_basement_levels == 0
+                and self.parking_depth_m is not None and self.parking_depth_m > 0):
+            raise ValueError(
+                f"Attached parking depth below the fire access level ({self.parking_depth_m:g} m) "
+                f"needs parking basement levels: 0 levels are entered. Enter the levels, or "
+                f"clear the depth or set it to 0 m.")
         return self
 
     @model_validator(mode="after")
