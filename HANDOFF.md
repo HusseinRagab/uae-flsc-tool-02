@@ -9,6 +9,14 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-13 — Phase 4 merged to master on Hussein's go (PR #24, 2f4aee2)
+
+- Card "Merge now" (05:12Z). Head 150d037 re-verified before merge: 291 pytest, 112 cases,
+  structural 0; master tree identical to the PR head. The live app redeploys from master.
+- Re-run issued jobs whose results changed: post offices (now OH2), kiosks entered as Mercantile
+  A/B (now Mercantile C, Table 9.21.b), saved Business files (stop until a group is chosen).
+  PC clone: git pull.
+
 ### 2026-10-13 — Phase 4 defaults confirmed (4 cards, 02:52Z, all option A)
 
 Hussein confirmed the four defaults picked while coding phase 4; no code change (PR #24 already
