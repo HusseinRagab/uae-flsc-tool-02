@@ -756,11 +756,12 @@ CASES = [
          expect_fp_branch="storage_single_tenant_oh2_tier2",
          expect_fp_systems=["Fire Pump (Single-Tenant OH2 Tier 2)"]),
 
-    dict(name="AUDIT FP: Single-tenant Extra Hazard (Groups I + J)",
+    dict(name="AUDIT FP: Single-tenant Extra Hazard Group 1 row 1 (Table 9.27 Group I)",
          inputs=dict(occupancy="storage_industrial", is_single_tenant_storage=True,
-                     height_m=10, ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="HH"),
-         expect_fp_branch="storage_single_tenant_extra_hazard",
-         expect_fp_systems=["Fire Pump (Single-Tenant Extra Hazard)"]),
+                     height_m=10, ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="HH",
+                     sum_gf_bua_m2=2000),  # owner rulings 12.10.2026 Ch9 Q1 and 13.10.2026 Group I split
+         expect_fp_branch="storage_single_tenant_eh1_tier1",
+         expect_fp_systems=["Fire Pump (Single-Tenant EH1 Tier 1)"]),
 
     dict(name="AUDIT FP: Idle pallet warehouse (Table 9.27 Group K)",
          inputs=dict(occupancy="storage_industrial", is_idle_pallet_storage=True,
