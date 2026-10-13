@@ -164,3 +164,12 @@ def test_nursery_below_3600_has_no_hydrant_line():
     assert not any_line(r, "Yard Fire Hydrant System")
     ext = lines(r, "FP", "Portable Fire Extinguishers")
     assert ext and "no fixed water-based" not in ext[0].detail
+
+
+def test_blank_sum_note_not_printed_when_ground_floor_is_exactly_3600():
+    # Owner ruling 13.10.2026 "Higher row": a ground floor of exactly 3600 m2 already
+    # takes row 2, so a blank plot sum cannot change the row and is not named.
+    r = group_i(3600)
+    assert branch(r) == "storage_single_tenant_eh1_tier2"
+    assert not any_line(r, NE)
+    assert any_line(group_i(3599.9), NE)

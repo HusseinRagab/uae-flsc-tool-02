@@ -677,8 +677,10 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
 
     # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum (#4.1.13) is required. A blank
     # sum is taken above 3600 m2 (Table 9.27 row 4, never a lower row) and named here.
+    # A ground floor of exactly 3600 m2 already takes the higher row (owner ruling
+    # 13.10.2026, "Higher row"), so the blank sum cannot change the row there.
     if (b.occupancy == "storage_industrial" and b.storage_gf_bua_sum_missing
-            and b.ground_floor_bua_m2 <= 3600
+            and b.ground_floor_bua_m2 < 3600
             and any("storage_gf_bua_sum_m2" in str(br.get("match")) for br in _matched)):
         branch_items = [_gf_bua_sum_not_evaluated_line()] + list(branch_items)
 
