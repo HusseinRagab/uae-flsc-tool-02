@@ -5,10 +5,9 @@ meta:
   chapter_title: "Fire Extinguishers"
 
 # ---------- UNIVERSAL: Class A (Table 4.3 row 1) -----------------------------
-# Class A fires (ordinary combustibles - paper, wood, fabric, plastics) apply
-# to virtually every occupancy (assembly, business, education, healthcare,
-# residential, hotel, daycare, detention, mercantile, mall, storage,
-# industrial, animal housing, fuel dispensing).
+# Class A fires (ordinary combustibles - paper, wood, fabric, plastics): the
+# occupancies Table 4.3 row 1 lists (p.373-374), plus parking and underground
+# buildings by owner ruling 12.10.2026 (P3 Ch47 Q2). Infrastructure: no line.
 general:
   # ----- Universal FE Specifications (Tables 4.4 + Material Standards section) -----
   - id: fe_g_civil_defence_approval
@@ -18,16 +17,16 @@ general:
         code_ref: "Ch 4, #4 / Material Test Standards"
         page_ref: "p.381-382"
         spec: "All extinguishers Listed, Approved, Registered by Civil Defence Material Approval Department"
-        detail: "Listing per ANSI/NFPA 10, EN 3-7 / EN 3-8 / EN 3-9, ANSI/UL 8 (Foam), UL 2129 (Halocarbon), CAN/ULC-S507-92 (Water 9 L), CAN/ULC-S508-M90 (Class D media). Installation only by Civil Defence approved and licensed contractors. Civil Defence registration mark on each extinguisher body."
+        detail: "Listing per ANSI/NFPA 10, EN 3-7 / EN 3-8 / EN 3-9, ANSI/UL 8 (Foam), UL 2129 (Halocarbon), CAN/ULC-S507-92 (Water 9 L), CAN/ULC-S508-M90 (Class D media). Installation only by Civil Defence approved and licensed contractors."
 
   - id: fe_g_mounting_signage
     when: {}
     systems:
       - name: "Mounting Heights + Cabinet + Signage"
-        code_ref: "Ch 4, #2.3 / Table 4.1 row 4 (Installation)"
-        page_ref: "p.361"
-        spec: "Top of extinguisher <= 1.5 m above floor. Bottom >= 300 mm (30 cm) above floor."
-        detail: "Per code Table 4.1 row 4 (p.361): top not more than 1.5 m above floor, bottom not less than 30 cm from finished floor. The 'Top <= 1.07 m above floor (units > 18 kg)' guidance is NFPA 10 industry practice and is NOT in UAE Ch 4 text. Mount on bracket or hook, OR house in Fire Hose Cabinet (FHC) with clear external signage / pictogram. Extinguishers shall NEVER be placed on floor directly. Path to extinguisher unobstructed. ID label at eye level for FHCs. Signage in red background with white pictogram visible from approach direction. Cabinets shall not be kept locked. Installation only in temperatures 4 C to 49 C."
+        code_ref: "Ch 4, #2.3 / Table 4.1 row 4 (Installation); Table 4.4 item 1.xi (signage)"
+        page_ref: "p.361, p.379"
+        spec: "Top of extinguisher <= 1.5 m above floor. Bottom >= 300 mm (30 cm) above floor. Visual signage pointing at the location of the extinguisher, in Arabic and English."
+        detail: "Per code Table 4.1 row 4 (p.361): top not more than 1.5 m above floor, bottom not less than 30 cm from finished floor. The 'Top <= 1.07 m above floor (units > 18 kg)' guidance is NFPA 10 industry practice and is NOT in UAE Ch 4 text. Mount on bracket or hook, OR house in Fire Hose Cabinet (FHC); Table 4.3 (p.373-375): such cabinets shall clearly have signage that indicates presence of extinguishers inside the Fire Hose Cabinet. Table 4.4 item 1.iii (p.379): extinguisher free of obstruction. Table 4.4 item 1.xi (p.379): visual signage, pointing at the location of extinguisher, both in Arabic and English shall be in place and visible. Cabinets shall not be kept locked. Installation only in temperatures 4 C to 49 C."
 
   - id: fe_g_training_requirement
     when: {}
@@ -42,10 +41,11 @@ general:
     when: {}
     systems:
       - name: "Obsolete Extinguisher Types - Removed From Service"
-        code_ref: "Ch 4, #2.2.8 / Obsolete Extinguishers"
+        required: recommended
+        code_ref: "Ch 4, #2.2.8.1 / Obsolete Extinguishers"
         page_ref: "p.359"
-        spec: "Obsolete extinguisher types SHALL be removed from service and replaced."
-        detail: "Per code #2.2.8.1, the following are obsolete and shall be removed: (a) Soda acid; (b) Chemical foam (excluding film-forming agents); (c) Vaporizing liquid; (d) Cartridge-operated water; (e) Cartridge-operated loaded stream; (f) Copper or brass shell extinguishers joined by soft solder or rivets (excluding pump tanks); (g) Extinguishers rated prior to 1955 and marked B-1, C-1 on the nameplate; (h) Extinguishers not listed or labeled; (i) Halon 1211 and Halon 1301 agents. Facility management shall audit the existing extinguisher inventory at acceptance and during periodic inspections and replace any obsolete units."
+        spec: "Obsolete extinguisher types should be removed from service and replaced (#2.2.8.1 prints 'should', not 'shall')."
+        detail: "Per code #2.2.8.1, the following types of extinguishers are considered obsolete and should be removed from service and replaced: (a) Soda acid; (b) Chemical foam (excluding film-forming agents); (c) Vaporizing liquid; (d) Cartridge-operated water; (e) Cartridge-operated loaded stream; (f) Copper or brass shell extinguishers joined by soft solder or rivets (excluding pump tanks); (g) Extinguishers rated prior to 1955 and marked B-1, C-1 on the nameplate; (h) Extinguishers not listed or labeled; (i) Halon 1211 and Halon 1301 agents. Facility management should check the existing extinguisher inventory against this list at acceptance and during periodic inspections."
 
   - id: fe_g_inspection_intervals
     when: {}
@@ -53,18 +53,55 @@ general:
       - name: "Inspection + Testing Intervals"
         code_ref: "Ch 4, #3.4 / Table 4.4 (Inspection + Maintenance)"
         page_ref: "p.379-380"
-        spec: "Acceptance / Daily-Monthly visual / Annual professional service (per Table 4.4); refer to NFPA 10 for further intervals."
-        detail: "Per code Table 4.4 (p.379-380): ACCEPTANCE: verify location, height, signage, seals, gauge, weight, nozzle. DAILY/MONTHLY: facility management checks presence, location, pressure gauge; extinguishers cleaned and replaced on hangers; replacement unit installed when one is removed for service. ANNUAL: full disassembly maintenance (stored-pressure loaded-stream), CO2 hose conductivity test, pressure regulator test on wheeled units, weighing, recharging if discharged. Note: Table 4.4 states 'NFPA 10 shall be referred for further details.' The 6-year teardown / 12-year hydrostatic test intervals commonly cited are NFPA 10 derivatives and are NOT explicitly stated in UAE Ch 4 text. Service tag shall be attached after each service. Records retained at facility for inspection."
+        spec: "Fire extinguishers shall be serviced and maintained once every year (#3.4.3). Acceptance / daily / monthly / annual inspections per Table 4.4 (minimum guidelines); NFPA 10 referred for further details."
+        detail: "Per code Table 4.4 (p.379-380): ACCEPTANCE: verify location, height, signage, seals, gauge, weight, nozzle. DAILY/MONTHLY: facility management checks presence, location, pressure gauge; extinguishers cleaned and replaced on hangers; replacement unit installed when one is removed for service. ANNUAL: full disassembly maintenance (stored-pressure loaded-stream), CO2 hose conductivity test, pressure regulator test on wheeled units, weighing, recharging if discharged. Note: Table 4.4 states 'NFPA 10 shall be referred for further details.' The 6-year teardown / 12-year hydrostatic test intervals commonly cited are NFPA 10 derivatives and are NOT explicitly stated in UAE Ch 4 text. #3.4.3 (p.379): the fire extinguishers shall be serviced and maintained once every year; the Table 4.4 requirements are minimum guidelines. Table 4.4 item 1.xiii: a record of the acceptance test shall be maintained in the facility."
 
+  # Table 4.3 row 1 prints two type lists (CH47-11): p.373 items 1-7 (assembly,
+  # business, educational, healthcare, residential, hotel, daycare) take dry powder
+  # AND CO2; p.374 items 8-12 (detention, mercantile, malls, storage and factories,
+  # animal housing, fuel dispensing) take dry powder OR clean agent, AND CO2.
   - id: fe_g_class_a
     when:
-      occupancy_not: [villa_private, villa_commercial]
+      occupancy_in: [assembly_a, assembly_b, assembly_c, business,
+                     education_a, education_b, education_c,
+                     healthcare_a, healthcare_b, healthcare_c,
+                     residential, labour_accommodation, staff_accommodation, hostel,
+                     hotel_a, hotel_b, hotel_c, daycare_a, daycare_b, daycare_c]
+    systems:
+      - name: "Class A Fire Extinguisher (Multi-purpose Dry Powder AND CO2)"
+        spec: "Multi-purpose Dry Powder 2-A, 20-B, C 4 kg (ONE) AND CO2 Type 5 kg (ONE) per location; each serves approximately 280 m2; maximum travel distance 30 m"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1 items 1-7"
+        page_ref: "p.373"
+        detail: "Table 4.3 row 1 items 1-7 (p.373: assembly, business, educational, healthcare, residential, hotel, daycare) print Multi-purpose Dry Powder 2-A, 20-B, C 4 kg AND CO2 5 kg, with no clean-agent alternative. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 30 m. Place along the corridors, waiting areas, shops, supermarkets, service corridors, staff and reception areas, where people can easily find and use them. As a practice fire extinguishers are placed in Fire Hose Cabinets (FHC); such cabinets shall clearly have signage that indicates presence of extinguishers inside."
+
+  - id: fe_g_class_a_p374
+    when:
+      occupancy_in: [detention_a, detention_b, detention_c, mercantile_a, mercantile_b,
+                     mall_covered, mall_open, mall_mixed, storage_industrial,
+                     animal_housing, motor_fuel_dispensing]
     systems:
       - name: "Class A Fire Extinguisher (Multi-purpose Dry Powder OR Clean Agent) + CO2"
-        spec: "Multi-purpose Dry Powder 4 kg, rating 2-A:20-B:C (or Clean Agent 4 kg) AND CO2 5 kg per location"
-        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1"
+        spec: "Multi-purpose Dry Powder 2-A, 20-B, C 4 kg (ONE) OR Clean Agent Type 4 kg (ONE), AND CO2 Type 5 kg (ONE) per location; each serves approximately 280 m2; maximum travel distance 30 m"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1 items 8-12"
+        page_ref: "p.374"
+        detail: "Table 4.3 row 1 items 8-12 (p.374: detention and correction, mercantile, malls, storage (warehouse) and factories, animal housing, fuel dispensing) print Multi-purpose Dry Powder 2-A, 20-B, C 4 kg OR Clean Agent 4 kg, AND CO2 5 kg. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 30 m. Place along the corridors, waiting areas, shops, supermarkets, service corridors, staff and reception areas, where people can easily find and use them. As a practice fire extinguishers are placed in Fire Hose Cabinets (FHC); such cabinets shall clearly have signage that indicates presence of extinguishers inside."
+
+  # Occupancies Table 4.3 row 1 (p.373-374) does not list. Owner ruling 12.10.2026,
+  # P3 Ch47 Q2: open / enclosed parking and high / low depth underground take a
+  # required line with the p.374 types, labelled a tool decision; infrastructure gets
+  # no Class A line; mixed_multiple gets no line of its own (its listed occupancies
+  # decide under R13, most restrictive). Same name and spec as fe_g_class_a_p374 so
+  # an R13 merge with a p.374 occupancy keeps one line.
+  - id: fe_g_class_a_parking_underground
+    when:
+      occupancy_in: [parking_enclosed, parking_open,
+                     high_depth_underground, low_depth_underground]
+    systems:
+      - name: "Class A Fire Extinguisher (Multi-purpose Dry Powder OR Clean Agent) + CO2"
+        spec: "Multi-purpose Dry Powder 2-A, 20-B, C 4 kg (ONE) OR Clean Agent Type 4 kg (ONE), AND CO2 Type 5 kg (ONE) per location; each serves approximately 280 m2; maximum travel distance 30 m"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1, p.374 types (tool decision, owner ruling 12.10.2026, P3 Ch47 Q2)"
         page_ref: "p.373-374"
-        detail: "Class A coverage applies to seating areas, corridors, waiting areas, exit routes, office areas, shops, reception, dining, guest rooms, etc. Each extinguisher serves approximately 280 m² of area; maximum travel distance 30 m. Place along corridors, waiting areas, shops, supermarkets, service corridors, staff and reception areas. Extinguishers commonly housed in Fire Hose Cabinets (FHC) with clear external signage."
+        detail: "Tool decision, owner ruling 12.10.2026 (P3 Ch47 Q2): Table 4.3 row 1 does not list this occupancy (p.373-374 list assembly, business, educational, healthcare, residential, hotel, daycare, detention and correction, mercantile, malls, storage (warehouse) and factories, animal housing, fuel dispensing). Parking and underground buildings take the types printed on p.374: Multi-purpose Dry Powder 2-A, 20-B, C 4 kg OR Clean Agent 4 kg, AND CO2 5 kg. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 30 m. As a practice fire extinguishers are placed in Fire Hose Cabinets (FHC); such cabinets shall clearly have signage that indicates presence of extinguishers inside."
 
   - id: fe_g_class_a_villa
     when:
@@ -130,8 +167,70 @@ addons:
       - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Storage Zones"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2"
         page_ref: "p.375"
-        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 4 kg (2-A:20-B:C) per location"
-        detail: "Class B coverage applies to: chemical stores, linen stores, waste storage, flammable liquid stores, cleaning solvent stores, laboratories, paint/solvent rooms. Each extinguisher serves ~280 m²; maximum travel 15 m."
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg per location; maximum travel distance 15 m"
+        detail: "Table 4.3 row 2 (p.375) Class B areas: laboratories, chemical stores, linen stores, waste storage, cleaning solvent stores, flammable liquid stores, chemical / flammable liquid / flammable material storage and activity. Use this flag for such areas in an occupancy whose own row 2 item does not already list them. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 15 m."
+
+  # Table 4.3 row 2 items 2-7 (p.375) list Class B areas per occupancy. They fire
+  # from the occupancy (CH47-01), at each listed area present in the building.
+  - id: fe_class_b_row2_educational
+    always_on: true
+    when: {occupancy_in: [education_a, education_b, education_c]}
+    systems:
+      - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Educational Areas"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 2"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg at laboratories and cleaning solvent stores; maximum travel distance 15 m"
+        detail: "Table 4.3 row 2 item 2 EDUCATIONAL (p.375): i. Laboratories; ii. Cleaning solvent stores. Applies at each of these areas present in the building. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 15 m."
+
+  - id: fe_class_b_row2_healthcare
+    always_on: true
+    when: {occupancy_in: [healthcare_a, healthcare_b, healthcare_c]}
+    systems:
+      - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Healthcare Areas"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 3"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg at chemical stores, linen stores, waste storage and cleaning solvent stores; maximum travel distance 15 m"
+        detail: "Table 4.3 row 2 item 3 HEALTHCARE (p.375): i. Chemical Stores; ii. Linen Stores; iii. Waste Storage; iv. Cleaning solvent stores. Applies at each of these areas present in the building. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 15 m."
+
+  - id: fe_class_b_row2_hotel
+    always_on: true
+    when: {occupancy_in: [hotel_a, hotel_b, hotel_c]}
+    systems:
+      - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Hotel Areas"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 4"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg at chemical stores, linen stores, waste storage and cleaning solvent stores; maximum travel distance 15 m"
+        detail: "Table 4.3 row 2 item 4 HOTEL (p.375): i. Chemical Stores; ii. Linen Stores; iii. Waste Storage; iv. Cleaning solvent stores. Applies at each of these areas present in the building. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 15 m."
+
+  - id: fe_class_b_row2_mercantile
+    always_on: true
+    when: {occupancy_in: [mercantile_a, mercantile_b]}
+    systems:
+      - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Mercantile Areas"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 5"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg at chemical stores and flammable liquid stores; maximum travel distance 15 m"
+        detail: "Table 4.3 row 2 item 5 MERCANTILE (p.375): i. Chemical Stores; ii. Flammable liquid Stores. Applies at each of these areas present in the building. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 15 m."
+
+  - id: fe_class_b_row2_mall
+    always_on: true
+    when: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
+    systems:
+      - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Mall Areas"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 6"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg at service corridors and cleaning solvent stores; maximum travel distance 15 m"
+        detail: "Table 4.3 row 2 item 6 MALLS (p.375): i. Service Corridor; ii. Cleaning solvent stores. Applies at each of these areas present in the building. Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 15 m."
+
+  - id: fe_class_b_row2_storage_factories
+    always_on: true
+    when: {occupancy: storage_industrial}
+    systems:
+      - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Storage / Factory Areas"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 7"
+        page_ref: "p.375"
+        spec: "Foam Type 9 L (3 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg at chemical, flammable liquid and flammable material storage and activity; maximum travel distance 15 m"
+        detail: "Table 4.3 row 2 item 7 STORAGE (WAREHOUSE) AND FACTORIES (p.375): i. Chemical Storage and activity; ii. Flammable liquid Storage and activity; iii. Flammable material Storage and activity. Applies at each of these areas present in the building. Bulk storage of flammable liquids takes the wheeled row 3 item 2 (Bulk Flammable Liquid line). Each extinguisher serves approximately 280 m2 of the area; maximum travel distance 15 m."
 
   # Rule ID kept as `fe_class_b_assembly_bar` for downstream stability. The flag
   # `has_nightclub_disco` is the only available UI input today and is interpreted
@@ -161,15 +260,24 @@ addons:
       - name: "Class B Wheeled Foam Extinguisher - Bulk Flammable Liquid"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 3 item 2"
         page_ref: "p.376"
-        spec: "Wheeled Foam 50 L + Multi-purpose Dry Powder 4 kg"
-        detail: "Bulk flammable liquid storage and Group A plastic storage require wheeled foam at 15 m max travel."
+        spec: "Wheeled Type Foam 50 L (13 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg; maximum travel distance 15 m"
+        detail: "Table 4.3 row 3 item 2.i (p.376): bulk storage of flammable liquids. Maximum travel distance 15 m; placed near the hazard in protected environment as per manufacturer's guidelines."
+
+  - id: fe_class_b_wheeled_group_a_plastic
+    flag: has_group_a_plastic_storage
+    systems:
+      - name: "Class B Wheeled Foam Extinguisher - Group A Plastic Storage / Activity"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 3 item 2.ii"
+        page_ref: "p.376"
+        spec: "Wheeled Type Foam 50 L (13 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg; maximum travel distance 15 m"
+        detail: "Table 4.3 row 3 item 2 STORAGE (WAREHOUSE) AND FACTORIES, ii. Group A Plastic storage and activity (p.376). Maximum travel distance 15 m; placed near the hazard in protected environment as per manufacturer's guidelines."
 
   # ---- Class C - non-wheeled (electrical rooms) ----
   - id: fe_class_c_main_electrical
     flag: has_main_electrical_room
     systems:
       - name: "Class C Extinguisher - Main Electrical Room"
-        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 1"
         page_ref: "p.376"
         spec: "CO2 5 kg OR Clean Agent 5 kg"
         detail: "One Class C extinguisher inside the room next to the exit. Max travel 9 m."
@@ -178,7 +286,7 @@ addons:
     flag: has_lv_mv_room
     systems:
       - name: "Class C Extinguisher - LV Room"
-        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 1"
         page_ref: "p.376"
         spec: "CO2 5 kg OR Clean Agent 5 kg"
         detail: "Inside the LV room next to exit. Max travel 9 m. An MV room takes the HV row (ruling R12)."
@@ -223,10 +331,10 @@ addons:
     flag: has_rmu_idf_mdf_room
     systems:
       - name: "Class C Extinguisher - RMU Room"
-        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 7"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 items 7-8"
         page_ref: "p.376"
         spec: "CO2 5 kg OR Clean Agent 5 kg"
-        detail: "Inside the RMU / IDF / MDF / CDF / MMR / switchgear room next to the exit. Max travel 9 m."
+        detail: "Table 4.3 row 4 item 7 RMU rooms, item 8 switchgear room (p.376): inside the room next to the exit. Max travel 9 m. Row 4 does not name IDF / MDF / CDF / MMR rooms; the app flag groups them with RMU rooms."
 
   # ---- Class C - wheeled (HV / Transformer / Heavy electrical) ----
   - id: fe_class_c_wheeled_transformer_utility

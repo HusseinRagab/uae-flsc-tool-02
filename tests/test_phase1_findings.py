@@ -394,8 +394,11 @@ def test_CH10_02_known_case_no_contradictions():
 def test_CH10_04_high_depth_occupancy_without_numbers():
     r = report(occupancy="high_depth_underground", height_m=6, ground_floor_bua_m2=1000)
     req = [it.system for it in items(r, "SC", required_only=True)]
-    assert "Stair Pressurization (basement stairs, depth more than 7 m)" in req
-    assert "Firefighting Lift (depth more than 7 m)" in req
+    # Re-pointed in phase 3 (CH10-27): with no depth entered the rows are
+    # FAQ #29.i (more than 2 levels) and Ch 2 #2.9.4.a, not the Table 10.22
+    # depth rows, which are named NOT EVALUATED.
+    assert "Stair Pressurization (basement stairs, more than 2 basement levels)" in req
+    assert "Firefighting Lift (more than 2 basements)" in req
 
 
 def test_CH10_37_one_tunnel_line():
@@ -406,7 +409,10 @@ def test_CH10_37_one_tunnel_line():
 # ------------------------------------------------- attached parking
 def test_attached_parking_carries_routing_inputs():
     r = report(occupancy="hotel_a", height_m=18, ground_floor_bua_m2=1000, plot_area_m2=2000,
-               has_parking_area=True, attached_parking_kind="open", exit_stairs=3)
+               has_parking_area=True, attached_parking_kind="open", exit_stairs=3,
+               parking_area_m2=1000,  # phase 3 (ENG-11): the parking area is required
+               # P3 App Q2 (owner ruling 12.10.2026): the parking's own height and levels
+               parking_height_m=18, parking_basement_levels=0)
     ch = next(c for c in r.attached_parking_chapters if c.chapter_code == "FP")
     p = [it for b in ch.blocks for it in b.items
          if it.system.startswith("Fire Pump") and it.status == "required"]

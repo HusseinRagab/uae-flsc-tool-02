@@ -37,6 +37,21 @@ general:
         code_ref: "Ch 9, #4.1.6"
         page_ref: "p.694"
         detail: "Yard hydrant loop per Section 3.11. Required because total storage/industrial built-up area across all floors > 3,600 m2 (#4.1.6, p.694). This companion trigger catches multi-storey storage buildings whose ground-floor footprint alone is below 3,600 m2."
+  - id: g_yard_hydrant_storage_total_bua_missing
+    # Audit CH9A-17: #4.1.6 keys on the built-up area of all floors (#4.1.11). With the
+    # total GFA not entered on a storage building of more than one floor, the total is
+    # unknown: named, never taken as the ground floor alone.
+    when:
+      building_category_is: storage_industrial
+      gross_floor_area_m2_lte: 0
+      floors_above_grade_gt: 1
+      ground_floor_bua_m2_lte: 3600
+    systems:
+      - name: "Yard Fire Hydrant System (#4.1.6 total built-up area) - NOT EVALUATED"
+        spec: "Not evaluated: enter the total GFA (all floors, including mezzanines)"
+        code_ref: "Ch 9, #4.1.6 / #4.1.11"
+        page_ref: "p.694, p.695"
+        detail: "#4.1.6 requires yard fire hydrants for storage and industrial occupancies with more than 3600 m2 built-up area; #4.1.11 defines built-up area as the total floor areas of all the floors, including mezzanines. The total GFA was not entered for this multi-storey building, so this trigger is not evaluated (audit CH9A-17)."
   - id: g_yard_hydrant_storage_remote
     when:
       building_category_is: storage_industrial
@@ -313,13 +328,16 @@ branches:
         spec: "60 minutes duration"
 
   - id: superhighrise_large_plot
+    merge_family: tall   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {height_m_gt: 90, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.2.1 / Table 9.18.A"
     page: "p.696"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout the building including basements and podiums (open as well as closed) per Section 3.5 (Table 9.18.A i). Triggered by super highrise (more than 90 m) on a plot exceeding 20,000 m2."
       - name: "Wet Riser System (zoned - High/Low per Table 9.6.13)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet risers throughout per Section 3.4, with High Zones and Low Zones according to the pressure limitations of Table 9.6 item 13 (Table 9.18.A iii-iv). Outlets: 25 mm hose reel (or 40 mm hose rack) and 65 mm landing valve (Table 9.6 items 1, 7)."
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
@@ -329,6 +347,7 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 (Table 9.18.A vii). Not required where infrastructure yard hydrants are available within 60 m of the towers; tapping from the existing yard hydrant network is permitted to extend coverage (Table 9.18.A viii)."
       - name: "Fire Pump (first/lowest level)"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 17 bar (combined yard + internal; irrespective of number of stairs and standpipes)"
         detail: "Where a fire pump set is combined and serves both yard hydrants and internal building systems, the first pump set at the lowest level is 1000 gpm irrespective of the number of stairs and standpipes, at 17 bar (Table 9.18.A ix)."
@@ -336,6 +355,7 @@ branches:
         pump_spec_type: standpipe_dependent
         detail: "Where a pump set only serves internal building systems, the pump sets located vertically at every 90 m intermediate interval from the lowest level fire pump (Table 9.18.A xi)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration (lowest level, combined)"
         detail: "Combined water tank at the lowest level: 60 minutes, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.18.A x)."
@@ -344,13 +364,16 @@ branches:
         detail: "A fire water tank for every upper-level pump set (every 90 m interval), 30 minutes, with automatic low water level detection, instantaneous refilling, and pumping and piping to refill the tanks from lower levels (Table 9.18.A xii)."
 
   - id: superhighrise_small_plot
+    merge_family: tall   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {height_m_gt: 90, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.2.1 / Table 9.18.B (and row C)"
     page: "p.697"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.18.B i). Row C (yard hydrants provided as part of infrastructure development, irrespective of plot area) has the same requirements."
       - name: "Wet Riser System (zoned)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4 with High Zones and Low Zones per Table 9.6 item 13 (Table 9.18.B iii-iv). Outlets: 25 mm hose reel (or 40 mm hose rack) and 65 mm landing valve (Table 9.6 items 1, 7)."
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
@@ -358,6 +381,7 @@ branches:
       - name: "Multi-level Pump Set (every 90 m)"
         detail: "Every 90 m height from the lowest fire pump set level per Table 9.6 item 13 (Table 9.18.B vi)."
       - name: "Fire Pump (first/lowest level)"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 17 bar (irrespective of the number of standpipes)"
         detail: "First fire pump set at the lowest level of the building (Table 9.18.B vii)."
@@ -365,6 +389,7 @@ branches:
         pump_spec_type: standpipe_dependent
         detail: "Upper-level pump sets located at every 90 m interval from the lowest level fire pump (Table 9.18.B ix)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration (lowest level)"
         detail: "Water tank at the lowest level: 60 minutes, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.18.B viii)."
@@ -373,13 +398,16 @@ branches:
         detail: "A fire water tank for every upper-level pump set (every 90 m interval), 30 minutes, with automatic low water level detection, instantaneous refilling, and pumping and piping to refill the tanks from lower levels (Table 9.18.B x)."
 
   - id: highrise_45_90_large_plot
+    merge_family: tall   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {height_m_gte: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.A"
     page: "p.698"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.A i). Table 9.19 rows A/B apply when the most remote landing valve is 45 m or more above the lowest fire pump set level (row heading: more than 45 m ... from lowest pump set level; Table 9.6 item 13.iii zones the risers at a height 45 m from the fire pump location). The tool takes the pump room at the lowest basement unless it is set at grade."
       - name: "Wet Riser System (looped, High/Low zones per Table 9.6.13)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4 with looped High Zones and Low Zones according to the pressure limitations of Table 9.6 item 13 (Table 9.19.A iii-iv)."
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
@@ -387,43 +415,53 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 (Table 9.19.A vi). Not required where infrastructure yard hydrants are available within 60 m of the towers; tapping from the existing network is permitted (Table 9.19.A vii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve (combined yard + internal; irrespective of number of stairs)"
         detail: "Where a fire pump set is combined and serves yard hydrants and internal building systems (Table 9.19.A viii)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.A ix)."
 
   - id: highrise_45_90_small_plot
+    merge_family: tall   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {height_m_gte: 23, height_m_lte: 90, pump_head_height_m_gte: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.B"
     page: "p.698"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.B i). Table 9.19 rows A/B apply when the most remote landing valve is 45 m or more above the lowest fire pump set level (row heading: more than 45 m ... from lowest pump set level; Table 9.6 item 13.iii zones the risers at a height 45 m from the fire pump location). The tool takes the pump room at the lowest basement unless it is set at grade."
       - name: "Wet Riser System (zoned per Table 9.6.13)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4 with High Zones and Low Zones according to the pressure limitations of Table 9.6 item 13 (Table 9.19.B iii-iv)."
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
         detail: "Table 9.19.B v."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         pump_spec_type: standpipe_dependent
         detail: "Table 9.19.B vi."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.B vii)."
 
   - id: highrise_23_45_large_plot
+    merge_family: tall   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {height_m_gte: 23, pump_head_height_m_lt: 45, plot_area_m2_gt: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.C"
     page: "p.699"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.C i)."
       - name: "Wet Riser System"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet risers throughout per Section 3.4 (Table 9.19.C iii)."
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
@@ -431,31 +469,38 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 (Table 9.19.C v). Not required where infrastructure yard hydrants are available within 60 m of the towers (Table 9.19.C vi)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve and yard hydrant (combined; irrespective of number of standpipes)"
         detail: "Where a fire pump set is combined and serves yard hydrants and internal building systems (Table 9.19.C vii)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Combined water tank, low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.C viii)."
 
   - id: highrise_23_45
+    merge_family: tall   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {height_m_gte: 23, pump_head_height_m_lt: 45, plot_area_m2_lte: 20000, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
     section: "Ch 9, #4.3.1 / Table 9.19.D"
     page: "p.699"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout including basements and podiums (open as well as closed) per Section 3.5 (Table 9.19.D i)."
       - name: "Wet Riser System"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet risers throughout per Section 3.4 (Table 9.19.D iii)."
       - name: "Wet Risers Interconnected at Lowest + Highest Level of Each Zone"
         detail: "Table 9.19.D iv."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         pump_spec_type: standpipe_dependent
         detail: "Table 9.19.D v-vi."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.D vii)."
@@ -474,7 +519,11 @@ branches:
     # fewer basements) also takes row H.
     match:
       any_of:
-        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
+        # Audit CH9A-19: Table 9.20.a (p.700) does not list low depth underground
+        # buildings; a midrise one is NOT EVALUATED (branch midrise_low_depth_not_in_code)
+        # unless it is high depth (row H).
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c, low_depth_underground], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: true}
         - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
@@ -511,7 +560,11 @@ branches:
     # fewer basements) also takes row H.
     match:
       any_of:
-        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c], occupancy_group_is: midrise_public}
+        # Audit CH9A-19: Table 9.20.a (p.700) does not list low depth underground
+        # buildings; a midrise one is NOT EVALUATED (branch midrise_low_depth_not_in_code)
+        # unless it is high depth (row H).
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c, low_depth_underground], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: true}
         - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
         - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
@@ -535,6 +588,17 @@ branches:
         duty: tank
         spec: "60 minutes duration (combined)"
         detail: "Combined tank: low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.a.2 vii)."
+
+  # Audit CH9A-19: #4.4.1 / #4.4.2 and Tables 9.20.a-d (p.700-704) do not list low
+  # depth underground buildings, so a midrise one is not evaluated: the report names it.
+  - id: midrise_low_depth_not_in_code
+    match: {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: false}
+    section: "Ch 9, #4.4 / Tables 9.20.a-9.20.d"
+    page: "p.700-704"
+    systems:
+      - name: "Midrise Low Depth Underground - NOT EVALUATED"
+        spec: "Not evaluated: choose the occupancy of the building above grade"
+        detail: "Table 9.20.a (p.700) lists the #4.4.1 occupancies and row H (high depth underground buildings or buildings with 3 or more basements); Tables 9.20.b-9.20.d (p.701-704) list residential, business, healthcare B/C, mercantile C, animal housing and detention. None lists a low depth underground building (#1.7.44, p.45) at midrise height, so the tool does not pick a row: select the occupancy of the building above grade and enter the basements (audit CH9A-19)."
 
   # ---- Midrise residential group (Table 9.20.b, #4.4.2, p.701-702) ----
   # Rows 1-3 are tiers on the ground-floor built-up area; row 4 (plot more
@@ -942,12 +1006,14 @@ branches:
       floors_above_grade_lte: 2
       villa_converted_use_is: true
       ground_floor_bua_m2_lte: 900
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    # Owner ruling 12.10.2026, P3 App Q1: a converted villa takes Table 9.21.d alone; the
+    # Table 9.23 villa rows (#4.7.1, p.716) are suppressed (#4.5.4, p.710).
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500]
     section: "Ch 9, #4.5.4 / Table 9.21.d.1 (GF BUA less than 900 m2, irrespective of stairs)"
     page: "p.710"
     systems:
       - name: "Portable Fire Extinguishers (Chapter 4)"
-        detail: "Fire extinguishers as per Chapter 4 (Table 9.21.d.1 i); fire pump and tank NA. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c for such a villa. The table prints less than 900 m2 and more than 900 m2; 900 m2 exactly is taken under this row."
+        detail: "Fire extinguishers as per Chapter 4 (Table 9.21.d.1 i); fire pump and tank NA. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c and the Table 9.23 villa rows for such a villa (owner ruling 12.10.2026, P3 App Q1). The table prints less than 900 m2 and more than 900 m2; 900 m2 exactly is taken under this row."
       - name: "Automatic Sprinkler System"
         required: not_required
         detail: "Not required by Table 9.21.d.1."
@@ -966,12 +1032,14 @@ branches:
       ground_floor_bua_m2_gt: 900
       has_single_exit_stair_is: false
       exit_stairs_gte: 2
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    # Owner ruling 12.10.2026, P3 App Q1: a converted villa takes Table 9.21.d alone; the
+    # Table 9.23 villa rows (#4.7.1, p.716) are suppressed (#4.5.4, p.710).
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500]
     section: "Ch 9, #4.5.4 / Table 9.21.d.2 (GF BUA more than 900 m2, two exit stairs)"
     page: "p.710"
     systems:
       - name: "Portable Fire Extinguishers (Chapter 4)"
-        detail: "Fire extinguishers as per Chapter 4 (Table 9.21.d.2 i); fire pump and tank NA. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c for such a villa."
+        detail: "Fire extinguishers as per Chapter 4 (Table 9.21.d.2 i); fire pump and tank NA. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c and the Table 9.23 villa rows for such a villa (owner ruling 12.10.2026, P3 App Q1)."
       - name: "Automatic Sprinkler System"
         required: not_required
         detail: "Not required by Table 9.21.d.2."
@@ -991,12 +1059,14 @@ branches:
       any_of:
         - {has_single_exit_stair_is: true}
         - {exit_stairs_lt: 2}
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    # Owner ruling 12.10.2026, P3 App Q1: a converted villa takes Table 9.21.d alone; the
+    # Table 9.23 villa rows (#4.7.1, p.716) are suppressed (#4.5.4, p.710).
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500]
     section: "Ch 9, #4.5.4 / Table 9.21.d.3 (GF BUA more than 900 m2, second exit stair not available)"
     page: "p.710"
     systems:
       - name: "Portable Fire Extinguishers (Chapter 4)"
-        detail: "Fire extinguishers as per Chapter 4. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c for such a villa."
+        detail: "Fire extinguishers as per Chapter 4. Table 9.21.d covers existing G+1 villas converted to commercial outlets (#4.5.4, p.710); it replaces the generic lowrise tiers of Tables 9.21.a-c and the Table 9.23 villa rows for such a villa (owner ruling 12.10.2026, P3 App Q1)."
       - name: "Second Exit Stair (external, from first floor)"
         required: recommended
         detail: "It is highly recommended to the owner to consider providing a second exit stair externally from the first floor (Table 9.21.d.3 i)."
@@ -1015,16 +1085,38 @@ branches:
   # ---------------- LOWRISE COMMERCIAL OUTLET ATTACHED (Ch 9, #4.5.5 / Table 9.21.e) ----
   # Villas / business / mosques with commercial / mercantile outlets attached or in the
   # same plot. Tiers keyed off the commercial-outlet BUA, not the host building.
+  # Audit CH9B-14: #4.5.5 (p.711) covers lowrise villas (G+1), business (Groups A, B, C)
+  # and mosques (Assembly Group C in this tool) with commercial / mercantile outlets
+  # attached or in the same plot; the rows are keyed on the built-up ground floor area OF
+  # THE COMMERCIAL OUTLET (`commercial_outlet_gf_bua_m2`), and Table 9.21.e replaces the
+  # generic Table 9.21.a / 9.21.b / 9.21.c tiers of the host building. The table prints
+  # "upto 900 m2" and "more than 900 m2", so 900 m2 is row 1.
+  - id: lowrise_commercial_outlet_area_missing
+    match:
+      height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
+      has_attached_commercial_outlet_is: true
+      commercial_outlet_gf_bua_m2_lte: 0
+    section: "Ch 9, #4.5.5 / Table 9.21.e"
+    page: "p.711"
+    systems:
+      - name: "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area of the commercial outlet"
+        detail: "Table 9.21.e rows 1 (up to 900 m2) and 2 (more than 900 m2) are keyed on the built-up ground floor area of the commercial outlet, not of the host building. The outlet area was not entered, so the Table 9.21.e row is not evaluated (audit CH9B-14)."
+
   - id: lowrise_commercial_outlet_attached_small
     match:
       height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
       has_attached_commercial_outlet_is: true
-      ground_floor_bua_m2_lte: 900
+      commercial_outlet_gf_bua_m2_gt: 0
+      commercial_outlet_gf_bua_m2_lte: 900
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.5 / Table 9.21.e.1"
     page: "p.711"
     systems:
       - name: "Hose Reel System (throughout)"
-        detail: "Hose reels throughout the building per Section 3.3. Triggered because attached/same-plot commercial outlet BUA <= 900 m2."
+        detail: "Hose reels throughout the building per Section 3.3. Triggered because the built-up ground floor area of the attached / same-plot commercial outlet is up to 900 m2 (Table 9.21.e.1). Table 9.21.e replaces the generic Table 9.21.a / 9.21.b tiers of the host building (#4.5.5)."
       - name: "Dry Landing Valves"
         required: not_required
         detail: "Not required at this tier."
@@ -1043,13 +1135,15 @@ branches:
   - id: lowrise_commercial_outlet_attached_large
     match:
       height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
       has_attached_commercial_outlet_is: true
-      ground_floor_bua_m2_gt: 900
+      commercial_outlet_gf_bua_m2_gt: 900
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.5 / Table 9.21.e.2"
     page: "p.711"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements)"
-        detail: "Full sprinkler coverage throughout the building including basements per Section 3.5. Triggered because attached/same-plot commercial outlet BUA > 900 m2."
+        detail: "Sprinklers throughout the building including basements per Section 3.5. Triggered because the built-up ground floor area of the attached / same-plot commercial outlet is more than 900 m2 (Table 9.21.e.2). Table 9.21.e replaces the generic Table 9.21.a / 9.21.b tiers of the host building (#4.5.5)."
       - name: "Hose Reel System (throughout)"
         detail: "Hose reels throughout per Section 3.3."
       - name: "Dry Landing Valves"
@@ -1075,9 +1169,12 @@ branches:
   #   site_office_short   -> extinguishers only (used <6 months)
   #   site_office_long    -> hose reel + 50 gpm @ 4.5 bar / 30 min tank (used >6 months)
   #   small_detached      -> extinguishers only (detached G+1 <=150 m2 any occupancy)
+  # Audit CH9B-14: #4.5.6 (p.712) gives tents, marquees, site offices and site dwellings
+  # their own Table 9.21.f; it replaces the generic Table 9.21.a / 9.21.b / 9.21.c tiers.
   - id: lowrise_tent_marquee_extinguishers_only
     match:
       tent_marquee_kind_in: [temporary, site_office_short, small_detached]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows A / D / F)"
     page: "p.712"
     systems:
@@ -1096,6 +1193,7 @@ branches:
   - id: lowrise_tent_marquee_hose_reel
     match:
       tent_marquee_kind_in: [permanent, commercial_desert, site_office_long]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows B / C / E)"
     page: "p.712"
     systems:
@@ -2679,6 +2777,7 @@ branches:
   # The plot > 20,000 m2 rows add hydrants and the 1000 gpm / 60 min duty on
   # top of the area/height row. Smoke control is Ch 10, not Table 9.24.
   - id: parking_enclosed_a1
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_enclosed, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 900, height_m_lte: 15}
     section: "Ch 9, #4.8.1 / Table 9.24.A.1 (GF BUA up to 900 m2, height up to 15 m)"
     page: "p.718"
@@ -2691,35 +2790,42 @@ branches:
         required: not_required
         detail: "Not required by Table 9.24.A.1."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose reel outlet valve"
         detail: "Table 9.24.A.1 iii."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "30 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.24.A.1 iv)."
 
   - id: parking_enclosed_a2
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_enclosed, has_robotic_parking_is: false, ground_floor_bua_m2_gt: 900, ground_floor_bua_m2_lte: 3600, height_m_lte: 15}
     section: "Ch 9, #4.8.1 / Table 9.24.A.2 (GF BUA 901 to 3,600 m2, height up to 15 m)"
     page: "p.718"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout the parking structure per Section 3.5 (Table 9.24.A.2 i). The table prints up to 900 m2 and 901 m2 to 3,600 m2; any area above 900 m2 is taken under this row."
       - name: "Dry Riser + Hose Reel System (throughout)"
         detail: "Dry riser and hose reel system throughout per Section 3.2 and Section 3.3 (Table 9.24.A.2 iii)."
       - name: "Dry Risers Interconnected at Highest Level"
         detail: "Table 9.24.A.2 iv."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose valve"
         detail: "Table 9.24.A.2 v."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "30 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.24.A.2 vi)."
 
   - id: parking_enclosed_a3
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match:
       occupancy: parking_enclosed
       has_robotic_parking_is: false
@@ -2730,20 +2836,25 @@ branches:
     page: "p.718"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout the parking structure per Section 3.5 (Table 9.24.A.3 i)."
       - name: "Wet Riser System (interconnected at highest level)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet riser system throughout per Section 3.4, interconnected at the highest level (Table 9.24.A.3 iii-iv)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         pump_spec_type: standpipe_dependent
         detail: "Table 9.24.A.3 v prints 750 gpm for 2 standpipes and 1000 gpm for more than 3 standpipes; 3 standpipes is not printed. Exactly 3 standpipes takes 1000 gpm: every other table switches above 2, so the printed more than 3 is read as a typo (ruling R3, 12.10.2026)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.24.A.3 vi)."
 
   - id: parking_enclosed_a4
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_enclosed, has_robotic_parking_is: false, plot_area_m2_gt: 20000}
     section: "Ch 9, #4.8.1 / Table 9.24.A.4 (plot more than 20,000 m2)"
     page: "p.719"
@@ -2751,15 +2862,18 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 in a loop covering the entire development (Table 9.24.A.4 i). Not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure; tapping from the existing yard hydrant network is permitted to extend coverage (item ii). Sprinklers, wet risers and hose reels follow Table 9.24.A.1, 2 or 3 as applicable (item iii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote hydrant valve and hose outlet (combined yard + internal, or yard hydrants only)"
         detail: "Table 9.24.A.4 iii (combined pump set) and iv (pump set serving only the yard hydrants)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (combined tank, dedicated direct breeching inlet; Table 9.24.A.4 v)."
 
   - id: parking_robotic_b1
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy_in: [parking_enclosed, parking_open], has_robotic_parking_is: true}
     suppresses: [parking_enclosed_a1, parking_enclosed_a2, parking_enclosed_a3, parking_enclosed_a4, parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
     section: "Ch 9, #4.8.1 / Table 9.24.B.1 (mechanical / robotic parking, irrespective of area)"
@@ -2768,18 +2882,22 @@ branches:
       - name: "Deluge Water Spray System (each vehicle covered)"
         detail: "Deluge water spray system per Section 3.8 such that each vehicle is under the deluge spray coverage (Table 9.24.B.1 i)."
       - name: "Wet Riser System (near stairs and access walkways)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet riser system throughout the building, near stairs and on access walkways, per Section 3.4; interconnected at the highest level (Table 9.24.B.1 ii-iii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "Sized for at least 2 adjacent deluge water spray zones @ 6.9 bar at most remote hose reel outlet valve"
         detail: "Table 9.24.B.1 iv. The flow depends on the deluge zone design; it is not a fixed table value, so this line is listed beside any other pump line rather than ranked against it."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.24.B.1 v)."
 
   - id: parking_robotic_b2
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy_in: [parking_enclosed, parking_open], has_robotic_parking_is: true, plot_area_m2_gt: 20000}
     section: "Ch 9, #4.8.1 / Table 9.24.B.2 (plot more than 20,000 m2)"
     page: "p.719"
@@ -2787,15 +2905,18 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 in a loop covering the entire development; the fire hose for the interior of the building is tapped from the hydrant loop (Table 9.24.B.2 i). Not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure; tapping from the existing yard hydrant network is permitted to extend coverage (item ii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve and hydrant outlet (combined yard + internal, or yard hydrants only)"
         detail: "Table 9.24.B.2 iii (combined pump set) and iv (pump set serving only the yard hydrants)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (combined tank, dedicated direct breeching inlet; Table 9.24.B.2 v)."
 
   - id: parking_open_c1
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 2000, height_m_lt: 15}
     section: "Ch 9, #4.8.1 / Table 9.24.C.1 (GF BUA up to 2,000 m2, height less than 15 m)"
     page: "p.720"
@@ -2806,32 +2927,39 @@ branches:
         required: not_required
         detail: "Dry risers shall not be required (Table 9.24.C.1 ii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose reel outlet valve"
         detail: "Table 9.24.C.1 iii."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "45 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.24.C.1 iv)."
 
   - id: parking_open_c2
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 2000, height_m_gte: 15, height_m_lt: 23}
     section: "Ch 9, #4.8.1 / Table 9.24.C.2 (GF BUA up to 2,000 m2, height 15 m to less than 23 m)"
     page: "p.720"
     systems:
       - name: "Wet Riser System (interconnected at highest level)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet riser system throughout per Section 3.4, interconnected at the highest level (Table 9.24.C.2 i-ii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         pump_spec_type: stairs_dependent
         detail: "Table 9.24.C.2 iii: 750 gpm for 2 stairs, 1000 gpm for 3 or more stairs."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (dedicated direct breeching inlet; Table 9.24.C.2 iv)."
 
   - id: parking_open_c3
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match:
       occupancy: parking_open
       has_robotic_parking_is: false
@@ -2842,20 +2970,25 @@ branches:
     page: "p.720"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
+        merge_system: sprinkler
         detail: "Sprinklers throughout the parking structure per Section 3.5 (Table 9.24.C.3 i)."
       - name: "Wet Riser System (interconnected at highest level)"
+        merge_system: wet_riser
         requires_wet_riser: true
         detail: "Wet riser system throughout per Section 3.4, interconnected at the highest level (Table 9.24.C.3 ii-iii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve"
         detail: "Table 9.24.C.3 iv."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (dedicated direct breeching inlet; Table 9.24.C.3 v)."
 
   - id: parking_open_c4
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_open, has_robotic_parking_is: false, plot_area_m2_gt: 20000}
     section: "Ch 9, #4.8.1 / Table 9.24.C.4 (plot more than 20,000 m2)"
     page: "p.720"
@@ -2863,15 +2996,18 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 in a loop covering the entire development (Table 9.24.C.4 i). Not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure; tapping from the existing yard hydrant network is permitted to extend coverage (item ii). Sprinklers, wet risers or hose reels follow Table 9.24.C.1, 2 or 3 as applicable (item iii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm @ 6.9 bar at most remote landing valve and yard hydrant (combined yard + internal, or yard hydrants only)"
         detail: "Table 9.24.C.4 iv (combined pump set) and v (pump set serving only the yard hydrants)."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (combined tank, dedicated direct breeching inlet; Table 9.24.C.4 vi)."
 
   - id: parking_covered_below_3600
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_lt: 3600}
     suppresses: [parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
     section: "Ch 9, #4.8.1 / Table 9.24.D (covered / shaded one-level parking below 3,600 m2)"
@@ -2882,6 +3018,7 @@ branches:
         detail: "Table 9.24.D starts at a covered/shaded parking area of 3,600 m2; the code prints nothing for a smaller covered/shaded one-level parking. Not evaluated by the tool: confirm with the Authority."
 
   - id: parking_covered_d1
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_gte: 3600, ground_floor_bua_m2_lte: 20000}
     suppresses: [parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
     section: "Ch 9, #4.8.1 / Table 9.24.D.1 (covered / shaded parking 3,600 m2 to less than 20,000 m2)"
@@ -2893,15 +3030,18 @@ branches:
         required: not_required
         detail: "Dry riser shall not be required (Table 9.24.D.1 ii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose reel outlet valve"
         detail: "Table 9.24.D.1 iii."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.24.D.1 iv)."
 
   - id: parking_covered_d2
+    merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
     match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_gt: 20000}
     suppresses: [parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
     section: "Ch 9, #4.8.1 / Table 9.24.D.2 (covered / shaded parking more than 20,000 m2)"
@@ -2910,10 +3050,12 @@ branches:
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrants per Section 3.11 in a loop covering the entire development; where yard hydrants are provided, the hose reel system is not required (Table 9.24.D.2 i). Yard hydrants or hose reels are not required where infrastructure yard hydrants are available within 60 m of every exterior part of the structure (item ii)."
       - name: "Fire Pump"
+        merge_system: pump
         duty: pump
         spec: "1000 gpm"
         detail: "Table 9.24.D.2 iii prints 1000 gpm with no pressure; size the pressure for the most remote hydrant valve per Section 3.11."
       - name: "Fire Water Tank"
+        merge_system: tank
         duty: tank
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet and instantaneous refilling (Table 9.24.D.2 iv)."
@@ -3343,15 +3485,31 @@ equipment:
         page_ref: "p.906, p.756"
         detail: "Fixed water spray system on every aboveground LPG tank, fed from the fire pump and water tank of the building the LPG tank serves, designed per Chapter 9 (Table 11.5 item 5.i). Where that building has no fire pump and water tank, a dry-type water spray ring with open nozzles connected to a Civil Defence breeching inlet (Table 11.5 item 5.ii; Table 9.31.B ii gives the same dry deluge with breeching inlet for a building that is not sprinklered). Code conflict: Table 9.31.B iii (p.756) reads 'Where LPG tanks are installed aboveground, no protection shall be required, unless the proximity of such tanks is more than 6 m from any point of structure', while Table 11.5 item 5.i (p.906) requires the fixed water spray with no exemption. Ruling R5 (12.10.2026): Chapter 11 governs, so no distance exemption is applied."
 
-  - id: eq_B_lpg_tanks_underground_mounded
+  - id: eq_B_lpg_tanks_underground_and_roof
     flag: has_lpg_tanks
-    when: {has_lpg_tank_underground_mounded_is: true}
+    # Underground / mounded tanks ticked beside roof or at-grade tanks: those tanks are
+    # covered by Table 9.31.B i (p.756) and Table 11.5 item 5 / Table 11.7 #5 (Ch 11), so
+    # the spray is required for them (owner ruling 12.10.2026, P3 Ch11 Q4 at-grade input).
+    when:
+      has_lpg_tank_underground_mounded_is: true
+      any_of:
+        - {has_lpg_tank_roof_mounted_is: true}
+        - {has_lpg_tank_at_grade_is: true}
     systems:
       - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
-        required: conditional
+        code_ref: "Ch 11, Table 11.7 #5 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
+        page_ref: "p.906, p.756"
+        detail: "Roof-mounted or aboveground at-grade LPG tanks are ticked beside the underground / mounded tanks: Table 9.31.B i-ii (p.756) cover tanks aboveground or on roofs or podiums, and Chapter 11 requires their fire protection (Table 11.5 item 5, Table 11.7 #5), so the fixed water spray system is required on every such tank. The underground / mounded tanks need none (Table 11.9 #5). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
+
+  - id: eq_B_lpg_tanks_underground_mounded
+    flag: has_lpg_tanks
+    when: {has_lpg_tank_underground_mounded_is: true, has_lpg_tank_roof_mounted_is: false, has_lpg_tank_at_grade_is: false}
+    systems:
+      - name: "LPG Tanks (aboveground, roof or podium) - Fixed Water Spray System"
+        required: not_required
         code_ref: "Ch 11, #2.5.3 / Table 11.5 item 5; Ch 9, #4.15 / Table 9.31.B"
         page_ref: "p.906, p.756"
-        detail: "Underground / mounded LPG tanks are ticked: Table 9.31.B i-ii (p.756) apply only where LPG tanks are installed aboveground or on roofs or podiums, so the water spray system is required only for the tanks installed aboveground or on roofs or podiums. Where some tanks are aboveground: fixed water spray on every aboveground LPG tank fed from the building fire pump and water tank (Table 11.5 item 5.i), or a dry-type water spray ring with open nozzles and a Civil Defence breeching inlet where the building has none (item 5.ii). Ruling R5 (12.10.2026): Chapter 11 governs the Table 9.31.B iii 6 m clause."
+        detail: "Only underground / mounded LPG tanks are declared (no roof or aboveground at-grade tanks ticked): Table 9.31.B i-ii (p.756) apply only where LPG tanks are installed aboveground or on roofs or podiums, and Table 11.9 #5 makes fire protection for underground / mounded tanks not mandatory, so no water spray system is required. Tick the roof or at-grade tank box if the project also has those tanks (owner ruling 12.10.2026, P3 Ch11 Q4)."
 
   - id: eq_C_flammable_liquid_tanks
     flag: has_flammable_liquid_tanks

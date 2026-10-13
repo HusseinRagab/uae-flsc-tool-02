@@ -16,13 +16,26 @@ Owner rulings 12.10.2026 (Ch 3 Q1-Q3):
   - Q3: mall factor from the gross leasable area (Table 3.13 row 14, p.287):
     less than 14,000 m2 -> 2.8 m2; from 14,000 m2, 3.3 m2 plus 0.1 m2 for each FULL
     1,290 m2 above 14,000 m2, maximum 5.1 m2. Blank GLA: the GFA, labelled.
+
+Owner answer 12.10.2026, F6 (phase 3): an optional per-storey table (storey, Table
+3.13 row, area). When it has lines it governs: each storey's OL is the sum of its
+uses, each rounded up (#4.1.2); Table 3.14 runs on each storey (#4.3.1, #4.1.3) and
+the storey with the highest OL is named as governing. A line with no row takes the
+densest Table 3.13 row of the occupancy (Ch3 Q2). A line or storey the table cannot
+value (no storey name, unknown row, no row for an occupancy with no Table 3.13 row,
+a storey with no area) is refused by name and no exit count is stated.
+
+Owner ruling 12.10.2026, P3 Storey Q1: each storey carries an "identical storeys"
+count. A storey counts that many times in the building total OL; the governing storey
+is still the one with the highest OL. The counts must add up to the floors above grade
+plus the basements: otherwise no exit count is stated (NOT EVALUATED, the gap named).
 """
 from __future__ import annotations
 
 import math
 from typing import Dict, List, Optional, Tuple
 
-from flsc_schema import Building, OccupantLoadSummary
+from flsc_schema import Building, OccupantLoadSummary, StoreyLoad
 
 # Table 3.13 rows that carry an area factor (m2 per person), read off p.285-287.
 # Rows with no area factor are left out: 1.iii bench seating (455 mm linear), 1.iv
@@ -124,6 +137,8 @@ _MALLS = ("mall_covered", "mall_open", "mall_mixed")
 _Q1 = "owner ruling 12.10.2026, Ch3 Q1"
 _Q2 = "owner ruling 12.10.2026, Ch3 Q2"
 _Q3 = "owner ruling 12.10.2026, Ch3 Q3"
+_F6 = "owner answer 12.10.2026, F6"
+_SQ1 = "owner ruling 12.10.2026, P3 Storey Q1"
 
 
 def min_exits_for_ol(occupant_load: int, outdoor: bool = False) -> Tuple[int, str]:
@@ -265,6 +280,140 @@ def _occupancy_factor(b: Building) -> Tuple[float, str]:
     return f, ref
 
 
+def _storey_table_warnings(b: Building, total_area: float,
+                           largest_area: float) -> List[str]:
+    """Input checks on the per-storey table (F6). They do not stop the evaluation. (The
+    storey count is a refusal, not a warning: owner ruling 12.10.2026, P3 Storey Q1.)"""
+    w = []
+    gfa = float(b.gross_floor_area_m2 or 0)
+    if gfa > 0 and total_area > gfa:
+        w.append(f"The per-storey areas add up to {total_area:,.0f} m2, more than the GFA "
+                 f"of {gfa:,.0f} m2: check the inputs.")
+    if b.use_areas:
+        w.append("The whole-building per-use areas are not used: the per-storey table "
+                 f"governs ({_F6}).")
+    ls = float(b.largest_storey_area_m2 or 0)
+    if ls > 0:
+        txt = (f"The largest storey area input ({ls:,.0f} m2) is not used for Table 3.14: the "
+               f"per-storey table governs ({_F6})")
+        if largest_area > ls:
+            txt += (f"; the table has a storey of {largest_area:,.0f} m2, larger than it: "
+                    "check the inputs")
+        w.append(txt + ".")
+    return w
+
+
+def _from_storeys(b: Building) -> OccupantLoadSummary:
+    """Owner answer 12.10.2026, F6: per-storey per-use table."""
+    occ_f, occ_ref = _occupancy_factor(b)
+    problems: List[str] = []
+    order: List[str] = []
+    areas: Dict[str, Dict[Optional[str], float]] = {}
+    counts: Dict[str, List[int]] = {}
+    refused: set = set()
+    for i, u in enumerate(b.storey_uses, 1):
+        name = (u.storey or "").strip()
+        row = u.row or None
+        if not name:
+            problems.append(f"line {i}: no storey name")
+            continue
+        if name not in areas:
+            order.append(name)
+            areas[name] = {}
+            counts[name] = []
+        if u.count not in counts[name]:
+            counts[name].append(u.count)
+        if row is not None and row not in TABLE_3_13_ROWS:
+            problems.append(f"line {i} ({name}): {row!r} is not a Table 3.13 row the tool lists")
+            refused.add(name)
+            continue
+        if row is None and u.area_m2 > 0 and occ_f <= 0:
+            problems.append(f"line {i} ({name}): no Table 3.13 row chosen, and this occupancy "
+                            "has none (Table 3.13, p.285-287): choose the row of the actual use "
+                            "(#1.4.5)")
+            refused.add(name)
+            continue
+        areas[name][row] = areas[name].get(row, 0.0) + float(u.area_m2)
+    problems += [f"storey {n!r}: no area entered" for n in order
+                 if n not in refused and sum(areas[n].values()) <= 0]
+    # P3 Storey Q1: every line of a storey carries the same identical-storeys count.
+    problems += [f"storey {n!r}: its lines give different identical-storey counts "
+                 f"({', '.join(map(str, counts[n]))}); give every line of the storey the same "
+                 "count" for n in order if len(counts[n]) > 1]
+    count = {n: counts[n][0] for n in order}
+    total_area = sum(sum(a.values()) * count[n] for n, a in areas.items())
+    if problems:
+        return _not_evaluated(
+            total_area, "Per-storey table", (
+                f"Not evaluated: per-storey table ({_F6}): " + "; ".join(problems) +
+                ". Correct the table; no exit count is stated until every line can be valued."),
+            "Table 3.14 not evaluated: per-storey table line(s) to correct (no exit count stated)")
+
+    results: List[StoreyLoad] = []
+    densest, densest_ref = None, ""
+    for name in order:
+        ol_s, parts = 0, []
+        for row, a in areas[name].items():
+            if a <= 0:
+                continue
+            if row is None:
+                f, ref = occ_f, occ_ref
+                label = "no row chosen (densest row)"
+            else:
+                f, ref = _row_factor(b, row)
+                label = f"row {row}"
+            n = _ol(a, f)
+            ol_s += n
+            parts.append(f"{label}: {a:,.0f} m2 / {f:g} m2 = {n:,}")
+            if densest is None or f < densest:
+                densest, densest_ref = f, ref
+        exits, _ = min_exits_for_ol(ol_s)
+        results.append(StoreyLoad(storey=name, area_m2=sum(areas[name].values()),
+                                  occupant_load=ol_s, min_exits=exits, parts=parts,
+                                  count=count[name]))
+    per = " | ".join(f"{s.storey}" + (f" (x{s.count} identical storeys)" if s.count > 1 else "")
+                     + ": " + "; ".join(s.parts) +
+                     f" -> OL {s.occupant_load:,} -> {s.min_exits} exits" for s in results)
+    # P3 Storey Q1: the counts must cover every storey of the building, else no exit
+    # count is stated and the gap is named.
+    n_listed = sum(s.count for s in results)
+    n_bld = b.floors_above_grade + b.floors_below_grade
+    if n_listed != n_bld:
+        gap = (f"{n_bld - n_listed} storey(s) not covered" if n_listed < n_bld
+               else f"{n_listed - n_bld} storey(s) more than the building has")
+        return OccupantLoadSummary(
+            area_m2=total_area, factor_m2_per_person=0.0,
+            factor_ref="Per-storey table", occupant_load=0, min_exits=0, evaluated=False,
+            exit_ref=("Table 3.14 not evaluated: the per-storey table counts do not cover the "
+                      f"building's storeys ({gap}; no exit count stated)"),
+            note=(f"Not evaluated: per-storey table ({_F6}; {_SQ1}): the identical-storey counts "
+                  f"add up to {n_listed} storey(s), the building has {n_bld} (floors above grade "
+                  f"{b.floors_above_grade} + basements {b.floors_below_grade}): {gap}. List every "
+                  "storey, or give a typical storey its identical-storeys count, so the counts "
+                  f"add up to {n_bld}; no exit count is stated until they do. Listed: {per}."),
+            storeys=results)
+    gov = max(results, key=lambda s: s.occupant_load)
+    exits, ref = min_exits_for_ol(gov.occupant_load)
+    total = sum(s.occupant_load * s.count for s in results)
+    warnings = _storey_table_warnings(b, total_area, max(s.area_m2 for s in results))
+    note = (f"OL per storey from the per-storey table (#1.4.5, #4.1.2, #4.1.3, #4.3.1; {_F6}): "
+            f"{per}. Governing storey: {gov.storey} (OL {gov.occupant_load:,}). Building total "
+            f"OL {total:,} = the sum of the storeys, each counted as many times as its "
+            f"identical-storeys count ({_SQ1}; each use rounded up).")
+    if any(None in areas[n] for n in order):
+        note += f" Lines with no row chosen use {occ_ref}."
+    if warnings:
+        note += " Check: " + " ".join(warnings)
+    return OccupantLoadSummary(
+        area_m2=total_area, factor_m2_per_person=densest or 0.0,
+        factor_ref=f"Per-storey table (densest factor used: {densest_ref})",
+        occupant_load=total, min_exits=exits,
+        exit_ref=(f"{ref} (governing storey '{gov.storey}': OL {gov.occupant_load:,}; per "
+                  f"storey, #4.3.1, #4.1.3; {_F6})"),
+        note=note, storey_area_m2=gov.area_m2, storey_occupant_load=gov.occupant_load,
+        governing_storey=gov.storey, storeys=results, warnings=warnings)
+
+
 def compute_occupant_load(b: Building) -> OccupantLoadSummary:
     occ = b.occupancy
 
@@ -275,6 +424,9 @@ def compute_occupant_load(b: Building) -> OccupantLoadSummary:
                 "is set by Tables 3.27 / 3.28 (see the Means of Egress items). Table 3.14 "
                 "does not apply to villas."),
             "Table 3.14 not applied to villas (Tables 3.27 / 3.28)")
+
+    if b.storey_uses:
+        return _from_storeys(b)
 
     if b.use_area_total_m2 > 0:
         return _from_use_areas(b)

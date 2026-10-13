@@ -37,39 +37,43 @@ Occupancy = Literal[
     "high_depth_underground", "low_depth_underground",
 ]
 
+# Definitions follow Ch 1 Table 1.1 (p.48-50): occupancy groups are defined by USE
+# (audit ENG-16). Ch 1 #1.7.9 (p.41) mercantile Class A/B/C (area and storeys) is a
+# separate classification, not the Table 1.1 group. The client-count wording of the
+# daycare groups (Ch 3) and the education notes are unchanged.
 OCCUPANCY_DEFS = {
-    "assembly_a": "Assembly Group A - Occupant load > 1,000. Concert halls, large auditoriums, stadiums, arenas, exhibition halls, mosques > 1,000 capacity.",
-    "assembly_b": "Assembly Group B - Occupant load 301 to 1,000. Cinemas, theatres, banquet halls, conference halls, mid-size mosques, ballrooms.",
-    "assembly_c": "Assembly Group C - Occupant load 50 to 300. Restaurants, cafes, small meeting rooms, small mosques, community halls, bars, nightclubs.",
-    "business": "Business - Offices, non-inpatient clinics, government offices, banks, courthouses, professional services.",
+    "assembly_a": "Assembly Group A - Table 1.1 row 1 (p.48): banquet halls, night clubs, discos, restaurants with more than 50 people, pubs, bars, theaters, concert halls, cinemas, indoor stadiums, studios with audience, exhibition halls, casinos.",
+    "assembly_b": "Assembly Group B - Table 1.1 row 1 (p.48): amusement parks, grandstands, outdoor stadiums, bleachers, swimming pools, skating rinks, indoor kid's play areas, bowling alleys, pool/billiard parlors, waiting areas in transportation terminals, airport terminal buildings, food courts and seating areas.",
+    "assembly_c": "Assembly Group C - Table 1.1 row 1 (p.48): art galleries, community halls, mosques, churches, temples, courtrooms, funeral parlors, gymnasiums, fitness centers, seminar halls, libraries, museums, open air theaters, amphitheaters, parks, beaches.",
+    "business": "Business - Table 1.1 row 2 (p.48), Groups A, B and C together: A electronic data processing, telephone exchanges, radio and television stations, laboratories, testing and research, airport traffic control towers; B offices, modular site offices, banks, government offices, post offices, money exchange centers, sales and marketing offices, professional / consultancy services; C barber shops, beauty shops, massage centers, typing centers, translation centers, print shops, photo studios.",
     # NOTE: Education group letters swapped 2026-05 to match UAE FLSC Ch 3 #5.3 / Table 3.13.3.
     # Per code: Group A = Nurseries / KG / Preschool (Table 3.20); Group B/C = Schools and Colleges
     # / Universities (Table 3.21). Schema IDs preserved (education_a/_b/_c) for backward compat
     # with saved scenarios; their meaning is the code's meaning, not the schema's original.
-    "education_a": "Educational Group A - Nurseries, KG1/KG2, Preschool, Talent Centers (Table 3.20).",
-    "education_b": "Educational Group B - Schools: Grade 1 through 12 (Table 3.21).",
-    "education_c": "Educational Group C - Colleges, Universities, adult education (Table 3.21).",
-    "mercantile_a": "Mercantile Group A - Retail up to 2 storeys and less than 2,800 m2. Shops, showrooms, boutiques.",
-    "mercantile_b": "Mercantile Group B - Retail more than 2 storeys or exceeding 2,800 m2. Department stores, hypermarkets (stand-alone).",
-    "healthcare_a": "Healthcare Group A - Hospitals, nursing homes, inpatient medical facilities where occupants require assistance for evacuation (Table 3.22).",
-    "healthcare_b": "Healthcare Group B - Clinics, day-surgery and outpatient medical facilities (Table 3.22). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with residential / business), NOT the public-assembly Table 9.20.a / 9.21.a used by Healthcare Group A hospitals.",
-    "healthcare_c": "Healthcare Group C - Ambulatory healthcare, walk-in clinics, dental/eye/diagnostic centres (Table 3.23). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with Healthcare Group B), not Table 9.20.a / 9.21.a.",
-    "hotel_a": "Hotel Group A - Luxury / 4-5 star hotels.",
-    "hotel_b": "Hotel Group B - Mid-range hotels (2-3 star).",
-    "hotel_c": "Hotel Group C - Budget hotels, apartment hotels, furnished apartments.",
+    "education_a": "Educational Group A - Table 1.1 row 3 (p.48): nurseries, kindergarten, preschool center, talent grooming centers for kids (Table 3.20).",
+    "education_b": "Educational Group B - Table 1.1 row 3 (p.48): schools for up to 12th grade students (Table 3.21).",
+    "education_c": "Educational Group C - Table 1.1 row 3 (p.48): colleges, universities, training centers for adults (Table 3.21).",
+    "mercantile_a": "Mercantile Group A - Table 1.1 row 11 (p.50): hardware stores, paint stores, chemical stores, furniture stores, motor vehicle showrooms, restaurants with less than 50 people. (Ch 1 #1.7.9 Class A/B/C by area and storeys, p.41, is a separate classification.)",
+    "mercantile_b": "Mercantile Group B - Table 1.1 row 11 (p.50): department stores, supermarkets, hypermarkets, shopping centers, anchor stores, showrooms, retail stores, whole sale stores, boutiques, drugstores, gift shops. (Ch 1 #1.7.9 Class A/B/C by area and storeys, p.41, is a separate classification.)",
+    "healthcare_a": "Healthcare Group A - Table 1.1 row 4 (p.48): hospitals, limited care facilities, nursing homes, mental asylums (Table 3.22).",
+    "healthcare_b": "Healthcare Group B - Table 1.1 row 4 (p.48): clinics (Table 3.22). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with residential / business), NOT the public-assembly Table 9.20.a / 9.21.a used by Healthcare Group A hospitals.",
+    "healthcare_c": "Healthcare Group C - Table 1.1 row 4 (p.48): ambulatory health care center (Table 3.23). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with Healthcare Group B), not Table 9.20.a / 9.21.a.",
+    "hotel_a": "Hotel Group A - Table 1.1 row 9 (p.50): hotels, hotel apartments, time share properties.",
+    "hotel_b": "Hotel Group B - Table 1.1 row 9 (p.50): dormitory, motels, lodging.",
+    "hotel_c": "Hotel Group C - Table 1.1 row 9 (p.50): resorts.",
     "daycare_a": "Daycare Group A - Daycare for more than 12 clients.",
     "daycare_b": "Daycare Group B - Daycare for 7 to 12 clients.",
     # daycare_c: UAE FLSC Ch 3 #5.10 only defines Daycare Groups A and B. Schema keeps _c as a
     # UI convenience for family daycare (4-6 clients); Ch 3 rules treat it the same as Group B.
     "daycare_c": "Daycare Group C - Family daycare for 4 to 6 clients (UI category; Ch 3 falls back to Group B rules).",
-    "residential": "Residential - Apartment buildings, flats, condominiums. Multi-family dwellings.",
-    "labour_accommodation": "Labour Accommodation - Dormitory-style housing for construction/industrial workers with shared facilities.",
-    "staff_accommodation": "Staff Accommodation - Housing for employees of a single institution (hospital/hotel/airport staff).",
-    "hostel": "Hostel - Shared lodging, bunk-bed dormitories, youth hostels, pilgrim accommodation.",
-    "animal_housing": "Animal Housing - Stables, kennels, veterinary boarding, livestock pens.",
-    "detention_a": "Detention & Correctional Group A - Maximum security; occupants restrained and require supervised evacuation.",
-    "detention_b": "Detention & Correctional Group B - Medium security correctional facilities.",
-    "detention_c": "Detention & Correctional Group C - Minimum security, police holding cells, short-term detention.",
+    "residential": "Residential Group A - Table 1.1 row 5 (p.49): residential buildings, residential apartments, assisted living homes.",
+    "labour_accommodation": "Labour Accommodation - Residential Group C, Table 1.1 row 5 (p.49): labor accommodation.",
+    "staff_accommodation": "Staff Accommodation - Residential Group B, Table 1.1 row 5 (p.49): staff accommodation.",
+    "hostel": "Hostel - Residential Group B, Table 1.1 row 5 (p.49): hostels, monasteries, school boarding house.",
+    "animal_housing": "Animal Housing - Group A (animal market, pet shops, bird market, veterinary clinic), Group B (stable, animal sheds, livestock shelter, slaughter houses), Group C (zoo), as listed in Ch 9 #1.1.13 (p.528-529). Choose the group.",
+    "detention_a": "Detention & Correctional Group A - Table 1.1 row 8 (p.49): adult prisons, adult detention centers, adult jails, adult correctional centers, adult pre-release centers.",
+    "detention_b": "Detention & Correctional Group B - Table 1.1 row 8 (p.49): juvenile prisons, juvenile detention centers, juvenile correctional centers.",
+    "detention_c": "Detention & Correctional Group C - Table 1.1 row 8 (p.49): medical quarantines, airport quarantines.",
     "villa_private": "Private Villa (Ch 1 #1.7.34) - Single-family dwelling unit, generally ground with first floor, built and solely owned by an individual on an individual plot.",
     "villa_commercial": "Commercial Villa (Ch 1 #1.7.35) - One- or two-family dwelling units built in a group by a developer and sold, leased or rented to individual families. Mosques, community halls and recreation facilities may also be part of this development. NOT a private villa converted to a shop/clinic - use the 'villa converted to other use' flag for that (Table 8.13 item 14 / Table 9.21.d).",
     "mall_covered": "Covered Mall - Fully enclosed/climatised shopping mall with common internal circulation; tenants accessed from internal mall.",
@@ -79,10 +83,10 @@ OCCUPANCY_DEFS = {
     "parking_open": "Open Parking (UAE FLSC Ch 1, Table 1.1, def. 15) - A parking occupancy where in each parking level, any part of the carpark is within 30 m of permanent natural ventilation wall openings open to the atmosphere; not less than 0.4 m^2 per linear meter distributed over 40 percent of the building perimeter or uniformly over two opposing sides; interior wall lines and column lines at least 20 percent open with openings distributed to provide ventilation.",
     "storage_industrial": "Storage / Warehouse / Industrial - Warehouses, logistics, manufacturing, processing, workshops. Ch 9 #4.11 (Tables 9.24-9.28).",
     "motor_fuel_dispensing": "Motor Fuel Dispensing - Petrol stations, truck fuelling, ADNOC/ENOC/EPPCO with fuel storage and dispensing pumps.",
-    "infrastructure": "Infrastructure - new developments' infrastructure, marina/waterfront, theme/amusement parks, commercial developments. Ch 9 #4.10 / Table 9.26 (yard-hydrant network only).",
+    "infrastructure": "Infrastructure - Ch 9 #4.10.1 (p.723): new developments' infrastructure, marina developments, waterfront developments, theme parks, amusement parks and commercial developments. Table 9.26 (yard-hydrant network only).",
     "mixed_multiple": "Mixed and Multiple Occupancies - Two or more occupancies intermingled. Treated by most-restrictive occupancy unless separated per Ch 1.",
-    "high_depth_underground": "High-Depth Underground - 3 or more basements.",
-    "low_depth_underground": "Low-Depth Underground - 2 or fewer basements.",
+    "high_depth_underground": "High-Depth Underground (Ch 1 #1.7.45, p.45) - An underground structure or a building more than 7 m below or having more than two basements below the level of exit discharge.",
+    "low_depth_underground": "Low-Depth Underground (Ch 1 #1.7.44, p.45) - An underground structure or a building up to 7 m below or having up to two basements below the level of exit discharge.",
 }
 
 # Ch 9 #1.1.13 (p.526-530) hazard classification for sprinkler protection.
@@ -93,8 +97,12 @@ OCCUPANCY_DEFS = {
 #   OH2 #1.1.13.3: Animal Housing B (stables, animal sheds, livestock shelter),
 #       Malls Group A (covered malls).
 #   EH2 #1.1.13.5.b: robotic / mechanical parking.
-# Animal Housing A and C are LH; the tool's single animal_housing occupancy takes the
-# highest of its three groups (OH2) until the group is chosen (override in the app).
+# Animal Housing A and C are LH (#1.1.13.1.q, r, p.528), B is OH2 (#1.1.13.3.a, p.529):
+# see ANIMAL_HOUSING_GROUPS. The animal_housing value below (OH2, the highest of the
+# three) is the hazard of the occupancy with no group known; the app requires the group
+# for the primary occupancy (owner answer 12.10.2026, Ch9 Q6) and for a secondary one
+# in R13 most-restrictive mode (`secondary_animal_housing_group`, owner ruling
+# 12.10.2026, P3 Storey Q4; the engine never uses OH2 for a secondary with no group).
 # Storage / industrial has no default: the app makes the user choose (Table 9.27).
 # HAZARD_NOT_CLASSIFIED lists the occupancies #1.1.13 does not name; their value
 # here is the tool's working default and the app says the designer must select.
@@ -150,7 +158,18 @@ def occupancy_group(occ: str) -> Optional[str]:
     return None
 
 
-def default_hazard(occ: str) -> str:
+# Owner answer 12.10.2026, Ch9 Q6 (phase 3): animal housing split into its three groups.
+# group: (hazard class, #1.1.13 clause, page, examples as printed).
+ANIMAL_HOUSING_GROUPS = {
+    "A": ("LH", "#1.1.13.1.q", "p.528", "Animal Market, Pet Shops, Bird Market, Veterinary Clinic"),
+    "B": ("OH2", "#1.1.13.3.a", "p.529", "Stable, Animal sheds, Livestock Shelter, Slaughter Houses"),
+    "C": ("LH", "#1.1.13.1.r", "p.528", "Zoo"),
+}
+
+
+def default_hazard(occ: str, animal_housing_group: Optional[str] = None) -> str:
+    if occ == "animal_housing" and animal_housing_group in ANIMAL_HOUSING_GROUPS:
+        return ANIMAL_HOUSING_GROUPS[animal_housing_group][0]
     return HAZARD_BY_OCCUPANCY.get(occ, "OH1")
 
 
@@ -160,6 +179,20 @@ class UseArea(BaseModel):
     Owner ruling 12.10.2026, Ch3 Q2."""
     row: str
     area_m2: float = Field(0.0, ge=0)
+
+
+class StoreyUse(BaseModel):
+    """One line of the per-storey table (owner answer 12.10.2026, F6): the storey it
+    belongs to, a Table 3.13 row id (None = the densest row of the occupancy, Ch3 Q2)
+    and the floor area of that use on that storey. Lines with the same storey name
+    form one storey."""
+    storey: str = ""
+    row: Optional[str] = None
+    area_m2: float = Field(0.0, ge=0)
+    # Owner ruling 12.10.2026, P3 Storey Q1: number of identical storeys this storey
+    # stands for (a whole number, at least 1; a bool or a fraction is refused). Every
+    # line of one storey carries the same count. Old files without it load with 1.
+    count: int = Field(1, ge=1, strict=True)
 
 
 class Building(BaseModel):
@@ -181,12 +214,13 @@ class Building(BaseModel):
     basement_bua_m2: float = Field(0.0, ge=0)
     plot_area_m2: float = Field(0.0, ge=0)
     corridor_length_m: float = Field(0.0, ge=0)     # SC Ch 10 - >60 m enclosed-corridor trigger (Table 10.27 item 4)
-    assembly_area_m2: float = Field(0.0, ge=0)      # SC Ch 10 - >2000 m² assembly hall trigger (Table 10.27 items 9-13: exhibition/assembly/sports/auditorium/stadium). If 0 and occupancy is assembly_*, falls back to gross_floor_area_m2.
+    assembly_area_m2: float = Field(0.0, ge=0)      # SC Ch 10 - largest hall area: Table 10.27 items 9-13 (> 2000 m2 exhibition/assembly/sports/auditorium/stadium) and item 2.3 (school sports hall / auditorium). 0 = not entered: assembly_* with GFA > 2000 m2 prints NOT EVALUATED (no GFA fallback; CH10-16).
 
     # --- MOE (Ch 3) / FSA (Ch 2) inputs - owner rulings 12.10.2026, Ch3 Q1-Q6.
     # 0 / empty = not entered; each fallback is named in the report line.
     largest_storey_area_m2: float = Field(0.0, ge=0)   # Q1: Table 3.14 per storey (#4.3.1); 0 -> whole GFA
     use_areas: List[UseArea] = Field(default_factory=list)  # Q2: per-use areas (#1.4.5); empty -> densest Table 3.13 row
+    storey_uses: List[StoreyUse] = Field(default_factory=list)  # F6: per-storey per-use table; empty -> the inputs above
     mall_gla_m2: float = Field(0.0, ge=0)              # Q3: mall gross leasable area (Table 3.13 row 14); 0 -> GFA
     building_volume_m3: float = Field(0.0, ge=0)       # Q5: gross cubical extent (#2.8.8.a / #2.8.9.a); 0 -> footprint x height
     is_waterfront: bool = False                        # Q6: waterfront property (#2.8.10, Table 2.8)
@@ -198,6 +232,9 @@ class Building(BaseModel):
     ] = "unspecified"
 
     hazard_class: Literal["LH", "OH1", "OH2", "HH"] = "OH1"
+    # Owner answer 12.10.2026, Ch9 Q6: Animal Housing Group A / B / C (#1.1.13). With a
+    # group and no hazard_class given, the hazard is the group's printed class.
+    animal_housing_group: Optional[Literal["A", "B", "C"]] = None
 
     # --- FP (Ch 9) - High Ceiling
     has_high_ceiling: bool = False
@@ -278,6 +315,9 @@ class Building(BaseModel):
     has_amusement_confounding: bool = False       # mazes, mirrors, play areas (assembly)
     has_nightclub_disco: bool = False
     has_theater_cinema: bool = False
+    # SC Ch 10 Table 10.27 item 8 (cinema: #2.13 purge) vs item 14 (theatre: #2.9);
+    # None = not stated -> NOT EVALUATED line (phase 3, CH10-16).
+    theater_cinema_kind: Optional[Literal["cinema", "theatre", "both"]] = None
     has_nursery_within: bool = False              # education sub-zone
     has_auditorium_within: bool = False           # education sub-zone
     has_hh_storage_zones: bool = False            # HH groups / robotic / cold / cable spread (storage)
@@ -309,6 +349,10 @@ class Building(BaseModel):
     # (R13 most-restrictive mode). None = not chosen: its Table 9.27 rows are not evaluated.
     # "EH2" = HH with Extra Hazard Group 2 (#1.1.13.5).
     secondary_storage_hazard: Optional[Literal["LH", "OH1", "OH2", "HH", "EH2"]] = None
+    # Owner ruling 12.10.2026, P3 Storey Q4: group of an animal_housing SECONDARY occupancy
+    # (R13 most-restrictive mode), hazard per #1.1.13 (A LH, B OH2, C LH, p.528-529).
+    # None = not chosen: its Ch 9 lines are not evaluated (as Ch9 Q9 for storage).
+    secondary_animal_housing_group: Optional[Literal["A", "B", "C"]] = None
     hangar_group: Literal["I", "II_III", "IV"] = "I"  # Table 9.27 Group Q.1 / Q.2 / Q.3; default Group I (most onerous)
     is_aboveground_tank_storage: bool = False       # Table 9.27 Group T - flammable / combustible liquids in aboveground storage tanks
     ast_storage_area_m2: float = Field(0.0, ge=0)   # Group T storage area; 0 = not stated -> row 2
@@ -319,20 +363,51 @@ class Building(BaseModel):
     # `villa_converted_use` flag defined in the ES Ch 5 section above.)
     has_single_exit_stair: bool = False             # Tables 9.20.c, 9.21.c - building has only one exit stair
     has_attached_commercial_outlet: bool = False    # Table 9.21.e - villa/mosque/business with commercial outlet attached or in same plot
+    # Table 9.21.e (p.711) rows are keyed on the built-up ground floor area OF THE
+    # COMMERCIAL OUTLET, not the host building (audit CH9B-14). 0 = not entered: the
+    # Table 9.21.e row is not evaluated and the report names the missing input.
+    commercial_outlet_gf_bua_m2: float = Field(0.0, ge=0)
     tent_marquee_kind: Literal["none", "temporary", "permanent", "commercial_desert", "site_office_short", "site_office_long", "small_detached"] = "none"
     # Table 9.21.f - tents, marquees, site offices, site dwellings sub-types.
     # --- FP (Ch 9) - Tunnel Fire Protection (Table 9.28)
     tunnel_kind: Literal["road_rail", "cable"] = "road_rail"
+    # Ch 9 #4.1.2 (p.694): water based systems shall not be installed or used where water
+    # reactive materials are stored and handled (audit CH9A-20).
+    has_water_reactive_materials: bool = False
+    # Ch 1 Table 1.1 row 11 (p.50): a group of mercantile occupancies under a single roof or
+    # not separated, with a ground floor built up area of more than 3600 m2, irrespective of
+    # the number of storeys, shall be considered as Malls (audit ENG-02).
+    mercantile_multi_tenant: bool = False
+    # Owner ruling 12.10.2026, P3 Ch47 Q3: Business Group C (Table 1.1 p.48) and Mercantile
+    # Group C (Table 1.1 p.50, #1.7.9.2 p.41). Below 23 m Ch 6 Table 6.5 item 11 / 12
+    # (stand-alone EL, p.419) governs; from 23 m the height rows govern.
+    is_business_group_c: bool = False
+    is_mercantile_group_c: bool = False
     tunnel_length_m: float = 0.0
 
 
     # --- FE (Ch 4) - Hazard / Class flags
     has_class_b_storage_zones: bool = False       # chemical / linen / waste / flammable liquid / solvent / lab stores
     has_combustible_metals: bool = False          # magnesium / titanium / zirconium / sodium / lithium / potassium
+    has_group_a_plastic_storage: bool = False     # Ch 4 Table 4.3 row 3 item 2.ii: Group A plastic storage and activity (wheeled foam)
     has_hv_or_heavy_electrical: bool = False      # HV room / heavy electrical machinery
-    has_parking_area: bool = True                 # in-building parking area (most occupancies have one)
+    # Audit ENG-11: off unless the user ticks it (a default True added a whole parking
+    # sub-evaluation the user had not chosen, e.g. to a G+1 villa).
+    has_parking_area: bool = False                # in-building parking area
     attached_parking_kind: Literal["enclosed", "open"] = "enclosed"  # ATTACHED parking sub-occupancy: open vs enclosed (drives MOE/FP/FA/SC parking sub-evaluation)
-    parking_area_m2: float = 0.0      # Footprint area of the attached parking - used as GFA / GF BUA in the parking sub-evaluation. If 0, falls back to basement_bua_m2 then ground_floor_bua_m2.
+    parking_area_m2: float = Field(0.0, ge=0)   # Footprint area of the attached parking - used as GFA / GF BUA in the parking sub-evaluation. 0 = not entered: the parking sub-evaluation is NOT EVALUATED (audit ENG-11; no fallback to the basement or ground-floor BUA).
+    # Owner ruling 12.10.2026, P3 App Q2: the attached parking's OWN height above the fire
+    # access level (m) and its basement levels drive the height- and level-keyed parking
+    # rows (e.g. Ch 10 Table 10.23 item 1.iv, p.860; Table 9.24 rows). None = not entered:
+    # those lines are NOT EVALUATED by name, never taken from the tower. 0 m = the parking
+    # is wholly below the fire access level. Ch 9 sprinklers still follow the host table.
+    parking_height_m: Optional[float] = Field(None, ge=0)
+    parking_basement_levels: Optional[int] = Field(None, ge=0)
+    # Owner ruling 12.10.2026, P3 follow-up F-a3: the attached parking's own depth below
+    # the fire access level (m), at most the building's depth (#1.7.45 p.45: more than 7 m
+    # = high depth). None = not entered: the building's depth is used and the report says
+    # so by name.
+    parking_depth_m: Optional[float] = Field(None, ge=0)
 
     # --- FP (Ch 9) - Motor Fuel Dispensing sub-group (Table 9.25 A/B/C)
     motor_fuel_group: Literal["A", "B", "C"] = "A"
@@ -352,6 +427,21 @@ class Building(BaseModel):
     has_lpg_cylinders_indoor: bool = False         # Indoor cylinder room (Table 11.2)
     has_lpg_cylinders_food_truck: bool = False     # Food truck LPG (Table 11.3)
     has_lpg_flame_effect: bool = False             # Flame-effect shows in front of audience (Table 11.12)
+    # Owner ruling 12.10.2026, P3 Ch11 Q4: tanks above ground at grade beside roof /
+    # underground tanks (Table 11.5, p.906). With neither roof nor underground ticked the
+    # tanks are taken at grade, as before.
+    has_lpg_tank_at_grade: bool = False
+    # Owner ruling 12.10.2026, P3 Ch11 Q3: #2.2.4 cylinders not allowed in new / modified
+    # buildings; #2.2.5 Civil Defence approval (p.884). The app stops a cylinder choice for
+    # a new or modified building unless the approval is ticked.
+    # Follow-up 12.10.2026 (owner ruling 12.10.2026, P3 follow-up F-a1-1): a REQUIRED
+    # choice with no pre-fill. True = new or modified, False = existing (not modified),
+    # None = not stated: with cylinders the app stops and the #2.2.4 line is NOT EVALUATED.
+    is_new_or_modified_building: Optional[bool] = None
+    has_cd_cylinder_approval: bool = False
+    # Owner ruling 12.10.2026, P3 Ch11 Q6: #3.2.2 (p.923) no indoor flame effect show in a
+    # building that is not fully sprinkler protected. None = not stated.
+    lpg_flame_effect_show: Optional[Literal["indoor", "outdoor", "both"]] = None
 
     @property
     def building_category(self) -> str:
@@ -368,10 +458,61 @@ class Building(BaseModel):
         return "general"
 
     @model_validator(mode="after")
+    def _animal_housing_hazard(self):
+        """Ch 9 #1.1.13 (p.528-529): the chosen animal housing group sets the hazard
+        class unless one was given explicitly (an override)."""
+        if (self.occupancy == "animal_housing" and self.animal_housing_group
+                and "hazard_class" not in self.model_fields_set):
+            self.hazard_class = ANIMAL_HOUSING_GROUPS[self.animal_housing_group][0]
+        return self
+
+    @model_validator(mode="after")
+    def _parking_levels_within_building(self):
+        """P3 App Q2: the attached parking is in the building, so its basement levels
+        cannot exceed the building's basements."""
+        if (self.has_parking_area and self.parking_basement_levels is not None
+                and self.parking_basement_levels > self.floors_below_grade):
+            raise ValueError(
+                f"Attached parking basement levels ({self.parking_basement_levels}) cannot "
+                f"exceed the building's basements ({self.floors_below_grade}).")
+        # P3 follow-up F-a3: nor its depth the building's depth.
+        if (self.has_parking_area and self.parking_depth_m is not None
+                and self.parking_depth_m > self.depth_below_grade_m):
+            raise ValueError(
+                f"Attached parking depth below the fire access level ({self.parking_depth_m:g} m) "
+                f"cannot exceed the building's depth below grade ({self.depth_below_grade_m:g} m).")
+        # Owner ruling 13.10.2026, P3 follow-up F-a4-2: a parking with no basement levels
+        # has no depth below the fire access level to state.
+        if (self.has_parking_area and self.parking_basement_levels == 0
+                and self.parking_depth_m is not None and self.parking_depth_m > 0):
+            raise ValueError(
+                f"Attached parking depth below the fire access level ({self.parking_depth_m:g} m) "
+                f"needs parking basement levels: 0 levels are entered. Enter the levels, or "
+                f"clear the depth or set it to 0 m.")
+        return self
+
+    @model_validator(mode="after")
     def _height_stated(self):
         if self.height_m <= 0 and "height_m" in self.model_fields_set \
                 and self.occupancy != "infrastructure":
             raise ValueError("Building height must be more than 0 m.")
+        return self
+
+    @property
+    def mercantile_is_mall(self) -> bool:
+        """Ch 1 Table 1.1 row 11 (p.50): a group of mercantile occupancies under a single
+        roof or not separated, ground floor built up area more than 3600 m2 -> a Mall."""
+        return (self.occupancy in ("mercantile_a", "mercantile_b")
+                and self.mercantile_multi_tenant and self.ground_floor_bua_m2 > 3600)
+
+    @model_validator(mode="after")
+    def _mercantile_group_is_a_mall(self):
+        # Audit ENG-02: refused, never evaluated as a mercantile building.
+        if self.mercantile_is_mall:
+            raise ValueError(
+                "A group of mercantile occupancies under a single roof or not separated, with "
+                "a ground floor built up area of more than 3600 m2, shall be considered as a "
+                "Mall (Ch 1 Table 1.1 row 11, p.50): choose a Mall occupancy.")
         return self
 
     @property
@@ -438,7 +579,11 @@ class Building(BaseModel):
 
     @property
     def use_area_total_m2(self) -> float:
-        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered."""
+        """Sum of the per-use areas entered (Ch3 Q2); 0 = none entered. When the
+        per-storey table has lines it governs (owner answer 12.10.2026, F6) and its
+        areas are summed instead."""
+        if self.storey_uses:
+            return sum(u.area_m2 * u.count for u in self.storey_uses)
         return sum(u.area_m2 for u in self.use_areas)
 
     @property
@@ -447,9 +592,13 @@ class Building(BaseModel):
         'Highrise' with 23 m or more in height, 'High Depth' with more than 2
         basements, Malls and multi storey Amusement Parks. One trigger for the FSA
         Fire Lift line and the Ch 10 'NOT mandatory' line (owner ruling 12.10.2026,
-        Ch3 Q9)."""
+        Ch3 Q9). The high-depth underground occupancy (Ch 1 #1.7.45, p.45) counts as
+        'High Depth' with no basement count entered (owner ruling 12.10.2026, P3 Ch10 Q4),
+        matching the Ch 10 lift line."""
         hits = (("highrise of 23 m or more", self.height_m >= 23),
                 ("high depth with more than 2 basements", self.floors_below_grade > 2),
+                ("high depth underground (Ch 1 #1.7.45)",
+                 self.occupancy == "high_depth_underground" and self.floors_below_grade <= 2),
                 ("mall", self.occupancy in ("mall_covered", "mall_open", "mall_mixed")),
                 ("multi storey amusement park", self.is_theme_park and self.floors_above_grade > 1))
         return [why for why, hit in hits if hit]
@@ -527,6 +676,21 @@ class OccupantLoadSummary(BaseModel):
     evaluated: bool = True
     storey_area_m2: float = 0.0
     storey_occupant_load: int = 0
+    # Owner answer 12.10.2026, F6: per-storey table results. governing_storey is the
+    # storey whose OL sets the Table 3.14 count; warnings are input checks to show.
+    governing_storey: str = ""
+    storeys: List["StoreyLoad"] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+
+
+class StoreyLoad(BaseModel):
+    """One storey of the per-storey table (F6): area, OL and Table 3.14 exits."""
+    storey: str
+    area_m2: float = 0.0
+    occupant_load: int = 0
+    min_exits: int = 0
+    parts: List[str] = Field(default_factory=list)
+    count: int = 1   # identical storeys (owner ruling 12.10.2026, P3 Storey Q1)
 
 
 class FireAccessSummary(BaseModel):

@@ -176,7 +176,9 @@ CASES = [
                      ground_floor_bua_m2=1200, plot_area_m2=5000,
                      has_commercial_kitchen=True, has_main_electrical_room=True),
          expect_fe_general=[
-             "Class A Fire Extinguisher (Multi-purpose Dry Powder OR Clean Agent) + CO2",
+             # Re-pointed phase 3 CH47-11: hotels are Table 4.3 row 1 item 6 (p.373),
+             # dry powder AND CO2 with no clean-agent alternative.
+             "Class A Fire Extinguisher (Multi-purpose Dry Powder AND CO2)",
              "Class K Fire Extinguisher (Residential Kitchen)",
          ],
          expect_fe_addons=[
@@ -368,10 +370,11 @@ CASES = [
          expect_sc_branch="sc_midrise_lowrise_default",
          expect_sc_status={"Stair Pressurization NOT Required (default)": "not_required"}),
 
-    dict(name="SC: Lowrise hospital -> special-occupancy stair pressurization required",
+    # Phase 3 CH10-14: the hospital stair is Table 10.27 item 1.vi (one line).
+    dict(name="SC: Lowrise hospital -> hospital stair pressurization required",
          inputs=dict(occupancy="healthcare_a", height_m=12, floors_above_grade=3,
                      ground_floor_bua_m2=3000, plot_area_m2=8000),
-         expect_sc_systems=["Stair Pressurization (special occupancy override)"]),
+         expect_sc_systems=["Stair Pressurization (hospital)"]),
 
     dict(name="SC: Enclosed parking -> mechanical purging via dedicated ducting",
          inputs=dict(occupancy="parking_enclosed", height_m=12, floors_above_grade=3,
@@ -425,17 +428,19 @@ CASES = [
              "Kitchen Cooking Operation Ventilation",
          ]),
 
-    dict(name="SC: Tunnel flag -> tunnel smoke management (one line, Table 10.25)",
+    # Phase 3 CH10-17: Table 10.25 tiers on length; no length -> NOT EVALUATED.
+    dict(name="SC: Tunnel flag, no length -> tunnel smoke management not evaluated (one line, Table 10.25)",
          inputs=dict(occupancy="business", height_m=10, floors_above_grade=2,
                      ground_floor_bua_m2=2000, plot_area_m2=5000,
                      has_tunnel=True),
-         expect_sc_systems=["Tunnel Smoke Management - Road / Rail"]),
+         expect_sc_systems=["Tunnel Smoke Management - Road / Rail: NOT EVALUATED (tunnel length not entered)"]),
 
+    # Phase 3 CH10-27: 4 levels with no depth -> FAQ #29.i row (more than 2 levels).
     dict(name="SC: Deep basement (4 levels below) -> underground stair pressurization",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
                      floors_below_grade=4, ground_floor_bua_m2=8000,
                      basement_bua_m2=8000, plot_area_m2=15000),
-         expect_sc_systems=["Stair Pressurization (basement stairs, depth more than 7 m)"]),
+         expect_sc_systems=["Stair Pressurization (basement stairs, more than 2 basement levels)"]),
 
     # AUDIT Ch 10 Table 10.22 - depth-only trigger (1 basement, 8 m deep)
     dict(name="AUDIT SC: Single deep basement (8m, 1 level) -> Table 10.22 by depth",
@@ -445,9 +450,8 @@ CASES = [
          expect_sc_systems=["Stair Pressurization (basement stairs, depth more than 7 m)"]),
 
     # AUDIT Ch 10 Table 10.27 item 4 - lowrise corridor > 60 m
-    # Audit-correction: Table 10.27 item 4 (p.866) lists ONLY mercantile, staff/labour
-    # accommodation, residential, office. Hotels and hostel are NOT in the code text,
-    # so the trigger was scoped down. Test switched from hotel_b to residential.
+    # Phase 3 CH10-05: the item 4 list reads "such as" (examples), so hotels and other
+    # occupancies are covered too (tests/test_phase3_ch10.py); residential kept here.
     dict(name="AUDIT SC: Residential lowrise corridor 80m -> long-corridor natural ventilation (Table 10.27 item 4)",
          inputs=dict(occupancy="residential", height_m=18, floors_above_grade=5,
                      corridor_length_m=80, ground_floor_bua_m2=800, plot_area_m2=2000),
@@ -626,7 +630,8 @@ CASES = [
          expect_el_general=[
              "Emergency Lighting - General Performance Specs (Table 6.1)",
              "EL Proximity Rule (within 2m)",
-             "EL Cable Fire Rating",
+             # "EL Cable Fire Rating" removed phase 3 CH47-08: Table 6.3 #7.i (p.416) does
+             # not require fire-rated wiring for a monitored system (this 20 m case).
              "EL Acceptance Tests + Periodic Inspection",
          ]),
 
@@ -708,14 +713,19 @@ CASES = [
     dict(name="AUDIT Parking: Hotel + enclosed attached parking -> 7 parking sub-chapters",
          inputs=dict(occupancy="hotel_a", height_m=18, floors_above_grade=5,
                      ground_floor_bua_m2=1000, plot_area_m2=2000,
-                     has_parking_area=True, attached_parking_kind="enclosed"),
+                     has_parking_area=True, attached_parking_kind="enclosed",
+                     parking_area_m2=1000,    # phase 3 (ENG-11): area required, no fallback
+                     # P3 App Q2 (owner ruling 12.10.2026): the parking's own height and
+                     # levels, never the tower's (re-pointed: was the hotel height 18 m)
+                     parking_height_m=18, parking_basement_levels=0),
          expect_attached_parking_count=7,
          expect_attached_parking_branch_for=("FP", "parking_enclosed_a3")),
 
     dict(name="AUDIT Parking: Residential + open attached parking -> sub-evaluation parking_open",
          inputs=dict(occupancy="residential", height_m=20, floors_above_grade=6,
                      ground_floor_bua_m2=600, plot_area_m2=2000,
-                     has_parking_area=True, attached_parking_kind="open"),
+                     has_parking_area=True, attached_parking_kind="open",
+                     parking_area_m2=600),    # phase 3 (ENG-11): area required, no fallback
          expect_attached_parking_count=7,
          expect_attached_parking_branch_for=("MOE", "moe_parking_open")),
 
