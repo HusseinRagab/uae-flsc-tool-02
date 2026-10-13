@@ -156,7 +156,7 @@ def test_P3_STOREY_Q4_secondary_animal_housing_group_is_required():
     assert check({"secondary_animal_housing_group_input": "C"}) == []
     assert "Secondary animal housing group = 'D'" in " ".join(
         check({"secondary_animal_housing_group_input": "D"}))
-    state = {**_occ("Business / Office", "business"), "height_m_input": 10.0,
+    state = {**_occ("Business / Office", "business"), "business_group_input": "B", "height_m_input": 10.0,
              "floors_above_input": 3, "floors_below_input": 0, "gfa_input": 6000.0,
              "ground_bua_input": 2000.0, "plot_area_input": 8000.0,
              "mixed_occupancy_mode_input": "most_restrictive",

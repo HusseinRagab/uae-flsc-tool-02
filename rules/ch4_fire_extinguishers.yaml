@@ -76,7 +76,7 @@ general:
 
   - id: fe_g_class_a_p374
     when:
-      occupancy_in: [detention_a, detention_b, detention_c, mercantile_a, mercantile_b,
+      occupancy_in: [detention_a, detention_b, detention_c, mercantile_a, mercantile_b, mercantile_c,
                      mall_covered, mall_open, mall_mixed, storage_industrial,
                      animal_housing, motor_fuel_dispensing]
     systems:
@@ -204,7 +204,7 @@ addons:
 
   - id: fe_class_b_row2_mercantile
     always_on: true
-    when: {occupancy_in: [mercantile_a, mercantile_b]}
+    when: {occupancy_in: [mercantile_a, mercantile_b, mercantile_c]}
     systems:
       - name: "Class B Fire Extinguisher (Foam + Dry Powder) - Mercantile Areas"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 2 item 5"

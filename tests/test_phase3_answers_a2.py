@@ -94,52 +94,57 @@ def el_types(r):
 def test_P3_Ch47_Q3_group_c_takes_table_6_5_item_11_12_below_23_m():
     """Table 6.5 p.419 items 11 BUSINESS, GROUP C / 12 MERCANTILE, GROUP C: 'Stand alone Self
     Contained Emergency Lighting System as per Section 3.4., shall be provided and
-    permitted'; items 1-2 super highrise / highrise. Table 1.1 p.48 / p.50; #1.7.9.2 p.41."""
-    assert Building.model_fields["is_business_group_c"].default is False
-    assert Building.model_fields["is_mercantile_group_c"].default is False
-    for occ, flag, h, item in (("business", "is_business_group_c", 10, "item 11"),
-                               ("business", "is_business_group_c", 22.9, "item 11"),
-                               ("mercantile_a", "is_mercantile_group_c", 4, "item 12"),
-                               ("mercantile_b", "is_mercantile_group_c", 18, "item 12")):
-        r = report(occupancy=occ, height_m=h, ground_floor_bua_m2=200, **{flag: True})
-        assert el_types(r) == [(STAND, "required")], (occ, h, el_types(r))
+    permitted'; items 1-2 super highrise / highrise. Table 1.1 p.48 / p.50.
+    Re-pointed 13.10.2026 (owner rulings P4 Q1 / Q5): the old ticks became the Business
+    group selector and the Mercantile Group C occupancy."""
+    KIOSK = dict(occupancy="mercantile_c", mercantile_c_type="kiosk_permanent",
+                 kiosk_in_sprinklered_area_or_mall=False)
+    for kw, h, item in ((dict(occupancy="business", business_group="C"), 10, "item 11"),
+                        (dict(occupancy="business", business_group="C"), 22.9, "item 11"),
+                        (KIOSK, 4, "item 12"),
+                        (KIOSK, 18, "item 12")):
+        r = report(height_m=h, ground_floor_bua_m2=15, **kw)
+        assert el_types(r) == [(STAND, "required")], (kw, h, el_types(r))
         s = named(r, "EL", STAND)[0]
         assert f"Table 6.5 {item}" in s.code_ref and "P3 Ch47 Q3" in s.detail
     # 23 m or more: the height rows govern, no item 11 / 12 line.
-    for occ, flag in (("business", "is_business_group_c"), ("mercantile_b", "is_mercantile_group_c")):
-        r = report(occupancy=occ, height_m=23, ground_floor_bua_m2=200, **{flag: True})
+    for kw in (dict(occupancy="business", business_group="C"), KIOSK):
+        r = report(height_m=23, ground_floor_bua_m2=15, **kw)
         assert [n for n, _ in el_types(r)] == [
             "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting",
             "One Centralized Emergency Lighting System for the Entire Facility (#4.2)"], el_types(r)
         assert not [it for it in items(r, "EL") if it.system.startswith("Stand-alone")]
-    # Unticked: height row required, item 11 / 12 a conditional prompt.
-    r = report(occupancy="mercantile_b", height_m=8, ground_floor_bua_m2=200)
-    assert el_types(r) == [
-        ("Monitored Self-Contained EL (Section 3.3)", "required"),
-        ("One Centralized Emergency Lighting System for the Entire Facility (#4.2)", "required"),
-        ("Stand-alone Self-Contained EL (Section 3.4) - Mercantile Group C only", "conditional")]
-    # A flag on another occupancy changes nothing.
-    assert el_types(report(occupancy="residential", height_m=10, is_business_group_c=True,
-                           is_mercantile_group_c=True)) == el_types(
+    # Mercantile A / B and Business A / B: the height row, and no Group C prompt any more
+    # (the group is now an input).
+    for kw in (dict(occupancy="mercantile_b"), dict(occupancy="business", business_group="B")):
+        r = report(height_m=8, ground_floor_bua_m2=200, **kw)
+        assert el_types(r) == [
+            ("Monitored Self-Contained EL (Section 3.3)", "required"),
+            ("One Centralized Emergency Lighting System for the Entire Facility (#4.2)",
+             "required")], (kw, el_types(r))
+    # A group or type on another occupancy changes nothing.
+    assert el_types(report(occupancy="residential", height_m=10, business_group="C",
+                           mercantile_c_type="food_truck")) == el_types(
         report(occupancy="residential", height_m=10))
 
 
 def test_P3_Ch47_Q3_group_c_inputs_saved_checked_on_load_and_reset():
+    """Re-pointed 13.10.2026 (owner rulings P4 Q1, Q5, Q6): the group and type inputs
+    replace the two ticks; the Mercantile tick is kept only to stop an older file."""
     keys = _save_keys()
-    assert "is_business_group_c" in keys and "is_mercantile_group_c" in keys
-    assert 'key="is_business_group_c"' in APP_SRC and 'key="is_mercantile_group_c"' in APP_SRC
-    assert '"Business Group C (stand-alone)"' in APP_SRC
-    assert '"Mercantile Group C (stand-alone)"' in APP_SRC
+    assert "business_group_input" in keys and "mercantile_c_type_input" in keys
+    assert "is_business_group_c" not in keys and "is_mercantile_group_c" in keys
+    assert 'key="business_group_input"' in APP_SRC and 'key="mercantile_c_type_input"' in APP_SRC
+    assert '"Business Group C (stand-alone)"' not in APP_SRC
     guard = _guard()
-    bad = " ".join(guard({"is_business_group_c": "true", "is_mercantile_group_c": 1}))
-    assert "is_business_group_c = 'true' (not true / false)" in bad
+    bad = " ".join(guard({"business_group_input": "D", "is_mercantile_group_c": 1}))
+    assert "Business group = 'D' (not a listed option)" in bad
     assert "is_mercantile_group_c = 1 (not true / false)" in bad
-    assert guard({"is_business_group_c": True, "is_mercantile_group_c": False}) == []
-    # The box reaches the Building, and an occupancy change clears it.
-    at = _app_test({**_GEO, **_occ("Business / Office", "business"), "_last_occupancy": "business",
-                    "is_business_group_c": True})
-    assert json.loads(at.session_state["_building_json"])["is_business_group_c"] is True
+    assert guard({"business_group_input": "C", "is_mercantile_group_c": False}) == []
+    # The group reaches the Building, and an occupancy change clears it.
+    at = _app_test({**_GEO, **_occ("Business / Office", "business"), "business_group_input": "C",
+                    "_last_occupancy": "business"})
+    assert json.loads(at.session_state["_building_json"])["business_group"] == "C"
     at.selectbox(key="occupancy_category_select").set_value("Residential / Lodging").run()
     assert not at.exception
-    assert _state(at, "is_business_group_c", False) is False
-    assert json.loads(at.session_state["_building_json"])["is_business_group_c"] is False
+    assert json.loads(at.session_state["_building_json"])["business_group"] is None

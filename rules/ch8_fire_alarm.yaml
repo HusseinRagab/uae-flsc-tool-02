@@ -869,13 +869,27 @@ auxiliary_rooms:
         required: conditional
         detail: "CONDITIONAL: Temporary kiosks (item 31) and temporary tents (item 32) shall be provided with battery-operated smoke detectors listed and approved by Civil Defence. Temporary modular houses / offices (item 33) shall be provided with smoke detectors per Section 4.3. Applies only when the project includes any of these temporary structures."
 
-  # Item 34: Food trucks, any fuel (has_food_trucks), or the Ch 11 LPG food-truck input.
+  # Item 31: the building is a temporary kiosk (Mercantile Group C, owner ruling
+  # 13.10.2026, P4 Q5).
+  - id: fa_aux_temporary_kiosk
+    always_on: true
+    when: {mercantile_c_type_is: kiosk_temporary}
+    systems:
+      - name: "Battery Operated Smoke Detectors (Temporary Kiosk)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 31"
+        page_ref: "p.511"
+        spec: "Battery Operated Smoke Detectors, listed and approved by Civil Defence"
+        detail: "Table 8.14 item 31 TEMPORARY KIOSKS, p.511: Battery Operated Smoke Detectors, listed and approved by Civil Defence shall be provided. The building is a temporary kiosk (Mercantile Group C, owner ruling 13.10.2026, P4 Q5)."
+
+  # Item 34: Food trucks, any fuel (has_food_trucks), the Ch 11 LPG food-truck input, or
+  # the building is a food truck (Mercantile Group C, owner ruling 13.10.2026, P4 Q5).
   - id: fa_aux_food_truck
     always_on: true
     when:
       any_of:
         - {has_food_trucks_is: true}
         - {has_lpg_cylinders_food_truck_is: true}
+        - {mercantile_c_type_is: food_truck}
     systems:
       - name: "Heat Detector (Food Truck)"
         code_ref: "Ch 8, #5.2 / Table 8.14 item 34"
@@ -883,10 +897,23 @@ auxiliary_rooms:
         spec: "Per Section 4.7"
         detail: "Table 8.14 item 34 FOOD TRUCKS, p.511: heat detector shall be provided as per Section 4.7. Item 34 applies to every food truck, whatever its fuel."
 
-  # Item 35: Mercantile trucks - conditional reminder (no clean flag).
+  # Item 35: the building is a mercantile truck (Mercantile Group C, owner ruling
+  # 13.10.2026, P4 Q5): required. Otherwise a conditional reminder (no clean flag).
+  - id: fa_aux_mercantile_truck_required
+    always_on: true
+    when: {mercantile_c_type_is: mercantile_truck}
+    systems:
+      - name: "Heat Detector (Mercantile Truck)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 35"
+        page_ref: "p.511"
+        spec: "Per Section 4.7"
+        detail: "Table 8.14 item 35 MERCANTILE TRUCKS, p.511: Heat Detector shall be provided as per Section 4.7. The building is a mercantile truck (Mercantile Group C, owner ruling 13.10.2026, P4 Q5)."
+
   - id: fa_aux_mercantile_truck
     always_on: true
-    when: {not: {occupancy: storage_industrial, is_plant_nursery_is: true}}
+    when:
+      not: {occupancy: storage_industrial, is_plant_nursery_is: true}
+      mercantile_c_type_in: [null, kiosk_permanent, kiosk_temporary, food_truck]
     systems:
       - name: "Heat Detector (Mercantile Truck) (Conditional)"
         code_ref: "Ch 8, #5.2 / Table 8.14 item 35"

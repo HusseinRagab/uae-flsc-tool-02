@@ -191,7 +191,7 @@ def test_CH9_Q9_secondary_storage_hazard_required_never_OH2_by_default():
                for m in guard({"secondary_storage_hazard_input": "XH"}))
     # App: stops until the secondary storage hazard is chosen.
     base = {**_GEO, "occupancy_chosen": ("Business / Office", "business"),
-            "occupancy_category_select": "Business / Office", "occupancy_sub_select": "business",
+            "occupancy_category_select": "Business / Office", "occupancy_sub_select": "business", "business_group_input": "B",
             "mixed_occupancy_mode_input": "most_restrictive",
             "secondary_occupancies_input": ["storage_industrial"]}
     at = _app_test(base)

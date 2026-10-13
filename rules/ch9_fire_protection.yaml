@@ -840,7 +840,7 @@ branches:
   - id: lowrise_residential_upto_3600
     match:
       height_m_lte: 15
-      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c]
       ground_floor_bua_m2_lte: 3600
       plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.1"
@@ -863,7 +863,7 @@ branches:
   - id: lowrise_residential_over_3600
     match:
       height_m_lte: 15
-      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c]
       ground_floor_bua_m2_gt: 3600
       plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.2"
@@ -886,7 +886,7 @@ branches:
   - id: lowrise_residential_large_plot
     match:
       height_m_lte: 15
-      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c]
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c]
       plot_area_m2_gt: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.3"
     page: "p.708"
@@ -906,7 +906,7 @@ branches:
   # "in accordance with Table 9.21.a. 1., 2., or 3., as applicable". The pump and
   # tank stay with lowrise_residential_large_plot (combined 1000 gpm, 60 min).
   - id: lowrise_residential_large_plot_tier1
-    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_lte: 500}
+    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_lte: 500}
     section: "Ch 9, #4.5.2 / Table 9.21.b.3.i with Table 9.21.a.1 (GF BUA up to 500 m2)"
     page: "p.708, p.705"
     systems:
@@ -917,7 +917,7 @@ branches:
         detail: "Not required (Table 9.21.a.1 ii)."
 
   - id: lowrise_residential_large_plot_tier2
-    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_gt: 500, ground_floor_bua_m2_lte: 3600}
+    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_gt: 500, ground_floor_bua_m2_lte: 3600}
     section: "Ch 9, #4.5.2 / Table 9.21.b.3.i with Table 9.21.a.2 (GF BUA 501 to 3,600 m2)"
     page: "p.708, p.705"
     systems:
@@ -930,7 +930,7 @@ branches:
         detail: "Not required (Table 9.21.a.2 iv)."
 
   - id: lowrise_residential_large_plot_tier3
-    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_gt: 3600}
+    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_gt: 3600}
     section: "Ch 9, #4.5.2 / Table 9.21.b.3.i with Table 9.21.a.3 (GF BUA more than 3,600 m2)"
     page: "p.708, p.705"
     systems:
@@ -3623,3 +3623,69 @@ equipment:
         code_ref: "Ch 9, #4.15 / Table 9.31.P"
         page_ref: "p.757"
         detail: "Processing / generating plants: risk assessment + House-of-Expertise proposal."
+
+# ---------------- KIOSKS (Ch 1, Table 1.9 item 48, p.98) ----------------------------
+# Mercantile Group C kiosk, permanent or temporary (Table 1.1 row 11, p.50; owner rulings
+# 13.10.2026, P4 Q4-Q5). Table 1.9 item 48 sends fire protection to Ch 9; its lines are
+# printed here, beside the Table 9.20.b row C / Table 9.21.b row. Line iii depends on
+# kiosk_in_sprinklered_area_or_mall: blank = NOT EVALUATED by name, never a pass.
+kiosk_item_48:
+  - id: kiosk_48_general
+    always_on: true
+    when: {is_kiosk_is: true}
+    systems:
+      - name: "Kiosk Fire Resistance Separation (Table 1.9 item 48)"
+        code_ref: "Ch 1, Table 1.9 item 48"
+        page_ref: "p.98"
+        spec: "0 Hour with automatic fixed fire protection system; 0 Hour without"
+        detail: "Table 1.9 item 48 KIOSKS (p.98): required separation with automatic fixed fire protection system 0 Hour; without automatic fixed fire protection system 0 Hour."
+      - name: "Kiosk Separation from Other Occupancies (Table 1.9 item 48 i)"
+        code_ref: "Ch 1, Table 1.9 item 48 i"
+        page_ref: "p.98"
+        spec: "Not less than 1.5 m horizontal separation"
+        detail: "Table 1.9 item 48 i (p.98): 'Minimum horizontal separation between kiosks and other occupancies, including other structures within mall circulation area or retail spaces shall not be less than 1.5 m.'"
+      - name: "Separation Between Adjacent Kiosks (Table 1.9 item 48 ii)"
+        code_ref: "Ch 1, Table 1.9 item 48 ii"
+        page_ref: "p.98"
+        spec: "Not less than 6 m between 2 adjacent kiosks"
+        detail: "Table 1.9 item 48 ii (p.98): 'The minimum horizontal separation distance between 2 adjacent kiosks shall not be less than 6m.'"
+      - name: "Automatic Fire Detection and Alarm System (Kiosk, Table 1.9 item 48 iv)"
+        code_ref: "Ch 1, Table 1.9 item 48 iv"
+        page_ref: "p.98"
+        spec: "Automatic fire detection and alarm system"
+        detail: "Table 1.9 item 48 iv (p.98): 'Kiosks shall be provided with automatic fire detection and alarm system.' The Ch 8 chapter of this report gives the system lines."
+      - name: "Kiosk Area Limit (Table 1.9 item 48 v)"
+        code_ref: "Ch 1, Table 1.9 item 48 v / #7.1.40"
+        page_ref: "p.98"
+        spec: "Kiosk or group of kiosks: area not more than 18 m2"
+        detail: "Table 1.9 item 48 v (p.98): 'Kiosks or group of kiosks shall not have an area more than 18 m2. See section 7.1.40. for kiosk material requirements.' The tool reads the kiosk area from the ground floor built-up area input."
+
+  - id: kiosk_48_iii_sprinklered_area
+    always_on: true
+    when: {is_kiosk_is: true, kiosk_in_sprinklered_area_or_mall_is: true}
+    systems:
+      - name: "Automatic Sprinkler System (Kiosk, Table 1.9 item 48 iii)"
+        code_ref: "Ch 1, Table 1.9 item 48 iii"
+        page_ref: "p.98"
+        spec: "Automatic sprinkler system in the kiosk"
+        detail: "Table 1.9 item 48 iii (p.98): 'Kiosks located at sprinkler protected areas and mall buildings shall be provided with automatic sprinkler system.' The kiosk is entered as located in a sprinkler protected area or a mall building."
+
+  - id: kiosk_48_iii_not_sprinklered_area
+    always_on: true
+    when: {is_kiosk_is: true, kiosk_in_sprinklered_area_or_mall_is: false}
+    systems:
+      - name: "Automatic Sprinkler System (Kiosk, Table 1.9 item 48 iii)"
+        required: not_required
+        code_ref: "Ch 1, Table 1.9 item 48 iii"
+        page_ref: "p.98"
+        detail: "Not required by item 48 iii: Table 1.9 item 48 iii (p.98) requires an automatic sprinkler system for kiosks located at sprinkler protected areas and mall buildings, and the kiosk is entered as located elsewhere. The Ch 9 table row above still governs."
+
+  - id: kiosk_48_iii_not_evaluated
+    always_on: true
+    when: {is_kiosk_is: true, kiosk_in_sprinklered_area_or_mall_is: null}
+    systems:
+      - name: "Kiosk Location (Table 1.9 item 48 iii) - NOT EVALUATED"
+        code_ref: "Ch 1, Table 1.9 item 48 iii"
+        page_ref: "p.98"
+        spec: "Not evaluated: state whether the kiosk is in a sprinkler protected area or a mall building"
+        detail: "Table 1.9 item 48 iii (p.98): 'Kiosks located at sprinkler protected areas and mall buildings shall be provided with automatic sprinkler system.' Where the kiosk is located was not entered, so this line is not evaluated."

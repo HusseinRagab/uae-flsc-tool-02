@@ -150,7 +150,7 @@ def test_ENG_12_load_sets_the_occupancy_and_replaces_the_session():
     apply, defaults = _loader()
     keys = _save_keys()
     # Save a business project from the app.
-    src = _app_test({**_GEO, **_occ("Business / Office", "business"),
+    src = _app_test({**_GEO, **_occ("Business / Office", "business"), "business_group_input": "B",
                      "project_name_input": "B-01"})
     saved = {k: (list(v) if isinstance(v, tuple) else v)
              for k in keys if _has_state(src, k) for v in [_state(src, k)]}
@@ -220,7 +220,7 @@ def test_ENG_17_underground_definitions_quote_1_7_44_and_1_7_45():
 
 # ---------------------------------------------------------------- ENG-21
 def test_ENG_21_height_datum_states_the_printed_definition_and_warns():
-    base = {**_GEO, **_occ("Business / Office", "business")}
+    base = {**_GEO, **_occ("Business / Office", "business"), "business_group_input": "B"}
     at = _app_test({**base, "height_datum_input": "occupiable_ceiling"})
     assert any("FAQ Annexure 1 Q2-Q5, p.1273" in w.value and "#1.7.39-#1.7.42" in w.value
                for w in at.warning)
@@ -261,7 +261,7 @@ def test_ENG_23_every_input_is_keyed_saved_and_type_checked_on_load():
         assert frag in bad, frag
     # Round trip: an HH override and the other new inputs come back with the same Building.
     apply, _ = _loader()
-    a = _app_test({**_GEO, **_occ("Business / Office", "business"),
+    a = _app_test({**_GEO, **_occ("Business / Office", "business"), "business_group_input": "B",
                    "hazard_override_input": "HH", "height_datum_input": "occupiable_ceiling",
                    "construction_type_input": "type_ii", "corridor_length_m": 12.0,
                    "project_name_input": "Round trip"})
@@ -352,7 +352,7 @@ def test_CH9B_14_outlet_keyed_on_outlet_area_and_tents_replace_generic_tiers():
     assert not [it for it in items(tent, "FP", True)
                 if it.system.startswith(("Automatic Sprinkler", "Fire Pump", "Hose Reel"))]
     # The inputs reach Building() from the app.
-    at = _app_test({**_GEO, **_occ("Business / Office", "business"), "height_m_input": 7.0,
+    at = _app_test({**_GEO, **_occ("Business / Office", "business"), "business_group_input": "B", "height_m_input": 7.0,
                     "has_attached_commercial_outlet": True,
                     "commercial_outlet_gf_bua_m2_input": 500.0,
                     "tent_marquee_kind_input": "none"})
@@ -363,7 +363,7 @@ def test_CH9B_14_outlet_keyed_on_outlet_area_and_tents_replace_generic_tiers():
 
 # ---------------------------------------------------------------- Scenario B
 def test_SCENB_storage_hazard_is_asked_never_defaulted():
-    at = _app_test({**_GEO, **_occ("Business / Office", "business")})
+    at = _app_test({**_GEO, **_occ("Business / Office", "business"), "business_group_input": "B"})
     at.selectbox(key="scenario_b_occ").set_value("storage_industrial").run()
     assert not at.exception
     hz = at.selectbox(key="scenario_b_storage_hazard")
