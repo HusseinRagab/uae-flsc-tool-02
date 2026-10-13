@@ -9,6 +9,14 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-13 — Phase 4 defaults confirmed (4 cards, 02:52Z, all option A)
+
+Hussein confirmed the four defaults picked while coding phase 4; no code change (PR #24 already
+does each): kiosk area read from the GF BUA, stop above 18 m2 (item 48 v); a Business listed as
+another occupancy keeps Table 6.5 items 5-6; Mercantile C refused as another occupancy and cannot
+list others; trucks get Table 6.5 item 12. Default 5 (item 48 iii blank = NOT EVALUATED) follows
+the standing rule that a blank never counts as a pass.
+
 ### 2026-10-13 — Phase 4: Mercantile Group C and Business Groups A/B/C (6 cards, 00:49Z, all option A)
 
 Log: project files `uae_flsc_tool/phase4/ANSWERS_13.10.2026.md`; scope `SCOPE_phase4_13.10.2026.md`.
@@ -311,7 +319,7 @@ the 750 gpm row of 9.24.C.2.
 | P3 cards (24) | Ch 10 Q1-Q4, Ch 11 Q1-Q7, Ch 4-7 Q1-Q3, storey Q1-Q4, app Q1-Q6 | answered 12.10 16:27Z, coded (App Q4 = phase 4) |
 | P3 follow-ups (5) | cylinder new-building default, villa EAP, flame effect alarm, amusement vs Group C, parking depth | answered 17:07Z, coded |
 | P3 follow-ups (2) | flame-effect sprinkler check across R13 occupancies; parking depth with 0 levels | ruled 13.10 (All occupancies; Refuse it), coded |
-| P4 Q1-Q6 | Business group form and hazard, Mercantile C hazard, lowrise kiosk row, Mercantile C type, old files with the Group C tick | ruled 13.10 00:49Z (all option A), coded on PR #24 |
+| P4 Q1-Q6 | Business group form and hazard, Mercantile C hazard, lowrise kiosk row, Mercantile C type, old files with the Group C tick | ruled 13.10 00:49Z (all option A), 4 coding defaults confirmed 02:52Z (option A), coded on PR #24 |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
