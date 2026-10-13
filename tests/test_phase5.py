@@ -99,7 +99,7 @@ def test_p5_ch6_g4_central_battery_cable_test_standards_8_1_9():
             "UL 1724, UL 1685, UL 1666") in d
     assert d.count("IEC 60331-2") == 1          # printed twice (vii, x), listed once
     assert "EN 50200 (930" not in d
-    assert "Table 6.2 #4.ii" not in d            # G3 (5% central battery) rides a pending card
+    assert "Table 6.2 #4.ii, p.413" in d         # G3 owner ruling 13.10.2026
 
 
 def test_p5_ch9_item2_table_9_30_rows_r_to_v_printed_text():
