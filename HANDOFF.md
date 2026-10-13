@@ -9,6 +9,13 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-13 — Phase 3 merged to master on Hussein's go (PR #23, eb9faa9)
+
+- Card "Merge, then phase 4" (00:29Z). Master verified: 275 pytest, 112 cases, structural 0;
+  tree identical to the PR head 8950da0. The live app redeploys from master.
+- Re-run issued jobs whose results changed (PR #23 body lists them). PC clone: git pull.
+- Branch restarted from master for phase 4: Mercantile Group C and Business Groups A/B/C.
+
 ### 2026-10-13 — Phase 3 last two follow-up answers coded (2 cards, 00:08Z)
 
 - F-a4-1 "All occupancies": the #3.2.2 (p.923) indoor flame-effect sprinkler condition is checked
