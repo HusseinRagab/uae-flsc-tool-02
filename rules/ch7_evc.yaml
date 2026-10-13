@@ -186,6 +186,17 @@ general:
         spec: "Wall-mounted telephone appliances or jacks 910-1680 mm above floor level with clear access at least 760 mm wide; where accessible to the general public, one telephone appliance per location not more than 1220 mm above floor level"
         detail: "Table 7.2 #5 (p.438): i. wall-mounted telephone appliances or related jacks shall be not less than 910 mm and not more than 1680 mm above floor level with clear access to the appliance that is at least 760 mm wide; ii. if accessible to the general public, one telephone appliance per location shall be not more than 1220 mm above floor level."
 
+  # Owner ruling 13.10.2026 (card "Add all", Phase 5 G5 / CH47-05): Table 7.2 item 1,
+  # "collocated" printed word for word, not interpreted.
+  - id: evc_general_two_way_usage
+    when: {}
+    systems:
+      - name: "Two-way Telephone System - Civil Defence Use, Collocated with EVC"
+        code_ref: "Ch 7, #2.5 / Table 7.2 item 1"
+        page_ref: "p.437"
+        spec: "Provided for Civil Defence personnel use and collocated with the Emergency Voice Evacuation and Communication System"
+        detail: "Owner ruling 13.10.2026. #2.5.1 (p.437): Two-way Communication System or Two-way Telephone System requirements shall comply with Table 7.2. Table 7.2 #1.i (p.437), verbatim: 'Two-way Communication Systems or Two-way Telephone Systems shall be provided for Civil Defence personnel use. And it shall be collocated with the Emergency Voice Evacuation and Communication System.'"
+
   - id: evc_general_two_way_phone_jacks
     when: {}
     systems:
@@ -195,6 +206,7 @@ general:
         spec: "Common talk / party-line; jacks at every required location"
         detail: "Telephone station OR jack at: (a) every stair landing, every floor; (b) every fire lift lobby; (c) inside every elevator car; (d) fire / emergency command centre; (e) fire pump room; (f) every area of refuge. AT LEAST 2 HANDSETS at each control centre for emergency responders. Each station/jack permanently labelled to allow caller to identify location by voice."
 
+  # Item 3.1 (v)-(vi) added by owner ruling 13.10.2026 (card "Add all", Phase 5 G5).
   - id: evc_general_two_way_phone_features
     when: {}
     systems:
@@ -202,7 +214,7 @@ general:
         code_ref: "Ch 7, #2.5 / Table 7.2 item 3"
         page_ref: "p.437"
         spec: "Listed; integrity-monitored; simultaneous 5-station common-talk capability"
-        detail: "Equipment listed and approved for two-way telephone service. Integrity monitoring of all circuits. Simultaneous operation of any 5 telephone stations in common-talk mode. Distinctive off-hook indication at control unit (visible per circuit if selective talk)."
+        detail: "Equipment listed and approved for two-way telephone service. Integrity monitoring of all circuits. Simultaneous operation of any 5 telephone stations in common-talk mode. Distinctive off-hook indication at control unit (visible per circuit if selective talk). Table 7.2 #3.1 (p.437; owner ruling 13.10.2026): v. a means for silencing the audible call-in signal sounding appliance shall be permitted, provided that it is key operated or located in a locked cabinet, or provided with protection to prevent use by unauthorized persons. The means shall operate a visible indicator and sound a trouble signal whenever the means is in the silence position and no telephone circuits are in an off-hook condition; vi. if a selective talk system is used, means mentioned above shall be permitted, provided that subsequent telephone circuits going off-hook operate the distinctive off-hook signal."
 
 branches:
   - id: evc_super_highrise

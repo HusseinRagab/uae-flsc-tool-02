@@ -569,6 +569,53 @@ _WATER_REACTIVE_LINE = Requirement(
             "(#4.1.1)."),
     code_ref="Ch 9, #4.1.2 / #4.1.1", page_ref="p.694", source_rule="ch9_4_1_2_water_reactive")
 
+# Owner ruling 13.10.2026 (CH9D-15, "Pointer lines"): Ch 9 Section 5 (p.758-769) is
+# reported as one line per required system type, naming its acceptance test, inspection
+# and maintenance table; the table rows are not itemised.
+_ITM_TABLES = (
+    # (key, system label, table, clause, page range, standards as printed, name keywords)
+    ("pump", "Fire Pumps", "Table 9.32", "#5.5.1", "p.759-761",
+     "Manufacturer's instruction manual, NFPA 20 and NFPA 25", ("fire pump", "pump set")),
+    ("standpipe", "Standpipe and Hose Systems (Dry/Wet Risers)", "Table 9.33", "#5.6.1",
+     "p.762-763", "NFPA 14 and NFPA 25",
+     ("riser", "standpipe", "landing valve", "hose reel")),
+    ("sprinkler", "Sprinkler and Deluge Systems", "Table 9.34", "#5.7.1", "p.764-765",
+     "NFPA 13, NFPA 15 and NFPA 25", ("sprinkler", "deluge", "water spray", "pre-action")),
+    ("foam", "Foam Systems", "Table 9.35", "#5.8.1", "p.766-767",
+     "NFPA 13, NFPA 11, NFPA 16 and NFPA 25", ("foam",)),
+    ("clean_agent", "Clean Agent Systems", "Table 9.36", "#5.9.1", "p.768-769",
+     "NFPA 2001, and Manufacturer's guidelines", ("clean agent",)),
+)
+
+
+def _itm_lines(blocks) -> List[Requirement]:
+    """One Section 5 pointer line per system type that a required Ch 9 line names. A line
+    offering alternatives ("Clean Agent OR Deluge Water Spray") points to each table, for
+    the option installed."""
+    names = [(it.system or "").lower() for blk in blocks for it in blk.items
+             if it.status == "required"]
+    out = []
+    for _key, label, table, clause, pages, stds, words in _ITM_TABLES:
+        hits = [n for n in names if any(w in n for w in words) and "extinguisher" not in n]
+        if not hits:
+            continue
+        optional = all(" or " in n for n in hits)
+        out.append(Requirement(
+            system=f"Acceptance Test, Inspection and Maintenance - {label}",
+            status="required",
+            spec=(f"{clause}: inspected and maintained to {table} as the minimum guideline; "
+                  f"detailed acceptance, inspection tests and maintenance per {stds}"
+                  + (" (for the option installed)" if optional else "")),
+            detail=(f"Ch 9 Section 5, {table} ({pages}); rows not itemised in this report "
+                    "(owner ruling 13.10.2026, CH9D-15). #5.3 (p.758): inspection and "
+                    "acceptance are the main consultant's responsibility. #5.4.1 (p.758): the "
+                    "building owner, his appointed representative and the facility management "
+                    "ensure the systems are inspected regularly, maintained and repaired."),
+            code_ref=f"Ch 9, {clause} / {table}", page_ref=pages,
+            source_rule=f"itm_{_key}"))
+    return out
+
+
 _FOAM_PROHIBITED_LINE = Requirement(
     system="Medium- / High-Expansion Foam Not Used on the #4.1.3 Hazards",
     status="required",
@@ -630,8 +677,10 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
 
     # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum (#4.1.13) is required. A blank
     # sum is taken above 3600 m2 (Table 9.27 row 4, never a lower row) and named here.
+    # A ground floor of exactly 3600 m2 already takes the higher row (owner ruling
+    # 13.10.2026, "Higher row"), so the blank sum cannot change the row there.
     if (b.occupancy == "storage_industrial" and b.storage_gf_bua_sum_missing
-            and b.ground_floor_bua_m2 <= 3600
+            and b.ground_floor_bua_m2 < 3600
             and any("storage_gf_bua_sum_m2" in str(br.get("match")) for br in _matched)):
         branch_items = [_gf_bua_sum_not_evaluated_line()] + list(branch_items)
 
@@ -714,6 +763,11 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
         prohib.append(_FOAM_PROHIBITED_LINE)
     if prohib:
         blocks.append(SectionBlock(title="FP - Prohibitions (Ch 9, #4.1.2 / #4.1.3)", items=prohib))
+
+    itm = _itm_lines(blocks)
+    if itm:
+        blocks.append(SectionBlock(
+            title="FP - Testing, Inspection and Maintenance (Ch 9, Section 5)", items=itm))
 
     return ChapterReport(
         chapter_code="FP", chapter_title="Fire Protection (Ch 9)",

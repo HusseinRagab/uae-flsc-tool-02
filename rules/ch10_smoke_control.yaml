@@ -386,8 +386,11 @@ branches:
         required: conditional
         detail: "Table 10.27 item 2.3 applies to an enclosed sports hall or auditorium with a legitimate stage or having area more than 2000 m2 (dedicated smoke purging per Section 2.13). An auditorium is ticked without a stage, and its area is not entered; enter the largest hall area in SC settings to evaluate it."
 
-  # Table 10.25 (p.862): road tunnel tiers by total length (CH10-17). The
-  # rail and service / cable rows are on p.863 (values from the audit slice).
+  # Table 10.25 (p.862-863): road (row 1) and rail (row 2) tunnel tiers by total
+  # length, service / cable tunnels (row 3) (CH10-17). Rows 2 and 3 read off the
+  # p.863 page image (phase 5, 13.10.2026). The tool has one "road / rail" kind;
+  # the not-entered, less-than-90 m and more-than-90 m lines state both rows
+  # (owner ruling 13.10.2026 "Name both routes" for the more-than-90 m line).
   - id: sc_aux_tunnel_length_not_entered
     match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_lte: 0}
     section: "Ch 10, #3.7 / Table 10.25"
@@ -395,35 +398,36 @@ branches:
     systems:
       - name: "Tunnel Smoke Management - Road / Rail: NOT EVALUATED (tunnel length not entered)"
         required: conditional
-        detail: "Table 10.25 tiers road tunnels by total length: less than 90 m, natural ventilation per Section 2.11 OR Section 2.15 acceptable and a jet fan system not mandatory; more than 90 m, a jet fan system per Section 2.14 for the entire tunnel. Enter the tunnel length (FP settings) to evaluate it."
+        detail: "Table 10.25 tiers road and rail tunnels by total length: less than 90 m, natural ventilation per Section 2.11 OR Section 2.15 acceptable (a jet fan system, rail: a jet fan or mechanical ventilation system, not mandatory); more than 90 m, road: a jet fan system per Section 2.14 for the entire tunnel; rail: a jet fan system per Section 2.14 for the entire tunnel OR a mechanical smoke purging system using dedicated ducting per Section 2.13. Enter the tunnel length (FP settings) to evaluate it."
 
   - id: sc_aux_tunnel_road_rail_under_90
     match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_gt: 0, tunnel_length_m_lt: 90}
-    section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel), item 2"
-    page: "p.862"
+    section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel) item 2; row 2 (rail tunnel) item 1"
+    page: "p.862-863"
     systems:
       - name: "Tunnel Smoke Management - Road / Rail, length less than 90 m (natural ventilation acceptable)"
-        spec: "Natural ventilation per Section 2.11 OR Section 2.15 acceptable; natural ventilation utilizing the tunnel openings acceptable; a jet fan system shall not be mandatory"
-        detail: "Road tunnels having total length of less than 90 m (Table 10.25 row 1, item 2.i-iii). Smoke management systems other than jet fan systems shall be installed through a fire engineering analysis demonstrating the intent of item 1.iii (row 1, item 1.iv). A rail tunnel of less than 90 m is covered by the rail row on p.863, which the tool does not evaluate: check it there."
+        spec: "Natural ventilation per Section 2.11 OR Section 2.15 acceptable; natural ventilation utilizing the tunnel openings acceptable; road: a jet fan system shall not be mandatory; rail: a jet fan or mechanical ventilation system shall not be mandatory"
+        detail: "Road tunnels having total length of less than 90 m (Table 10.25 row 1, item 2.i-iii, p.862); rail tunnels having total length of less than 90 m (row 2, item 1.i-iii, p.863). Road tunnels: smoke management systems other than jet fan systems shall be installed through a fire engineering analysis demonstrating the efficiency and fulfillment of the intent of item 1.iii (row 1, item 1.iv)."
 
   # Owner ruling 12.10.2026, P3 Ch10 Q2: a length of exactly 90 m (neither 'less
   # than' nor 'more than' 90 m on p.862) takes the higher band, as R11 at band edges.
   - id: sc_aux_tunnel_road_rail_over_90
     match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_gte: 90}
-    section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel), item 3"
+    section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel) item 3; row 2 (rail tunnel) item 2"
     page: "p.862-863"
     systems:
-      - name: "Tunnel Smoke Management - Road / Rail, length more than 90 m (jet fan system)"
-        spec: "Jet fan system per Section 2.14 for the entire tunnel; other systems or combinations permitted where justified by an engineering analysis and CFD modeling"
-        detail: "Road tunnels having total length of more than 90 m (Table 10.25 row 1, item 3.i-ii). A length of exactly 90 m falls in neither printed band ('less than 90 m', 'more than 90 m') and takes this higher band (owner ruling 12.10.2026, P3 Ch10 Q2, as ruling R11 at band edges). Rail tunnels of more than 90 m: jet fan OR ducted purge (Table 10.25 rail row, p.863)."
+      - name: "Tunnel Smoke Management - Road / Rail, length more than 90 m (road: jet fan system; rail: jet fan system OR ducted smoke purging)"
+        spec: "Road: jet fan system per Section 2.14 for the entire tunnel; other systems or combinations permitted where justified by an engineering analysis and CFD modeling. Rail: jet fan system per Section 2.14 for the entire tunnel OR a mechanical smoke purging system using dedicated ducting per Section 2.13; other systems or combinations of systems permitted where justified by an engineering analysis and CFD modeling"
+        detail: "Road tunnels having total length of more than 90 m (Table 10.25 row 1, item 3.i-ii, p.862); rail tunnels having total length of more than 90 m (row 2, item 2.i-ii, p.863): 'A jet fan system, in accordance with Section 2.14. shall be provided for the entire tunnel. OR a mechanical smoke purging system using dedicated ducting shall be provided in accordance with Section 2.13.' and 'Other systems or combinations of systems shall be permitted, where justified by an engineering analysis and CFD modeling.' The tool has one road / rail kind, so both rows are stated (owner ruling 13.10.2026, 'Name both routes'). A length of exactly 90 m falls in neither printed band ('less than 90 m', 'more than 90 m', both rows) and takes this higher band (owner ruling 12.10.2026, P3 Ch10 Q2, as ruling R11 at band edges)."
 
   - id: sc_aux_tunnel_cable
     match: {has_tunnel: true, tunnel_kind_is: cable}
-    section: "Ch 10, #3.7 / Table 10.25 (service / cable tunnels)"
+    section: "Ch 10, #3.7 / Table 10.25 row 3 (service tunnel) item 1"
     page: "p.863"
     systems:
       - name: "Tunnel Smoke Management - Service / Cable"
-        spec: "Mechanical ventilation per Section 2.17, any length; natural ventilation acceptable if less than 90 m long"
+        spec: "Mechanical ventilation system per Section 2.17, any length; natural ventilation utilizing the tunnel openings acceptable where the tunnel length is less than 90 m"
+        detail: "Service or cable tunnels of any length (Table 10.25 row 3, item 1.i-iii): i. a mechanical ventilation system per Section 2.17 shall be provided; ii. natural ventilation utilizing the tunnel openings shall be acceptable where the tunnel length is less than 90 m; iii. a jet fan system per Section 2.14 OR a mechanical smoke purging system using dedicated ducting per Section 2.13 OR other systems or combinations of systems permitted where justified by an engineering analysis and CFD modeling."
 
   - id: sc_business_open_plan
     match: {occupancy: business}
@@ -540,9 +544,23 @@ auxiliary_rooms:
       - name: "Kitchen Cooking Operation Ventilation"
         code_ref: "Ch 10, #3.9 / Table 10.27 item 16"
         page_ref: "p.866"
-  - id: sc_aux_lpg_hazardous
-    flag: has_lpg_tanks
+  # Table 10.26 item 2 (p.864): ROOMS STORING HAZARDOUS AND FLAMMABLE CHEMICALS,
+  # ventilation per Section 2.20 (#2.20.1 / Table 10.18, p.853-854). The row does
+  # not name LPG; LPG tanks are outdoor installations (Ch 11), so the line fires on
+  # the stored-chemical inputs instead (owner ruling 13.10.2026, "Move to chemicals").
+  # p.854 numbers two rows "4." after "6. CONTROLS": cited by name (STAND BY FAN,
+  # STAND BY POWER), not number.
+  - id: sc_aux_hazardous_chemical_room
+    always_on: true
+    when:
+      any_of:
+        - {has_chemical_warehouse_is: true}
+        - {has_bulk_flammable_liquid_storage_is: true}
+        - {has_bulk_flammable_gas_storage_is: true}
+        - {has_bulk_flammable_solid_storage_is: true}
     systems:
-      - name: "LPG / Hazardous + Flammable Chemical Room Ventilation"
-        code_ref: "Ch 10, #2.20 / Table 10.26.2"
-        page_ref: "p.864"
+      - name: "Hazardous + Flammable Chemical Room Ventilation"
+        spec: "Dedicated ventilation system per Section 2.20 / Table 10.18: exhaust and supply part at a rate of 20 air-changes per hour; flammable concentration below 25% of the low flammable limit (LFL) or the low explosive limit (LEL); make-up air 85 % of the required exhaust of 20 air changes per hour; ventilation system fan provided with an emergency power"
+        detail: "Table 10.26 item 2 (p.864): rooms storing hazardous and flammable chemicals, a ventilation system shall be provided in accordance with Section 2.20. #2.20.1 (p.853): rooms containing hazardous and flammable materials, ventilation system as per Table 10.18 and the relevant general requirements for smoke control systems as per Section 2.5. Table 10.18 (p.853-854): the same system shall also serve as smoke exhaust system during fire emergencies (item 1.ii); exhaust plenum within 300 mm from the floor, fresh air on the opposite side within 300 mm from the floor (3.i); provided for the complete floor area including pits (3.iii); extract plenum terminates minimum 15 m from the ignition source, property limit or nearby building (4.i); exhaust direct to the external, not less than 5 m from any air intake openings (4.ii); exhaust ducts shall not pass through fire walls (4.v); fire dampers not installed where the material exhausted is toxic and a risk evaluation shows the toxic hazard greater than the fire hazard (5.2.i); fire detection and alarm system not interlocked to shut down air-moving devices, except where needed for an automatic extinguishing system (6.i-ii); ventilation failure annunciation (6.iii); gas or vapour detectors set at 25% of LFL/LEL to annunciate and switch off all automatic operations within the area (if any), and 50% of LFL/LEL to start the ventilation system (6.iv); STAND BY FAN row: back-up (stand-by) fans shall not be required; STAND BY POWER row: the ventilation system fan shall be provided with an emergency power. Inputs: chemical warehouse, bulk flammable liquid, gas or solid storage (owner ruling 13.10.2026, 'Move to chemicals'; LPG tanks alone no longer trigger this line)."
+        code_ref: "Ch 10, #3.8 / Table 10.26 item 2; #2.20 / Table 10.18"
+        page_ref: "p.864, p.853-854"

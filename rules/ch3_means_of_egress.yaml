@@ -19,7 +19,7 @@ general:
   - id: moe_g_door_minimums
     systems:
       - name: "Door Assembly Minimums (Table 3.2)"
-        spec: "Min width 915 mm; door forces (Table 3.2 item 5.ii): 67 N to release the latch, 133 N to set the door leaf in motion, 67 N to open to the required width; door swing in egress direction where occupant load >= 50, OR serving a horizontal exit, OR a high-hazard content room, OR an exit enclosure; panic / fire-exit hardware on fire-rated assemblies"
+        spec: "Min width 915 mm; door forces not to exceed (Table 3.2 item 5.ii): 67 N (15 lbf) to release the latch, 133 N (30 lbf) to set any door leaf in motion, 67 N (15 lbf) to open any door leaf to the minimum required width; door swing in egress direction where occupant load >= 50, OR serving a horizontal exit, OR a high-hazard content room, OR an exit enclosure; panic / fire-exit hardware on fire-rated assemblies"
         code_ref: "Ch 3, #3.2 / Table 3.2"
         page_ref: "p.247-254"
         detail: "Side-hinged or pivoted swinging doors required. Per Table 3.2 #4 item i (p.248), swing in direction of egress applies on ANY of four triggers: (a) occupant load >= 50, (b) horizontal exit, (c) high-hazard content room, (d) exit enclosure. Panic hardware (or fire-exit hardware on fire-rated doors) bar between 865-1220 mm AFFL. Doors readily operable from egress side without keys, tools or special knowledge."
@@ -66,23 +66,24 @@ general:
   - id: moe_g_stair_geometry
     systems:
       - name: "Stair Geometry (Ch 3, #3.3)"
-        spec: "Tread depth ≥ 280 mm; riser height 100-180 mm uniform (max 10 mm variation per flight); head room on stairs ≥ 2,030 mm; max height between landings 3,660 mm"
+        spec: "Exit stair width not less than 1200 mm serving up to 2000 persons, not less than 1420 mm serving more than 2000 persons, and satisfying the egress capacity; width not decreasing along the direction of egress travel; measured from wall to the clear available width of the step, handrails may project at most 100 mm on each side at a height of 865 mm to 965 mm (Table 3.4 item 1). Tread depth ≥ 280 mm; riser height 100-180 mm uniform (max 10 mm variation per flight); head room on stairs ≥ 2,030 mm; max height between landings 3,660 mm"
         code_ref: "Ch 3, #3.3 / Table 3.4"
         page_ref: "p.255-258"
         detail: "Per Table 3.4 #2 (p.255): general exit-stair riser MIN 100 mm, MAX 180 mm, uniform throughout each flight. Aisle stairs in Assembly are a separate case: tread ≥ 280 mm and riser not less than 100 mm and not more than 205 mm (Table 3.17 item 8.ii-iii, p.298); where the aisle riser exceeds 178 mm the stair width is multiplied by factor A (Table 3.17 item 3.i, p.297), so 178 mm is a width-factor threshold, not a riser limit. Stair handrails on both sides; intermediate handrails where width > 1,750 mm (Table 3.4 #10)."
 
   # Owner ruling 12.10.2026, Ch3 Q7: the general items above apply to villas with the
-  # villa tables taking precedence. Table 3.4 stair widths (item 1, p.255) are not
-  # itemised: p.255 is not in the checked page set.
+  # villa tables taking precedence. Table 3.4 item 1 (p.255) widths are stated on the
+  # Stair Geometry line. #3.3.2 (p.255): stair types and modifications allowed by
+  # Section 5 (Table 3.27 item 2.v, Table 3.28 item 3.v) override Table 3.4.
   - id: moe_g_villa_general_items
     when:
       occupancy_in: [villa_private, villa_commercial]
     systems:
       - name: "Villa: General Ch 3 Items (Tables 3.1, 3.2, 3.4) with Villa Table Precedence"
-        spec: "Tables 3.1 (general), 3.2 (doors) and 3.4 (stairs) apply to the villa as listed in this chapter's general items. Private villa: where they conflict with Table 3.27, Table 3.27 prevails (#5.6.1). Tables 3.14 (number of exits) and 3.15.a (remoteness) are not applied to villas."
-        code_ref: "Ch 3, #5.6.1 / Tables 3.1, 3.2, 3.4, 3.27"
-        page_ref: "p.246-259, 323"
-        detail: "Owner ruling 12.10.2026, Ch3 Q7. #5.6.1 (p.323): 'The Private Villa occupancies shall comply with Table 3.27. along with all other sections of this chapter. Where conflicts arise between this section and other sections of this Chapter or code, the requirements of this section shall prevail.' #5.6.1 covers private villas; commercial villas follow #5.7 / Table 3.28 (p.324), whose precedence wording the tool has not checked (needs p.324). Table 3.4 stair widths (item 1, p.255) are not itemised by the tool: read them on p.255."
+        spec: "Tables 3.1 (general), 3.2 (doors) and 3.4 (stairs) apply to the villa as listed in this chapter's general items. Private villa: where they conflict with Table 3.27, Table 3.27 prevails (#5.6.1). Commercial villa: where they conflict with Table 3.28, Table 3.28 prevails (#5.7.1). Tables 3.14 (number of exits) and 3.15.a (remoteness) are not applied to villas."
+        code_ref: "Ch 3, #5.6.1 / #5.7.1 / Tables 3.1, 3.2, 3.4, 3.27, 3.28"
+        page_ref: "p.246-259, 323-324"
+        detail: "Owner ruling 12.10.2026, Ch3 Q7. #5.6.1 (p.323): 'The Private Villa occupancies shall comply with Table 3.27. along with all other sections of this chapter. Where conflicts arise between this section and other sections of this Chapter or code, the requirements of this section shall prevail.' #5.6.1 covers private villas; #5.7.1 (p.324) gives Table 3.28 the same precedence for commercial villas. Table 3.4 item 1 (p.255) widths are stated on the Stair Geometry line. #3.3.2 (p.255): stair types and modifications allowed by Section 5 (Table 3.27 item 2.v, Table 3.28 item 3.v) override Table 3.4."
 
   # Hazardous-area door rule - fires whenever the building is classed HH.
   # Table 3.2 item 4.i (p.248): doors serving a high hazard content room swing in the
@@ -226,6 +227,11 @@ branches:
         spec_s: "Hospitals, sleeping areas (4.i): commonpath 30 m, dead end 9.1 m, travel 61 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
         spec_ns: "Hospitals, sleeping areas (4.i): Table 3.16 prints the S column only (no non-sprinklered values). Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
         detail: "Per Table 3.16 row 4 (p.293): hospitals are tabulated as sprinklered-only. Two-exit requirement is absolute (Table 3.22 #4, p.313): single exit is NOT permitted, and every corridor must access two approved exits without passing through intervening rooms."
+      - name: "Smoke Compartments (Table 3.22 item 7)"
+        spec: "Every floor having healthcare activity divided into a minimum of 2 smoke compartments, each not exceeding 2100 m2 in area; smoke barrier 1 hour fire resistance rated"
+        code_ref: "Ch 3, #5.4.1 / Table 3.22 item 7"
+        page_ref: "p.313"
+        detail: "Table 3.22 item 7.ii-iv (p.313): an atrium separated in accordance with applicable requirements may have an unlimited smoke compartment area; windows in the smoke barrier are fixed fire rated window assemblies; vision panels in smoke compartment doors are fire rated glazing in approved frames with the bottom of the panel not more than 1090 mm from finished floor."
 
   - id: moe_healthcare_b
     match: {occupancy: healthcare_b}
@@ -239,6 +245,11 @@ branches:
         spec_s: "Clinics, consultancy areas (4.ii): commonpath 30 m, dead end 15 m, travel 91 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m."
         spec_ns: "Clinics, consultancy areas (4.ii): commonpath 23 m, dead end 6.1 m, travel 61 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m."
         detail: "Per Table 3.16 row 4.ii (p.293): Healthcare Group B (clinics, day-surgery, outpatient consultancy) uses the clinics row. Two-exit requirement applies per Table 3.22 #4 (p.313)."
+      - name: "Smoke Compartments (Table 3.22 item 7)"
+        spec: "Every floor having healthcare activity divided into a minimum of 2 smoke compartments, each not exceeding 2100 m2 in area; smoke barrier 1 hour fire resistance rated"
+        code_ref: "Ch 3, #5.4.1 / Table 3.22 item 7"
+        page_ref: "p.313"
+        detail: "Table 3.22 item 7.ii-iv (p.313): an atrium separated in accordance with applicable requirements may have an unlimited smoke compartment area; windows in the smoke barrier are fixed fire rated window assemblies; vision panels in smoke compartment doors are fire rated glazing in approved frames with the bottom of the panel not more than 1090 mm from finished floor."
 
   - id: moe_healthcare_c
     match: {occupancy: healthcare_c}
@@ -252,6 +263,36 @@ branches:
         spec_s: "Ambulatory health care (5.i): commonpath 30 m, dead end 15 m, travel 61 m."
         spec_ns: "Ambulatory health care (5.i): commonpath 23 m, dead end 6.1 m, travel 46 m."
         detail: "Per Table 3.16 row 5 (p.293) + Table 3.23 (p.315-316). Single exit is NOT permitted (Table 3.23 #2, p.315). Rooms or spaces larger than 232 m² require 2 separate remote exits (#3). 1-hour fire-rated separation from other tenants with 44 mm thick doors (#5)."
+
+  # Table 3.23 item 6.i (p.316): every floor having area more than 900 m2 per story is
+  # divided into 2 smoke compartments. Same pair as the villa 400 m2 rule: required when
+  # the largest storey is known to exceed 900 m2, conditional when no storey area is
+  # entered and the GFA / ground floor could hide one (owner card 13.10.2026 05:45Z, G11).
+  - id: moe_healthcare_c_smoke_compartments
+    match: {occupancy: healthcare_c, largest_storey_area_min_m2_gt: 900}
+    section: "Ch 3, #5.4.2 / Table 3.23 item 6"
+    page: "p.316"
+    systems:
+      - name: "Smoke Compartments - Storey over 900 m2 (Table 3.23 item 6)"
+        spec: "A storey exceeds 900 m2: every such floor divided into a minimum of 2 smoke compartments, each not exceeding 2000 m2 in area; smoke barrier 1 hour fire resistance rated"
+        code_ref: "Ch 3, #5.4.2 / Table 3.23 item 6"
+        page_ref: "p.316"
+        detail: "Table 3.23 item 6.ii-iv (p.316): the area of an atrium separated in accordance with applicable requirements may be unlimited; windows in the smoke barrier are fixed fire rated window assemblies; vision panels in smoke compartment doors are fire-rated glazing in approved frames, the glazing and bottom of the panel not more than 1090 mm from the finished floor."
+
+  - id: moe_healthcare_c_smoke_compartments_check
+    match:
+      occupancy: healthcare_c
+      largest_storey_area_min_m2_lte: 900
+      largest_storey_area_m2_lte: 0
+      not: {gross_floor_area_m2_lte: 900, ground_floor_bua_m2_lte: 900}
+    section: "Ch 3, #5.4.2 / Table 3.23 item 6"
+    page: "p.316"
+    systems:
+      - name: "Smoke Compartments - Storey over 900 m2 (Table 3.23 item 6)"
+        required: conditional
+        spec: "If any storey exceeds 900 m2: minimum of 2 smoke compartments, each not exceeding 2000 m2 in area, 1 hour fire resistance rated smoke barrier (the inputs give no per-storey area)"
+        code_ref: "Ch 3, #5.4.2 / Table 3.23 item 6"
+        page_ref: "p.316"
 
   # ------ Residential ------
   - id: moe_residential
@@ -423,6 +464,11 @@ branches:
         detail: "Mechanical/Robotic parking is Table 3.13 ROW 20 (Parking Group C), not row 19. Row 19 covers Enclosed + Open parking under Parking Group A,B. Tabulated travel for Mechanical/Robotic is Table 3.16 row 21 (S 60 m / NS 46 m)."
         code_ref: "Ch 3, Table 3.13 row 20 + Table 3.16 row 21"
         page_ref: "p.287, 295"
+      - name: "Single Exit Not Permitted - Parking (Table 3.37 item 4)"
+        spec: "Single exit is not permitted; 2 exits shall be provided from every storey or level or section as per Section 4.4, Table 3.15.b. In 1 level below or 1 level above discharge level of parking, vehicle ramp shall be considered as one of the means of egress, provided no shutters or doors are installed in such ramps."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 4"
+        page_ref: "p.338"
+        detail: "Owner card 13.10.2026 05:45Z 'Add item 4.iii': the ramp allowance (item 4.iii) is stated with its condition. #5.16.1 (p.338): parking in above ground, enclosed or underground structures complies with Table 3.37 along with all other sections of this chapter; where conflicts arise, #5.16 prevails."
 
   - id: moe_parking_open
     match: {occupancy: parking_open}
@@ -440,6 +486,11 @@ branches:
         detail: "Table 3.16 row 20.ii (p.295) gives open parking S 122 m, NS 91 m travel. CODE CONFLICT: Table 3.15.b item iv (p.291) prints 122 m for a non-sprinklered open podium. The tool uses the stricter 91 m (ruling R9, 12.10.2026); confirm with Civil Defence. Dead-end and commonpath shall not exceed 15 m. Open podium parking benefits from natural ventilation - the longer travel distance acknowledges the much lower smoke / heat hazard. Note: Mechanical/Robotic parking is a SEPARATE row (Table 3.13 row 20, Parking Group C) with OLF 46.5 m² - see moe_parking_enclosed for the row 20 reference."
       - name: "Open-parking definition (Ch 1, Table 1.9.34)"
         detail: "To qualify as 'open parking' the structure must have permanent wall openings ≥ 0.4 m² per linear metre of exterior perimeter, distributed over 40% of perimeter or uniformly on at least two opposing sides; interior wall lines / column lines ≥ 20% open. Any part of parking within 30 m of permanent natural ventilation opening."
+      - name: "Single Exit Not Permitted - Parking (Table 3.37 item 4)"
+        spec: "Single exit is not permitted; 2 exits shall be provided from every storey or level or section as per Section 4.4, Table 3.15.b. In 1 level below or 1 level above discharge level of parking, vehicle ramp shall be considered as one of the means of egress, provided no shutters or doors are installed in such ramps."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 4"
+        page_ref: "p.338"
+        detail: "Owner card 13.10.2026 05:45Z 'Add item 4.iii': the ramp allowance (item 4.iii) is stated with its condition. #5.16.1 (p.338): parking in above ground, enclosed or underground structures complies with Table 3.37 along with all other sections of this chapter; where conflicts arise, #5.16 prevails."
 
   # ------ Animal housing ------
   - id: moe_animal_housing
@@ -523,10 +574,69 @@ branches:
     page: "p.324"
     systems:
       - name: "Means of Egress - Commercial Villa (Table 3.28)"
-        spec: "Comply with Ch 3 #5.7 and Table 3.28 (commercial villa). The private-villa Table 3.27 does not apply to commercial villas and groups of villas (#5.6.2, p.323)."
-        code_ref: "Ch 3, #5.7 / Table 3.28"
+        spec: "Comply with Ch 3 #5.7 and Table 3.28 along with all other sections of this chapter; where they conflict, #5.7 prevails (#5.7.1). The private-villa Table 3.27 does not apply to commercial villas and groups of villas (#5.6.2, p.323)."
+        code_ref: "Ch 3, #5.7.1 / Table 3.28"
         page_ref: "p.324"
-        detail: "Table 3.13 row 9 and Table 3.16 row 9 print None / NA: there is no occupant-load factor or travel distance for commercial villas. The Table 3.28 items are not itemised by this tool yet (needs the p.324 page check)."
+        detail: "Table 3.13 row 9 and Table 3.16 row 9 print None / NA: there is no occupant-load factor or travel distance for commercial villas. The Table 3.28 items follow as separate lines."
+      - name: "Commercial Villa: Separation (Table 3.28 item 2.i)"
+        spec: "Commercial villas separated from each other by a 2 hour fire resistance rated construction"
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 2.i"
+        page_ref: "p.324"
+      - name: "Commercial Villa: Primary and Secondary Means of Escape (Table 3.28 item 3.i)"
+        spec: "Every sleeping room and every living area shall have a primary means of escape (a door, stairway or ramp giving unobstructed travel to the outside) and a secondary means of escape. If the villa is sprinkler protected, the secondary means of escape is not required."
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 3.i, 3.iv"
+        page_ref: "p.324"
+        detail: "Item 3.i prints 'of a private villa' inside the commercial-villa table; read as the commercial villa. Secondary means (item 3.iv): a door, stairway or ramp remote from the primary exit leading outside; a passage through an adjacent non lockable space or set back area, remote from the primary exit and leading outside; a permanent stair to the roof with an outside stair (spiral, steel or standard) from the roof to the level of discharge, remote from the primary exit; or an operable window on the exterior wall not less than 510 mm wide and 610 mm high, clear opening not less than 0.53 m2, bottom not more than 6100 mm from finished ground floor. Civil Defence highly recommends a second primary escape; egress through the roof by a fixed steel, concrete or spiral stair to the ground is acceptable as the second primary means (item 3.ii)."
+      - name: "Commercial Villa: Doors (Table 3.28 item 4)"
+        spec: "Closet door latches openable by children from inside the closet; bathroom doors openable from the outside in an emergency when locked; while the villa is occupied, no locking device that impedes or prohibits egress or cannot be easily disengaged."
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 4"
+        page_ref: "p.324"
+      - name: "Commercial Villa: Hallway (Table 3.28 item 5.i)"
+        spec: "Hallway minimum 915 mm wide with a clear headroom of 2030 mm, without obstructions"
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 5.i"
+        page_ref: "p.324"
+      - name: "Commercial Villa: Egress Through a Nonresidential Occupancy (Table 3.28 item 1)"
+        required: conditional
+        spec: "Where the commercial villa shares a building with a nonresidential occupancy: its sole means of egress shall not pass through that occupancy, unless the egress is separated from it by a 1 hour fire resistance rated corridor and does not pass through hazardous content locations (item 1.ii), or the nonresidential occupancy is fully sprinklered per Ch 9 (item 1.iii)."
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 1"
+        page_ref: "p.324"
+        detail: "Conditional: no input says whether the villa shares a building with a nonresidential occupancy. Items 1.i (no exception) and 1.ii / 1.iii (exceptions) are printed as separate items; read here as the rule plus its exceptions."
+
+  # Table 3.28 item 3.iii: same pair as the private villa 400 m2 rule above.
+  - id: moe_villa_commercial_two_primary
+    match: {occupancy: villa_commercial, largest_storey_area_min_m2_gt: 400}
+    section: "Ch 3, #5.7 / Table 3.28 item 3.iii"
+    page: "p.324"
+    systems:
+      - name: "Commercial Villa: Two Primary Means of Escape - Floor over 400 m2 (Table 3.28 item 3.iii)"
+        spec: "A floor of the villa exceeds 400 m2: two primary means of escape remote from each other"
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 3.iii"
+        page_ref: "p.324"
+
+  - id: moe_villa_commercial_two_primary_check
+    match:
+      occupancy: villa_commercial
+      largest_storey_area_min_m2_lte: 400
+      largest_storey_area_m2_lte: 0
+      not: {gross_floor_area_m2_lte: 400, ground_floor_bua_m2_lte: 400}
+    section: "Ch 3, #5.7 / Table 3.28 item 3.iii"
+    page: "p.324"
+    systems:
+      - name: "Commercial Villa: Two Primary Means of Escape - Floor over 400 m2 (Table 3.28 item 3.iii)"
+        required: conditional
+        spec: "If any floor of the villa exceeds 400 m2: two primary means of escape remote from each other (the inputs give no per-floor area)"
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 3.iii"
+        page_ref: "p.324"
+
+  - id: moe_villa_commercial_basement
+    match: {occupancy: villa_commercial, floors_below_grade_gt: 0}
+    section: "Ch 3, #5.7 / Table 3.28 item 3.v-vi"
+    page: "p.324"
+    systems:
+      - name: "Commercial Villa: Basement Exit Stair (Table 3.28 item 3.vi)"
+        spec: "Basements shall have a standard enclosed exit stair leading to the discharge level; spiral stairs, winders and open stairs are not permitted for access and exit from basements (item 3.v)."
+        code_ref: "Ch 3, #5.7 / Table 3.28 item 3.v-vi"
+        page_ref: "p.324"
 
   # ------ Occupancies with no Table 3.13 / 3.16 row ------
   # Owner ruling 12.10.2026, Ch3 Q2: MOE is not evaluated for these until the per-use

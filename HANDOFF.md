@@ -9,6 +9,49 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-13 — Phase 5: 2018 page gaps closed (10 cards, 05:23-05:45Z, all option A)
+
+Card "Close gaps" (05:23Z). Every deferred page read off the rendered 2018 PDF (library copy,
+MD5 49a371a64bd689216f9443a0f91b10e4). Reports: project files `uae_flsc_tool/phase5/`.
+- CH9D-15 "Pointer lines": FP block "Testing, Inspection and Maintenance (Ch 9, Section 5)",
+  one line per required system type: Tables 9.32 pumps, 9.33 standpipes and hose, 9.34
+  sprinkler and deluge, 9.35 foam, 9.36 clean agent (p.758-769); rows not itemised.
+- Class A (no verdict change): Ch 2 #2.6.6 / #2.8.1 / #2.6.8 citations; door forces wording
+  (p.249); Table 5.1 sub-item numbers; #8.1.9 cable test standards (p.425); Table 9.30 R-V
+  printed text (p.755); Table 9.28 B Class III riser (p.748); Groups B/C not-required riser
+  lines (p.725-726); Table 9.14 item 3.ii (p.675, not p.674); Table 10.25 rail under 90 m and
+  cable rows (p.863).
+- Ch 2-3 "Add all 9" + G6 "Fire lift buildings" + G12 "Add item 4.iii": fire engine 2 m to
+  10 m (#2.8.2); 1 m inspection pathway (#2.6.7); turning facility (#2.7.1-#2.7.4); super
+  highrise lift lobby (#2.9.5); #2.9.6 fire exit stair where a fire lift is required;
+  fireboat berth on the waterfront tick (#3.2, Table 2.9); Table 3.4 widths 1200 / 1420 mm as
+  text; Table 3.28 commercial villa; Tables 3.22 item 7 / 3.23 item 6 smoke compartments;
+  Table 3.37 item 4.iii ramp allowance (LESS onerous).
+- Ch 5-8 "Add all": directional sign chevron (p.389); 30-day illumination check (#4.4,
+  p.400); 5% central battery spare capacity (Table 6.2 item 4.ii, p.413); EVC Civil Defence
+  equipment "collocated" (Table 7.2 item 1, p.437); FA power sources (Table 8.1 item 15
+  i-x, p.461).
+- Ch 9: Group I split into two rows (p.732): under 3600 m2 750 gpm @ 4.5 bar, 60 min (LESS
+  onerous); 3600 m2 and above 1250 gpm @ 6.9 bar, 90 min, hydrant loop required (MORE).
+  Exactly 3600 m2 takes row 2 in Groups D, E, I, J ("Higher row"); the blank-sum NOT
+  EVALUATED note no longer prints at a ground floor of exactly 3600 m2. Nursery keeps the
+  #4.1.6 hydrant lines; "no fixed water-based system" wording removed.
+- Ch 10: rail tunnels over 90 m state jet fan OR ducted purge OR CFD-justified (LESS
+  onerous, rail only). Table 10.26 item 2 line (renamed sc_aux_hazardous_chemical_room) fires
+  on the chemical warehouse / bulk flammable storage ticks with Section 2.20 / Table 10.18
+  values, not on LPG tanks (LPG-only buildings lose it).
+- Re-run issued jobs: Group D/E/I/J storage at exactly 3600 m2 or Group I at any size; LPG
+  tank buildings; rail tunnels; buildings with chemical or bulk flammable storage.
+- Tests: 350 pytest (47 new in tests/test_phase5*.py), 112 cases, structural 0.
+
+### 2026-10-13 — Phase 4 merged to master on Hussein's go (PR #24, 2f4aee2)
+
+- Card "Merge now" (05:12Z). Head 150d037 re-verified before merge: 291 pytest, 112 cases,
+  structural 0; master tree identical to the PR head. The live app redeploys from master.
+- Re-run issued jobs whose results changed: post offices (now OH2), kiosks entered as Mercantile
+  A/B (now Mercantile C, Table 9.21.b), saved Business files (stop until a group is chosen).
+  PC clone: git pull.
+
 ### 2026-10-13 — Phase 4 defaults confirmed (4 cards, 02:52Z, all option A)
 
 Hussein confirmed the four defaults picked while coding phase 4; no code change (PR #24 already
@@ -320,17 +363,17 @@ the 750 gpm row of 9.24.C.2.
 | P3 follow-ups (5) | cylinder new-building default, villa EAP, flame effect alarm, amusement vs Group C, parking depth | answered 17:07Z, coded |
 | P3 follow-ups (2) | flame-effect sprinkler check across R13 occupancies; parking depth with 0 levels | ruled 13.10 (All occupancies; Refuse it), coded |
 | P4 Q1-Q6 | Business group form and hazard, Mercantile C hazard, lowrise kiosk row, Mercantile C type, old files with the Group C tick | ruled 13.10 00:49Z (all option A), 4 coding defaults confirmed 02:52Z (option A), coded on PR #24 |
+| P5 (10 cards) | CH9D-15 Section 5, Ch 2-3 additions, #2.9.6 scope, Table 3.37 4.iii, Ch 5-8 additions, Group I split, 3600 m2 edge, nursery hydrants, rail tunnel routes, Table 10.26 item 2 | ruled 13.10 05:23-05:45Z (all option A), coded on PR #25 |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
-Phases 1-3 are on master; phase 4 is on draft PR #24 (see the log entry).
+Phases 1-4 are on master; phase 5 is on draft PR #25 (see the log entry).
 
 ## Known, not fixed in phase 1
 
-- The approximately sign and the tilde remain in a few texts (`fire_access.py` "Footprint",
-  Ch 5 "15 m" note); label sweep is a later phase.
-- Villa 9.23 rows still fire beside 9.21.d converted-villa rows; the duty merge keeps the
-  governing pump/tank, other items may repeat.
+- (Phase 3 closed the tilde / approximately-sign sweep and the villa 9.23 vs 9.21.d repeat.)
+- Group V plant nursery above 3600 m2 prints "Portable Fire Extinguishers (only)" and a
+  not-required fire pump beside the required #4.1.6 hydrant line (left as is in phase 5).
 - Scenario matrix "!!" gaps are unchanged from master.
 
 ## Verify

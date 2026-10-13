@@ -286,7 +286,7 @@ def test_CH9C_25_groups_I_and_J_separate_J_breeching_and_hydrants():
                is_single_tenant_storage=True)
     assert lines(j2, "FP", "Yard Fire Hydrants")
     i = store(ground_floor_bua_m2=2000, hazard_class="HH", is_single_tenant_storage=True)
-    assert branch(i) == "storage_single_tenant_extra_hazard"
+    assert branch(i) == "storage_single_tenant_eh1_tier1"  # Group I split, owner ruling 13.10.2026
     assert "EH2" not in " ".join(it.spec or "" for it in items(i, "FP") if it.duty)
 
 

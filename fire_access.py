@@ -3,7 +3,9 @@
 Values are from the printed pages: Table 2.1 (p.206), #2.6 and Table 2.2 (p.207),
 #2.8.3 and #2.8.4 (p.212), #2.8.5 / #2.8.6 and Tables 2.3 / 2.4 (p.213), #2.8.7 and
 Table 2.5 (p.214), #2.8.8 / #2.8.9 and Tables 2.6 / 2.7 (p.215), #2.8.10 and Table
-2.8 (p.217), #2.9.3 (p.219), #2.9.4 (p.220).
+2.8 (p.217), #2.9.3 (p.219), #2.9.4 (p.220); #2.6.6-#2.6.8 (p.208), #2.7 and Figures
+2.5-2.7 (p.209-210), #2.8.1-#2.8.2 (p.211), #2.9.5-#2.9.6 (p.221), #3.2 and Table 2.9
+(p.225).
 
 Sprinkler protection is the Ch 9 result for the building (engine passes it): the
 building is "sprinkler protected" when its Ch 9 table row requires an automatic
@@ -195,7 +197,15 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
         _req("Fire vehicle accessway width + clearance",
              f"Minimum unobstructed width {s.accessway_width_m:g} m (road width between kerbs "
              f"6 m); vertical clearance {s.vertical_clearance_m:g} m for any grade",
-             "Ch 2, Table 2.1 / #2.6.1 / #2.6.3", "p.206-207", "fsa_table_2_1"),
+             "Ch 2, Table 2.1 / #2.6.1 / #2.6.3", "p.206-207", "fsa_table_2_1",
+             detail=("#2.8.1 (p.211): minimum width of 6 m throughout; the accessway must "
+                     "accommodate the entry and maneuvering of fire engine, extended ladders, "
+                     "pumping appliances, aerial appliances, turntable and / or hydraulic "
+                     "platforms. #2.6.6 (p.208): accessway and fire engine access road kept clear "
+                     "of obstructions and protruded parts of the building, plants, trees or other "
+                     "fixtures between the accessway and the access openings. #2.6.8 (p.208): fire "
+                     "hydrants, where required by Ch 9, located along the Fire Access Road and "
+                     "Fire Accessway.")),
         _req("Parking distance to entrance / breeching inlet",
              f"Not more than {s.max_distance_entrance_m:g} m from building entrance; not more "
              f"than {s.max_distance_breeching_m:g} m from breeching inlet",
@@ -208,24 +218,53 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
              "All-weather driving surface to carry 41,000 kg (standard fire appliance) / "
              "81,000 kg (high reach fire appliance)",
              "Ch 2, Table 2.1", "p.206", "fsa_load_capacity"),
-        _req("Access road dead end", "Maximum dead end 45 m",
-             "Ch 2, Table 2.1", "p.206", "fsa_dead_end"),
+        _req("Access road dead end",
+             "Maximum dead end 45 m; where a Fire Accessway dead end exceeds 45 m a turning "
+             "facility shall be provided: U-turn, Y-turn, T-turn or roundabout",
+             "Ch 2, Table 2.1 / #2.7.1", "p.206, 209", "fsa_dead_end"),
         _req("Access road gateways",
              "Minimum width of gateways 4.5 m (gate width 4500 mm); electric / automatic gates "
              "with a manual override for Civil Defence",
              "Ch 2, Table 2.1 / #2.4.1 / #2.4.3", "p.206", "fsa_gateways"),
-        _req("Access road turning circle", "Minimum turning circle (roundabout) radius 12 m",
-             "Ch 2, Table 2.1", "p.206", "fsa_turning_circle"),
+        _req("Access road turning circle",
+             "Minimum turning circle (roundabout) radius 12 m; U-turn and roundabout per "
+             "Figure 2.5: clearance radius (R3) 12000 mm, outer radius (R2) 11000 mm, inner "
+             "radius (R1) 7000 mm, lane dimension 6000 mm",
+             "Ch 2, Table 2.1 / #2.7.2 / Figure 2.5", "p.206, 209", "fsa_turning_circle",
+             detail=("T-turn per #2.7.3 / Figure 2.6 (p.209), dimensions as printed: 6000, 36000, "
+                     "20000, 11000, 6000 and R 7000 mm. Y-turn per #2.7.4 / Figure 2.7 (p.210), "
+                     "dimensions as printed: 20000, 19000, 6000 and R 7000 mm. The figures do not "
+                     "name what each T-turn / Y-turn dimension measures: check the layout against "
+                     "the figure.")),
         _req("Fire lane signage",
              "'NO PARKING, FIRE LANE' and 'PARKING RESERVED OF CIVIL DEFENCE' signs; wording "
              "not less than 50 mm; roadways and accessways free of obstruction",
              "Ch 2, #2.5.1", "p.206", "fsa_signage"),
+        _req("Firefighter inspection pathway",
+             "A suitable access pathway (paved or gravel path) so fire-fighters can inspect all "
+             "elevations of the building during or after a fire; minimum 1 m wide, not impeded "
+             "by plants, bushes, walls or other features (width and obstruction printed as "
+             "'should')",
+             "Ch 2, #2.6.7", "p.208", "fsa_inspection_pathway"),
     ]
     if h > 15:
         items.append(_req(
             "Accessway within 18 m of breeching inlet",
             "Required for midrise and highrise buildings exceeding 15 m habitable height",
             "Ch 2, #2.6.2", "p.207", "fsa_breeching_18m"))
+    # #2.8.2 applies wherever an accessway is required: not the #2.8.3.a / #2.8.4.a
+    # "Access road within 60 / 45 m" cases (owner card 13.10.2026 05:45Z, G2).
+    if not s.extent.startswith("Access road within"):
+        items.append(_req(
+            "Accessway position from the building",
+            "Nearer edge of the accessway not less than 2 m or more than 10 m from the "
+            "building, measured horizontally",
+            "Ch 2, #2.8.2", "p.211", "fsa_accessway_offset",
+            detail=("#2.6.6 Note / Figure 2.4 (p.208): the fire engine shall be located at least "
+                    "2 m from the building, but not more than 10 m away from the external wall or "
+                    "facade (including any overhead obstruction). A public road may be used as "
+                    "hard standing by fire engine, provided the edge of the public road to the "
+                    "facade where access openings are located is not exceeding 10 m.")))
     # Site flags (owner ruling 12.10.2026, Ch3 Q6): each line is required when its box is
     # ticked and left out when it is not.
     if b.tower_setback_over_30m:
@@ -266,6 +305,20 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
             detail=("Ticked: waterfront property; owner ruling 12.10.2026, Ch3 Q6. #2.8.10.a: "
                     "the fire access road shall comply with this chapter and Table 2.8. Where it "
                     "does not, #2.8.10.b.1 (building facade) and #2.8.10.b.2 apply.")))
+        # Ch 2 #3.2 (p.225) on the same tick (owner card 13.10.2026 05:45Z, G7).
+        items.append(_req(
+            "Fireboat access from the water front",
+            "Fire access for Civil Defence Fire Boats irrespective of the fire access road on "
+            "land: dedicated berth for docking during emergencies, minimum unobstructed length "
+            "15 m, width 5 m, vertical clearance 6 m (Table 2.9); mooring facility complete with "
+            "approved ropes and fixed fittings on the deck and platform; mooring bitts or cleats "
+            "corrosion resistant, secured to a foundation tied into an underdeck structure and "
+            "of adequate strength to carry the mooring loads; docking facility within 45 m from "
+            "any building and structure to be attended to, on the shore",
+            "Ch 2, #3.2.1-#3.2.5 / Table 2.9", "p.225", "fsa_fireboat",
+            detail=("Ticked: waterfront property (owner card 13.10.2026 05:45Z). #3.2.1: on all "
+                    "water front developments, so that Fire Boats can approach from the "
+                    "waterside.")))
     if b.is_theme_park:
         items.append(_req(
             "Theme park fire access",
@@ -299,6 +352,33 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
                "storey" if b.height_class == "super_highrise" else ""),
             "Ch 2, #2.9.4.a-j", "p.220", "fsa_fire_lift",
             detail=f"#2.9.4.a: required in any building which is {' / '.join(lift)}."))
+        # #2.9.6 (p.221) only where the Fire Lift is required (owner card 13.10.2026
+        # 05:45Z "Fire lift buildings", G6).
+        items.append(_req(
+            "Fire Exit Stair for fire fighters",
+            "2 hour rated Fire Exit enclosure for the fire fighters to access the interior and "
+            "upper floors; the exit stair a fully enclosed smoke proof space; number of such "
+            "stairs per Ch 3, construction per Ch 1; the Fire Exit Stair connects every "
+            "habitable floor, and not less than one stair provides access to the roof where "
+            "LPG tanks are located",
+            "Ch 2, #2.9.6.a-b", "p.221", "fsa_fire_exit_stair",
+            detail=(f"Stated where the Fire Lift is required (#2.9.4.a: {' / '.join(lift)}); "
+                    "#2.9.5.b: the Fire Lift Lobby is where both the fire exit stair and the fire "
+                    "lift can be accessed."
+                    + (" Ticked: roof-mounted LPG tanks (Ch 11)." if b.has_lpg_tank_roof_mounted
+                       else ""))))
+    if b.height_class == "super_highrise":
+        items.append(_req(
+            "Firefighter's Lift Lobby (super highrise)",
+            "Fire Fighter's Lift Lobby per Ch 1 Table 1.9.38, where both the fire exit stair "
+            "and the fire lift can be accessed; enclosed with a smoke barrier of minimum 1-hour "
+            "fire-resistance rating; clear floor area not less than 9 m2 with a minimum "
+            "dimension of 2440 mm; doorway protected with a 60 minutes fire door assembly; free "
+            "of combustible materials and ignition sources",
+            "Ch 2, #2.9.5.a-e / Figure 2.15", "p.221", "fsa_fire_lift_lobby",
+            detail=("#2.9.5.a: all super highrise buildings (height greater than 90 m from the "
+                    "fire access level). #2.9.5.f: no requirement for the fire lift lobby or the "
+                    "fire lift shaft to be pressurized when this lobby is provided.")))
     return ChapterReport(
         chapter_code="FSA", chapter_title="Fire Service Access (Ch 2)",
         selected_branch="fsa_auto", selected_branch_section=f"{ext_code} ({ext_page})",
