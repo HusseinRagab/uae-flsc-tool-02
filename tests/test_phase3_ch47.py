@@ -127,13 +127,19 @@ def el_system_types(r):
 
 def test_CH47_07_offices_and_retail_get_one_system_type():
     """Table 6.5 p.419 items 11-12 are Business / Mercantile GROUP C; Table 1.1 p.48 offices
-    are Business Group B, p.50 Mercantile Group C = kiosks / food trucks."""
-    for occ, h in (("business", 10), ("mercantile_a", 8), ("business", 18)):
-        r = report(occupancy=occ, height_m=h, ground_floor_bua_m2=1500)
+    are Business Group B, p.50 Mercantile Group C = kiosks / food trucks. Re-pointed
+    13.10.2026 (owner ruling P4 Q1): the group is an input, so the Group C prompt is gone
+    and a Business building with no group is NOT EVALUATED by name."""
+    for kw, h in ((dict(occupancy="business", business_group="B"), 10),
+                  (dict(occupancy="mercantile_a"), 8),
+                  (dict(occupancy="business", business_group="A"), 18)):
+        r = report(height_m=h, ground_floor_bua_m2=1500, **kw)
         t = el_system_types(r)
-        assert [x.system for x in t] == ["Monitored Self-Contained EL (Section 3.3)"], (occ, t)
-        c = [it for it in items(r, "EL") if it.system.startswith("Stand-alone")]
-        assert len(c) == 1 and c[0].status == "conditional" and "GROUP C" in c[0].detail
+        assert [x.system for x in t] == ["Monitored Self-Contained EL (Section 3.3)"], (kw, t)
+        assert not [it for it in items(r, "EL") if it.system.startswith("Stand-alone")]
+    ne = [it for it in items(report(occupancy="business", height_m=10), "EL")
+          if it.system.endswith("NOT EVALUATED")]
+    assert len(ne) == 1 and ne[0].status == "required" and "P4 Q1" in ne[0].detail
     hi = report(occupancy="business", height_m=40)
     assert [x.system for x in el_system_types(hi)] == [
         "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"]

@@ -21,7 +21,7 @@ Occupancy = Literal[
     "assembly_a", "assembly_b", "assembly_c",
     "business",
     "education_a", "education_b", "education_c",
-    "mercantile_a", "mercantile_b",
+    "mercantile_a", "mercantile_b", "mercantile_c",
     "healthcare_a", "healthcare_b", "healthcare_c",
     "hotel_a", "hotel_b", "hotel_c",
     "daycare_a", "daycare_b", "daycare_c",
@@ -45,7 +45,7 @@ OCCUPANCY_DEFS = {
     "assembly_a": "Assembly Group A - Table 1.1 row 1 (p.48): banquet halls, night clubs, discos, restaurants with more than 50 people, pubs, bars, theaters, concert halls, cinemas, indoor stadiums, studios with audience, exhibition halls, casinos.",
     "assembly_b": "Assembly Group B - Table 1.1 row 1 (p.48): amusement parks, grandstands, outdoor stadiums, bleachers, swimming pools, skating rinks, indoor kid's play areas, bowling alleys, pool/billiard parlors, waiting areas in transportation terminals, airport terminal buildings, food courts and seating areas.",
     "assembly_c": "Assembly Group C - Table 1.1 row 1 (p.48): art galleries, community halls, mosques, churches, temples, courtrooms, funeral parlors, gymnasiums, fitness centers, seminar halls, libraries, museums, open air theaters, amphitheaters, parks, beaches.",
-    "business": "Business - Table 1.1 row 2 (p.48), Groups A, B and C together: A electronic data processing, telephone exchanges, radio and television stations, laboratories, testing and research, airport traffic control towers; B offices, modular site offices, banks, government offices, post offices, money exchange centers, sales and marketing offices, professional / consultancy services; C barber shops, beauty shops, massage centers, typing centers, translation centers, print shops, photo studios.",
+    "business": "Business - Table 1.1 row 2 (p.48), Group A, B or C (choose the group; the Ch 3, 8 and 9 tables print 'Business Group A, B, C' together): A electronic data processing, telephone exchanges, radio and television stations, laboratories, testing and research, airport traffic control towers; B offices, modular site offices, banks, government offices, post offices, money exchange centers, sales and marketing offices, professional / consultancy services; C barber shops, beauty shops, massage centers, typing centers, translation centers, print shops, photo studios.",
     # NOTE: Education group letters swapped 2026-05 to match UAE FLSC Ch 3 #5.3 / Table 3.13.3.
     # Per code: Group A = Nurseries / KG / Preschool (Table 3.20); Group B/C = Schools and Colleges
     # / Universities (Table 3.21). Schema IDs preserved (education_a/_b/_c) for backward compat
@@ -55,6 +55,7 @@ OCCUPANCY_DEFS = {
     "education_c": "Educational Group C - Table 1.1 row 3 (p.48): colleges, universities, training centers for adults (Table 3.21).",
     "mercantile_a": "Mercantile Group A - Table 1.1 row 11 (p.50): hardware stores, paint stores, chemical stores, furniture stores, motor vehicle showrooms, restaurants with less than 50 people. (Ch 1 #1.7.9 Class A/B/C by area and storeys, p.41, is a separate classification.)",
     "mercantile_b": "Mercantile Group B - Table 1.1 row 11 (p.50): department stores, supermarkets, hypermarkets, shopping centers, anchor stores, showrooms, retail stores, whole sale stores, boutiques, drugstores, gift shops. (Ch 1 #1.7.9 Class A/B/C by area and storeys, p.41, is a separate classification.)",
+    "mercantile_c": "Mercantile Group C - Table 1.1 row 11 (p.50): kiosks, food trucks, mercantile trucks. Choose the type. A kiosk follows Table 9.20.b row C (midrise, p.701) or Table 9.21.b (lowrise, by inference; owner ruling 13.10.2026, P4 Q4) plus Ch 1 Table 1.9 item 48 (p.98); a truck gets only its own items (owner ruling 13.10.2026, P4 Q5).",
     "healthcare_a": "Healthcare Group A - Table 1.1 row 4 (p.48): hospitals, limited care facilities, nursing homes, mental asylums (Table 3.22).",
     "healthcare_b": "Healthcare Group B - Table 1.1 row 4 (p.48): clinics (Table 3.22). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with residential / business), NOT the public-assembly Table 9.20.a / 9.21.a used by Healthcare Group A hospitals.",
     "healthcare_c": "Healthcare Group C - Table 1.1 row 4 (p.48): ambulatory health care center (Table 3.23). Mid/low-rise fire protection follows Table 9.20.b / 9.21.b (with Healthcare Group B), not Table 9.20.a / 9.21.a.",
@@ -111,6 +112,9 @@ HAZARD_BY_OCCUPANCY = {
     "business": "LH",
     "education_a": "LH", "education_b": "LH", "education_c": "LH",
     "mercantile_a": "OH1", "mercantile_b": "OH1",
+    # Owner ruling 13.10.2026, P4 Q3: #1.1.13 does not list Mercantile C; OH1 as the
+    # mercantile family (#1.1.13.2.e-f, p.528).
+    "mercantile_c": "OH1",
     "healthcare_a": "LH", "healthcare_b": "LH", "healthcare_c": "LH",
     "hotel_a": "OH1", "hotel_b": "OH1", "hotel_c": "OH1",
     "daycare_a": "LH", "daycare_b": "LH", "daycare_c": "LH",
@@ -144,6 +148,9 @@ MIDRISE_RESIDENTIAL = {
     "residential", "labour_accommodation", "staff_accommodation",
     "hostel", "business", "animal_housing",
     "healthcare_b", "healthcare_c",
+    # Table 9.20.b row C MERCANTILE GROUP C (KIOSKS), p.701; lowrise Table 9.21.b by
+    # inference (owner ruling 13.10.2026, P4 Q4).
+    "mercantile_c",
 }
 LOWRISE_PUBLIC = MIDRISE_PUBLIC | {
     "detention_a", "detention_b", "detention_c", "low_depth_underground",
@@ -167,9 +174,33 @@ ANIMAL_HOUSING_GROUPS = {
 }
 
 
-def default_hazard(occ: str, animal_housing_group: Optional[str] = None) -> str:
+# Owner rulings 13.10.2026, P4 Q1-Q2: Business Groups A / B / C (Table 1.1 row 2, p.48).
+# #1.1.13 does not list Business: LH for every group, except a post office (Group B),
+# which #1.1.13.3.c (p.529) lists under Ordinary Hazard Group 2.
+BUSINESS_GROUPS = {
+    "A": "electronic data processing, telephone exchanges, radio and television stations, "
+         "laboratories, testing and research, airport traffic control towers",
+    "B": "offices, modular site offices, banks, government offices, post offices, money "
+         "exchange centers, sales and marketing offices, professional / consultancy services",
+    "C": "barber shops, beauty shops, massage centers, typing centers, translation centers, "
+         "print shops, photo studios",
+}
+# Owner ruling 13.10.2026, P4 Q5: Mercantile Group C type (Table 1.1 row 11, p.50).
+MERCANTILE_C_TYPES = {
+    "kiosk_permanent": "Kiosk (permanent)",
+    "kiosk_temporary": "Kiosk (temporary)",
+    "food_truck": "Food truck",
+    "mercantile_truck": "Mercantile truck",
+}
+MERCANTILE_C_TRUCKS = ("food_truck", "mercantile_truck")
+
+
+def default_hazard(occ: str, animal_housing_group: Optional[str] = None,
+                   is_post_office: bool = False) -> str:
     if occ == "animal_housing" and animal_housing_group in ANIMAL_HOUSING_GROUPS:
         return ANIMAL_HOUSING_GROUPS[animal_housing_group][0]
+    if occ == "business" and is_post_office:
+        return "OH2"   # #1.1.13.3.c, p.529; owner ruling 13.10.2026, P4 Q2
     return HAZARD_BY_OCCUPANCY.get(occ, "OH1")
 
 
@@ -378,11 +409,19 @@ class Building(BaseModel):
     # not separated, with a ground floor built up area of more than 3600 m2, irrespective of
     # the number of storeys, shall be considered as Malls (audit ENG-02).
     mercantile_multi_tenant: bool = False
-    # Owner ruling 12.10.2026, P3 Ch47 Q3: Business Group C (Table 1.1 p.48) and Mercantile
-    # Group C (Table 1.1 p.50, #1.7.9.2 p.41). Below 23 m Ch 6 Table 6.5 item 11 / 12
-    # (stand-alone EL, p.419) governs; from 23 m the height rows govern.
-    is_business_group_c: bool = False
-    is_mercantile_group_c: bool = False
+    # Owner rulings 13.10.2026, P4 Q1-Q2: the Business group (Table 1.1 row 2, p.48),
+    # required, no default; Group C drives Ch 6 Table 6.5 item 11 (p.419) below 23 m
+    # (owner ruling 12.10.2026, P3 Ch47 Q3). A post office (Group B) is OH2
+    # (#1.1.13.3.c, p.529).
+    business_group: Optional[Literal["A", "B", "C"]] = None
+    is_post_office: bool = False
+    # Owner ruling 13.10.2026, P4 Q5: Mercantile Group C type, required, no default.
+    mercantile_c_type: Optional[Literal["kiosk_permanent", "kiosk_temporary",
+                                        "food_truck", "mercantile_truck"]] = None
+    # Ch 1 Table 1.9 item 48 iii (p.98): kiosks located at sprinkler protected areas and
+    # mall buildings shall be provided with automatic sprinkler system. None = not
+    # entered: that line is NOT EVALUATED by name.
+    kiosk_in_sprinklered_area_or_mall: Optional[bool] = None
     tunnel_length_m: float = 0.0
 
 
@@ -465,6 +504,65 @@ class Building(BaseModel):
                 and "hazard_class" not in self.model_fields_set):
             self.hazard_class = ANIMAL_HOUSING_GROUPS[self.animal_housing_group][0]
         return self
+
+    @model_validator(mode="after")
+    def _business_group_hazard(self):
+        """Owner rulings 13.10.2026, P4 Q1-Q2: a post office is Business Group B, OH2
+        (#1.1.13.3.c, p.529) unless a hazard class was given explicitly (an override)."""
+        if self.is_post_office and not (self.occupancy == "business"
+                                        and self.business_group == "B"):
+            raise ValueError("'Post office' applies to Business Group B only (Table 1.1 "
+                             "row 2, p.48).")
+        if self.is_post_office and "hazard_class" not in self.model_fields_set:
+            self.hazard_class = "OH2"
+        return self
+
+    @model_validator(mode="after")
+    def _mercantile_c_not_secondary(self):
+        """A kiosk or truck is evaluated as its own Mercantile Group C building (owner
+        rulings 13.10.2026, P4 Q4-Q5), never as another listed occupancy."""
+        if "mercantile_c" in self.secondary_occupancies:
+            raise ValueError("Mercantile Group C (kiosks, food trucks, mercantile trucks) "
+                             "cannot be a listed other occupancy: evaluate it as its own "
+                             "building.")
+        if self.occupancy == "mercantile_c" and self.secondary_occupancies:
+            raise ValueError("A Mercantile Group C kiosk or truck is evaluated as its own "
+                             "building: clear the listed other occupancies.")
+        return self
+
+    @property
+    def is_business_group_c(self) -> bool:
+        """Ch 6 Table 6.5 item 11 BUSINESS, GROUP C (p.419)."""
+        return self.occupancy == "business" and self.business_group == "C"
+
+    @property
+    def is_mercantile_group_c(self) -> bool:
+        """Ch 6 Table 6.5 item 12 MERCANTILE, GROUP C (p.419)."""
+        return self.occupancy == "mercantile_c"
+
+    @property
+    def is_mercantile_c_truck(self) -> bool:
+        return self.occupancy == "mercantile_c" and self.mercantile_c_type in MERCANTILE_C_TRUCKS
+
+    @property
+    def is_kiosk(self) -> bool:
+        return self.occupancy == "mercantile_c" and self.mercantile_c_type in (
+            "kiosk_permanent", "kiosk_temporary")
+
+    @property
+    def occupancy_qualifier(self) -> str:
+        """The group / type printed beside the occupancy in reports (empty when none)."""
+        if self.occupancy == "animal_housing" and self.animal_housing_group:
+            return f"Group {self.animal_housing_group}, #1.1.13"
+        if self.occupancy == "business":
+            if self.business_group is None:
+                return "group not chosen"
+            return f"Group {self.business_group}" + (
+                ", post office, OH2 #1.1.13.3.c" if self.is_post_office else "")
+        if self.occupancy == "mercantile_c":
+            return (MERCANTILE_C_TYPES[self.mercantile_c_type] if self.mercantile_c_type
+                    else "type not chosen")
+        return ""
 
     @model_validator(mode="after")
     def _parking_levels_within_building(self):

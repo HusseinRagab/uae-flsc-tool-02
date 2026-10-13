@@ -298,7 +298,7 @@ branches:
 
   # ------ Mercantile / Mall ------
   - id: moe_mercantile
-    match: {occupancy_in: [mercantile_a, mercantile_b], hazard_class_in: [LH, OH1, OH2]}
+    match: {occupancy_in: [mercantile_a, mercantile_b, mercantile_c], hazard_class_in: [LH, OH1, OH2]}
     section: "Ch 3, #4 + #5.11 / Tables 3.13.13 + 3.16"
     page: "p.286, 294"
     systems:
@@ -313,7 +313,7 @@ branches:
   # High-hazard mercantile - matches main mercantile occupancies BUT only when hazard_class = HH.
   # Per Table 3.16 row 13.iii the sprinkler discount is removed and travel is severely tightened.
   - id: moe_mercantile_high_hazard
-    match: {occupancy_in: [mercantile_a, mercantile_b], hazard_class_is: HH}
+    match: {occupancy_in: [mercantile_a, mercantile_b, mercantile_c], hazard_class_is: HH}
     section: "Ch 3, #4 + #5.11 / Table 3.16 row 13.iii"
     page: "p.294"
     systems:

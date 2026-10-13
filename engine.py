@@ -26,6 +26,7 @@ import yaml
 from flsc_schema import (
     Building, ChapterReport, ComplianceReport, HighCeilingSpec,
     Requirement, SectionBlock, occupancy_group, default_hazard, ANIMAL_HOUSING_GROUPS,
+    MERCANTILE_C_TYPES,
 )
 from occupant_load import compute_occupant_load
 from fire_access import evaluate_fire_access, compute_fire_access
@@ -387,7 +388,8 @@ def building_sprinklered(b: Building, fp_rules: Optional[Dict[str, Any]] = None)
         return False
     gen = _collect_general(rules, b)
     branch_items = _collect_branch(rules.get("branches", []), b)[0]
-    return _sprinkler_required(list(gen) + list(branch_items))
+    kiosk = _collect_flag(rules.get("kiosk_item_48", []), b)   # Table 1.9 item 48 iii
+    return _sprinkler_required(list(gen) + list(branch_items) + list(kiosk))
 
 
 def _fa_row_automatic_detection(b: Building, fa_rules: Dict[str, Any]) -> bool:
@@ -590,6 +592,11 @@ def _with_robotic_eh2(b: Building) -> Building:
     return b
 
 
+_P4_Q4_NOTE = (" Mercantile Group C (kiosks) is not listed in Table 9.21.b (p.707-708); this "
+               "row is applied by inference from its midrise twin, Table 9.20.b row C "
+               "MERCANTILE GROUP C (KIOSKS), p.701 (owner ruling 13.10.2026, P4 Q4).")
+
+
 # ---------------------------- Per-chapter evaluators -------------------------
 
 def evaluate_fp(b: Building, rules: Dict[str, Any],
@@ -628,14 +635,27 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
             and any("storage_gf_bua_sum_m2" in str(br.get("match")) for br in _matched)):
         branch_items = [_gf_bua_sum_not_evaluated_line()] + list(branch_items)
 
+    # Owner ruling 13.10.2026, P4 Q4: Table 9.21.b does not list Mercantile Group C; a
+    # lowrise kiosk takes it by inference from its midrise twin, Table 9.20.b row C.
+    if b.occupancy == "mercantile_c" and sel_id and sel_id.startswith("lowrise_residential"):
+        branch_items = [it.model_copy(update={"detail": (it.detail or "") + _P4_Q4_NOTE})
+                        for it in branch_items]
+        sel_section = f"{sel_section} (Mercantile Group C by inference, owner ruling 13.10.2026, P4 Q4)"
+
     if branch_items:
         blocks.append(SectionBlock(title="FP - Branch Requirements (Ch 9)", items=_dedupe(branch_items)))
+
+    # Ch 1 Table 1.9 item 48 KIOSKS (p.98), owner rulings 13.10.2026, P4 Q4-Q5.
+    kiosk_items = _dedupe(_collect_flag(rules.get("kiosk_item_48", []), b))
+    if kiosk_items:
+        blocks.append(SectionBlock(title="FP - Kiosk (Ch 1, Table 1.9 item 48)", items=kiosk_items))
 
     # Determine if matched FP branch + general REQUIRES (status=required) any sprinkler system.
     # Various-locations items annotated with `requires_sprinkler_system: true` are suppressed
     # when the building's branch does not mandate sprinklers (e.g. small villas where
     # sprinklers are only "recommended").
-    sprinkler_required = host_sprinklered or _sprinkler_required(list(gen) + list(branch_items))
+    sprinkler_required = host_sprinklered or _sprinkler_required(
+        list(gen) + list(branch_items) + list(kiosk_items))
     # #4.13.1 (p.749): Table 9.29 extends the building sprinkler system. Ruling R8
     # (12.10.2026): gated rows print a #4.13.1 not_required note in a building whose
     # table row gives no automatic sprinkler system.
@@ -840,18 +860,31 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     # Owner ruling 12.10.2026, P3 follow-up F-a2: a Business / Mercantile Group C
     # stand-alone building with the amusement box ticked takes Table 6.5 item 4; item 11
     # / 12 (stand-alone) is not applied (the YAML rows already exclude it).
-    group_c = ((b.occupancy == "business" and b.is_business_group_c)
-               or (b.occupancy in ("mercantile_a", "mercantile_b") and b.is_mercantile_group_c))
-    if group_c and b.has_amusement_confounding:
+    if (b.is_business_group_c or b.is_mercantile_group_c) and b.has_amusement_confounding:
         item = "11" if b.occupancy == "business" else "12"
         kind = "Business" if b.occupancy == "business" else "Mercantile"
-        note = (f" {kind} Group C (stand-alone) is also ticked: Table 6.5 item 4 AMUSEMENT "
+        note = (f" {kind} Group C is also chosen: Table 6.5 item 4 AMUSEMENT "
                 f"BUILDINGS governs and item {item} (stand-alone self-contained, Section 3.4) is "
                 f"not applied (owner ruling 12.10.2026, P3 follow-up F-a2).")
         branch_items = [it.model_copy(update={"detail": (it.detail or "") + note})
                         if it.source_rule == "el_amusement_standalone"
                         and it.system.startswith("Central Battery") else it
                         for it in branch_items]
+    # Owner ruling 13.10.2026, P4 Q1: below 23 m the Business group decides item 11
+    # (Group C) or the height row (items 5-6). The main Business occupancy with no group
+    # chosen is NOT EVALUATED by name. A listed other Business occupancy (R13) has no
+    # group input: it keeps the height row, the more onerous of the two.
+    if (b.occupancy == "business" and b.business_group is None and b.height_m < 23
+            and not b.has_amusement_confounding):
+        src = _R13_SOURCE.get()
+        if src is not None and src.occupancy != "business":
+            branch_items = [it.model_copy(update={"detail": (it.detail or "") + (
+                " Business is a listed other occupancy with no group input: the height row "
+                "(Table 6.5 items 5-6, monitored) is kept, the more onerous of items 5-6 and "
+                "item 11 (Business Group C, stand-alone) under ruling R13 most restrictive "
+                "(owner ruling 13.10.2026, P4 Q1).")}) for it in branch_items]
+        else:
+            branch_items = [_business_group_not_evaluated_el()]
     if branch_items:
         blocks.append(SectionBlock(title="EL - System Type Selection (Ch 6, Table 6.5)", items=_dedupe(branch_items)))
 
@@ -860,6 +893,21 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         selected_branch=sel_id, selected_branch_section=sel_section,
         blocks=blocks,
     )
+
+
+def _business_group_not_evaluated_el() -> Requirement:
+    return Requirement(
+        system="Emergency Lighting System Type (Business) - NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: choose the Business group (A, B or C)",
+        detail=("Below 23 m Table 6.5 (p.419) gives item 11 BUSINESS, GROUP C a stand alone "
+                "self contained emergency lighting system (Section 3.4) and other buildings "
+                "the low rise / midrise row, items 5-6, a monitored type self contained "
+                "system (Section 3.3). The Business group (Table 1.1 row 2, p.48) was not "
+                "chosen, so the system type is not evaluated (owner ruling 13.10.2026, "
+                "P4 Q1)."),
+        code_ref="Ch 6, #4.3 / Table 6.5 items 5-6, 11", page_ref="p.419",
+        source_rule="p4_q1_business_group")
 
 
 def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
@@ -1133,7 +1181,7 @@ def build_rule_lookup() -> Dict[str, Dict[str, Any]]:
                 lookup[rid] = {"file": yf.name, "kind": "branch",
                                "match": rule.get("match", {}) or {}}
         for section_key in ("auxiliary_rooms", "equipment", "addons",
-                            "various_locations"):
+                            "various_locations", "kiosk_item_48"):
             for rule in (d.get(section_key) or []):
                 rid = rule.get("id")
                 if not rid:
@@ -1775,7 +1823,7 @@ def _evaluate_single(b: Building) -> ComplianceReport:
     ol = compute_occupant_load(b)
     fa_summary = compute_fire_access(b, requires_wet_riser=wet, sprinklered=spr)
 
-    return ComplianceReport(
+    r = ComplianceReport(
         building=b,
         chapters=chapters,
         requires_wet_riser=wet,
@@ -1785,6 +1833,72 @@ def _evaluate_single(b: Building) -> ComplianceReport:
         fire_access=fa_summary,
         mixed_occupancy_note=_mixed_occupancy_note(b),
     )
+    if b.occupancy == "mercantile_c" and not b.is_kiosk:
+        r = _mercantile_c_scope(r)
+    return r
+
+
+# Owner ruling 13.10.2026, P4 Q5: a food truck or mercantile truck (Mercantile Group C)
+# takes only its own items: Ch 4 extinguishers as mercantile, Ch 8 Table 8.14 item 34 /
+# 35 heat detector, Ch 6 Table 6.5 item 12 and, with LPG, Ch 11 Table 11.3. Every other
+# chapter is named not applicable. With no type chosen every chapter is NOT EVALUATED.
+_TRUCK_KEEP = {
+    "FE": None,    # whole chapter
+    "LPG": None,   # whole chapter
+    "FA": ("fa_aux_food_truck", "fa_aux_mercantile_truck_required"),
+    "EL": ("el_mercantile_group_c", "el_amusement_standalone"),
+}
+
+
+def _mercantile_c_scope(r: ComplianceReport) -> ComplianceReport:
+    b = r.building
+    if b.mercantile_c_type is None:
+        line = Requirement(
+            system="Mercantile Group C Type - NOT EVALUATED",
+            status="required",
+            spec="Not evaluated: choose kiosk (permanent or temporary), food truck or "
+                 "mercantile truck",
+            detail=("Table 1.1 row 11 (p.50) Mercantile Group C covers kiosks, food trucks "
+                    "and mercantile trucks. A kiosk follows Table 9.20.b row C (p.701) or "
+                    "Table 9.21.b with Ch 1 Table 1.9 item 48 (p.98); a truck takes only its "
+                    "own items. The type was not chosen, so this chapter is not evaluated "
+                    "(owner ruling 13.10.2026, P4 Q5)."),
+            code_ref="Ch 1, Table 1.1 row 11", page_ref="p.50",
+            source_rule="p4_q5_mercantile_c_type")
+        chapters = [c.model_copy(update={
+            "blocks": [SectionBlock(title=f"{c.chapter_code} - NOT EVALUATED", items=[line])],
+            "selected_branch": None, "selected_branch_section": None}) for c in r.chapters]
+    else:
+        kind = MERCANTILE_C_TYPES[b.mercantile_c_type].lower()
+        chapters = []
+        for c in r.chapters:
+            keep = _TRUCK_KEEP.get(c.chapter_code, ())
+            if keep is None:
+                chapters.append(c)
+                continue
+            items = [it for blk in c.blocks for it in blk.items if it.source_rule in keep]
+            if items:
+                chapters.append(c.model_copy(update={
+                    "blocks": [SectionBlock(title=f"{c.chapter_code} - {kind.capitalize()} "
+                                                  f"(Mercantile Group C)", items=items)]}))
+                continue
+            chapters.append(c.model_copy(update={
+                "selected_branch": None, "selected_branch_section": None,
+                "blocks": [SectionBlock(title=f"{c.chapter_code} - Not applicable", items=[
+                    Requirement(
+                        system=f"{c.chapter_title} - Not Applicable to a {kind.capitalize()}",
+                        status="not_required",
+                        detail=(f"Table 1.1 row 11 (p.50) lists the {kind} under Mercantile "
+                                f"Group C. A truck takes only its own items: Ch 4 fire "
+                                f"extinguishers, Ch 8 Table 8.14 item 34 / 35 heat detector "
+                                f"(p.511), Ch 6 Table 6.5 item 12 (p.419) and, with LPG "
+                                f"cylinders, Ch 11 Table 11.3 (p.899). This chapter's "
+                                f"building rows are not applied to a truck (owner ruling "
+                                f"13.10.2026, P4 Q5)."),
+                        source_rule="p4_q5_truck_not_applicable")])]}))
+    return r.model_copy(update={
+        "chapters": chapters, "attached_parking_chapters": [], "occupant_load": None,
+        "fire_access": None, "high_ceiling": None, "requires_wet_riser": False})
 
 
 # ---------------------------- Markdown renderer ------------------------------
@@ -1797,8 +1911,8 @@ def report_to_markdown(r: ComplianceReport) -> str:
         L.append(f"**Project:** {b.project_name}")
     L.append("")
     L.append("## Building profile")
-    _grp = (f" (Group {b.animal_housing_group}, #1.1.13)"   # owner answer 12.10.2026, Ch9 Q6
-            if b.occupancy == "animal_housing" and b.animal_housing_group else "")
+    # Owner answer 12.10.2026, Ch9 Q6; owner rulings 13.10.2026, P4 Q1 / Q5
+    _grp = f" ({b.occupancy_qualifier})" if b.occupancy_qualifier else ""
     L.append(f"- Occupancy: `{b.occupancy}`{_grp}")
     L.append(f"- Height: {b.height_m} m  ->  class: **{b.height_class}**")
     L.append(f"- Storeys: {b.floors_above_grade} above + {b.floors_below_grade} basement")

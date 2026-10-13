@@ -117,7 +117,7 @@ _ROWS_BY_OCCUPANCY: Dict[str, List[str]] = {
     **{o: ["11.i", "11.ii"] for o in ("hotel_a", "hotel_b", "hotel_c")},
     **{o: ["12"] for o in ("daycare_a", "daycare_b", "daycare_c")},
     **{o: ["13.i", "13.ii", "13.iii", "13.iv", "13.v", "13.vi"]
-       for o in ("mercantile_a", "mercantile_b")},
+       for o in ("mercantile_a", "mercantile_b", "mercantile_c")},
     "parking_enclosed": ["19.i"], "parking_open": ["19.ii"],
     "animal_housing": ["21"],
 }

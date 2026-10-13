@@ -9,6 +9,36 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-13 — Phase 4: Mercantile Group C and Business Groups A/B/C (6 cards, 00:49Z, all option A)
+
+Log: project files `uae_flsc_tool/phase4/ANSWERS_13.10.2026.md`; scope `SCOPE_phase4_13.10.2026.md`.
+- Q1 Business: required A/B/C selector, no default (`business_group`). Group C = Table 6.5 item 11
+  (p.419) below 23 m. No group: the app stops by name; the report prints the Ch 6 system type
+  NOT EVALUATED. A Business listed as another occupancy (R13) has no group input and keeps the
+  height row (items 5-6, the more onerous), named. Old "Business Group C (stand-alone)" tick is
+  not carried into the group; the stop names it.
+- Q2 hazard: LH for every group; "Post office" (Group B only) = OH2 (#1.1.13.3.c, p.529).
+- Q3 Mercantile C: OH1, override available.
+- Q4 new occupancy `mercantile_c`: midrise Table 9.20.b row C (p.701); lowrise Table 9.21.b by
+  inference (cited on every row line) plus Ch 1 Table 1.9 item 48 (p.98) lines i-v; item 48 iii
+  sprinklers needs the new kiosk location input (blank = NOT EVALUATED; yes = sprinklered building).
+- Q5 type required: kiosk permanent / temporary (temporary adds Table 8.14 item 31), food truck,
+  mercantile truck. Trucks keep Ch 4 (as mercantile), Ch 8 item 34 / 35 (p.511), Ch 6 item 12
+  (default picked: Table 6.5 names Mercantile Group C) and Ch 11 (Table 11.3 when LPG); every
+  other chapter "Not applicable" by name. No type: every chapter NOT EVALUATED. Mercantile C is
+  refused as a listed other occupancy and cannot list others (default picked). App: kiosk area
+  (GF BUA) above 18 m2 stops (item 48 v).
+- Q6 old files with the "Mercantile Group C (stand-alone)" tick load, then stop by name until the
+  tick is cleared or the occupancy is set to Mercantile C.
+- Ch 3 / 4 / 5 / 7 mercantile rows and Table 3.13 row 13 now include Mercantile C (printed without
+  a group).
+- Grid vs master (6552 cases): only Ch 6 changes. Business with no group: EL type NOT EVALUATED
+  (72 cases). Business with a group, Mercantile A and B: the conditional "Group C only" prompt is
+  gone (72 cases each). Pump, tank, sprinkler, FA lines unchanged. 168 new mercantile_c cases, 0
+  errors.
+- Tests: 291 pytest (16 new in tests/test_phase4.py, 4 re-pointed from the two ticks; app tests
+  that use Business now choose Group B), 112 cases (1 re-pointed), structural 0.
+
 ### 2026-10-13 — Phase 3 merged to master on Hussein's go (PR #23, eb9faa9)
 
 - Card "Merge, then phase 4" (00:29Z). Master verified: 275 pytest, 112 cases, structural 0;
@@ -281,10 +311,11 @@ the 750 gpm row of 9.24.C.2.
 | P3 cards (24) | Ch 10 Q1-Q4, Ch 11 Q1-Q7, Ch 4-7 Q1-Q3, storey Q1-Q4, app Q1-Q6 | answered 12.10 16:27Z, coded (App Q4 = phase 4) |
 | P3 follow-ups (5) | cylinder new-building default, villa EAP, flame effect alarm, amusement vs Group C, parking depth | answered 17:07Z, coded |
 | P3 follow-ups (2) | flame-effect sprinkler check across R13 occupancies; parking depth with 0 levels | ruled 13.10 (All occupancies; Refuse it), coded |
+| P4 Q1-Q6 | Business group form and hazard, Mercantile C hazard, lowrise kiosk row, Mercantile C type, old files with the Group C tick | ruled 13.10 00:49Z (all option A), coded on PR #24 |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
-Phase 3 is on the branch (draft PR); see the log entry.
+Phases 1-3 are on master; phase 4 is on draft PR #24 (see the log entry).
 
 ## Known, not fixed in phase 1
 
@@ -302,4 +333,4 @@ python3 tests/test_cases.py
 python3 _structural_check.py
 ```
 
-*Last updated: 2026-10-12*
+*Last updated: 2026-10-13*

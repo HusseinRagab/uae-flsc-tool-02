@@ -36,22 +36,23 @@ def get(r, code, prefix):
 def test_F_a2_amusement_with_group_c_keeps_table_6_5_item_4():
     """Table 6.5 p.419: item 4 AMUSEMENT BUILDINGS (Central Battery OR Monitored) governs over
     item 11 / 12 (stand-alone) when both boxes are ticked. The governing row was already coded
-    by package a2; the ruling citation is new."""
-    for occ, flag, item in (("business", "is_business_group_c", "item 11"),
-                            ("mercantile_a", "is_mercantile_group_c", "item 12"),
-                            ("mercantile_b", "is_mercantile_group_c", "item 12")):
-        r = report(occupancy=occ, height_m=10, ground_floor_bua_m2=200,
-                   has_amusement_confounding=True, **{flag: True})
+    by package a2; the ruling citation is new. Re-pointed 13.10.2026 (owner rulings P4 Q1 /
+    Q5): Group C is the Business group or the Mercantile Group C occupancy."""
+    for kw, item in ((dict(occupancy="business", business_group="C"), "item 11"),
+                     (dict(occupancy="mercantile_c", mercantile_c_type="kiosk_permanent"),
+                      "item 12")):
+        occ = kw["occupancy"]
+        r = report(height_m=10, ground_floor_bua_m2=15, has_amusement_confounding=True, **kw)
         cb = get(r, "EL", CB)
         assert cb.status == "required" and "Table 6.5 item 4" in cb.code_ref
         assert "P3 follow-up F-a2" in cb.detail and item in cb.detail, (occ, cb.detail)
         assert not [it for it in items(r, "EL") if it.system.startswith("Stand-alone")], occ
         # Group C without amusement: item 11 / 12 governs, no F-a2 citation
-        plain = report(occupancy=occ, height_m=10, ground_floor_bua_m2=200, **{flag: True})
+        plain = report(height_m=10, ground_floor_bua_m2=15, **kw)
         assert get(plain, "EL", "Stand-alone").status == "required"
         assert not [it for it in items(plain, "EL") if "F-a2" in (it.detail or "")]
     # amusement without Group C: item 4, no F-a2 citation
-    r = report(occupancy="business", height_m=10, ground_floor_bua_m2=200,
+    r = report(occupancy="business", business_group="B", height_m=10, ground_floor_bua_m2=200,
                has_amusement_confounding=True)
     assert "F-a2" not in get(r, "EL", CB).detail
 

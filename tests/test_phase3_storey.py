@@ -196,7 +196,8 @@ def test_F6_app_saves_and_validates_the_table():
 def test_F6_app_table_drives_the_occupant_load_card():
     at = _app_test({"occupancy_chosen": ("Business / Office", "business"),
                     "occupancy_category_select": "Business / Office",
-                    "occupancy_sub_select": "business", "height_m_input": 12.0,
+                    "occupancy_sub_select": "business", "business_group_input": "B",
+                    "height_m_input": 12.0,
                     "floors_above_input": 3, "floors_below_input": 0,
                     "gfa_input": 9000.0, "ground_bua_input": 3000.0,
                     "plot_area_input": 9000.0, "storey_table_base": TABLE})
@@ -207,7 +208,8 @@ def test_F6_app_table_drives_the_occupant_load_card():
     assert not at.warning
     at = _app_test({"occupancy_chosen": ("Business / Office", "business"),
                     "occupancy_category_select": "Business / Office",
-                    "occupancy_sub_select": "business", "height_m_input": 12.0,
+                    "occupancy_sub_select": "business", "business_group_input": "B",
+                    "height_m_input": 12.0,
                     "floors_above_input": 3, "floors_below_input": 0,
                     "gfa_input": 5000.0, "ground_bua_input": 3000.0,
                     "plot_area_input": 9000.0, "storey_table_base": TABLE})

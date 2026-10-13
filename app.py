@@ -25,7 +25,8 @@ import streamlit as st
 import yaml as _yaml
 
 from flsc_schema import (Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER,
-                         HAZARD_NOT_CLASSIFIED, ANIMAL_HOUSING_GROUPS)
+                         HAZARD_NOT_CLASSIFIED, ANIMAL_HOUSING_GROUPS, BUSINESS_GROUPS,
+                         MERCANTILE_C_TYPES)
 from engine import evaluate, report_to_markdown, build_rule_lookup, lpg_input_stops
 from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
 from figures import figure_caption, figures_for
@@ -144,7 +145,7 @@ OCCUPANCY_OPTIONS = {
     "Business / Office": ["business"],
     "Assembly": ["assembly_a", "assembly_b", "assembly_c"],
     "Mall": ["mall_covered", "mall_open", "mall_mixed"],
-    "Mercantile": ["mercantile_a", "mercantile_b"],
+    "Mercantile": ["mercantile_a", "mercantile_b", "mercantile_c"],   # P4 (13.10.2026)
     "Education": ["education_a", "education_b", "education_c"],
     "Healthcare": ["healthcare_a", "healthcare_b", "healthcare_c"],
     "Daycare": ["daycare_a", "daycare_b", "daycare_c"],
@@ -333,6 +334,12 @@ def _invalid_scenario_values(data: dict) -> list:
         "lpg_flame_effect_show_input": ("Flame effect show", (None, "indoor", "outdoor", "both")),
         # Owner ruling 12.10.2026, P3 follow-up F-a1-1: #2.2.4, required, no pre-fill
         "new_or_modified_building_input": ("New or modified building", (None, "new", "existing")),
+        # Owner rulings 13.10.2026, P4 Q1 / Q5, required, no pre-fill
+        "business_group_input": ("Business group", (None, "A", "B", "C")),
+        "mercantile_c_type_input": ("Mercantile Group C type", (
+            None, "kiosk_permanent", "kiosk_temporary", "food_truck", "mercantile_truck")),
+        "kiosk_location_input": ("Kiosk location (Table 1.9 item 48 iii)", (
+            None, "sprinklered_or_mall", "other")),
     }
     # Ch3 Q2 per-use areas (owner ruling 12.10.2026): known Table 3.13 rows, at most
     # as many rows as the sidebar offers.
@@ -644,12 +651,28 @@ INCOMPATIBLE_FLAGS_BY_OCC = {
 }
 
 
-# Owner ruling 12.10.2026, P3 Ch47 Q3: flags that apply to listed occupancies only;
-# every other occupancy clears them on an occupancy change.
+# Flags that apply to listed occupancies only; every other occupancy clears them on an
+# occupancy change. is_mercantile_group_c is the old 'Mercantile Group C (stand-alone)'
+# tick, kept only so an older file stops until it is resolved (owner ruling 13.10.2026,
+# P4 Q6). Post office: owner ruling 13.10.2026, P4 Q2.
 OCC_ONLY_FLAGS = {
-    "is_business_group_c": ("business",),
     "is_mercantile_group_c": ("mercantile_a", "mercantile_b"),
+    "is_post_office": ("business",),
 }
+
+
+def _p4_building_kwargs(occupancy: str) -> dict:
+    """Owner rulings 13.10.2026, P4 Q1-Q5: the Business group, post office, Mercantile
+    Group C type and kiosk location, each passed only where it applies."""
+    ss = st.session_state
+    grp = ss.get("business_group_input") if occupancy == "business" else None
+    mtype = ss.get("mercantile_c_type_input") if occupancy == "mercantile_c" else None
+    loc = (ss.get("kiosk_location_input")
+           if mtype in ("kiosk_permanent", "kiosk_temporary") else None)
+    return {"business_group": grp,
+            "is_post_office": bool(ss.get("is_post_office")) and grp == "B",
+            "mercantile_c_type": mtype,
+            "kiosk_in_sprinklered_area_or_mall": None if loc is None else loc == "sprinklered_or_mall"}
 
 
 def _apply_incompatible_flag_reset(occupancy: str) -> None:
@@ -888,7 +911,9 @@ with st.sidebar:
             "height_datum_input", "construction_type_input", "hazard_override_input",
             # Hazard / occupancy
             "occupancy_chosen", "mercantile_multi_tenant",
-            "is_business_group_c", "is_mercantile_group_c",
+            # Owner rulings 13.10.2026, P4 Q1-Q6 (is_mercantile_group_c = old tick, Q6)
+            "business_group_input", "is_post_office", "mercantile_c_type_input",
+            "kiosk_location_input", "is_mercantile_group_c",
             # Parking
             "has_parking_area", "attached_parking_kind_radio", "parking_area_m2_input",
             "parking_height_m_input", "parking_basement_levels_input",   # P3 App Q2
@@ -984,6 +1009,10 @@ with st.sidebar:
                 st.session_state["storey_table_base"] = st.session_state["storey_table_input"]
                 st.session_state.pop("storey_table_editor", None)
                 st.session_state["animal_housing_group_input"] = _data.get("animal_housing_group_input")
+                # Owner ruling 13.10.2026, P4 Q1: an older file's 'Business Group C
+                # (stand-alone)' tick is not carried into the group; it is only named in
+                # the stop that asks for the group.
+                st.session_state["_legacy_business_group_c"] = _data.get("is_business_group_c") is True
                 st.session_state["_scenario_loaded_marker"] = True
                 st.session_state["_scenario_load_note"] = (
                     (f"Not inputs, ignored: {', '.join(_ignored)}. " if _ignored else "")
@@ -1120,21 +1149,57 @@ with st.sidebar:
                          "a single roof or not separated and having a ground floor built up "
                          "area of more than 3600 m2, irrespective of the number of storeys, "
                          "shall be considered as Malls.")
-        # Owner ruling 12.10.2026, P3 Ch47 Q3.
-        st.checkbox("Mercantile Group C (stand-alone)", key="is_mercantile_group_c",
-                    help="Ch 1 Table 1.1 row 11 (p.50) Mercantile Group C: kiosks, food trucks, "
-                         "mercantile trucks; #1.7.9.2 (p.41) Class C: aggregate gross area of "
-                         "not more than 280 m2 and occupying only ground floor. Below 23 m, "
-                         "Ch 6 Table 6.5 item 12 (p.419) governs: stand-alone self-contained "
-                         "emergency lighting. At 23 m or more the height rows govern.")
+        # Owner ruling 13.10.2026, P4 Q6: an older file's Group C tick stays visible (and
+        # the report stops) until it is cleared here or the occupancy is set to
+        # Mercantile Group C.
+        if st.session_state.get("is_mercantile_group_c"):
+            st.checkbox("Mercantile Group C tick from an older file (untick to confirm this "
+                        "building is not Mercantile Group C)", key="is_mercantile_group_c",
+                        help="Mercantile Group C (kiosks, food trucks, mercantile trucks, "
+                             "Table 1.1 row 11, p.50) is now its own occupancy. Untick this, "
+                             "or choose 'mercantile_c' as the occupancy (owner ruling "
+                             "13.10.2026, P4 Q6).")
+    if occupancy == "mercantile_c":
+        # Owner ruling 13.10.2026, P4 Q5: the type is required, no default.
+        st.selectbox(
+            "Mercantile Group C type (required)", list(MERCANTILE_C_TYPES), index=None,
+            format_func=lambda t: MERCANTILE_C_TYPES[t], placeholder="Select the type",
+            key="mercantile_c_type_input",
+            help="Table 1.1 row 11 (p.50): kiosks, food trucks, mercantile trucks. A kiosk "
+                 "takes Table 9.20.b row C (midrise, p.701) or Table 9.21.b (lowrise, by "
+                 "inference) and Ch 1 Table 1.9 item 48 (p.98); a temporary kiosk also takes "
+                 "Ch 8 Table 8.14 item 31. A truck takes only its own items: Ch 4 "
+                 "extinguishers, Ch 8 Table 8.14 item 34 / 35, Ch 6 Table 6.5 item 12 and, "
+                 "with LPG cylinders, Ch 11 Table 11.3 (owner rulings 13.10.2026, P4 Q4-Q5).")
+        if st.session_state.get("mercantile_c_type_input") in ("kiosk_permanent",
+                                                                "kiosk_temporary"):
+            st.selectbox(
+                "Kiosk location (Table 1.9 item 48 iii) (required)",
+                ["sprinklered_or_mall", "other"], index=None,
+                format_func=lambda x: {
+                    "sprinklered_or_mall": "In a sprinkler protected area or a mall building",
+                    "other": "Elsewhere"}[x],
+                placeholder="Select where the kiosk is", key="kiosk_location_input",
+                help="Ch 1 Table 1.9 item 48 iii (p.98): kiosks located at sprinkler "
+                     "protected areas and mall buildings shall be provided with automatic "
+                     "sprinkler system. Blank: that line is NOT EVALUATED. The kiosk area is "
+                     "the ground floor built-up area (item 48 v: 18 m2 at most).")
     if occupancy == "business":
-        # Owner ruling 12.10.2026, P3 Ch47 Q3.
-        st.checkbox("Business Group C (stand-alone)", key="is_business_group_c",
-                    help="Ch 1 Table 1.1 row 2 (p.48) Business Group C: barber shops, beauty "
-                         "shops, massage centers, typing centers, translation centers, print "
-                         "shops, photo studios. Below 23 m, Ch 6 Table 6.5 item 11 (p.419) "
-                         "governs: stand-alone self-contained emergency lighting. At 23 m or "
-                         "more the height rows govern.")
+        # Owner rulings 13.10.2026, P4 Q1-Q2: the group is required, no default.
+        st.selectbox(
+            "Business group (required)", list(BUSINESS_GROUPS), index=None,
+            format_func=lambda g: f"Group {g} - {BUSINESS_GROUPS[g]}",
+            placeholder="Select the group (Table 1.1 row 2)", key="business_group_input",
+            help="Ch 1 Table 1.1 row 2 (p.48). The Ch 3, 8 and 9 tables print Business "
+                 "Groups A, B, C together; Group C takes Ch 6 Table 6.5 item 11 (p.419, "
+                 "stand-alone self-contained emergency lighting) below 23 m. #1.1.13 does "
+                 "not list Business: Light Hazard, except a post office (owner rulings "
+                 "13.10.2026, P4 Q1-Q2).")
+        if st.session_state.get("business_group_input") == "B":
+            st.checkbox("Post office", key="is_post_office",
+                        help="#1.1.13.3.c (p.529) lists post offices under Ordinary Hazard "
+                             "Group 2: the hazard class becomes OH2 (owner ruling 13.10.2026, "
+                             "P4 Q2).")
     if occupancy in INCOMPATIBLE_FLAGS_BY_OCC:
         st.caption(
             "💡 Special Rooms / Equipment that typically don't apply to this "
@@ -1206,7 +1271,10 @@ with st.sidebar:
     for w in _warnings:
         st.caption(w)
 
-    derived_hazard = default_hazard(occupancy, st.session_state.get("animal_housing_group_input"))
+    derived_hazard = default_hazard(
+        occupancy, st.session_state.get("animal_housing_group_input"),
+        is_post_office=(occupancy == "business" and st.session_state.get("business_group_input") == "B"
+                        and bool(st.session_state.get("is_post_office"))))   # P4 Q2
     # Owner ruling 12.10.2026, Ch9 Q7: robotic / mechanical parking is Extra Hazard
     # Group 2 (#1.1.13.5.b, p.530); the hazard is forced to HH + EH2 when ticked.
     _robotic_eh2 = (bool(st.session_state.get("has_robotic_parking"))
@@ -1255,7 +1323,8 @@ with st.sidebar:
                 o for o in st.session_state["secondary_occupancies_input"] if o != occupancy]
         st.multiselect(
             "Other occupancies in the building",
-            options=[occ for _, occ in OCC_FLAT if occ != occupancy],
+            # Owner rulings 13.10.2026, P4 Q4-Q5: a kiosk or truck is its own building.
+            options=[occ for _, occ in OCC_FLAT if occ not in (occupancy, "mercantile_c")],
             format_func=_occ_label,
             key="secondary_occupancies_input",
             help="Most restrictive: each one is evaluated and the most onerous line per "
@@ -1842,6 +1911,44 @@ if occupancy == "animal_housing" \
              "answer 12.10.2026, Ch9 Q6).")
     st.stop()
 
+# ---------- Owner rulings 13.10.2026, P4 Q1, Q5, Q6 ---------------------------
+if occupancy in ("mercantile_a", "mercantile_b") and gs_early("is_mercantile_group_c"):
+    st.error("This project was saved with 'Mercantile Group C (stand-alone)' ticked. Mercantile "
+             "Group C (kiosks, food trucks, mercantile trucks, Ch 1 Table 1.1 row 11, p.50) is "
+             "now its own occupancy: choose 'mercantile_c' as the occupancy, or untick 'Mercantile "
+             "Group C tick from an older file' in the sidebar to confirm this building is "
+             "Mercantile Group A or B (owner ruling 13.10.2026, P4 Q6).")
+    st.stop()
+if occupancy == "business" and st.session_state.get("business_group_input") not in BUSINESS_GROUPS:
+    st.error("Select the Business group (sidebar, under the occupancy): Group A electronic data "
+             "processing, telephone exchanges, radio and television stations, laboratories; Group "
+             "B offices, banks, government offices, post offices; Group C barber shops, beauty "
+             "shops, massage centers, typing and translation centers, print shops, photo studios "
+             "(Ch 1 Table 1.1 row 2, p.48). Group C takes Ch 6 Table 6.5 item 11 below 23 m, so "
+             "the tool does not assume a group (owner ruling 13.10.2026, P4 Q1)."
+             + (" The file had the old 'Business Group C (stand-alone)' box ticked."
+                if st.session_state.get("_legacy_business_group_c") else ""))
+    st.stop()
+if occupancy == "mercantile_c":
+    if st.session_state.get("mercantile_c_type_input") not in MERCANTILE_C_TYPES:
+        st.error("Select the Mercantile Group C type (sidebar, under the occupancy): kiosk "
+                 "(permanent or temporary), food truck or mercantile truck (Ch 1 Table 1.1 row "
+                 "11, p.50). A kiosk and a truck take different items, so the tool does not "
+                 "assume one (owner ruling 13.10.2026, P4 Q5).")
+        st.stop()
+    if st.session_state.get("secondary_occupancies_input"):
+        st.error("A Mercantile Group C kiosk or truck is evaluated as its own building: clear "
+                 "'Other occupancies' (sidebar, Mixed occupancy), or evaluate the host building "
+                 "separately (owner rulings 13.10.2026, P4 Q4-Q5).")
+        st.stop()
+    if (st.session_state.get("mercantile_c_type_input") in ("kiosk_permanent", "kiosk_temporary")
+            and float(ground_bua) > 18):
+        st.error(f"Kiosks or group of kiosks shall not have an area more than 18 m2 (Ch 1 Table "
+                 f"1.9 item 48 v, p.98). The ground floor built-up area (the kiosk area) is "
+                 f"{float(ground_bua):g} m2: enter 18 m2 or less, or choose Mercantile Group A "
+                 f"or B.")
+        st.stop()
+
 # ---------- Pre-evaluate to detect wet riser requirement ---------------------
 prelim = _cached_evaluate(Building(
     project_name=project_name, occupancy=occupancy, height_m=height_m,
@@ -2255,9 +2362,8 @@ building = Building(
                           if occupancy == "animal_housing" else None),
     # Phase 3 app package (audit ENG-02, CH9A-20, CH9B-14)
     mercantile_multi_tenant=gs("mercantile_multi_tenant") and occupancy in ("mercantile_a", "mercantile_b"),
-    # Owner ruling 12.10.2026, P3 Ch47 Q3
-    is_business_group_c=gs("is_business_group_c") and occupancy == "business",
-    is_mercantile_group_c=gs("is_mercantile_group_c") and occupancy in ("mercantile_a", "mercantile_b"),
+    # Owner rulings 13.10.2026, P4 Q1-Q5
+    **_p4_building_kwargs(occupancy),
     has_water_reactive_materials=gs("has_water_reactive_materials"),
     has_attached_commercial_outlet=(gs("has_attached_commercial_outlet") and float(height_m) <= 15
                                     and occupancy in ("villa_private", "villa_commercial",
@@ -2305,8 +2411,8 @@ st.markdown(
     ),
     unsafe_allow_html=True,
 )
-_ahg_txt = (f" **Group {building.animal_housing_group}**" if building.animal_housing_group
-            else "")   # owner answer 12.10.2026, Ch9 Q6
+# Owner answer 12.10.2026, Ch9 Q6; owner rulings 13.10.2026, P4 Q1 / Q5
+_ahg_txt = f" **({building.occupancy_qualifier})**" if building.occupancy_qualifier else ""
 st.caption(f"**Occupancy:** `{occupancy}`{_ahg_txt} - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
 
 _ol = report.occupant_load
@@ -2382,9 +2488,34 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
             st.caption("Ch 1 Table 1.1 row 11 (p.50): a group of mercantile occupancies under a "
                        "single roof or not separated, with a ground floor built up area of more "
                        "than 3600 m2, is a Mall: choose a Mall occupancy for B in that case.")
+        # Owner rulings 13.10.2026, P4 Q1 / Q5: a group or type is chosen, never assumed;
+        # B keeps A's choice when the occupancy is the same.
+        b_grp, b_post = building.business_group, building.is_post_office
+        b_mtype = building.mercantile_c_type
+        b_kiosk = building.kiosk_in_sprinklered_area_or_mall
+        if b_occ == "business" and building.occupancy != "business":
+            b_grp = st.selectbox("B business group (required)", list(BUSINESS_GROUPS),
+                                 index=None, key="scenario_b_business_group",
+                                 format_func=lambda g: f"Group {g}",
+                                 placeholder="Select the group (Table 1.1 row 2)")
+            b_post = False
+            st.caption("B post office is not asked: Group B is evaluated as an office (LH).")
+        if b_occ == "mercantile_c" and building.occupancy != "mercantile_c":
+            b_mtype = st.selectbox("B Mercantile Group C type (required)",
+                                   list(MERCANTILE_C_TYPES), index=None,
+                                   key="scenario_b_mercantile_c_type",
+                                   format_func=lambda t: MERCANTILE_C_TYPES[t],
+                                   placeholder="Select the type")
+            b_kiosk = None
         _b_run = st.button("Run comparison", key="run_scenario_compare")
         if _b_run and float(b_h) <= 0 and b_occ != "infrastructure":
             st.error("Scenario B height must be more than 0 m.")
+        elif _b_run and b_occ == "business" and b_grp is None:
+            st.error("Scenario B is NOT EVALUATED: select the B business group (owner ruling "
+                     "13.10.2026, P4 Q1).")
+        elif _b_run and b_occ == "mercantile_c" and b_mtype is None:
+            st.error("Scenario B is NOT EVALUATED: select the B Mercantile Group C type (owner "
+                     "ruling 13.10.2026, P4 Q5).")
         elif _b_run and b_occ == "storage_industrial" and b_hz is None:
             st.error("Scenario B is NOT EVALUATED: select the B storage hazard class. Table "
                      "9.27 groups depend on the stored materials and activities (#1.1.13, "
@@ -2397,7 +2528,20 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
                 _b_upd = {"hazard_class": "HH" if b_hz == "EH2" else b_hz,
                           "is_extra_hazard_2": b_hz == "EH2", "sum_gf_bua_m2": float(b_sum)}
             else:
-                _b_upd = {"hazard_class": default_hazard(b_occ, building.animal_housing_group), "is_extra_hazard_2": False}
+                _b_upd = {"hazard_class": default_hazard(
+                    b_occ, building.animal_housing_group,
+                    is_post_office=(b_occ == "business" and b_grp == "B" and b_post)),
+                    "is_extra_hazard_2": False}
+            # Owner rulings 13.10.2026, P4 Q1-Q5: group / type only where they apply; a
+            # kiosk or truck is its own building (no other occupancies).
+            _b_upd.update({
+                "business_group": b_grp if b_occ == "business" else None,
+                "is_post_office": bool(b_post) and b_occ == "business" and b_grp == "B",
+                "mercantile_c_type": b_mtype if b_occ == "mercantile_c" else None,
+                "kiosk_in_sprinklered_area_or_mall": b_kiosk if b_occ == "mercantile_c" else None,
+            })
+            if b_occ == "mercantile_c":
+                _b_upd.update({"secondary_occupancies": [], "mixed_occupancy_mode": "none"})
             b_building = building.model_copy(update={
                 "occupancy": b_occ,
                 "height_m": float(b_h),
@@ -2511,8 +2655,7 @@ def _ticked_chips(building_obj: Building) -> str:
         "has_water_reactive_materials": "Water reactive materials",
         "has_attached_commercial_outlet": "Commercial outlet (9.21.e)",
         "mercantile_multi_tenant": "Mercantile group",
-        "is_business_group_c": "Business Group C",
-        "is_mercantile_group_c": "Mercantile Group C",
+        "is_post_office": "Post office (OH2)",
         # FE-specific
         "has_class_b_storage_zones": "Class B storage",
         "has_combustible_metals": "Combustible metals",

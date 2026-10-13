@@ -106,6 +106,8 @@ def _chapter_counts(ch) -> dict:
 def _profile_rows(r: ComplianceReport, detailed: bool = False) -> list:
     b = r.building
     occ_label = OCCUPANCY_DEFS.get(b.occupancy, b.occupancy).split(" - ")[0]
+    if b.occupancy_qualifier:   # owner rulings 13.10.2026, P4 Q1 / Q5
+        occ_label = f"{occ_label} ({b.occupancy_qualifier})"
     hc = str(b.height_class).replace("_", " ")
     rows = [
         ("Occupancy", occ_label),
@@ -149,6 +151,8 @@ def _profile_rows_exec(r: ComplianceReport) -> list:
     """Condensed profile for the one-page executive summary."""
     b = r.building
     occ_label = OCCUPANCY_DEFS.get(b.occupancy, b.occupancy).split(" - ")[0]
+    if b.occupancy_qualifier:   # owner rulings 13.10.2026, P4 Q1 / Q5
+        occ_label = f"{occ_label} ({b.occupancy_qualifier})"
     hc = str(b.height_class).replace("_", " ")
     rows = [
         ("Occupancy", occ_label),
@@ -1131,7 +1135,7 @@ def report_to_xlsx_bytes(r):
     wp["A1"].fill = hfill
     wp["B1"].fill = hfill
     b = r.building
-    for k, v in [("Project", b.project_name or ""), ("Occupancy", b.occupancy),
+    for k, v in [("Project", b.project_name or ""), ("Occupancy", b.occupancy + (f" ({b.occupancy_qualifier})" if b.occupancy_qualifier else "")),
                  ("Height m", b.height_m), ("Height class", b.height_class),
                  ("Height datum", getattr(b, "height_datum", "grade")),
                  ("GFA m2", b.gross_floor_area_m2), ("Hazard", b.hazard_class)]:

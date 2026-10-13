@@ -358,7 +358,7 @@ branches:
 
   - id: evc_mercantile_not_required
     match:
-      occupancy_in: [mercantile_a, mercantile_b]
+      occupancy_in: [mercantile_a, mercantile_b, mercantile_c]
       height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 (not listed)"
     page: "p.439"

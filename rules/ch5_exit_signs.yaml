@@ -328,7 +328,7 @@ branches:
         detail: "General public areas, offices and areas accessible to general public shall be provided with universal Exit/Directional Signs and Tactile Signs at every exit."
 
   - id: es_mercantile
-    match: {occupancy_in: [mercantile_a, mercantile_b]}
+    match: {occupancy_in: [mercantile_a, mercantile_b, mercantile_c]}
     section: "Ch 5, #3 / Table 5.3 item 14"
     page: "p.398"
     systems:

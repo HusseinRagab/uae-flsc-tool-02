@@ -122,7 +122,8 @@ CASES = [
     # Since the schema doesn't model business/mercantile Group C separately, lowrise business and
     # mercantile_a now correctly match el_lowrise_general -> Monitored Self-Contained.
     dict(name="EL: Small business lowrise -> Monitored Self-Contained (audit-correct)",
-         inputs=dict(occupancy="business", height_m=10,
+         # Owner ruling 13.10.2026, P4 Q1: the group is required (offices = Group B).
+         inputs=dict(occupancy="business", business_group="B", height_m=10,
                      floors_above_grade=2, ground_floor_bua_m2=400,
                      plot_area_m2=1000),
          expect_el_branch="el_lowrise_general",
