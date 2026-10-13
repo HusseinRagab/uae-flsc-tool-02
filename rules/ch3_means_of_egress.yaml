@@ -19,7 +19,7 @@ general:
   - id: moe_g_door_minimums
     systems:
       - name: "Door Assembly Minimums (Table 3.2)"
-        spec: "Min width 915 mm; door forces (Table 3.2 item 5.ii): 67 N to release the latch, 133 N to set the door leaf in motion, 67 N to open to the required width; door swing in egress direction where occupant load >= 50, OR serving a horizontal exit, OR a high-hazard content room, OR an exit enclosure; panic / fire-exit hardware on fire-rated assemblies"
+        spec: "Min width 915 mm; door forces not to exceed (Table 3.2 item 5.ii): 67 N (15 lbf) to release the latch, 133 N (30 lbf) to set any door leaf in motion, 67 N (15 lbf) to open any door leaf to the minimum required width; door swing in egress direction where occupant load >= 50, OR serving a horizontal exit, OR a high-hazard content room, OR an exit enclosure; panic / fire-exit hardware on fire-rated assemblies"
         code_ref: "Ch 3, #3.2 / Table 3.2"
         page_ref: "p.247-254"
         detail: "Side-hinged or pivoted swinging doors required. Per Table 3.2 #4 item i (p.248), swing in direction of egress applies on ANY of four triggers: (a) occupant load >= 50, (b) horizontal exit, (c) high-hazard content room, (d) exit enclosure. Panic hardware (or fire-exit hardware on fire-rated doors) bar between 865-1220 mm AFFL. Doors readily operable from egress side without keys, tools or special knowledge."

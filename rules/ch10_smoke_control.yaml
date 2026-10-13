@@ -386,8 +386,10 @@ branches:
         required: conditional
         detail: "Table 10.27 item 2.3 applies to an enclosed sports hall or auditorium with a legitimate stage or having area more than 2000 m2 (dedicated smoke purging per Section 2.13). An auditorium is ticked without a stage, and its area is not entered; enter the largest hall area in SC settings to evaluate it."
 
-  # Table 10.25 (p.862): road tunnel tiers by total length (CH10-17). The
-  # rail and service / cable rows are on p.863 (values from the audit slice).
+  # Table 10.25 (p.862-863): road (row 1) and rail (row 2) tunnel tiers by total
+  # length, service / cable tunnels (row 3) (CH10-17). Rows 2 and 3 read off the
+  # p.863 page image (phase 5, 13.10.2026). The tool has one "road / rail" kind;
+  # the not-entered and less-than-90 m lines state both rows.
   - id: sc_aux_tunnel_length_not_entered
     match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_lte: 0}
     section: "Ch 10, #3.7 / Table 10.25"
@@ -395,16 +397,16 @@ branches:
     systems:
       - name: "Tunnel Smoke Management - Road / Rail: NOT EVALUATED (tunnel length not entered)"
         required: conditional
-        detail: "Table 10.25 tiers road tunnels by total length: less than 90 m, natural ventilation per Section 2.11 OR Section 2.15 acceptable and a jet fan system not mandatory; more than 90 m, a jet fan system per Section 2.14 for the entire tunnel. Enter the tunnel length (FP settings) to evaluate it."
+        detail: "Table 10.25 tiers road and rail tunnels by total length: less than 90 m, natural ventilation per Section 2.11 OR Section 2.15 acceptable (a jet fan system, rail: a jet fan or mechanical ventilation system, not mandatory); more than 90 m, road: a jet fan system per Section 2.14 for the entire tunnel; rail: a jet fan system per Section 2.14 for the entire tunnel OR a mechanical smoke purging system using dedicated ducting per Section 2.13. Enter the tunnel length (FP settings) to evaluate it."
 
   - id: sc_aux_tunnel_road_rail_under_90
     match: {has_tunnel: true, tunnel_kind_is: road_rail, tunnel_length_m_gt: 0, tunnel_length_m_lt: 90}
-    section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel), item 2"
-    page: "p.862"
+    section: "Ch 10, #3.7 / Table 10.25 row 1 (road tunnel) item 2; row 2 (rail tunnel) item 1"
+    page: "p.862-863"
     systems:
       - name: "Tunnel Smoke Management - Road / Rail, length less than 90 m (natural ventilation acceptable)"
-        spec: "Natural ventilation per Section 2.11 OR Section 2.15 acceptable; natural ventilation utilizing the tunnel openings acceptable; a jet fan system shall not be mandatory"
-        detail: "Road tunnels having total length of less than 90 m (Table 10.25 row 1, item 2.i-iii). Smoke management systems other than jet fan systems shall be installed through a fire engineering analysis demonstrating the intent of item 1.iii (row 1, item 1.iv). A rail tunnel of less than 90 m is covered by the rail row on p.863, which the tool does not evaluate: check it there."
+        spec: "Natural ventilation per Section 2.11 OR Section 2.15 acceptable; natural ventilation utilizing the tunnel openings acceptable; road: a jet fan system shall not be mandatory; rail: a jet fan or mechanical ventilation system shall not be mandatory"
+        detail: "Road tunnels having total length of less than 90 m (Table 10.25 row 1, item 2.i-iii, p.862); rail tunnels having total length of less than 90 m (row 2, item 1.i-iii, p.863). Road tunnels: smoke management systems other than jet fan systems shall be installed through a fire engineering analysis demonstrating the efficiency and fulfillment of the intent of item 1.iii (row 1, item 1.iv)."
 
   # Owner ruling 12.10.2026, P3 Ch10 Q2: a length of exactly 90 m (neither 'less
   # than' nor 'more than' 90 m on p.862) takes the higher band, as R11 at band edges.
@@ -419,11 +421,12 @@ branches:
 
   - id: sc_aux_tunnel_cable
     match: {has_tunnel: true, tunnel_kind_is: cable}
-    section: "Ch 10, #3.7 / Table 10.25 (service / cable tunnels)"
+    section: "Ch 10, #3.7 / Table 10.25 row 3 (service tunnel) item 1"
     page: "p.863"
     systems:
       - name: "Tunnel Smoke Management - Service / Cable"
-        spec: "Mechanical ventilation per Section 2.17, any length; natural ventilation acceptable if less than 90 m long"
+        spec: "Mechanical ventilation system per Section 2.17, any length; natural ventilation utilizing the tunnel openings acceptable where the tunnel length is less than 90 m"
+        detail: "Service or cable tunnels of any length (Table 10.25 row 3, item 1.i-iii): i. a mechanical ventilation system per Section 2.17 shall be provided; ii. natural ventilation utilizing the tunnel openings shall be acceptable where the tunnel length is less than 90 m; iii. a jet fan system per Section 2.14 OR a mechanical smoke purging system using dedicated ducting per Section 2.13 OR other systems or combinations of systems permitted where justified by an engineering analysis and CFD modeling."
 
   - id: sc_business_open_plan
     match: {occupancy: business}

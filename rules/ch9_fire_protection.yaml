@@ -1434,6 +1434,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   # ---- Group B - multi-tenant, Ordinary Hazard 1 (p.725) ----
+  # Group B = OH1 activities per #1.1.13.2.h (p.725)
   # Same row wording as Group A; density 0.15 gpm / 140 m2; pumps 50 / 300 / 300 / 750 gpm.
   - id: storage_industrial_tier1_oh
     match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
@@ -1443,6 +1444,8 @@ branches:
       - name: "Hose Reel System (throughout, incl. mezzanine)"
         spec: "Per Section 3.3"
         detail: "Row 1: total built-up ground floor area less than 900 m2 AND each individual unit compartment area (#4.1.14) less than 230 m2."
+      - name: "Dry Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 1 OH)"
         duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
@@ -1462,6 +1465,8 @@ branches:
         detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is printed in neither row 1 nor row 2; it is taken in row 2, the higher row (owner ruling 12.10.2026, Ch9 Q2)."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
+      - name: "Dry Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 2 OH)"
         duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet valve"
@@ -1481,6 +1486,8 @@ branches:
         detail: "Row 3: individual compartment or unit area (#4.1.14) more than 900 m2. Where the unit area is not entered, the whole ground floor is taken as one unit."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
+      - name: "Dry Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 3 OH)"
         duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet valve"
@@ -1502,6 +1509,8 @@ branches:
         spec: "Per Section 3.11"
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
+      - name: "Wet Risers and Internal Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 4 OH)"
         duty: pump
         spec: "750 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
@@ -1512,6 +1521,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   # ---- Group C - multi-tenant, Ordinary Hazard 2 (p.726) ----
+  # Group C = OH2 activities per #1.1.13.3.c (p.726)
   # Same row wording as Group A; density 0.20 gpm / 140 m2; pumps 50 / 350 / 350 / 750 gpm.
   - id: storage_industrial_tier1_oh2
     match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
@@ -1521,6 +1531,8 @@ branches:
       - name: "Hose Reel System (throughout, incl. mezzanine)"
         spec: "Per Section 3.3"
         detail: "Row 1: total built-up ground floor area less than 900 m2 AND each individual unit compartment area (#4.1.14) less than 230 m2."
+      - name: "Dry Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 1 OH2)"
         duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet valve"
@@ -1540,6 +1552,8 @@ branches:
         detail: "Row 2: total built-up ground floor area more than 900 m2 OR any individual unit compartment area (#4.1.14) 230-900 m2. A total of exactly 900 m2 is printed in neither row 1 nor row 2; it is taken in row 2, the higher row (owner ruling 12.10.2026, Ch9 Q2)."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
+      - name: "Dry Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 2 OH2)"
         duty: pump
         spec: "350 gpm @ 4.5 bar at most remote hose-reel outlet valve"
@@ -1559,6 +1573,8 @@ branches:
         detail: "Row 3: individual compartment or unit area (#4.1.14) more than 900 m2. Where the unit area is not entered, the whole ground floor is taken as one unit."
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
+      - name: "Dry Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 3 OH2)"
         duty: pump
         spec: "350 gpm @ 4.5 bar at most remote hose-reel outlet valve"
@@ -1580,6 +1596,8 @@ branches:
         spec: "Per Section 3.11"
       - name: "Hose Reel System (throughout)"
         spec: "Per Section 3.3"
+      - name: "Wet Risers and Internal Landing Valves"
+        required: not_required
       - name: "Fire Pump (Tier 4 OH2)"
         duty: pump
         spec: "750 gpm @ 6.9 bar at most remote HYDRANT outlet valve"
@@ -2729,7 +2747,7 @@ branches:
       - name: "Automatic Deluge Water Spray OR Water Mist System"
         spec: "Per Section 3.8 OR Section 3.10"
       - name: "Class III Wet Riser System (throughout)"
-        spec: "Per Section 3.4 - Class III with 65 mm and 25 mm outlets"
+        spec: "Per Section 3.4 - Class III: 65 mm landing valve AND 25 mm hose reel OR 40 mm hose rack (Table 9.6 item 1.i, p.582)"
         detail: "Breeching inlets shall be provided at BOTH tunnel openings."
       - name: "Fire Pump (Road/Rail Tunnel > 1000 m)"
         spec: "Sized to satisfy minimum 2 adjacent deluge water spray system zones at 6.9 bar at most remote landing valve. Water mist pump per manufacturer (1 hour duration)."
@@ -3427,7 +3445,7 @@ auxiliary_rooms:
       - name: "Operation Theatre - Double-Interlocked Pre-action (Section 3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.R"
         page_ref: "p.755"
-        detail: "Operation theatre: double-interlocked pre-action sprinkler per Section 3.7, OR 2-hour fire-rated enclosure with 90-minute fire doors housing exclusively dry-type medical + electrical equipment with no other storage."
+        detail: "Table 9.30.R: (i) a double interlocked pre-action sprinkler system per Section 3.7, OR (ii) rooms shall be 2 hour fire rated enclosures with 90 minutes fire doors, housing exclusively dry type medical and electrical equipment and no other storage."
 
   - id: aux_S_mri_scanning
     flag: has_mri_scanning_room
@@ -3436,7 +3454,7 @@ auxiliary_rooms:
       - name: "MRI / Scanning Room - Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.S"
         page_ref: "p.755"
-        detail: "MRI / scanning room: three options - (1) wet sprinkler per Section 3.5, (2) double-interlocked pre-action per Section 3.7, or (3) 2-hr fire-rated enclosure with 90-min fire doors housing only dry-type equipment."
+        detail: "Table 9.30.S: (i) an automatic sprinkler system per Section 3.5, OR (ii) a double interlocked pre-action sprinkler system per Section 3.7, OR (iii) rooms shall be 2 hour fire rated enclosures with 90 minutes fire doors, housing exclusively dry type medical and electrical equipment and no other storage."
 
   - id: aux_T_records
     flag: has_records_room
@@ -3445,7 +3463,7 @@ auxiliary_rooms:
       - name: "Records Room - Automatic Sprinkler (3.5) OR Double-Interlocked Pre-action (3.7) OR Clean Agent (3.14)"
         code_ref: "Ch 9, #4.14 / Table 9.30.T"
         page_ref: "p.755"
-        detail: "Records room: three options - wet sprinkler, double-interlocked pre-action, or clean agent."
+        detail: "Table 9.30.T: (i) an automatic sprinkler system per Section 3.5, OR (ii) a double interlocked pre-action sprinkler system per Section 3.7, OR (iii) a clean agent system per Section 3.14."
 
   - id: aux_U_ups
     flag: has_ups_room
@@ -3454,7 +3472,7 @@ auxiliary_rooms:
       - name: "UPS Room - Clean Agent (3.14) OR Double-Interlocked Pre-action (3.7) OR 2-hr Fire-Rated Enclosure"
         code_ref: "Ch 9, #4.14 / Table 9.30.U"
         page_ref: "p.755"
-        detail: "UPS room: three options - clean agent, pre-action, or 2-hr fire-rated enclosure housing only dry batteries + dry electrical equipment."
+        detail: "Table 9.30.U: (i) a clean agent system per Section 3.14, OR (ii) a double interlocked pre-action sprinkler system per Section 3.7, OR (iii) rooms shall be 2 hour fire rated enclosures with 90 minutes fire doors, housing exclusively dry type battery, dry electrical equipment and no other storage."
 
   - id: aux_V_cold_freezer
     flag: has_cold_freezer_room
@@ -3463,17 +3481,17 @@ auxiliary_rooms:
       - name: "Cold / Freezer Room - Dry Sprinklers OR Dry Pre-action System"
         code_ref: "Ch 9, #4.14 / Table 9.30.V"
         page_ref: "p.755"
-        detail: "Cold / freezer room: dry sprinklers or dry pre-action (to avoid freezing of wet pipe). Rooms < 20 m2 exempt if compartmented with firestopping. Modular cold rooms in occupied sprinklered rooms exempt."
+        detail: "Table 9.30.V: (i) dry type sprinklers or dry preaction system shall be provided. Exemptions: (ii) rooms which are less than 20 m2 in area need not be protected; however, such rooms shall be compartmented with fully compliant penetration fire stopping systems; (iii) modular type cold rooms which are exposed to occupied rooms shall not be required to be protected, provided the room is provided with automatic sprinkler system; (iv) rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected."
 
 equipment:
   - id: eq_A_kitchen_hood
     flag: has_commercial_kitchen
     systems:
       - name: "Commercial Kitchen Hood - Automatic Wet Chemical System (Section 3.12) + Grease Filters"
-        code_ref: "Ch 9, #4.15 / Table 9.31.A; #3.12 / Table 9.14 item 6"
+        code_ref: "Ch 9, #4.15 / Table 9.31.A; #3.12 / Table 9.14 items 3.ii, 6"
         page_ref: "p.756, p.675"
         spec: "For commercial kitchens having 3 or more burners"
-        detail: "Table 9.31.A: an automatic wet chemical system per Section 3.12 for commercial kitchens having 3 or more burners; grease filters shall be installed for the kitchen hood. Table 9.14 item 6: on activation, all sources of fuel and electric power that produce heat to all equipment protected by the system shall be shut down; gas appliances not requiring protection but located under the same ventilation equipment shall also be shut off; shutoff devices shall require manual resetting before fuel or power is restored."
+        detail: "Table 9.31.A: an automatic wet chemical system per Section 3.12 for commercial kitchens having 3 or more burners; grease filters shall be installed for the kitchen hood. Table 9.14 item 3.ii: the wet chemical system as an entire system, with its design, installation and maintenance manual from the manufacturer, shall be listed and approved by Civil Defence. Table 9.14 item 6: on activation, all sources of fuel and electric power that produce heat to all equipment protected by the system shall be shut down; gas appliances not requiring protection but located under the same ventilation equipment shall also be shut off; shutoff devices shall require manual resetting before fuel or power is restored."
 
   - id: eq_B_lpg_tanks
     flag: has_lpg_tanks

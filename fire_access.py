@@ -195,7 +195,15 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
         _req("Fire vehicle accessway width + clearance",
              f"Minimum unobstructed width {s.accessway_width_m:g} m (road width between kerbs "
              f"6 m); vertical clearance {s.vertical_clearance_m:g} m for any grade",
-             "Ch 2, Table 2.1 / #2.6.1 / #2.6.3", "p.206-207", "fsa_table_2_1"),
+             "Ch 2, Table 2.1 / #2.6.1 / #2.6.3", "p.206-207", "fsa_table_2_1",
+             detail=("#2.8.1 (p.211): minimum width of 6 m throughout; the accessway must "
+                     "accommodate the entry and maneuvering of fire engine, extended ladders, "
+                     "pumping appliances, aerial appliances, turntable and / or hydraulic "
+                     "platforms. #2.6.6 (p.208): accessway and fire engine access road kept clear "
+                     "of obstructions and protruded parts of the building, plants, trees or other "
+                     "fixtures between the accessway and the access openings. #2.6.8 (p.208): fire "
+                     "hydrants, where required by Ch 9, located along the Fire Access Road and "
+                     "Fire Accessway.")),
         _req("Parking distance to entrance / breeching inlet",
              f"Not more than {s.max_distance_entrance_m:g} m from building entrance; not more "
              f"than {s.max_distance_breeching_m:g} m from breeching inlet",
