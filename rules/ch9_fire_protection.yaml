@@ -1091,18 +1091,23 @@ branches:
   # THE COMMERCIAL OUTLET (`commercial_outlet_gf_bua_m2`), and Table 9.21.e replaces the
   # generic Table 9.21.a / 9.21.b / 9.21.c tiers of the host building. The table prints
   # "upto 900 m2" and "more than 900 m2", so 900 m2 is row 1.
+  # When the outlet area is blank the 9.21.e row cannot be chosen, so the host tiers
+  # are still suppressed (same list as the two sized rows): a blank never counts as a
+  # pass, and must not fall back to Table 9.21.a / 9.21.b (a business would otherwise
+  # keep 9.21.b hose-reel-only while 9.21.e.2 needs sprinklers above 900 m2).
   - id: lowrise_commercial_outlet_area_missing
     match:
       height_m_lte: 15
       occupancy_in: [villa_private, villa_commercial, business, assembly_c]
       has_attached_commercial_outlet_is: true
       commercial_outlet_gf_bua_m2_lte: 0
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.5 / Table 9.21.e"
     page: "p.711"
     systems:
       - name: "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED"
         spec: "Not evaluated: enter the built-up ground floor area of the commercial outlet"
-        detail: "Table 9.21.e rows 1 (up to 900 m2) and 2 (more than 900 m2) are keyed on the built-up ground floor area of the commercial outlet, not of the host building. The outlet area was not entered, so the Table 9.21.e row is not evaluated (audit CH9B-14)."
+        detail: "Table 9.21.e rows 1 (up to 900 m2) and 2 (more than 900 m2) are keyed on the built-up ground floor area of the commercial outlet, not of the host building. The outlet area was not entered, so the Table 9.21.e row is not evaluated (audit CH9B-14). Table 9.21.e replaces the generic Table 9.21.a / 9.21.b / 9.21.c tiers of the host building (#4.5.5), so those host rows are not applied while the outlet area is blank."
 
   - id: lowrise_commercial_outlet_attached_small
     match:

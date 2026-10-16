@@ -341,6 +341,18 @@ def test_CH9B_14_outlet_keyed_on_outlet_area_and_tents_replace_generic_tiers():
     assert "lowrise_commercial_outlet_attached_large" in branches(large)
     missing = report(occupancy="business", **kw)
     assert fp_line(missing, "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED")
+    # Host Table 9.21.b must not fill in while 9.21.e is not evaluated: a blank outlet
+    # area would otherwise keep 9.21.b.1 (hose reel / 50 gpm, no sprinklers) in place of
+    # 9.21.e.2 (sprinklers / 300 gpm) once the outlet exceeds 900 m2.
+    assert "lowrise_residential_" not in branches(missing)
+    assert "lowrise_public_" not in branches(missing)
+    assert not [it for it in items(missing, "FP", True)
+                if it.system.startswith(("Automatic Sprinkler", "Fire Pump", "Hose Reel"))]
+    mosque_missing = report(occupancy="assembly_c", **kw)
+    assert fp_line(mosque_missing, "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED")
+    assert "lowrise_public_" not in branches(mosque_missing)
+    assert not [it for it in items(mosque_missing, "FP", True)
+                if it.system.startswith(("Automatic Sprinkler", "Fire Pump", "Hose Reel"))]
     # Not a listed host occupancy: the outlet table does not apply.
     resid = report(occupancy="residential", commercial_outlet_gf_bua_m2=1500, **kw)
     assert "lowrise_commercial_outlet" not in branches(resid)
@@ -359,6 +371,30 @@ def test_CH9B_14_outlet_keyed_on_outlet_area_and_tents_replace_generic_tiers():
     bj = json.loads(at.session_state["_building_json"])
     assert bj["has_attached_commercial_outlet"] is True
     assert bj["commercial_outlet_gf_bua_m2"] == 500.0
+
+
+def test_CH9B_14_blank_outlet_area_does_not_keep_host_9_21_tiers():
+    # Engine-only: Table 9.21.e replaces 9.21.a / 9.21.b, including when the outlet
+    # GF BUA is blank. The sized 9.21.e rows already suppress those host tiers; the
+    # missing-area row must do the same so a business does not keep 9.21.b.1
+    # (hose reel / 50 gpm, no sprinklers) in place of 9.21.e.2.
+    kw = dict(height_m=7, floors_above_grade=2, ground_floor_bua_m2=2000, plot_area_m2=5000,
+              has_attached_commercial_outlet=True)
+    missing = report(occupancy="business", **kw)
+    assert fp_line(missing, "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED")
+    assert "lowrise_residential_" not in branches(missing)
+    assert "lowrise_public_" not in branches(missing)
+    assert not [it for it in items(missing, "FP", True)
+                if it.system.startswith(("Automatic Sprinkler", "Fire Pump", "Hose Reel"))]
+    mosque_missing = report(occupancy="assembly_c", **kw)
+    assert fp_line(mosque_missing, "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED")
+    assert "lowrise_public_" not in branches(mosque_missing)
+    assert not [it for it in items(mosque_missing, "FP", True)
+                if it.system.startswith(("Automatic Sprinkler", "Fire Pump", "Hose Reel"))]
+    # Control: no outlet tick still takes the host table.
+    host = report(occupancy="business", height_m=7, floors_above_grade=2,
+                  ground_floor_bua_m2=2000, plot_area_m2=5000)
+    assert "lowrise_residential_upto_3600" in branches(host)
 
 
 # ---------------------------------------------------------------- Scenario B
