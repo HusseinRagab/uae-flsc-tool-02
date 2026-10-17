@@ -1171,16 +1171,20 @@ branches:
   #   small_detached      -> extinguishers only (detached G+1 <=150 m2 any occupancy)
   # Audit CH9B-14: #4.5.6 (p.712) gives tents, marquees, site offices and site dwellings
   # their own Table 9.21.f; it replaces the generic Table 9.21.a / 9.21.b / 9.21.c tiers.
+  # Table 9.21 is lowrise (height 15 m or less). Sub-row F is only the printed
+  # "detached G+1, GF BUA up to 150 m2" case: a larger or taller building that still
+  # has that tick is named NOT EVALUATED and does not keep the host 9.21 package.
   - id: lowrise_tent_marquee_extinguishers_only
     match:
-      tent_marquee_kind_in: [temporary, site_office_short, small_detached]
+      height_m_lte: 15
+      tent_marquee_kind_in: [temporary, site_office_short]
     suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
-    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows A / D / F)"
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows A / D)"
     page: "p.712"
     systems:
       - name: "Portable Fire Extinguishers (only)"
         spec: "Per Chapter 4"
-        detail: "Temporary tents/marquees, short-duration site offices (<6 months), and detached G+1 buildings with GF BUA <= 150 m2 (any occupancy) require extinguishers per Chapter 4 only - no fixed water-based system."
+        detail: "Temporary tents/marquees and short-duration site offices (<6 months) require extinguishers per Chapter 4 only - no fixed water-based system."
       - name: "Automatic Sprinkler System"
         required: not_required
       - name: "Hose Reel System"
@@ -1190,8 +1194,48 @@ branches:
       - name: "Fire Water Tank"
         required: not_required
 
+  - id: lowrise_small_detached
+    match:
+      height_m_lte: 15
+      tent_marquee_kind: small_detached
+      ground_floor_bua_m2_gt: 0
+      ground_floor_bua_m2_lte: 150
+      floors_above_grade_lte: 2
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-row F)"
+    page: "p.712"
+    systems:
+      - name: "Portable Fire Extinguishers (only)"
+        spec: "Per Chapter 4"
+        detail: "Table 9.21.f.F: detached G+1 buildings with GF BUA up to 150 m2 (any occupancy) require extinguishers per Chapter 4 only - no fixed water-based system."
+      - name: "Automatic Sprinkler System"
+        required: not_required
+      - name: "Hose Reel System"
+        required: not_required
+      - name: "Fire Pump"
+        required: not_required
+      - name: "Fire Water Tank"
+        required: not_required
+
+  - id: lowrise_small_detached_limits_missing
+    match:
+      height_m_lte: 15
+      tent_marquee_kind: small_detached
+      any_of:
+        - {ground_floor_bua_m2_lte: 0}
+        - {ground_floor_bua_m2_gt: 150}
+        - {floors_above_grade_gt: 2}
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-row F)"
+    page: "p.712"
+    systems:
+      - name: "Detached G+1 / 150 m2 (Table 9.21.f.F) - NOT EVALUATED"
+        spec: "Not evaluated: Table 9.21.f.F is a detached G+1 building with GF BUA up to 150 m2"
+        detail: "Table 9.21.f.F (p.712) is only the printed detached G+1, GF BUA up to 150 m2 case (any occupancy). The building is larger or has more than two storeys above grade, or the ground-floor area was not entered, so this row is not evaluated and the generic Table 9.21.a / 9.21.b host tiers are not applied."
+
   - id: lowrise_tent_marquee_hose_reel
     match:
+      height_m_lte: 15
       tent_marquee_kind_in: [permanent, commercial_desert, site_office_long]
     suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows B / C / E)"
