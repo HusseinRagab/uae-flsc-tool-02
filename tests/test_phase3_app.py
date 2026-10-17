@@ -361,6 +361,34 @@ def test_CH9B_14_outlet_keyed_on_outlet_area_and_tents_replace_generic_tiers():
     assert bj["commercial_outlet_gf_bua_m2"] == 500.0
 
 
+def test_CH9B_14_small_detached_over_150m2_does_not_keep_host_or_extinguishers_only():
+    """Table 9.21.f.F (p.712) is detached G+1, GF BUA up to 150 m2. A hospital (or
+    other 9.21.a host) that still has that tick after the area grows used to take
+    extinguishers-only and suppress the host sprinkler package."""
+    kw = dict(occupancy="healthcare_a", height_m=10, floors_above_grade=2,
+              plot_area_m2=5000, tent_marquee_kind="small_detached")
+    ok = report(ground_floor_bua_m2=150, **kw)
+    assert "lowrise_small_detached" in branches(ok)
+    assert "lowrise_public_" not in branches(ok)
+    assert not [it for it in items(ok, "FP", True)
+                if it.system.startswith(("Automatic Sprinkler", "Fire Pump", "Hose Reel"))]
+    over = report(ground_floor_bua_m2=2000, **kw)
+    assert "lowrise_small_detached_limits_missing" in branches(over)
+    assert "lowrise_small_detached " not in branches(over) + " "
+    assert "lowrise_public_" not in branches(over)
+    assert fp_line(over, "Detached G+1 / 150 m2 (Table 9.21.f.F) - NOT EVALUATED")
+    assert not [it for it in items(over, "FP", True)
+                if it.system.startswith("Automatic Sprinkler")]
+    tall = report(ground_floor_bua_m2=100, floors_above_grade=3, occupancy="healthcare_a",
+                  height_m=10, plot_area_m2=5000, tent_marquee_kind="small_detached")
+    assert "lowrise_small_detached_limits_missing" in branches(tall)
+    assert "lowrise_public_" not in branches(tall)
+    host = report(occupancy="healthcare_a", height_m=10, floors_above_grade=2,
+                  ground_floor_bua_m2=2000, plot_area_m2=5000)
+    assert "lowrise_public_" in branches(host)
+    assert [it for it in items(host, "FP", True) if it.system.startswith("Automatic Sprinkler")]
+
+
 # ---------------------------------------------------------------- Scenario B
 def test_SCENB_storage_hazard_is_asked_never_defaulted():
     at = _app_test({**_GEO, **_occ("Business / Office", "business"), "business_group_input": "B"})
