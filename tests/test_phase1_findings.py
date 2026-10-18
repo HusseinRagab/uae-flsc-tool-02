@@ -365,6 +365,25 @@ def test_CH8_10_cold_storage_no_whole_building_smoke():
     assert not [it for it in items(r, "FA") if "(entire building)" in it.system]
 
 
+def test_CH8_open_yard_no_warehouse_smoke_detection():
+    """Table 8.14 item 37 is manual-only; items 19-20 must not also fire."""
+    r = report(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2500,
+               is_open_yard_storage=True, hazard_class="LH")
+    matched = [b["id"] for b in engine._select_branches(
+        engine.load_rules("ch8_fire_alarm.yaml")["branches"], r.building)]
+    assert "fa_storage_industrial" not in matched
+    assert "fa_storage_single_tenant_facp" not in matched
+    assert "fa_storage_multi_tenant_facp" not in matched
+    assert "fa_open_yard" in matched
+    assert not [it for it in items(r, "FA") if "(entire building)" in it.system]
+    manual = [it for it in items(r, "FA") if it.system.startswith("Manual FA System (Open Storage Shed)")]
+    assert manual and manual[0].status == "required"
+    ordinary = report(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2500,
+                      hazard_class="LH")
+    assert [it for it in items(ordinary, "FA")
+            if it.system.startswith("Smoke Detection and Alarm System (entire building)")]
+
+
 def test_CH8_15_fa_height_text_cites_ch1():
     r = report(occupancy="residential", height_m=20, ground_floor_bua_m2=800)
     text = " ".join((it.detail or "") + (it.spec or "") for it in items(r, "FA"))

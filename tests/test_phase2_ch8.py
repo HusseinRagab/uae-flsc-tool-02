@@ -262,3 +262,26 @@ def test_CH8_22_reminders_and_proxy_flags():
     lpg = report(occupancy="business", height_m=20, ground_floor_bua_m2=800,
                  has_lpg_cylinders_food_truck=True)
     assert one(lpg, "Heat Detector (Food Truck)").status == "required"
+
+
+# ------------------------------------------------------------------ open yard vs warehouse row
+def test_open_yard_takes_table_8_14_item_37_not_items_19_20():
+    """Open-yard storage is Table 8.14 item 37 (manual FA). The engine unions
+    matching branches, so items 19-20 (smoke throughout + immediate evacuation)
+    must not also fire."""
+    yard = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                  ground_floor_bua_m2=2500, hazard_class="LH", is_open_yard_storage=True)
+    assert yard.chapter("FA").selected_branch == "fa_open_yard"
+    names = [it.system for it in fa(yard)]
+    assert "Smoke Detection and Alarm System (entire building)" not in names
+    assert "General Fire Alarm = Evacuation Alarm" not in names
+    assert "Automatic Smoke Detection NOT REQUIRED (Open Yard / Open Storage Shed)" in names
+    shed = one(yard, "Manual FA System (Open Storage Shed)")
+    assert shed.status == "required"
+    assert "automatic detection not required" in shed.detail.lower()
+
+    warehouse = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                       ground_floor_bua_m2=2500, hazard_class="LH")
+    assert warehouse.chapter("FA").selected_branch == "fa_storage_industrial"
+    assert one(warehouse, "Smoke Detection and Alarm System (entire building)").status == "required"
+    assert not [it for it in fa(warehouse) if it.system.startswith("Manual FA System (Open Storage Shed)")]
