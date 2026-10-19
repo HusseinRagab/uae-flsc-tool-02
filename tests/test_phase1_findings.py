@@ -406,6 +406,27 @@ def test_CH10_37_one_tunnel_line():
     assert len([it for it in items(r, "SC") if it.system.startswith("Tunnel Smoke Management")]) == 1
 
 
+def test_CH10_open_yard_no_warehouse_roof_exhaust():
+    """Table 10.26.1 is warehouse roof ventilation; Group U has no building envelope."""
+    r = report(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2500,
+               is_open_yard_storage=True, hazard_class="LH")
+    matched = [b["id"] for b in engine._select_branches(
+        engine.load_rules("ch10_smoke_control.yaml")["branches"], r.building)]
+    assert "sc_open_yard" in matched
+    assert not [i for i in matched if i.startswith("sc_storage_industrial_")]
+    names = [it.system for it in items(r, "SC")]
+    assert not [n for n in names if "Roof Ventilation System" == n]
+    assert not [n for n in names if n.startswith("Roof Ventilation OR Mechanical")]
+    assert not [n for n in names if n.startswith("Mechanical Roof Exhaust Fans")]
+    assert not [n for n in names if n.startswith("Make-up Air Fans")]
+    assert "Roof Ventilation / Mechanical Roof Exhaust NOT Required (open yard, no building envelope)" in names
+    ordinary = report(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2500,
+                      hazard_class="LH")
+    assert ordinary.chapter("SC").selected_branch == "sc_storage_industrial_over_2000"
+    assert [it for it in items(ordinary, "SC")
+            if it.system.startswith("Mechanical Roof Exhaust Fans")]
+
+
 # ------------------------------------------------- attached parking
 def test_attached_parking_carries_routing_inputs():
     r = report(occupancy="hotel_a", height_m=18, ground_floor_bua_m2=1000, plot_area_m2=2000,

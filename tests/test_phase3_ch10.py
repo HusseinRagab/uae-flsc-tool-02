@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
+import engine  # noqa: E402
 from test_phase1_findings import items, report  # noqa: E402
 
 
@@ -233,3 +234,32 @@ def test_CH10_03_23_m_is_highrise_for_stairs():
                                            "required")
     r = report(occupancy="residential", height_m=22.9, **BASE)
     assert one(r, "Stair Pressurization").status == "not_required"
+
+
+# ----------------------------------------------- open yard vs warehouse roof row
+def test_open_yard_takes_no_table_10_26_1_roof_exhaust():
+    """Open-yard storage (Table 9.27 Group U) has no building envelope. The engine
+    unions matching branches, so Table 10.26.1 warehouse roof ventilation must
+    not also fire."""
+    yard = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                  ground_floor_bua_m2=2500, hazard_class="LH", is_open_yard_storage=True)
+    assert yard.chapter("SC").selected_branch == "sc_open_yard"
+    matched = [b["id"] for b in engine._select_branches(
+        engine.load_rules("ch10_smoke_control.yaml")["branches"], yard.building)]
+    assert not [i for i in matched if i.startswith("sc_storage_industrial_")]
+    assert one(yard, "Roof Ventilation / Mechanical Roof Exhaust NOT Required").status == "not_required"
+    n = names(yard)
+    assert "Roof Ventilation System" not in n
+    assert "Mechanical Roof Exhaust Fans (with engineering analysis if natural)" not in n
+    assert "Make-up Air Fans OR Sufficient Replacement-air Openings" not in n
+
+    small = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                   ground_floor_bua_m2=150, hazard_class="LH", is_open_yard_storage=True)
+    assert small.chapter("SC").selected_branch == "sc_open_yard"
+    assert "Roof Ventilation System" not in names(small)
+
+    warehouse = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                       ground_floor_bua_m2=2500, hazard_class="LH")
+    assert warehouse.chapter("SC").selected_branch == "sc_storage_industrial_over_2000"
+    assert one(warehouse, "Mechanical Roof Exhaust Fans").status == "required"
+    assert not [it for it in sc(warehouse) if "open yard" in it.system.lower()]
