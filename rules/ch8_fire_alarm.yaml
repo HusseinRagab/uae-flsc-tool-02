@@ -383,11 +383,25 @@ branches:
         spec: "Addressable, per Section 4.3"
       - name: "Main FACP at Continuously Attended Location"
 
+  - id: fa_aboveground_tanks
+    # Table 8.15 item 3 (p.512) is the specific row for flammable liquid tanks.
+    # Table 9.27 Group T (p.745) is outdoor aboveground tanks, not a warehouse
+    # envelope. fa_storage_industrial excludes this case because the engine
+    # unions matching branches.
+    match: {occupancy: storage_industrial, is_aboveground_tank_storage_is: true}
+    section: "Ch 8, #5.3 / Table 8.15 item 3"
+    page: "p.512"
+    systems:
+      - name: "Automatic Smoke Detection NOT REQUIRED (aboveground tanks, no warehouse envelope)"
+        required: not_required
+        detail: "Table 8.13 items 19-20 (p.506) require smoke detection throughout a warehouse building and audio-visual notification visible from the common entrance. Aboveground tank storage (Table 9.27 Group T, p.745) is flammable / combustible liquids in outdoor tanks, so those warehouse rows do not apply. Tank detection is Table 8.15 item 3 (p.512): intrinsically safe flame plus linear heat on the tank roof (fa_eq_flammable_liquid_tanks, when the flammable-liquid-tanks equipment tick is on)."
+
   - id: fa_storage_industrial
-    # Items 21 (cold storage), 23 (robotic) and 28 (plant nursery) are the
-    # specific rows for those buildings; the engine unions matching branches,
-    # so this general storage row must exclude them.
-    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false}
+    # Items 21 (cold storage), 23 (robotic), 28 (plant nursery) and Table 9.27
+    # Group T (aboveground tanks) are the specific rows for those buildings;
+    # the engine unions matching branches, so this general storage row must
+    # exclude them.
+    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false, is_aboveground_tank_storage_is: false}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20"
     page: "p.506"
     systems:
@@ -403,7 +417,7 @@ branches:
 
   - id: fa_storage_single_tenant_facp
     # Table 8.13 items 19-20 (iv): single-tenant warehouse main FACP location.
-    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false, is_single_tenant_storage_is: true}
+    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false, is_aboveground_tank_storage_is: false, is_single_tenant_storage_is: true}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20 (iv)"
     page: "p.506"
     systems:
@@ -412,7 +426,7 @@ branches:
 
   - id: fa_storage_multi_tenant_facp
     # Table 8.13 items 19-20 (v): one main FACP for a multi-tenant group is permitted.
-    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false, is_single_tenant_storage_is: false}
+    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false, is_aboveground_tank_storage_is: false, is_single_tenant_storage_is: false}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20 (v)"
     page: "p.506"
     systems:

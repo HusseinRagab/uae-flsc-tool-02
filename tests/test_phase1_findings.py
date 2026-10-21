@@ -365,6 +365,25 @@ def test_CH8_10_cold_storage_no_whole_building_smoke():
     assert not [it for it in items(r, "FA") if "(entire building)" in it.system]
 
 
+def test_CH8_ast_no_warehouse_smoke_detection():
+    """Table 8.13 items 19-20 are warehouse smoke-throughout; Group T is outdoor tanks."""
+    r = report(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2500,
+               is_aboveground_tank_storage=True, ast_storage_area_m2=1000,
+               ast_tank_capacity_m3=500, hazard_class="HH")
+    matched = [b["id"] for b in engine._select_branches(
+        engine.load_rules("ch8_fire_alarm.yaml")["branches"], r.building)]
+    assert "fa_storage_industrial" not in matched
+    assert "fa_storage_single_tenant_facp" not in matched
+    assert "fa_storage_multi_tenant_facp" not in matched
+    assert "fa_aboveground_tanks" in matched
+    assert not [it for it in items(r, "FA") if "(entire building)" in it.system]
+    assert not [it for it in items(r, "FA") if it.system == "General Fire Alarm = Evacuation Alarm"]
+    ordinary = report(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2500,
+                      hazard_class="LH")
+    assert [it for it in items(ordinary, "FA")
+            if it.system.startswith("Smoke Detection and Alarm System (entire building)")]
+
+
 def test_CH8_15_fa_height_text_cites_ch1():
     r = report(occupancy="residential", height_m=20, ground_floor_bua_m2=800)
     text = " ".join((it.detail or "") + (it.spec or "") for it in items(r, "FA"))

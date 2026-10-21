@@ -262,3 +262,34 @@ def test_CH8_22_reminders_and_proxy_flags():
     lpg = report(occupancy="business", height_m=20, ground_floor_bua_m2=800,
                  has_lpg_cylinders_food_truck=True)
     assert one(lpg, "Heat Detector (Food Truck)").status == "required"
+
+
+# ------------------------------------------------------------------ AST vs warehouse row
+def test_ast_takes_no_table_8_13_items_19_20():
+    """Aboveground tank storage (Table 9.27 Group T) is outdoor tanks, not a
+    warehouse envelope. The engine unions matching branches, so items 19-20
+    (smoke throughout + immediate evacuation) must not also fire."""
+    ast = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                 ground_floor_bua_m2=2500, hazard_class="HH",
+                 is_aboveground_tank_storage=True, ast_storage_area_m2=1000,
+                 ast_tank_capacity_m3=500)
+    assert ast.chapter("FA").selected_branch == "fa_aboveground_tanks"
+    names = [it.system for it in fa(ast)]
+    assert "Smoke Detection and Alarm System (entire building)" not in names
+    assert "General Fire Alarm = Evacuation Alarm" not in names
+    assert "External Audio-Visual Notification Devices" not in names
+    assert "Automatic Smoke Detection NOT REQUIRED (aboveground tanks, no warehouse envelope)" in names
+    assert one(ast, "Automatic Smoke Detection NOT REQUIRED (aboveground tanks, no warehouse envelope)").status == "not_required"
+
+    small = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                   ground_floor_bua_m2=150, hazard_class="HH",
+                   is_aboveground_tank_storage=True, ast_storage_area_m2=100,
+                   ast_tank_capacity_m3=50)
+    assert small.chapter("FA").selected_branch == "fa_aboveground_tanks"
+    assert "Smoke Detection and Alarm System (entire building)" not in [it.system for it in fa(small)]
+
+    warehouse = report(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                       ground_floor_bua_m2=2500, hazard_class="LH")
+    assert warehouse.chapter("FA").selected_branch == "fa_storage_industrial"
+    assert one(warehouse, "Smoke Detection and Alarm System (entire building)").status == "required"
+    assert not [it for it in fa(warehouse) if "aboveground tanks" in it.system.lower()]
