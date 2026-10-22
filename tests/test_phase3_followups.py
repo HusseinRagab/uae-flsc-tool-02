@@ -57,6 +57,26 @@ def test_F_a2_amusement_with_group_c_keeps_table_6_5_item_4():
     assert "F-a2" not in get(r, "EL", CB).detail
 
 
+def test_F_a2_amusement_warehouse_keeps_table_6_5_item_4():
+    """Table 6.5 p.419 item 4 AMUSEMENT BUILDINGS governs irrespective of primary
+    occupancy (same F-a2 ruling as Group C). A warehouse / factory with the amusement
+    box ticked must not also inherit items 7-8 (Monitored Self-Contained only)."""
+    kw = dict(occupancy="storage_industrial", height_m=10, floors_above_grade=2,
+              ground_floor_bua_m2=1000, plot_area_m2=5000, hazard_class="LH")
+    r = report(has_amusement_confounding=True, **kw)
+    cb = get(r, "EL", CB)
+    assert cb.status == "required" and "Table 6.5 item 4" in cb.code_ref
+    assert cb.source_rule == "el_amusement_standalone"
+    assert not [it for it in items(r, "EL")
+                if it.system.startswith("Monitored Self-Contained")
+                and it.source_rule == "el_storage_industrial"]
+    plain = report(**kw)
+    mon = get(plain, "EL", "Monitored Self-Contained")
+    assert mon.status == "required" and mon.source_rule == "el_storage_industrial"
+    assert "items 7-8" in (mon.code_ref or "")
+    assert not [it for it in items(plain, "EL") if it.system.startswith(CB)]
+
+
 # ------------------------------------------------------------------ F-a1-1
 def test_F_a1_1_new_or_modified_building_is_a_required_choice_with_no_prefill():
     assert Building.model_fields["is_new_or_modified_building"].default is None

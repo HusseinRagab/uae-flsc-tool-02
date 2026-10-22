@@ -170,6 +170,19 @@ CASES = [
          expect_el_branch="el_assembly_amusement",
          expect_el_systems=["Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"]),
 
+    dict(name="EL: Warehouse with amusement stays on Table 6.5 item 4 (not items 7-8)",
+         inputs=dict(occupancy="storage_industrial", height_m=10,
+                     floors_above_grade=2, ground_floor_bua_m2=1000,
+                     plot_area_m2=5000, hazard_class="LH",
+                     has_amusement_confounding=True),
+         expect_el_branch="el_amusement_standalone",
+         expect_el_systems=[
+             "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting",
+         ],
+         expect_el_absent=[
+             "Monitored Self-Contained EL (Section 3.3)",
+         ]),
+
 
     # ---- FE archetypes (Ch 4) ----
     dict(name="FE: Hotel highrise -> universal Class A + residential Class K + commercial kitchen Class K",
@@ -972,6 +985,10 @@ def run_all():
             if s not in _names(_items(r, "EL", "System Type Selection")):
                 ok = False
                 reasons.append(f"missing EL system: {s}")
+        for s in case.get("expect_el_absent", []):
+            if s in _names(_items(r, "EL", "System Type Selection")):
+                ok = False
+                reasons.append(f"EL system should be absent: {s}")
         for s in case.get("expect_el_general", []):
             if s not in _names(_items(r, "EL", "General Specs")):
                 ok = False
