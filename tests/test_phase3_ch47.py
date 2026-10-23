@@ -242,6 +242,35 @@ def test_CH47_05_strobes_speakers_zones_two_way_wiring_and_heights():
         assert v in h, v
 
 
+def test_CH47_open_yard_does_not_take_warehouse_el():
+    """Table 6.5 items 7-8 are warehouses/factories. Group U open-yard storage
+    has no building envelope, so the monitored warehouse row must not also fire."""
+    kw = dict(occupancy="storage_industrial", height_m=10, floors_above_grade=1,
+              ground_floor_bua_m2=2500, plot_area_m2=5000, hazard_class="LH")
+    yard = report(is_open_yard_storage=True, **kw)
+    assert yard.chapter("EL").selected_branch == "el_open_yard"
+    assert not [it for it in items(yard, "EL")
+                if it.source_rule == "el_storage_industrial"]
+    assert not [it for it in items(yard, "EL")
+                if it.system.startswith("Monitored Self-Contained EL (Section 3.3)")]
+    assert not [it for it in items(yard, "EL")
+                if it.system.startswith("Central Battery")]
+    nr = [it for it in items(yard, "EL")
+          if it.source_rule == "el_open_yard"]
+    assert nr and nr[0].status == "not_required"
+    tall = report(is_open_yard_storage=True, occupancy="storage_industrial",
+                  height_m=25, floors_above_grade=6, ground_floor_bua_m2=2500,
+                  plot_area_m2=5000, hazard_class="LH")
+    assert tall.chapter("EL").selected_branch == "el_open_yard"
+    assert not [it for it in items(tall, "EL")
+                if it.source_rule in ("el_highrise", "el_storage_industrial")]
+    plain = report(**kw)
+    mon = [it for it in items(plain, "EL")
+           if it.source_rule == "el_storage_industrial"
+           and it.system.startswith("Monitored Self-Contained")]
+    assert mon and mon[0].status == "required"
+
+
 def test_CH47_16_evc_labels_as_printed():
     """Table 7.1 #4.4 p.434 (no 'door closed'); Table 8.1 #14.2 p.459 15 s / 180 s;
     Table 8.13 p.502 240 s; ambient levels are 'for information'."""

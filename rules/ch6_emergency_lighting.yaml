@@ -122,6 +122,10 @@ branches:
     match:
       height_m_gt: 90
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+      # Table 6.5 items 1-2 assume a building envelope. Group U open-yard storage
+      # (Table 9.27) has none; el_open_yard states items 7-8 are not required and
+      # this height row must not replace them with Central Battery OR Monitored.
+      is_open_yard_storage_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 1"
     page: "p.419"
     systems:
@@ -140,6 +144,9 @@ branches:
       height_m_gte: 23
       height_m_lte: 90
       occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing]
+      # Same open-yard gate as el_super_highrise: no warehouse / height-tier EL
+      # system type on a Group U yard (no building envelope).
+      is_open_yard_storage_is: false
     section: "Ch 6, #4.3 / Table 6.5 item 2"
     page: "p.419"
     systems:
@@ -226,9 +233,24 @@ branches:
       - *el_single_system
 
 
+  - id: el_open_yard
+    # Table 6.5 items 7-8 are warehouses and factories. Table 9.27 Group U is
+    # open yard / outdoor storage with no building envelope. The engine unions
+    # every match, so items 7-8 must not also fire on a Group U profile.
+    match:
+      occupancy: storage_industrial
+      is_open_yard_storage_is: true
+    section: "Ch 6, #4.3 / Table 6.5 items 7-8"
+    page: "p.419"
+    systems:
+      - name: "Monitored Self-Contained EL (warehouses / factories) NOT REQUIRED (Open Yard)"
+        required: not_required
+        detail: "Table 6.5 items 7-8 (p.419) require a Monitored Self-Contained Emergency Lighting System (Section 3.3) for warehouses and factories, plus one centralized facility system (#4.2). Table 9.27 Group U is open yard / outdoor storage with no building envelope, so those warehouse rows do not apply. Height-tier items 1-2 (Central Battery OR Monitored) are also not applied."
+
   - id: el_storage_industrial
     match:
       occupancy: storage_industrial
+      is_open_yard_storage_is: false
     section: "Ch 6, #4.3 / Table 6.5 items 7-8"
     page: "p.419"
     systems:
