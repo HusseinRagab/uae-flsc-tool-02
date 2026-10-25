@@ -220,6 +220,11 @@ branches:
   - id: evc_super_highrise
     match:
       height_m_gt: 90
+      # Table 7.3 items 1-2 assume a building envelope (stair jacks, lift
+      # lobbies, speakers). Group U open-yard storage (Table 9.27) has none;
+      # evc_open_yard states item 9 is not required and this height row must
+      # not replace it with a required highrise EVC package.
+      is_open_yard_storage_is: false
     section: "Ch 7, #3.1 / Table 7.3 item 1"
     page: "p.439"
     systems:
@@ -234,6 +239,9 @@ branches:
     match:
       height_m_gte: 23
       height_m_lte: 90
+      # Same open-yard gate as evc_super_highrise: no warehouse / height-tier
+      # EVC on a Group U yard (no building envelope).
+      is_open_yard_storage_is: false
     section: "Ch 7, #3.1 / Table 7.3 item 2"
     page: "p.439"
     systems:
@@ -319,10 +327,26 @@ branches:
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
 
+  - id: evc_open_yard
+    # Table 7.3 item 9 is storage / industrial with BUA > 5,000 m2. Table 9.27
+    # Group U is open yard / outdoor storage with no building envelope. The
+    # engine unions every match, so item 9 (and height items 1-2) must not
+    # also fire on a Group U profile.
+    match:
+      occupancy: storage_industrial
+      is_open_yard_storage_is: true
+    section: "Ch 7, #3.1 / Table 7.3 item 9"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - storage/industrial NOT REQUIRED (Open Yard)"
+        required: not_required
+        detail: "Table 7.3 item 9 (p.439) requires EVC + two-way telephone for storage and industrial occupancies with built-up area > 5,000 m2. Table 9.27 Group U is open yard / outdoor storage with no building envelope, so those warehouse rows do not apply. Height-tier items 1-2 (highrise / super-highrise EVC) are also not applied."
+
   - id: evc_storage_industrial_large
     match:
       occupancy: storage_industrial
       gross_floor_area_m2_gt: 5000
+      is_open_yard_storage_is: false
     section: "Ch 7, #3.1 / Table 7.3 item 9"
     page: "p.439"
     systems:
@@ -428,6 +452,7 @@ branches:
       occupancy: storage_industrial
       gross_floor_area_m2_lte: 5000
       height_m_lt: 23
+      is_open_yard_storage_is: false
     section: "Ch 7, #3.1 / Table 7.3 item 9 (BUA threshold)"
     page: "p.439"
     systems:

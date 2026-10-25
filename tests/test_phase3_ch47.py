@@ -242,6 +242,40 @@ def test_CH47_05_strobes_speakers_zones_two_way_wiring_and_heights():
         assert v in h, v
 
 
+def test_CH47_open_yard_does_not_take_warehouse_evc():
+    """Table 7.3 item 9 is warehouses/factories over 5,000 m2. Group U open-yard
+    storage has no building envelope, so the warehouse EVC row must not also fire."""
+    kw = dict(occupancy="storage_industrial", height_m=10, floors_above_grade=1,
+              ground_floor_bua_m2=4000, gross_floor_area_m2=6000, plot_area_m2=8000,
+              hazard_class="LH")
+    yard = report(is_open_yard_storage=True, **kw)
+    assert yard.chapter("EVC").selected_branch == "evc_open_yard"
+    assert not [it for it in items(yard, "EVC")
+                if it.source_rule == "evc_storage_industrial_large"]
+    assert not [it for it in items(yard, "EVC")
+                if it.system.startswith("Emergency Voice Evacuation or Communication System")]
+    assert not [it for it in items(yard, "EVC")
+                if it.system.startswith("Two-way Telephone Communication System")]
+    assert not any("General Specifications" in blk.title for blk in yard.chapter("EVC").blocks)
+    nr = [it for it in items(yard, "EVC") if it.source_rule == "evc_open_yard"]
+    assert nr and nr[0].status == "not_required"
+    tall = report(is_open_yard_storage=True, occupancy="storage_industrial",
+                  height_m=25, floors_above_grade=6, ground_floor_bua_m2=2500,
+                  gross_floor_area_m2=2500, plot_area_m2=8000, hazard_class="LH")
+    assert tall.chapter("EVC").selected_branch == "evc_open_yard"
+    assert not [it for it in items(tall, "EVC")
+                if it.source_rule in ("evc_highrise", "evc_storage_industrial_large")]
+    small = report(is_open_yard_storage=True, occupancy="storage_industrial",
+                   height_m=10, floors_above_grade=1, ground_floor_bua_m2=2500,
+                   gross_floor_area_m2=3000, plot_area_m2=5000, hazard_class="LH")
+    assert small.chapter("EVC").selected_branch == "evc_open_yard"
+    plain = report(**kw)
+    req = [it for it in items(plain, "EVC")
+           if it.source_rule == "evc_storage_industrial_large"
+           and it.system.startswith("Emergency Voice Evacuation or Communication System")]
+    assert req and req[0].status == "required"
+
+
 def test_CH47_16_evc_labels_as_printed():
     """Table 7.1 #4.4 p.434 (no 'door closed'); Table 8.1 #14.2 p.459 15 s / 180 s;
     Table 8.13 p.502 240 s; ambient levels are 'for information'."""
