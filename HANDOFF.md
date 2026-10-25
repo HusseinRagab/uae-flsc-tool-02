@@ -34,6 +34,10 @@ Grok on Hussein's go 12:36Z; PR #32 to be closed by Hussein).
   and 4", and its detail says each row requires the same package
   (`engine._el_cite_every_row`, Ch 6 only; the shared `_dedupe` is unchanged). Before, the
   line cited only the first row in the YAML (item 1, 2 or 3). Package unchanged.
+  Limit: this works inside one `evaluate_el` run only; in R13 most-restrictive mixed mode
+  `engine._merge_most_restrictive` still keeps the main occupancy's citation when two
+  occupancies print the same line (e.g. storage_industrial + mall_covered at 30 m cites "item
+  2" only; Business B + storage_industrial at 10 m cites "item 6" only); the package is right.
 - Tests: 9 new pytest in tests/test_phase3_followups.py (8 failed before the change; the
   single-row citation guard passes both ways) and test case "EL: Highrise warehouse takes
   Table 6.5 item 2 only" (failed before). 360 pytest, 114 cases, structural 0 (549 rule IDs).
