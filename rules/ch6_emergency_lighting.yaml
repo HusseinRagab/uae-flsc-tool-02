@@ -236,6 +236,13 @@ branches:
       # item 4's Central Battery OR Monitored package. Fix ruled 25.10.2026
       # (same gate as PR #32 and the midrise, lowrise and Group C rows).
       has_amusement_confounding_is: false
+      # Owner ruling 25.10.2026 12:40Z (option A): at 23 m or more the height row
+      # (Table 6.5 items 1-2, Central Battery OR Monitored) governs a warehouse /
+      # factory and items 7-8 (Monitored only) are not printed. Table 6.5 p.419
+      # states no precedence between the rows; this is the less restrictive
+      # reading (it permits Central Battery), ruled by Hussein. Same as the
+      # Group C rows (items 11-12 below 23 m only).
+      height_m_lt: 23
     section: "Ch 6, #4.3 / Table 6.5 items 7-8"
     page: "p.419"
     systems:

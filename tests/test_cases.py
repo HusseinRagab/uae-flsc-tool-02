@@ -183,6 +183,18 @@ CASES = [
              "Monitored Self-Contained EL (Section 3.3)",
          ]),
 
+    dict(name="EL: Highrise warehouse takes Table 6.5 item 2 only (not items 7-8)",
+         inputs=dict(occupancy="storage_industrial", height_m=30,
+                     floors_above_grade=8, ground_floor_bua_m2=1000,
+                     plot_area_m2=5000, hazard_class="LH"),
+         expect_el_branch="el_highrise",
+         expect_el_systems=[
+             "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting",
+         ],
+         expect_el_absent=[
+             "Monitored Self-Contained EL (Section 3.3)",
+         ]),
+
 
     # ---- FE archetypes (Ch 4) ----
     dict(name="FE: Hotel highrise -> universal Class A + residential Class K + commercial kitchen Class K",

@@ -9,6 +9,44 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-25 — Ch 6: highrise warehouse takes the height row only; one EL line cites every row (local branch, not pushed)
+
+Rulings: Hussein 25.10.2026 12:37Z "Both A" (warehouses 23 m or taller: show one package) and
+12:40Z "All A" (the height row governs; the one line cites both items). Branch
+`fix-ch6-highrise-warehouse-el-25.10.2026` off master 5093e69 (the amusement fix, pushed by
+Grok on Hussein's go 12:36Z; PR #32 to be closed by Hussein).
+- Source: Table 6.5 p.419 read off the rendered page of
+  `24.Fire Protection Mind map\UAEFIRECODE_ENG_SEPTEMBER_2018.pdf` (CDGH-OP-25, September
+  2018, 1348 pages, MD5 563D41E3E9F41745441A042F57255BCD). That is NOT the library copy named
+  in the Phase 5 entry (MD5 49a371a6...), which was not found under 04.CODES AND BOOKS.
+  Items 1-4 (super highrise, highrise, mall, amusement): Central Battery (Section 3.2) OR
+  Monitored Self-Contained (Section 3.3). Items 5-8 (midrise, low rise, warehouses,
+  factories): Monitored Self-Contained only. The table and #4.1-#4.4 state no precedence
+  between rows.
+- (1) Warehouse / factory of 23 m or more: the height row (item 2, or item 1 above 90 m)
+  governs; items 7-8 are not printed (`el_storage_industrial` gains `height_m_lt: 23`). This is
+  the LESS restrictive reading: it permits Central Battery, which items 7-8 do not list; ruled
+  by Hussein (option A), consistent with the Group C (items 11-12 below 23 m) and amusement
+  (item 4 over items 7-8) rulings. Mixed buildings that list `storage_industrial` (R13 most
+  restrictive) follow, since the listed occupancy runs the same rows.
+- (2) Where two Table 6.5 rows print the identical line (height row + amusement, mall +
+  highrise, mall + amusement), the one line kept now cites every row, e.g. "Table 6.5 items 2
+  and 4", and its detail says each row requires the same package
+  (`engine._el_cite_every_row`, Ch 6 only; the shared `_dedupe` is unchanged). Before, the
+  line cited only the first row in the YAML (item 1, 2 or 3). Package unchanged.
+- Tests: 9 new pytest in tests/test_phase3_followups.py (8 failed before the change; the
+  single-row citation guard passes both ways) and test case "EL: Highrise warehouse takes
+  Table 6.5 item 2 only" (failed before). 360 pytest, 114 cases, structural 0 (549 rule IDs).
+- Grid vs master (40 occupancies x 8 heights incl. 22.9 / 23 m x amusement x LH/OH1, each
+  also with `storage_industrial` listed most restrictive = 2528 cases, 32 identical schema
+  refusals): 984 change, EL only. 312 lose only the items 7-8 line (all at 23 m or more, no
+  amusement: storage_industrial alone, 8; each other occupancy with storage listed, 8). 672
+  change only the citation (648 amusement cases; 24 malls of 23 m or more, "items 2 and 3" or
+  "items 1 and 3"). Case list: the session's grid_changed_cases.txt (not kept in the repo).
+- Re-run issued jobs: warehouses / factories of 23 m or more; mixed buildings (most
+  restrictive) that list storage_industrial, 23 m or more; reports where the cited Table 6.5
+  item matters (amusement buildings, malls of 23 m or more).
+
 ### 2026-10-25 — Ch 6 warehouse EL: items 7-8 no longer stack onto item 4 (local branch, not pushed)
 
 Ruling: Hussein 25.10.2026 11:07Z, card "FLSC Ch 6 warehouse EL bug: how to land the fix",
@@ -396,8 +434,8 @@ the 750 gpm row of 9.24.C.2.
 | P4 Q1-Q6 | Business group form and hazard, Mercantile C hazard, lowrise kiosk row, Mercantile C type, old files with the Group C tick | ruled 13.10 00:49Z (all option A), 4 coding defaults confirmed 02:52Z (option A), coded on PR #24 |
 | P5 (10 cards) | CH9D-15 Section 5, Ch 2-3 additions, #2.9.6 scope, Table 3.37 4.iii, Ch 5-8 additions, Group I split, 3600 m2 edge, nursery hydrants, rail tunnel routes, Table 10.26 item 2 | ruled 13.10 05:23-05:45Z (all option A), coded on PR #25 |
 | Ch 6 warehouse EL | how to land the items 7-8 vs item 4 fix (PR #32 bug) | ruled 25.10 11:07Z option A, coded on local branch fix-ch6-warehouse-el-25.10.2026, push via Grok on Hussein's go |
-| Ch 6 highrise warehouse EL | items 1-2 and items 7-8 both print at 23 m or more | open, not asked |
-| Ch 6 item 4 citation at 23 m+ | surviving Central Battery OR Monitored line cites item 2 (el_highrise), not item 4, when amusement is ticked (first of two identical lines kept; package right) | open note, not asked |
+| Ch 6 highrise warehouse EL | items 1-2 and items 7-8 both print at 23 m or more | ruled 25.10 12:37Z / 12:40Z option A (height row governs, less restrictive reading), coded on branch fix-ch6-highrise-warehouse-el-25.10.2026 |
+| Ch 6 item 4 citation at 23 m+ | surviving Central Battery OR Monitored line cites item 2 (el_highrise), not item 4, when amusement is ticked (first of two identical lines kept; package right) | ruled 25.10 12:40Z option A (cite every row), coded on the same branch |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 

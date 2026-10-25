@@ -939,6 +939,7 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
                 "(owner ruling 13.10.2026, P4 Q1).")}) for it in branch_items]
         else:
             branch_items = [_business_group_not_evaluated_el()]
+    branch_items = _el_cite_every_row(branch_items)
     if branch_items:
         blocks.append(SectionBlock(title="EL - System Type Selection (Ch 6, Table 6.5)", items=_dedupe(branch_items)))
 
@@ -947,6 +948,43 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
         selected_branch=sel_id, selected_branch_section=sel_section,
         blocks=blocks,
     )
+
+
+_T65_ITEMS = re.compile(r"Table 6\.5 items? (\d+)(?:-(\d+))?")
+
+
+def _t65_items(code_ref: Optional[str]) -> List[int]:
+    out = []
+    for m in _T65_ITEMS.finditer(code_ref or ""):
+        lo = int(m.group(1))
+        out.extend(range(lo, int(m.group(2) or lo) + 1))
+    return out
+
+
+def _el_cite_every_row(items: List[Requirement]) -> List[Requirement]:
+    """Owner ruling 25.10.2026 12:40Z (option A): when two Table 6.5 rows print the
+    same system line (e.g. a 30 m amusement building: item 2 HIGHRISE and item 4
+    AMUSEMENT BUILDINGS, both Central Battery OR Monitored), `_dedupe` keeps one line;
+    that line cites every row that required it, not only the first row in the YAML."""
+    groups: Dict[tuple, List[int]] = {}
+    for i, it in enumerate(items):
+        groups.setdefault((it.system, it.spec, it.status), []).append(i)
+    out = list(items)
+    for idx in groups.values():
+        if len({items[i].source_rule for i in idx}) < 2:
+            continue
+        nums = sorted({n for i in idx for n in _t65_items(items[i].code_ref)})
+        if len(nums) < 2:
+            continue
+        txt = ", ".join(str(n) for n in nums[:-1]) + f" and {nums[-1]}"
+        first = items[idx[0]]
+        out[idx[0]] = first.model_copy(update={
+            "code_ref": f"Ch 6, #4.3 / Table 6.5 items {txt}",
+            "detail": (first.detail or "") + (
+                f" Table 6.5 items {txt} each require this same package; one line is "
+                f"printed for all of them (owner ruling 25.10.2026)."),
+        })
+    return out
 
 
 def _business_group_not_evaluated_el() -> Requirement:

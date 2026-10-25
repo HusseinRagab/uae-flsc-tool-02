@@ -78,6 +78,73 @@ def test_F_a2_amusement_warehouse_keeps_table_6_5_item_4():
     assert not [it for it in items(plain, "EL") if it.system.startswith(CB)]
 
 
+# ------------------------------------------------------- owner ruling 25.10.2026 12:40Z
+WH = dict(occupancy="storage_industrial", ground_floor_bua_m2=1000, plot_area_m2=5000,
+          hazard_class="LH")
+
+
+def _el_monitored_only(r):
+    return [it for it in items(r, "EL") if it.system.startswith("Monitored Self-Contained")]
+
+
+@pytest.mark.parametrize("h, item", [(23, "item 2"), (30, "item 2"), (95, "item 1")])
+def test_highrise_warehouse_takes_height_row_only(h, item):
+    """Table 6.5 p.419: items 1-2 (Central Battery OR Monitored) and items 7-8 (Monitored
+    only) both name a warehouse / factory of 23 m or more; the table states no precedence.
+    Owner ruling 25.10.2026 (A, the less restrictive reading): the height row governs and
+    items 7-8 are not printed."""
+    r = report(height_m=h, floors_above_grade=max(1, int(h // 3.5)), **WH)
+    cb = get(r, "EL", CB)
+    assert cb.status == "required" and cb.code_ref.endswith(f"Table 6.5 {item}"), cb.code_ref
+    assert not _el_monitored_only(r)
+    low = report(height_m=22.9, floors_above_grade=6, **WH)
+    assert get(low, "EL", "Monitored Self-Contained").source_rule == "el_storage_industrial"
+    assert not [it for it in items(low, "EL") if it.system.startswith(CB)]
+
+
+def test_highrise_mixed_with_storage_secondary_takes_height_row_only():
+    """R13 most restrictive: a listed storage_industrial occupancy runs the same Ch 6
+    rows, so at 23 m or more it no longer adds the items 7-8 line (ruling 25.10.2026)."""
+    kw = dict(occupancy="business", business_group="B", ground_floor_bua_m2=1000,
+              plot_area_m2=5000, secondary_occupancies=["storage_industrial"],
+              mixed_occupancy_mode="most_restrictive")
+    r = report(height_m=30, floors_above_grade=8, **kw)
+    assert get(r, "EL", CB).status == "required"
+    assert not _el_monitored_only(r)
+    # below 23 m the Monitored line stays (items 6 and 7-8 print the same line, merged)
+    low = report(height_m=12, floors_above_grade=3, **kw)
+    assert [it.status for it in _el_monitored_only(low)] == ["required"]
+    assert not [it for it in items(low, "EL") if it.system.startswith(CB)]
+
+
+@pytest.mark.parametrize("kw, want", [
+    (dict(WH, height_m=30, floors_above_grade=8), "items 2 and 4"),
+    (dict(WH, height_m=95, floors_above_grade=27), "items 1 and 4"),
+    (dict(occupancy="business", business_group="B", height_m=30, floors_above_grade=8,
+          ground_floor_bua_m2=1000, plot_area_m2=5000), "items 2 and 4"),
+    (dict(occupancy="assembly_b", height_m=30, floors_above_grade=8,
+          ground_floor_bua_m2=2000, plot_area_m2=5000), "items 2 and 4"),
+])
+def test_amusement_at_23_m_or_more_cites_every_row(kw, want):
+    """The height row and item 4 print the identical Central Battery OR Monitored line;
+    the one line kept cites both rows (owner ruling 25.10.2026, A), not only the first."""
+    cb = get(report(has_amusement_confounding=True, **kw), "EL", CB)
+    assert cb.status == "required"
+    assert cb.code_ref == f"Ch 6, #4.3 / Table 6.5 {want}", cb.code_ref
+    assert f"Table 6.5 {want} each require this same package" in cb.detail
+
+
+def test_single_row_citation_unchanged():
+    """One row only (amusement below 23 m; highrise without amusement): the row's own
+    citation stays as printed in the rule table."""
+    r = report(has_amusement_confounding=True, height_m=10, floors_above_grade=2, **WH)
+    assert get(r, "EL", CB).code_ref.startswith("Ch 6, #4.3 / Table 6.5 item 4 (AMUSEMENT")
+    r = report(occupancy="business", business_group="B", height_m=30, floors_above_grade=8,
+               ground_floor_bua_m2=1000, plot_area_m2=5000)
+    cb = get(r, "EL", CB)
+    assert cb.code_ref == "Ch 6, #4.3 / Table 6.5 item 2" and "each require" not in cb.detail
+
+
 # ------------------------------------------------------------------ F-a1-1
 def test_F_a1_1_new_or_modified_building_is_a_required_choice_with_no_prefill():
     assert Building.model_fields["is_new_or_modified_building"].default is None
