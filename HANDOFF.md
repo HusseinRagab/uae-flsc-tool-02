@@ -18,15 +18,24 @@ option A (fix on the PC clone in a local branch; push later via Grok on his go).
   Self-Contained, `el_storage_industrial`), p.419. Item 4 governs irrespective of primary
   occupancy (owner ruling 12.10.2026, P3 follow-up F-a2).
 - Fix: `el_storage_industrial` carries `has_amusement_confounding_is: false`, the same gate as
-  the midrise, lowrise and Group C rows; identical to PR #32 (cursor/critical-bug-detection-58f0).
+  the midrise, lowrise and Group C rows; the same logic as PR #32
+  (cursor/critical-bug-detection-58f0), comment wording differs.
 - Tests: `test_F_a2_amusement_warehouse_keeps_table_6_5_item_4` (pytest) and test case "EL:
   Warehouse with amusement stays on Table 6.5 item 4" with a new `expect_el_absent` check; both
   failed before the YAML change. 351 pytest, 113 cases, structural 0 (549 rule IDs).
 - Grid (40 occupancies x 5 heights x amusement x LH/OH1 = 800 cases vs master 33ab682): 10
   change, all `storage_industrial` with amusement, each losing only the items 7-8 line.
-- Re-run issued jobs: warehouses / factories with the amusement box ticked.
+- Independent verifier: CLEAR (2,344-case grid; only `storage_industrial` + amusement
+  changes, item 4 kept).
+- Re-run issued jobs: warehouses / factories with the amusement box ticked, and mixed
+  buildings (most_restrictive mode) that list `storage_industrial` as a secondary occupancy
+  with the amusement box ticked (10 such cases in the verifier's grid change too).
 - Seen, not changed (needs a ruling): a warehouse / factory of 23 m or more still prints the
   highrise row (items 1-2, `el_highrise`) and items 7-8 together.
+- Open note, no code change (predates this fix, all occupancies): at 23 m or more the
+  surviving "Central Battery OR Monitored" line cites Table 6.5 item 2 (`el_highrise`), because
+  the engine keeps the first of two identical lines; the required package is right, only the
+  clause shown differs (item 4 is not cited when amusement is ticked).
 - PC clone: master fast-forwarded 8e752d0 to 33ab682; the 3 files shown modified (eap.py,
   occupant_load.py, submission_checklist.py) were byte-identical to 8e752d0 (stale index stat
   only), so nothing was parked; branch `hussein-pc-edits-25.10.2026` marks 8e752d0.
@@ -388,6 +397,7 @@ the 750 gpm row of 9.24.C.2.
 | P5 (10 cards) | CH9D-15 Section 5, Ch 2-3 additions, #2.9.6 scope, Table 3.37 4.iii, Ch 5-8 additions, Group I split, 3600 m2 edge, nursery hydrants, rail tunnel routes, Table 10.26 item 2 | ruled 13.10 05:23-05:45Z (all option A), coded on PR #25 |
 | Ch 6 warehouse EL | how to land the items 7-8 vs item 4 fix (PR #32 bug) | ruled 25.10 11:07Z option A, coded on local branch fix-ch6-warehouse-el-25.10.2026, push via Grok on Hussein's go |
 | Ch 6 highrise warehouse EL | items 1-2 and items 7-8 both print at 23 m or more | open, not asked |
+| Ch 6 item 4 citation at 23 m+ | surviving Central Battery OR Monitored line cites item 2 (el_highrise), not item 4, when amusement is ticked (first of two identical lines kept; package right) | open note, not asked |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
