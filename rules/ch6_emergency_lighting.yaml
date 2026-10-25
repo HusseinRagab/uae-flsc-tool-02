@@ -229,6 +229,13 @@ branches:
   - id: el_storage_industrial
     match:
       occupancy: storage_industrial
+      # Owner ruling 12.10.2026, P3 follow-up F-a2: Table 6.5 item 4 (AMUSEMENT
+      # BUILDINGS) governs irrespective of primary occupancy. The engine unions
+      # every match, so items 7-8 (warehouses/factories, monitored only) must
+      # not also fire - they would require Monitored Self-Contained on top of
+      # item 4's Central Battery OR Monitored package. Fix ruled 25.10.2026
+      # (same gate as PR #32 and the midrise, lowrise and Group C rows).
+      has_amusement_confounding_is: false
     section: "Ch 6, #4.3 / Table 6.5 items 7-8"
     page: "p.419"
     systems:

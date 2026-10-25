@@ -9,6 +9,28 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-25 — Ch 6 warehouse EL: items 7-8 no longer stack onto item 4 (local branch, not pushed)
+
+Ruling: Hussein 25.10.2026 11:07Z, card "FLSC Ch 6 warehouse EL bug: how to land the fix",
+option A (fix on the PC clone in a local branch; push later via Grok on his go).
+- Bug: a `storage_industrial` building with the amusement box ticked printed BOTH Table 6.5
+  item 4 (Central Battery OR Monitored, `el_amusement_standalone`) and items 7-8 (Monitored
+  Self-Contained, `el_storage_industrial`), p.419. Item 4 governs irrespective of primary
+  occupancy (owner ruling 12.10.2026, P3 follow-up F-a2).
+- Fix: `el_storage_industrial` carries `has_amusement_confounding_is: false`, the same gate as
+  the midrise, lowrise and Group C rows; identical to PR #32 (cursor/critical-bug-detection-58f0).
+- Tests: `test_F_a2_amusement_warehouse_keeps_table_6_5_item_4` (pytest) and test case "EL:
+  Warehouse with amusement stays on Table 6.5 item 4" with a new `expect_el_absent` check; both
+  failed before the YAML change. 351 pytest, 113 cases, structural 0 (549 rule IDs).
+- Grid (40 occupancies x 5 heights x amusement x LH/OH1 = 800 cases vs master 33ab682): 10
+  change, all `storage_industrial` with amusement, each losing only the items 7-8 line.
+- Re-run issued jobs: warehouses / factories with the amusement box ticked.
+- Seen, not changed (needs a ruling): a warehouse / factory of 23 m or more still prints the
+  highrise row (items 1-2, `el_highrise`) and items 7-8 together.
+- PC clone: master fast-forwarded 8e752d0 to 33ab682; the 3 files shown modified (eap.py,
+  occupant_load.py, submission_checklist.py) were byte-identical to 8e752d0 (stale index stat
+  only), so nothing was parked; branch `hussein-pc-edits-25.10.2026` marks 8e752d0.
+
 ### 2026-10-13 — Phase 5: 2018 page gaps closed (10 cards, 05:23-05:45Z, all option A)
 
 Card "Close gaps" (05:23Z). Every deferred page read off the rendered 2018 PDF (library copy,
@@ -364,6 +386,8 @@ the 750 gpm row of 9.24.C.2.
 | P3 follow-ups (2) | flame-effect sprinkler check across R13 occupancies; parking depth with 0 levels | ruled 13.10 (All occupancies; Refuse it), coded |
 | P4 Q1-Q6 | Business group form and hazard, Mercantile C hazard, lowrise kiosk row, Mercantile C type, old files with the Group C tick | ruled 13.10 00:49Z (all option A), 4 coding defaults confirmed 02:52Z (option A), coded on PR #24 |
 | P5 (10 cards) | CH9D-15 Section 5, Ch 2-3 additions, #2.9.6 scope, Table 3.37 4.iii, Ch 5-8 additions, Group I split, 3600 m2 edge, nursery hydrants, rail tunnel routes, Table 10.26 item 2 | ruled 13.10 05:23-05:45Z (all option A), coded on PR #25 |
+| Ch 6 warehouse EL | how to land the items 7-8 vs item 4 fix (PR #32 bug) | ruled 25.10 11:07Z option A, coded on local branch fix-ch6-warehouse-el-25.10.2026, push via Grok on Hussein's go |
+| Ch 6 highrise warehouse EL | items 1-2 and items 7-8 both print at 23 m or more | open, not asked |
 | R14 | #4.1.5 Lift Machine Room sprinkler in unsprinklered buildings (CH9A-09) | ruled 12.10: sprinklered only; coded |
 | R14b | #4.1.5 for the other Table 9.30 rooms | ruled 12.10: all rooms (9.30.D needs none); coded |
 
@@ -384,4 +408,4 @@ python3 tests/test_cases.py
 python3 _structural_check.py
 ```
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-25*
