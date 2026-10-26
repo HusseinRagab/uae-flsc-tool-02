@@ -242,6 +242,51 @@ def test_CH47_05_strobes_speakers_zones_two_way_wiring_and_heights():
         assert v in h, v
 
 
+def test_CH47_aboveground_tanks_do_not_take_warehouse_evc():
+    """Table 7.3 item 9 is warehouses/factories over 5,000 m2. Group T
+    aboveground tank storage is outdoor tanks with no warehouse envelope,
+    so the warehouse EVC row must not also fire."""
+    kw = dict(occupancy="storage_industrial", height_m=10, floors_above_grade=1,
+              ground_floor_bua_m2=4000, gross_floor_area_m2=6000, plot_area_m2=8000,
+              hazard_class="HH")
+    ast = report(is_aboveground_tank_storage=True, **kw)
+    assert ast.chapter("EVC").selected_branch == "evc_aboveground_tanks"
+    assert not [it for it in items(ast, "EVC")
+                if it.source_rule == "evc_storage_industrial_large"]
+    assert not [it for it in items(ast, "EVC")
+                if it.system.startswith("Emergency Voice Evacuation or Communication System")]
+    assert not [it for it in items(ast, "EVC")
+                if it.system.startswith("Two-way Telephone Communication System")]
+    assert not any("General Specifications" in blk.title for blk in ast.chapter("EVC").blocks)
+    nr = [it for it in items(ast, "EVC") if it.source_rule == "evc_aboveground_tanks"]
+    assert nr and nr[0].status == "not_required"
+    tall = report(is_aboveground_tank_storage=True, occupancy="storage_industrial",
+                  height_m=25, floors_above_grade=6, ground_floor_bua_m2=2500,
+                  gross_floor_area_m2=2500, plot_area_m2=5000, hazard_class="HH")
+    assert tall.chapter("EVC").selected_branch == "evc_aboveground_tanks"
+    assert not [it for it in items(tall, "EVC")
+                if it.source_rule in ("evc_highrise", "evc_storage_industrial_large")]
+    small = report(is_aboveground_tank_storage=True, occupancy="storage_industrial",
+                   height_m=10, floors_above_grade=1, ground_floor_bua_m2=150,
+                   plot_area_m2=2000, hazard_class="HH",
+                   ast_storage_area_m2=150, ast_tank_capacity_m3=50,
+                   gross_floor_area_m2=150)
+    assert small.chapter("EVC").selected_branch == "evc_aboveground_tanks"
+    assert not [it for it in items(small, "EVC")
+                if it.source_rule == "evc_storage_industrial_small"]
+    super_t = report(is_aboveground_tank_storage=True, occupancy="storage_industrial",
+                     height_m=95, floors_above_grade=20, ground_floor_bua_m2=2500,
+                     gross_floor_area_m2=2500, plot_area_m2=5000, hazard_class="HH")
+    assert super_t.chapter("EVC").selected_branch == "evc_aboveground_tanks"
+    assert not [it for it in items(super_t, "EVC")
+                if it.source_rule in ("evc_super_highrise", "evc_highrise")]
+    plain = report(**kw)
+    req = [it for it in items(plain, "EVC")
+           if it.source_rule == "evc_storage_industrial_large"
+           and it.system.startswith("Emergency Voice Evacuation or Communication System")]
+    assert req and req[0].status == "required"
+
+
 def test_CH47_16_evc_labels_as_printed():
     """Table 7.1 #4.4 p.434 (no 'door closed'); Table 8.1 #14.2 p.459 15 s / 180 s;
     Table 8.13 p.502 240 s; ambient levels are 'for information'."""

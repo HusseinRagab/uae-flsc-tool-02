@@ -296,6 +296,19 @@ CASES = [
                      ground_floor_bua_m2=300, plot_area_m2=600),
          expect_evc_branch="evc_villa_not_required"),
 
+    dict(name="EVC: Aboveground tanks do not take warehouse item 9",
+         inputs=dict(occupancy="storage_industrial", height_m=10,
+                     floors_above_grade=1, ground_floor_bua_m2=4000,
+                     gross_floor_area_m2=6000, plot_area_m2=8000,
+                     hazard_class="HH", is_aboveground_tank_storage=True),
+         expect_evc_branch="evc_aboveground_tanks",
+         expect_evc_status={
+             "Emergency Voice Evacuation (EVC) - storage/industrial NOT REQUIRED (Aboveground Tanks)":
+                 "not_required",
+         },
+         expect_evc_absent=["Emergency Voice Evacuation or Communication System (EVC)"],
+         expect_evc_general_absent=True),
+
 
     # ---- FA archetypes (Ch 8) ----
     # Ruling R7 (12.10.2026): a hotel keeps its own Table 8.13 item 18 protocol;
@@ -1061,6 +1074,10 @@ def run_all():
             if got != want:
                 ok = False
                 reasons.append(f"EVC status for '{sname}': expected {want}, got {got}")
+        for s in case.get("expect_evc_absent", []):
+            if s in _names(_items(r, "EVC")):
+                ok = False
+                reasons.append(f"EVC system should be absent: {s}")
         # ----- FA checks -----
         fa = r.chapter("FA")
         if "expect_fa_branch" in case:
