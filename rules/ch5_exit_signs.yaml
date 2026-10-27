@@ -7,6 +7,7 @@ meta:
 # ---------- UNIVERSAL items (Table 5.3 items 1-5) -----------------------
 # Skipped for villas and ground-floor-only fuel stations (Table 5.3 items
 # 18-20, p.399), unless the villa is converted or the station is multi-storey.
+# Also skipped for Table 9.27 Group U open-yard storage (no building envelope).
 general:
   # ----- Universal sign specifications (Tables 5.1.1 + 5.1.2 + 5.1.3 + 5.1.7) -----
   - id: es_g_sign_dimensions_bilingual
@@ -15,6 +16,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Exit Sign Letter Size + Bilingual EXIT (English + Arabic)"
         code_ref: "Ch 5, #2 / Table 5.1 item 1"
@@ -29,6 +31,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Directional Exit Sign - Chevron Arrow Identifiable at 12 m"
         code_ref: "Ch 5, #2 / Table 5.1 item 2"
@@ -42,6 +45,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Sign Illumination - External vs Internal"
         code_ref: "Ch 5, #2 / Table 5.2 item 1"
@@ -55,6 +59,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Photoluminescent Sign Specifications (UL 1994)"
         code_ref: "Ch 5, #2 / Table 5.1 item 4"
@@ -68,6 +73,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Tactile Sign at Every Exit (Braille + Raised Characters)"
         code_ref: "Ch 5, #2 / Table 5.1 item 3"
@@ -81,6 +87,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Directional Exit Sign Placement Rules"
         code_ref: "Ch 5, #2 / Table 5.2 #2 (items iii-iv) + #4"
@@ -94,6 +101,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Floor Proximity Sign Mounting (150-455 mm above floor)"
         code_ref: "Ch 5, #2 / Table 5.1 item 7 (trigger); also Table 5.2 #2.v-vi (mounting dimensions)"
@@ -107,6 +115,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Exit Sign Mounting Position Above / Beside Door"
         code_ref: "Ch 5, #2 / Table 5.2 #2.i-ii"
@@ -120,6 +129,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Exit Signs at Exit Doors"
         code_ref: "Ch 5, #3 / Table 5.3 item 1"
@@ -133,6 +143,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
       has_horizontal_exits_is: true
     systems:
       - name: "Exit Signs at Horizontal Exit Doors"
@@ -146,6 +157,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Exit Signs at Exit Stairs"
         code_ref: "Ch 5, #3 / Table 5.3 item 2"
@@ -159,6 +171,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Directional Signs at Exit Access Corridors"
         code_ref: "Ch 5, #3 / Table 5.3 item 3"
@@ -173,6 +186,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "NO EXIT signs at Dead Ends"
         code_ref: "Ch 5, #3 / Table 5.3 item 4"
@@ -187,6 +201,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "NO EXIT Sign Letter Dimensions"
         code_ref: "Ch 5, #2 / Table 5.1 item 5"
@@ -197,6 +212,9 @@ general:
   - id: es_g_evacuation_elevator_sign
     when:
       has_evacuation_elevator_is: true
+      not:
+        occupancy: storage_industrial
+        is_open_yard_storage_is: true
     systems:
       - name: "Evacuation Elevator Signs"
         code_ref: "Ch 5, #3 / Table 5.3 item 5"
@@ -207,6 +225,9 @@ general:
   - id: es_g_evacuation_elevator_sign_dimensions
     when:
       has_evacuation_elevator_is: true
+      not:
+        occupancy: storage_industrial
+        is_open_yard_storage_is: true
     systems:
       - name: "Evacuation Elevator Sign - Letter Height + Wording + Posting"
         code_ref: "Ch 5, #2 / Table 5.1 item 6"
@@ -220,6 +241,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Evacuation Plan"
         code_ref: "Ch 5, #2 / Table 5.1 item 8; applied via Table 5.3 (occupancy items)"
@@ -241,6 +263,7 @@ general:
         any_of:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+          - {occupancy: storage_industrial, is_open_yard_storage_is: true}
     systems:
       - name: "Exit / Directional Sign Inspection and Maintenance (every 30 days)"
         code_ref: "Ch 5, #4.4.1-#4.4.3"
@@ -364,8 +387,25 @@ branches:
         spec: "Per Table 5.1.2"
         detail: "Directional Signs shall be provided for aisles and rack areas where the exit is not directly visible."
 
+  - id: es_open_yard
+    # Table 5.3 item 15 is storage / industrial (warehouses and factories).
+    # Table 9.27 Group U is open-yard storage of materials other than
+    # flammable and combustible (outdoor, no building envelope). The engine
+    # unions every match, so the warehouse row and the indoor Table 5.3
+    # items 1-5 package (exit doors, stairs, corridors, framed plans) must
+    # not also fire on a Group U profile.
+    match:
+      occupancy: storage_industrial
+      is_open_yard_storage_is: true
+    section: "Ch 5, #3 / Table 5.3 item 15"
+    page: "p.399"
+    systems:
+      - name: "Exit Signs Not Required (Open Yard Storage)"
+        required: not_required
+        detail: "Table 5.3 item 15 (p.399) applies universal Exit / Directional Signs and Evacuation Plans to storage and industrial occupancies. Table 9.27 Group U is open-yard storage (no building envelope), so those warehouse rows do not apply: there are no exit stairs, exit-access corridors or interior exit doors to mark."
+
   - id: es_storage_industrial
-    match: {occupancy: storage_industrial}
+    match: {occupancy: storage_industrial, is_open_yard_storage_is: false}
     section: "Ch 5, #3 / Table 5.3 item 15"
     page: "p.399"
     systems:

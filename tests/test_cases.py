@@ -891,6 +891,22 @@ CASES = [
          expect_es_branch="es_villa_private",
          expect_es_status={"Exit Signs Not Required": "not_required"}),
 
+    dict(name="ES: Open-yard storage does not take warehouse item 15",
+         inputs=dict(occupancy="storage_industrial", height_m=10,
+                     floors_above_grade=1, ground_floor_bua_m2=4000,
+                     gross_floor_area_m2=6000, plot_area_m2=8000,
+                     hazard_class="OH1", is_open_yard_storage=True),
+         expect_es_branch="es_open_yard",
+         expect_es_status={
+             "Exit Signs Not Required (Open Yard Storage)": "not_required",
+         },
+         expect_es_absent=["Exit Signs at Exit Doors",
+                           "Exit Signs at Exit Stairs",
+                           "Directional Signs at Exit Access Corridors",
+                           "Evacuation Plan",
+                           "Storage / Industrial Compliance Note"],
+         expect_es_universal_absent=True),
+
     dict(name="ES: Mall with theatre/cinema -> photoluminescent",
          inputs=dict(occupancy="mall_covered", height_m=18, floors_above_grade=3,
                      ground_floor_bua_m2=10000, plot_area_m2=25000,
@@ -986,6 +1002,14 @@ def run_all():
             if got != want:
                 ok = False
                 reasons.append(f"ES status for '{sname}': expected {want}, got {got}")
+        for s in case.get("expect_es_absent", []):
+            if s in _names(_items(r, "ES")):
+                ok = False
+                reasons.append(f"ES system should be absent: {s}")
+        if case.get("expect_es_universal_absent"):
+            if any("Universal Requirements" in blk.title for blk in (es.blocks if es else [])):
+                ok = False
+                reasons.append("ES universal block present but should be absent (open-yard storage)")
 
         # ----- EL checks -----
         el = r.chapter("EL")

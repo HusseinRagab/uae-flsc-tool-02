@@ -119,6 +119,38 @@ def test_CH47_17_exit_sign_colours_and_spacing():
         assert v in s[0].spec, v
 
 
+def test_CH47_open_yard_does_not_take_warehouse_exit_signs():
+    """Table 5.3 item 15 is warehouses/factories. Group U open-yard storage
+    has no building envelope, so the warehouse sign row and the indoor
+    Table 5.3 items 1-5 package must not also fire."""
+    kw = dict(occupancy="storage_industrial", height_m=10, floors_above_grade=1,
+              ground_floor_bua_m2=4000, gross_floor_area_m2=6000, plot_area_m2=8000,
+              hazard_class="OH1")
+    yard = report(is_open_yard_storage=True, **kw)
+    assert yard.chapter("ES").selected_branch == "es_open_yard"
+    assert not [it for it in items(yard, "ES")
+                if it.source_rule == "es_storage_industrial"]
+    indoor = ("Exit Signs at Exit Doors", "Exit Signs at Exit Stairs",
+              "Directional Signs at Exit Access Corridors", "Evacuation Plan")
+    for name in indoor:
+        assert not named(yard, "ES", name), name
+    assert not any("Universal Requirements" in blk.title for blk in yard.chapter("ES").blocks)
+    nr = [it for it in items(yard, "ES") if it.source_rule == "es_open_yard"]
+    assert nr and nr[0].status == "not_required"
+    small = report(is_open_yard_storage=True, occupancy="storage_industrial",
+                   height_m=8, floors_above_grade=1, ground_floor_bua_m2=1500,
+                   plot_area_m2=3000, hazard_class="LH", gross_floor_area_m2=1500)
+    assert small.chapter("ES").selected_branch == "es_open_yard"
+    assert not named(small, "ES", "Exit Signs at Exit Doors")
+    plain = report(**kw)
+    assert plain.chapter("ES").selected_branch == "es_storage_industrial"
+    assert named(plain, "ES", "Exit Signs at Exit Doors")
+    assert named(plain, "ES", "Evacuation Plan")
+    animal = report(occupancy="animal_housing", height_m=8, ground_floor_bua_m2=400)
+    assert animal.chapter("ES").selected_branch is None
+    assert named(animal, "ES", "Exit Signs at Exit Doors")
+
+
 # ------------------------------------------------------------------ Ch 6
 def el_system_types(r):
     return [it for it in items(r, "EL") if it.status == "required" and
