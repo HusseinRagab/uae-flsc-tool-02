@@ -249,8 +249,17 @@ def _merge_duties(items: List[Requirement]) -> List[Requirement]:
         if len({items[i].source_rule for i in idx}) < 2:
             continue
         # A line whose flow (or minutes) is not printed as a number, e.g.
-        # "2 adjacent deluge zones", cannot be ranked: keep every line.
+        # "2 adjacent deluge zones", cannot be ranked: keep every line, each naming the
+        # others, and none is called governing (verifier 28.10.2026, ruling R-G).
         if any(_duty_key(items[i])[0] == 0 for i in idx):
+            what = "fire pump set" if duty == "pump" else "fire water tank"
+            for i in idx:
+                others = "; ".join(f"{items[j].spec or items[j].system} ({items[j].code_ref})"
+                                   for j in idx if j != i)
+                replace[i] = items[i].model_copy(update={"detail": (items[i].detail or "") + (
+                    f" More than one code table gives a {what} for this building and at least "
+                    f"one prints no flow or duration that can be ranked, so none is named as "
+                    f"governing: the {what} shall meet each of them. Also required: {others}.")})
             continue
         best = max(idx, key=lambda i: _duty_key(items[i]))
         w = items[best]
@@ -590,8 +599,9 @@ def _itm_lines(blocks) -> List[Requirement]:
     """One Section 5 pointer line per system type that a required Ch 9 line names. A line
     offering alternatives ("Clean Agent OR Deluge Water Spray") points to each table, for
     the option installed."""
+    # A NOT EVALUATED line names a system whose need is not known: no pointer for it.
     names = [(it.system or "").lower() for blk in blocks for it in blk.items
-             if it.status == "required"]
+             if it.status == "required" and "NOT EVALUATED" not in (it.system or "")]
     out = []
     for _key, label, table, clause, pages, stds, words in _ITM_TABLES:
         hits = [n for n in names if any(w in n for w in words) and "extinguisher" not in n]
@@ -915,12 +925,37 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
     # #4.13.1 (p.749): Table 9.29 extends the building sprinkler system. Ruling R8
     # (12.10.2026): gated rows print a #4.13.1 not_required note in a building whose
     # table row gives no automatic sprinkler system.
+    # Verifier 28.10.2026 (blank-input residual): when the table row itself is NOT
+    # EVALUATED (a missing input) and no sprinkler line was found, the sprinkler-gated
+    # Table 9.29 / 9.30 lines are NOT EVALUATED too, never "not required".
+    row_unknown = (not sprinkler_required
+                   and any("NOT EVALUATED" in (it.system or "") for it in branch_items)
+                   and not any(it.status == "required" and "NOT EVALUATED" not in (it.system or "")
+                               for it in branch_items))
+
+    def _gated(it, why, ref):
+        if row_unknown:
+            return Requirement(
+                system=f"{it.system} - NOT EVALUATED", status="required",
+                spec="Not evaluated: depends on the building sprinkler system",
+                detail=(f"{why} The building's Ch 9 table row is NOT EVALUATED (an input is "
+                        f"missing, named in this chapter), so whether the building is "
+                        f"sprinklered, and this line, is not evaluated. A missing input is "
+                        f"never taken as a pass."),
+                code_ref=ref, page_ref=it.page_ref, source_rule=it.source_rule)
+        return None
     var_rules = rules.get("various_locations") or []
     var_items = _collect_flag(
         [r for r in var_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
     if not sprinkler_required:
         for it in _collect_flag([r for r in var_rules if r.get("requires_sprinkler_system")
                                  and not r.get("silent_when_unsprinklered")], b):
+            ne = _gated(it, "#4.13.1 extends the building sprinkler system to the Table 9.29 "
+                            "locations (ruling R8).",
+                        "Ch 9, #4.13.1 / " + (it.code_ref or "").replace("Ch 9, #4.13.1 / ", ""))
+            if ne:
+                var_items.append(ne)
+                continue
             var_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: #4.13.1 extends the building sprinkler system to the "
@@ -941,6 +976,12 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
     if not sprinkler_required:
         for it in _collect_flag([r for r in aux_rules if r.get("requires_sprinkler_system")
                                  and not r.get("silent_when_unsprinklered")], b):
+            ne = _gated(it, "Table 9.30 systems apply when the main building is fully "
+                            "protected (#4.1.5).",
+                        "Ch 9, #4.1.5 / " + (it.code_ref or "").replace("Ch 9, ", ""))
+            if ne:
+                aux_items.append(ne)
+                continue
             aux_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: Table 9.30 systems apply only when the main building is "
@@ -2514,7 +2555,8 @@ def _evaluate_core(b: Building) -> ComplianceReport:
 def _mark_not_evaluated(ch: ChapterReport) -> ChapterReport:
     blocks = [blk.model_copy(update={"items": [
         it.model_copy(update={"status": "not_evaluated"})
-        if "NOT EVALUATED" in (it.system or "") and it.status == "required" else it
+        if "NOT EVALUATED" in (it.system or "") and it.status in ("required", "conditional")
+        else it
         for it in blk.items]}) for blk in ch.blocks]
     return ch.model_copy(update={"blocks": blocks})
 

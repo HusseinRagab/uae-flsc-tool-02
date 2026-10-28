@@ -209,5 +209,6 @@ def test_CH9_Q9_secondary_storage_hazard_required_never_OH2_by_default():
             "secondary_occupancies_input": ["storage_industrial"]}
     at = _app_test(base)
     assert any("Ch9 Q9" in e.value for e in at.error)
-    at = _app_test({**base, "secondary_storage_hazard_input": "OH2", "sum_gf_bua_m2_input": 1000.0})
+    at = _app_test({**base, "secondary_storage_hazard_input": "OH2", "sum_gf_bua_m2_input": 1000.0,
+                    "storage_tenancy_input": "multi"})  # ruling Q-4: required for listed storage too
     assert not at.error

@@ -823,23 +823,29 @@ def _sum_gf_bua_input() -> None:
              "evaluation (owner ruling 12.10.2026, Ch9 Q1).")
 
 
+def _storage_tenancy_input() -> None:
+    """Owner ruling Q-4 (28.10.2026): tenancy is a required choice with no default, for a
+    storage main occupancy and for storage listed as another occupancy (verifier
+    28.10.2026: the second case had no input)."""
+    st.radio(
+        "Storage tenancy (required)", ["multi", "single"], index=None, horizontal=True,
+        key="storage_tenancy_input",
+        format_func=lambda x: {"multi": "Multi-tenant (Groups A-E)",
+                               "single": "Single tenant (Groups F-J)"}[x],
+        help="Table 9.27 (p.724-733): multi-tenant Groups A (LH) / B (OH1) / C (OH2) / D "
+             "(EH1) / E (EH2), p.724-728, or single tenant Groups F / G / H / I / J, "
+             "p.729-733. Tanks and pumps differ, e.g. row 1 tank 30 min multi-tenant, "
+             "45 min single tenant. No default: the tool stops until it is chosen "
+             "(owner ruling Q-4, 28.10.2026).")
+
+
 def _storage_specialty_inputs() -> None:
     """Table 9.27 specialty groups (K-V), commodity groups (L-O), unit compartment
     and tank inputs, in one expander under the storage hazard class."""
     with st.expander("Storage / industrial specialty (Table 9.27)",
                      expanded=not st.session_state.get("storage_tenancy_input")):
         st.caption("Choose the tenancy, then tick only the specialty groups that apply.")
-        # Owner ruling Q-4 (28.10.2026): tenancy is a required choice with no default.
-        st.radio(
-            "Storage tenancy (required)", ["multi", "single"], index=None, horizontal=True,
-            key="storage_tenancy_input",
-            format_func=lambda x: {"multi": "Multi-tenant (Groups A-E)",
-                                   "single": "Single tenant (Groups F-J)"}[x],
-            help="Table 9.27 (p.724-733): multi-tenant Groups A (LH) / B (OH1) / C (OH2) / D "
-                 "(EH1) / E (EH2), p.724-728, or single tenant Groups F / G / H / I / J, "
-                 "p.729-733. Tanks and pumps differ, e.g. row 1 tank 30 min multi-tenant, "
-                 "45 min single tenant. No default: the tool stops until it is chosen "
-                 "(owner ruling Q-4, 28.10.2026).")
+        _storage_tenancy_input()
         st.checkbox(
             "Idle wood / plastic pallet warehouse (Group K - high-challenge fire load)",
             key="is_idle_pallet_storage",
@@ -1842,6 +1848,7 @@ with st.sidebar:
                      "(materials) and Table 9.2 (activities). Owner ruling 12.10.2026, Ch9 Q9.")
             # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum is required for storage.
             _sum_gf_bua_input()
+            _storage_tenancy_input()
         if (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
                 and "animal_housing" in (st.session_state.get("secondary_occupancies_input") or [])):
             # Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9 for storage): the group of
@@ -2400,16 +2407,18 @@ if occupancy == "storage_industrial" and hazard is None:
              "groups depend on the stored materials and activities (#1.1.13, Tables 9.1 "
              "and 9.2), so the tool does not assume one.")
 
-if occupancy == "storage_industrial" and not st.session_state.get("storage_tenancy_input"):
-    _stop("Select the storage tenancy (sidebar: under 'Storage hazard class', Storage / "
-          "industrial specialty): multi-tenant Groups A-E or single tenant Groups F-J of "
-          "Table 9.27 (p.724-733). Tanks and pumps differ, so the tool does not assume one "
-          "(owner ruling Q-4, 28.10.2026).")
 
 # ---------- Owner rulings 12.10.2026, Ch9 Q1 and Q9 -------------------------
 _storage_secondary = (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
                       and "storage_industrial" in (st.session_state.get("secondary_occupancies_input") or [])
                       and occupancy != "storage_industrial")
+if ((occupancy == "storage_industrial" or _storage_secondary)
+        and not st.session_state.get("storage_tenancy_input")):
+    _stop("Select the storage tenancy (sidebar: under 'Storage hazard class' for a storage "
+          "building, or under Mixed occupancy when storage is another occupancy): "
+          "multi-tenant Groups A-E or single tenant Groups F-J of Table 9.27 (p.724-733). "
+          "Tanks and pumps differ, so the tool does not assume one (owner ruling Q-4, "
+          "28.10.2026).")
 if _storage_secondary and not st.session_state.get("secondary_storage_hazard_input"):
     _stop("Select the hazard class of the storage / industrial occupancy listed under "
              "'Other occupancies' (sidebar, Mixed occupancy). Table 9.27 groups depend on the "
@@ -2736,7 +2745,8 @@ building = Building(
     is_open_yard_storage=gs("is_open_yard_storage"),
     is_plant_nursery=gs("is_plant_nursery"),
     storage_tenancy=(st.session_state.get("storage_tenancy_input")
-                     if occupancy == "storage_industrial" else None),   # ruling Q-4
+                     if occupancy == "storage_industrial" or _storage_secondary
+                     else None),   # ruling Q-4 (main or listed storage)
     is_idle_pallet_storage=gs("is_idle_pallet_storage"),
     is_extra_hazard_2=(gs("is_extra_hazard_2") and occupancy == "storage_industrial")
     or _robotic_eh2,   # owner ruling 12.10.2026, Ch9 Q7

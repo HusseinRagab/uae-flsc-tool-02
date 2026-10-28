@@ -217,3 +217,75 @@ def test_bugbot_exports_do_not_count_not_evaluated_as_required():
     d = docx.Document(io.BytesIO(export.report_to_docx_bytes(r, "compact")))
     cells = " ".join(c.text for t in d.tables for row in t.rows for c in row.cells)
     assert f"{n_req} required, {n_ne} not evaluated" in cells
+
+
+# ------------------------------------------------ independent verifier, 28.10.2026
+def test_verifier_conditional_not_evaluated_lines_get_the_status():
+    # Ch 10 builds some NOT EVALUATED lines as conditional (e.g. basement depth blank).
+    r = evaluate(Building(occupancy="residential", height_m=30, floors_above_grade=8,
+                          floors_below_grade=2, basement_bua_m2=1000, ground_floor_bua_m2=1000,
+                          gross_floor_area_m2=8000, plot_area_m2=3000))
+    ne = [it for c in r.chapters for bl in c.blocks for it in bl.items
+          if "NOT EVALUATED" in it.system]
+    assert ne and all(it.status == "not_evaluated" for it in ne)
+
+
+def test_verifier_gated_9_29_9_30_lines_not_evaluated_when_row_is():
+    r = evaluate(Building(occupancy="healthcare_a", height_m=8, floors_above_grade=2,
+                          ground_floor_bua_m2=2000, gross_floor_area_m2=4000, plot_area_m2=4000,
+                          tent_marquee_kind="small_detached"))
+    fp = next(c for c in r.chapters if c.chapter_code == "FP")
+    its = [it for bl in fp.blocks for it in bl.items]
+    assert not [it for it in its if it.status == "not_required" and (
+        "Table 9.29" in (it.code_ref or "") or "Table 9.30" in (it.code_ref or ""))]
+    assert any(it.status == "not_evaluated" and it.system.startswith("Lift Machine Room")
+               for it in its)
+
+
+def test_verifier_unranked_pumps_name_each_other():
+    r = evaluate(Building(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                          ground_floor_bua_m2=2000, gross_floor_area_m2=2000, sum_gf_bua_m2=2000,
+                          plot_area_m2=4000, hazard_class="OH2", storage_tenancy="multi",
+                          is_cold_storage=True))
+    fp = next(c for c in r.chapters if c.chapter_code == "FP")
+    pumps = [it for bl in fp.blocks for it in bl.items if it.duty == "pump" and it.status == "required"]
+    if len(pumps) > 1:
+        assert all("shall meet each of them" in (it.detail or "") for it in pumps)
+
+
+def test_verifier_RD_highrise_hotel_kitchens_required():
+    r = evaluate(Building(occupancy="hotel_a", height_m=40, floors_above_grade=12,
+                          ground_floor_bua_m2=1500, gross_floor_area_m2=18000, plot_area_m2=5000))
+    sc = next(c for c in r.chapters if c.chapter_code == "SC")
+    rules = {it.source_rule: it.status for bl in sc.blocks for it in bl.items}
+    assert rules.get("sc_aux_kitchen_16iii") == "required"
+    assert rules.get("sc_aux_kitchen_16iii_residential_highrise") == "conditional"
+
+
+def test_verifier_secondary_storage_tenancy_reaches_the_storage_run():
+    kw = dict(occupancy="residential", secondary_occupancies=["storage_industrial"],
+              mixed_occupancy_mode="most_restrictive", height_m=12, floors_above_grade=3,
+              ground_floor_bua_m2=2000, gross_floor_area_m2=6000, plot_area_m2=4000,
+              secondary_storage_hazard="OH1", sum_gf_bua_m2=2000)
+    def ne(**x):
+        r = evaluate(Building(**kw, **x))
+        return [it.system for c in r.chapters for bl in c.blocks for it in bl.items
+                if "Tenancy" in it.system and it.status == "not_evaluated"]
+    assert ne()                       # blank: named, never a pass
+    assert not ne(storage_tenancy="multi")
+
+
+def test_verifier_app_asks_tenancy_for_secondary_storage():
+    src = open(os.path.join(os.path.dirname(__file__), "..", "app.py"), encoding="utf-8").read()
+    i = src.index('key="secondary_storage_hazard_input"')
+    assert "_storage_tenancy_input()" in src[i:i + 900]
+    assert 'occupancy == "storage_industrial" or _storage_secondary)\n        and not st.session_state.get("storage_tenancy_input")' in src
+
+
+def test_verifier_no_itm_pointer_for_a_not_evaluated_system():
+    r = evaluate(Building(occupancy="healthcare_a", height_m=8, floors_above_grade=2,
+                          ground_floor_bua_m2=2000, gross_floor_area_m2=4000, plot_area_m2=4000,
+                          tent_marquee_kind="small_detached"))
+    fp = next(c for c in r.chapters if c.chapter_code == "FP")
+    rules = {it.source_rule for bl in fp.blocks for it in bl.items}
+    assert "itm_sprinkler" not in rules and "itm_clean_agent" not in rules

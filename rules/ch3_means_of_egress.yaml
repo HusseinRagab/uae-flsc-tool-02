@@ -1048,6 +1048,7 @@ branches:
     systems:
       - name: "Occupant Load Factor (Enclosed Parking - Table 3.13 row 19)"
         spec: "27.9 m² gross. Stair capacity 7.6 mm/person; ramp 5 mm/person"
+        detail: "Driver-parked levels. Where robotic / mechanical parking is ticked, the robotic / mechanical levels take Table 3.13 row 20 (46.5 m2, its own line) and the occupant load summary uses row 20.i (verifier 28.10.2026)."
       - name: "Travel Distance (Enclosed Parking - sprinklered)"
         sprinkler_column: S
         spec: "Max 61 m travel from most remote parking lot to exit door (along natural path)"
@@ -1151,7 +1152,7 @@ branches:
         spec: "Mechanical/Robotic parkings: 46.5 m2. Stair capacity 7.6 mm/person; ramp 5 mm/person"
         code_ref: "Ch 3, Table 3.13 row 20.i"
         page_ref: "p.287"
-        detail: "Ticked: robotic / mechanical parking. Table 3.13 row 20 prints 'PARKING, GROUP C'; Table 1.1 row 15 (p.53) calls mechanical and robotic parking Group B (#1.1.13.5.b, p.530). Driver-parked levels in the same parking take row 19 (27.9 m2): enter per-use areas."
+        detail: "Governs the robotic / mechanical parking levels and the occupant load summary. Ticked: robotic / mechanical parking. Table 3.13 row 20 prints 'PARKING, GROUP C'; Table 1.1 row 15 (p.53) calls mechanical and robotic parking Group B (#1.1.13.5.b, p.530). Driver-parked levels in the same parking take row 19 (27.9 m2): enter per-use areas."
       - name: "Travel / Commonpath / Dead-end (Mechanical / Robotic Parking - Table 3.16 row 21)"
         spec: "Commonpath S 15 m, NS 15 m  |  Dead end S 15 m, NS 15 m  |  Travel S 60 m, NS 46 m"
         spec_s: "Mechanical/Robotic parking (21.i): commonpath 15 m, dead end 15 m, travel 60 m"

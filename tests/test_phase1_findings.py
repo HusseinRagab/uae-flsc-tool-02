@@ -441,7 +441,9 @@ def test_R14b_every_table_9_30_room_gated_by_4_1_5():
     """Ruling R14b 12.10.2026: #4.1.5 applies to every Table 9.30 room."""
     kw = dict(has_main_electrical_room=True, has_diesel_generator_room=True,
               has_main_server_room=True, has_battery_room=True)
-    r = report(occupancy="residential", height_m=10, ground_floor_bua_m2=300, **kw)
+    # plot area entered: with it blank the Table 9.21.b row, and the sprinkler test, is
+    # NOT EVALUATED (verifier 28.10.2026, blank-input residual).
+    r = report(occupancy="residential", height_m=10, ground_floor_bua_m2=300, plot_area_m2=1000, **kw)
     # Owner ruling R-E (28.10.2026): the diesel generator room takes Table 9.31.E regardless
     # of sprinklers (citing Table 9.30.G too), so it has no #4.1.5 note.
     assert not [it for it in items(r, "FP")

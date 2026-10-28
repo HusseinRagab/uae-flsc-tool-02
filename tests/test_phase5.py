@@ -157,7 +157,7 @@ def test_p5_ch10_g1_rail_rows_under_90_not_entered_and_cable_row_3():
     assert "check it there" not in u.detail
     assert "efficiency and fulfillment" in u.detail
     (n,) = named(report(**kw), "SC", "Tunnel Smoke Management")
-    assert n.status == "conditional" and "road and rail tunnels" in n.detail
+    assert n.status == "not_evaluated" and "road and rail tunnels" in n.detail  # UX-03
     assert "mechanical smoke purging system using dedicated ducting per Section 2.13" in n.detail
     (c,) = named(report(tunnel_kind="cable", tunnel_length_m=50, **kw), "SC",
                  "Tunnel Smoke Management")

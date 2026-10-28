@@ -53,7 +53,7 @@ def test_rail_route_absent_under_90_not_entered_and_cable():
     (u,) = named(report(tunnel_length_m=89.9, **TUNNEL), "SC", "Tunnel Smoke Management")
     assert "dedicated ducting" not in u.spec and "less than 90 m" in u.system
     (n,) = named(report(**TUNNEL), "SC", "Tunnel Smoke Management")
-    assert n.status == "conditional" and "NOT EVALUATED" in n.system
+    assert n.status == "not_evaluated" and "NOT EVALUATED" in n.system  # UX-03
     (c,) = named(report(tunnel_kind="cable", tunnel_length_m=200, **TUNNEL), "SC",
                  "Tunnel Smoke Management")
     assert c.system == "Tunnel Smoke Management - Service / Cable"

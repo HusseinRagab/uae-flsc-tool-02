@@ -67,7 +67,12 @@ def test_C10_01_R_D_apartment_and_hotel_room_kitchens_conditional_in_highrise(oc
     r = report(occupancy=occ, height_m=40, **BASE)
     k = one(r, "SC", KITCHEN_RES)
     assert k.status == "conditional" and "R-D" in k.detail and "item 16.iii" in k.code_ref
-    assert not starts(r, "SC", KITCHEN_III)
+    # Verifier 28.10.2026: hotels are not a residential group (Table 1.1); under R-D their
+    # own kitchens take the required line, only the guest-room kitchens are conditional.
+    if occ.startswith("hotel"):
+        assert starts(r, "SC", KITCHEN_III)
+    else:
+        assert not starts(r, "SC", KITCHEN_III)
 
 
 def test_C10_01_no_16iii_line_lowrise_and_commercial_tick_keeps_16i_16ii():

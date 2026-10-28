@@ -616,11 +616,13 @@ auxiliary_rooms:
     when:
       any_of:
         - {occupancy_in: [mall_covered, mall_open, mall_mixed, healthcare_a]}
-        - {height_m_gte: 23, occupancy_not: [residential, labour_accommodation, staff_accommodation, hostel, hotel_a, hotel_b, hotel_c, villa_private, villa_commercial, parking_enclosed, parking_open]}
+        # Hotels are not a residential group (Table 1.1): their own kitchens are required;
+        # only the guest-room kitchens are conditional (next rule).
+        - {height_m_gte: 23, occupancy_not: [residential, labour_accommodation, staff_accommodation, hostel, villa_private, villa_commercial, parking_enclosed, parking_open]}
     systems:
       - name: "Kitchen Cooking Operation Ventilation (malls, hospitals, highrise - all kitchens)"
         spec: "All kitchens in the building: ventilation systems for cooking operations in accordance with Section 2.18"
-        detail: "Table 10.27 item 16.iii: All Kitchens located in Malls, Hospitals and Highrise buildings shall be provided with ventilation systems for cooking operations in accordance with Section 2.18. Required for malls, hospitals and every non-residential building of 23 m or more, with or without the commercial kitchen tick (owner ruling R-D, 28.10.2026; audit C10-01)."
+        detail: "Table 10.27 item 16.iii: All Kitchens located in Malls, Hospitals and Highrise buildings shall be provided with ventilation systems for cooking operations in accordance with Section 2.18. Required for malls, hospitals and every non-residential building of 23 m or more, with or without the commercial kitchen tick; in a hotel this covers the hotel's own kitchens, guest-room kitchens are the conditional line (owner ruling R-D, 28.10.2026; audit C10-01)."
         code_ref: "Ch 10, #3.9 / Table 10.27 item 16.iii"
         page_ref: "p.866"
   - id: sc_aux_kitchen_16iii_residential_highrise
