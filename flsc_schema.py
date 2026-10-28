@@ -369,7 +369,7 @@ class Building(BaseModel):
     is_flammable_liquid_industrial: bool = False    # Group S - foam sprinklers, processes
     is_open_yard_storage: bool = False              # Group U - outdoor/yard storage (no building envelope)
     is_plant_nursery: bool = False                  # Group V - extinguishers only
-    is_single_tenant_storage: bool = False          # Legacy key (saved files): True = single tenant; kept in step with `storage_tenancy` (Ch 8 Table 8.13 items 19-20 still read it)
+    is_single_tenant_storage: bool = False          # Legacy key (saved files): True = single tenant; kept in step with `storage_tenancy` (Ch 8 and Ch 9 read `storage_tenancy`)
     # --- fix round 28.10.2026 (ch9) ---
     # Owner ruling Q-4 (28.10.2026): storage tenancy is a REQUIRED choice with no default.
     # Table 9.27 prints multi-tenant Groups A-E (p.724-728) and single-tenant Groups F-J

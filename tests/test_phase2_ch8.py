@@ -160,7 +160,8 @@ def test_CH8_14_permitted_options_not_required_status():
     assert one(det, "Lockable Manual Call Points (permitted)").status == "conditional"
     mall = report(occupancy="mall_covered", height_m=12, ground_floor_bua_m2=5000)
     assert one(mall, "Visual Display Notification with Messages + Voice Speakers + PA (permitted)").status == "conditional"
-    st = report(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000)
+    st = report(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=2000,
+                storage_tenancy="multi")  # ruling Q-4 (28.10.2026): tenancy is a required choice
     assert one(st, "Single FACP for Multi-Tenant Warehouse (permitted)").status == "conditional"
 
 

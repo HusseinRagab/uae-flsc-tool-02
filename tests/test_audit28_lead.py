@@ -101,3 +101,34 @@ def test_RB_fa_general_lines_conditional_for_tank_farm_tank_detection_required()
     assert gen and all(it.status != "required" for it in gen)
     eq = [it for bl in fa.blocks if bl.title.startswith("FA - Equipment") for it in bl.items]
     assert any(it.status == "required" and "Table 8.15 item 3" in (it.code_ref or "") for it in eq)
+
+
+def _fp_systems(**kw):
+    r = evaluate(Building(**kw))
+    fp = next(c for c in r.chapters if c.chapter_code == "FP")
+    return [it.system for bl in fp.blocks for it in bl.items]
+
+
+def test_F9A03_plot_blank_not_evaluated_tall_midrise_villa():
+    # Tables 9.18 / 9.19 / 9.20.a / 9.23.B split on the plot area (p.696-700, p.717):
+    # a blank plot names the large-plot row as NOT EVALUATED (standing blank rule).
+    for kw in (dict(occupancy="residential", height_m=60, floors_above_grade=18),
+               dict(occupancy="residential", height_m=120, floors_above_grade=35),
+               dict(occupancy="assembly_a", height_m=20, floors_above_grade=5),
+               dict(occupancy="villa_commercial", height_m=8, floors_above_grade=2)):
+        sy = _fp_systems(ground_floor_bua_m2=1000, gross_floor_area_m2=5000, **kw)
+        assert any("Plot Area" in s and "NOT EVALUATED" in s for s in sy), kw
+        sy = _fp_systems(ground_floor_bua_m2=1000, gross_floor_area_m2=5000, plot_area_m2=3000, **kw)
+        assert not any("Plot Area" in s and "NOT EVALUATED" in s for s in sy), kw
+
+
+def test_Q4_fa_facp_line_follows_storage_tenancy():
+    def fa(t):
+        r = evaluate(Building(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2000,
+                              gross_floor_area_m2=2000, sum_gf_bua_m2=2000, plot_area_m2=4000,
+                              hazard_class="OH1", storage_tenancy=t))
+        c = next(c for c in r.chapters if c.chapter_code == "FA")
+        return {it.source_rule for bl in c.blocks for it in bl.items}
+    assert "fa_storage_single_tenant_facp" in fa("single")
+    assert "fa_storage_multi_tenant_facp" in fa("multi")
+    assert not {"fa_storage_single_tenant_facp", "fa_storage_multi_tenant_facp"} & fa(None)

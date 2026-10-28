@@ -625,7 +625,7 @@ branches:
   - id: fa_storage_single_tenant_facp
     # Table 8.13 items 19-20 (iv): single-tenant warehouse main FACP location.
     match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false,
-           is_open_yard_storage_is: false, is_aboveground_tank_storage_is: false, is_single_tenant_storage_is: true}
+           is_open_yard_storage_is: false, is_aboveground_tank_storage_is: false, storage_tenancy_is: single}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20 (iv)"
     page: "p.506"
     systems:
@@ -635,7 +635,7 @@ branches:
   - id: fa_storage_multi_tenant_facp
     # Table 8.13 items 19-20 (v): one main FACP for a multi-tenant group is permitted.
     match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false,
-           is_open_yard_storage_is: false, is_aboveground_tank_storage_is: false, is_single_tenant_storage_is: false}
+           is_open_yard_storage_is: false, is_aboveground_tank_storage_is: false, storage_tenancy_is: multi}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20 (v)"
     page: "p.506"
     systems:

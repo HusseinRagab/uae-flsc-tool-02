@@ -211,6 +211,15 @@ branches:
         spec: "60 minutes duration"
         detail: "Table 9.23.B.2 iii (p.717): capacity of 60 minutes of operation, complete with low water level detection, dedicated direct breeching inlet and instantaneous refilling arrangement."
 
+  - id: villa_commercial_plot_missing
+    match: {occupancy: villa_commercial, villa_converted_use_is: false, plot_area_m2_lte: 0}
+    section: "Ch 9, #4.7.1 / Table 9.23.B.2"
+    page: "p.717"
+    systems:
+      - name: "Plot Area 20,000 m2 or more (Table 9.23.B row 2) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.23.B row 2 (p.717) adds yard fire hydrants, a 1000 gpm fire pump set at 6.9 bar and a 60 minute tank where the plot area is 20,000 m2 or more. The plot area was not entered, so row 2 is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
   - id: villa_commercial_ground_1500
     match: {occupancy: villa_commercial, ground_floor_bua_m2_gt: 1500}
     section: "Ch 9, #4.7.1 / Table 9.23.B.3"
@@ -570,6 +579,15 @@ branches:
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.D vii)."
 
+  - id: tall_plot_missing
+    match: {height_m_gte: 23, plot_area_m2_lte: 0, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    section: "Ch 9, #4.2.1 / #4.3.1 / Tables 9.18, 9.19"
+    page: "p.696-699"
+    systems:
+      - name: "Plot Area more than 20,000 m2 (Table 9.18 A / Table 9.19 A, C) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Tables 9.18 and 9.19 (p.696-699) split on the plot area: more than 20,000 m2 adds yard fire hydrants and the combined pump duty at the most remote landing valve and the yard hydrant (Table 9.18.A, Table 9.19.A and C); up to 20,000 m2 takes rows B / D. The plot area was not entered, so the small-plot row is printed and the large-plot row is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
   - id: highrise_detention_note
     match: {height_m_gte: 23, occupancy_in: [detention_a, detention_b, detention_c]}
     section: "Ch 9, #4.3.1 / Table 9.19 (detention 23 m or more)"
@@ -673,6 +691,22 @@ branches:
         duty: tank
         spec: "60 minutes duration (combined)"
         detail: "Combined tank: low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.a.2 vii)."
+  - id: midrise_public_plot_missing
+    match:
+      any_of:
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c, low_depth_underground], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: true}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
+      plot_area_m2_lte: 0
+    section: "Ch 9, #4.4.1 / Table 9.20.a.2"
+    page: "p.700"
+    systems:
+      - name: "Plot Area more than 20,000 m2 (Table 9.20.a row 2) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.20.a (p.700) adds yard fire hydrants, a 1000 gpm fire pump set at 6.9 bar and a 60 minute tank where the plot area is more than 20,000 m2. The plot area was not entered, so the up-to-20,000 m2 row is printed and the large-plot row is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
 
   # Audit CH9A-19: #4.4.1 / #4.4.2 and Tables 9.20.a-d (p.700-704) do not list low
   # depth underground buildings, so a midrise one is not evaluated: the report names it.
