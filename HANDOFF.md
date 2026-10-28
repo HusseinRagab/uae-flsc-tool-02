@@ -9,6 +9,24 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-28 — Hospital sleeping areas: sprinklers required (owner item 5)
+
+Owner ruling 28.10.2026 item 5 coded. Table 3.16 row 4.i (p.293) prints hospital sleeping-area
+travel / dead-end / commonpath as S only. A lowrise Healthcare Group A building on Table
+9.21.a.1 (GF BUA up to 500 m2) was hose-reel only, so Ch 3 printed a NOT EVALUATED sleeping-area
+line instead of requiring sprinklers.
+
+Change: `g_hospital_sleeping_sprinklers` (Ch 9 general, `occupancy: healthcare_a`) requires
+"Automatic Sprinkler System (hospital sleeping areas)" throughout per Section 3.5. `building_sprinklered()`
+is then true, so Ch 3 uses the printed S column (30 / 9.1 / 61 m) and the NS-only NOT EVALUATED
+line does not print. Beside a hose-reel-only or extinguishers-only occupancy row,
+`_reconcile_not_required` keeps the required line. Where the occupancy row's pump is hose-reel
+only, the line names #4.1.9 hydraulic sizing.
+
+Tests: `test_CH123_05_hospital_sleeping_areas_require_sprinklers` (was NOT EVALUATED);
+`test_verifier_no_itm_pointer_for_a_not_evaluated_system` re-pointed to assembly_c so it still
+pins Table 9.21.f.F over-size with no sprinkler I&M pointer.
+
 ### 2026-10-28 — Owner rulings on the 12 open items of the audit fix round ("all as recommended")
 
 Hussein 28.10.2026: all 12 as recommended. Recorded only; no code changed in this entry.
@@ -22,8 +40,8 @@ document (no code until then).
 TO CODE in a fresh session (each with failing-first tests, grid diff, HANDOFF entry):
 1. Converted villa (villa_converted_use): Class A extinguishers per the new use's Table 4.3
    row 1 item (drop the villa "recommended" line; Ch 4 L11).
-5. Unsprinklered hospital sleeping areas (Table 3.16 row 4.i prints S only): sprinklers
-   required; replace the NOT EVALUATED line with a required line.
+5. DONE 28.10.2026: unsprinklered hospital sleeping areas now require sprinklers
+   (`g_hospital_sleeping_sprinklers`); Ch 3 uses the printed S values.
 6. Table 3.32 item 2 (p.331): 1525 mm corridor always; 1 h rating only if unsprinklered.
 10. R-G for Groups T / U: the hazard-class rows A-J apply only as conditional ("enclosed
    buildings on the site"), as R-B.

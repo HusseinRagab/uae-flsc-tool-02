@@ -199,7 +199,10 @@ def test_F9A_07_row_F_gated_to_detached_G1_up_to_150():
     over = report(ground_floor_bua_m2=2000, **kw)
     assert "lowrise_small_detached_limits_missing" in branches(over)
     assert named(over, "Detached G+1 / 150 m2 (Table 9.21.f.F) - NOT EVALUATED", "not_evaluated")
-    assert not named(over, "Automatic Sprinkler", "required")
+    # Host Table 9.21.a tiers stay suppressed; hospital sleeping-area sprinklers
+    # (g_hospital_sleeping_sprinklers, owner item 5) are a Table 3.16 requirement.
+    assert not [it for it in named(over, "Automatic Sprinkler", "required")
+                if it.source_rule != "g_hospital_sleeping_sprinklers"]
     tall = report(ground_floor_bua_m2=100, **{**kw, "floors_above_grade": 3})
     assert "lowrise_small_detached_limits_missing" in branches(tall)
 

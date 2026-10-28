@@ -231,7 +231,10 @@ def test_verifier_conditional_not_evaluated_lines_get_the_status():
 
 
 def test_verifier_gated_9_29_9_30_lines_not_evaluated_when_row_is():
-    r = evaluate(Building(occupancy="healthcare_a", height_m=8, floors_above_grade=2,
+    # Assembly, not a hospital: Table 3.16 row 4.i does not force sprinklers, so the
+    # over-size Table 9.21.f.F choice leaves the occupancy row NOT EVALUATED and the
+    # sprinkler-gated Table 9.29 / 9.30 lines NOT EVALUATED (never a pass).
+    r = evaluate(Building(occupancy="assembly_c", height_m=8, floors_above_grade=2,
                           ground_floor_bua_m2=2000, gross_floor_area_m2=4000, plot_area_m2=4000,
                           tent_marquee_kind="small_detached"))
     fp = next(c for c in r.chapters if c.chapter_code == "FP")
@@ -283,7 +286,9 @@ def test_verifier_app_asks_tenancy_for_secondary_storage():
 
 
 def test_verifier_no_itm_pointer_for_a_not_evaluated_system():
-    r = evaluate(Building(occupancy="healthcare_a", height_m=8, floors_above_grade=2,
+    # Assembly, not a hospital: Table 3.16 row 4.i does not force sprinklers, so the
+    # over-size Table 9.21.f.F choice stays NOT EVALUATED with no sprinkler I&M pointer.
+    r = evaluate(Building(occupancy="assembly_c", height_m=8, floors_above_grade=2,
                           ground_floor_bua_m2=2000, gross_floor_area_m2=4000, plot_area_m2=4000,
                           tent_marquee_kind="small_detached"))
     fp = next(c for c in r.chapters if c.chapter_code == "FP")
