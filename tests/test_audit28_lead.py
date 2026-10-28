@@ -199,3 +199,21 @@ def test_bugbot_parking_duty_promoted_when_host_has_none():
     assert sorted(duties) == ["pump", "tank"]
     assert not [it for bl in p[0].blocks for it in bl.items if it.duty]
     assert all("Q-3" in it.detail for bl in h[0].blocks for it in bl.items if it.duty)
+
+
+def test_bugbot_exports_do_not_count_not_evaluated_as_required():
+    # PR #38 review: compact chapter bars and the executive parking row said "N required"
+    # with NOT EVALUATED lines inside N (audit UX-03).
+    import io
+    import docx
+    import export
+    r = evaluate(Building(occupancy="residential", height_m=18, floors_above_grade=5,
+                          ground_floor_bua_m2=0, gross_floor_area_m2=0))
+    fp = next(c for c in r.chapters if c.chapter_code == "FP")
+    items = export._required_systems(fp)
+    n_req = sum(1 for it in items if it.status == "required")
+    n_ne = sum(1 for it in items if it.status == "not_evaluated")
+    assert n_ne and export._count_text(items) == f"{n_req} required, {n_ne} not evaluated"
+    d = docx.Document(io.BytesIO(export.report_to_docx_bytes(r, "compact")))
+    cells = " ".join(c.text for t in d.tables for row in t.rows for c in row.cells)
+    assert f"{n_req} required, {n_ne} not evaluated" in cells

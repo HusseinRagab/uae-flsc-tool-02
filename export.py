@@ -522,6 +522,14 @@ def _required_systems(ch) -> List[Requirement]:
     return items
 
 
+def _count_text(items) -> str:
+    """'N required' plus ', M not evaluated' (audit UX-03: a missing input is never counted
+    as a required system)."""
+    n_req = sum(1 for it in items if it.status == "required")
+    n_ne = sum(1 for it in items if it.status == "not_evaluated")
+    return f"{n_req} required" + (f", {n_ne} not evaluated" if n_ne else "")
+
+
 def _chapter_counts(ch) -> dict:
     counts = {s: 0 for s in STATUS_ORDER}
     for blk in ch.blocks:
@@ -900,7 +908,7 @@ def _compact_pdf(r: ComplianceReport, m: dict) -> bytes:
         story.append(Spacer(1, 5))
         story.append(_pdf_chapter_bar(
             f"{prefix}{ch.chapter_code}  |  {ch.chapter_title}",
-            f"{len(items)} required", styles, inner))
+            _count_text(items), styles, inner))
         names = [Paragraph("•  " + _x(it.system), styles["item"]) for it in items]
         body = Table([[p] for p in names], colWidths=[inner * cm])
         body.setStyle(TableStyle([
@@ -1080,11 +1088,13 @@ def _executive_pdf(r: ComplianceReport, m: dict) -> bytes:
                                f"{n_req} required line(s) in chapter</font>", styles["cell"]),
                      Paragraph(_x(spec), styles["cell"]),
                      Paragraph(_x(cite), styles["cite"])])
-    n_park = sum(len(_required_systems(ch)) for ch in (r.attached_parking_chapters or []))
+    _park_items = [it for ch in (r.attached_parking_chapters or []) for it in _required_systems(ch)]
+    n_park = len(_park_items)
+    park_txt = _count_text(_park_items) + " line(s)"
     if n_park:
         data.append([Paragraph("<b>P</b>", styles["cell"]),
                      Paragraph("Attached parking", styles["cell"]),
-                     Paragraph(f"{n_park} required line(s) in the attached parking "
+                     Paragraph(f"{park_txt} in the attached parking "
                                "evaluation: see the Detailed report.", styles["cell"]),
                      Paragraph("-", styles["cite"])])
     st_t = Table(data, colWidths=[1.1 * cm, 4.6 * cm, 7.9 * cm, 3.2 * cm], repeatRows=1)
@@ -1433,7 +1443,7 @@ def _compact_docx(r: ComplianceReport, m: dict) -> bytes:
         if not items:
             continue
         _docx_chapter_bar(doc, f"{prefix}{ch.chapter_code}  |  {ch.chapter_title}",
-                          f"{len(items)} required")
+                          _count_text(items))
         for it in items:
             doc.add_paragraph(it.system, style="List Bullet")
 
@@ -1564,10 +1574,13 @@ def _executive_docx(r: ComplianceReport, m: dict) -> bytes:
         _docx_shade(cell, TEAL_HEX)
         _docx_set(cell, text, size=8.5, bold=True, color="FFFFFF")
     rows = list(governing_rows(r))
-    n_park = sum(len(_required_systems(ch)) for ch in (r.attached_parking_chapters or []))
+    _park_items = [it for ch in (r.attached_parking_chapters or []) for it in _required_systems(ch)]
+    n_park = len(_park_items)
+    park_txt = _count_text(_park_items) + " line(s)"
     if n_park:
-        rows.append(("P", "Attached parking", f"{n_park} required line(s) in the attached "
-                     "parking evaluation: see the Detailed report.", "-", n_park))
+        rows.append(("P", "Attached parking", f"{park_txt} in the attached "
+                     "parking evaluation: see the Detailed report.", "-",
+                     sum(1 for it in _park_items if it.status == "required")))
     for i, (code, system, spec, cite, n_req) in enumerate(rows):
         row = t.add_row().cells
         if i % 2 == 1:
