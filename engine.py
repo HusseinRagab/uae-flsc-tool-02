@@ -1108,25 +1108,91 @@ def _business_group_not_evaluated_el() -> Requirement:
         source_rule="p4_q1_business_group")
 
 
-def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
-    """Ch 8 - Fire Detection & Alarm."""
+_FA_TEMPORARY_KINDS = ("temporary", "site_office_short", "site_office_long")
+
+
+def _fa_sprinklered(b: Building, sprinklered: Optional[bool] = None) -> bool:
+    """Sprinkler status for Table 8.13 item 22 (i)-(iii) (audit 28.10.2026, CH8-18): true
+    when the caller says so (an attached parking in a sprinklered host building), when the
+    building's own Ch 9 rows require sprinklers, or, under ruling R13 most restrictive,
+    when any listed occupancy's Ch 9 rows require them."""
+    if sprinklered or building_sprinklered(b):
+        return True
+    src = _R13_SOURCE.get()
+    if src is not None and src.mixed_occupancy_mode == "most_restrictive" and src.secondary_occupancies:
+        occs, base = _r13_base(src)
+        return any(building_sprinklered(_r13_single(base, o)) for o in occs)
+    return False
+
+
+def _fa_parking_detection(it: Requirement, spr: bool) -> Requirement:
+    """Audit 28.10.2026, CH8-18: Table 8.13 item 22 (i)-(iii), p.506, printed as the
+    branch that applies to this building, with the other branch named."""
+    analogy = "by analogy" in (it.system or "")
+    tail = " - by analogy with item 22 (ruling R10)" if analogy else ""
+    ref = "Ch 8, #5.1 / Table 8.13 item 22 " + ("(i)-(ii)" if spr else "(iii)") + (
+        ", by analogy (ruling R10)" if analogy else "")
+    if spr:
+        return it.model_copy(update={
+            "system": "Manual Fire Detection and Alarm System - parking sprinklered, no fire detectors" + tail,
+            "spec": "Manual Fire Detection and Alarm System per Section 4.10; no fire detectors",
+            "detail": ("Table 8.13 item 22, p.506: (i) no Fire Detectors are required if the "
+                       "enclosed parking is provided fully with automatic sprinkler System; (ii) "
+                       "where enclosed parking is provided with automatic sprinkler system, Manual "
+                       "Fire Detection and Alarm System shall be provided as per Section 4.10. "
+                       "This building's Ch 9 result requires automatic sprinklers, so (i)-(ii) "
+                       "apply. Were the parking not sprinklered, (iii) a Heat Detection and Alarm "
+                       "System per Section 4.7 would apply."
+                       + (" Applied by analogy: Table 8.13 has no open-parking row (ruling R10, "
+                          "12.10.2026)." if analogy else "")),
+            "code_ref": ref, "page_ref": "p.506"})
+    return it.model_copy(update={
+        "system": "Heat Detection and Alarm System - parking not sprinklered" + tail,
+        "spec": "Heat Detection and Alarm System per Section 4.7, throughout",
+        "detail": ("Table 8.13 item 22 (iii), p.506: where enclosed parking is not provided with "
+                   "automatic sprinkler system, Heat Detection and Alarm System shall be provided "
+                   "as per Section 4.7. This building's Ch 9 result does not require automatic "
+                   "sprinklers, so (iii) applies. A fully sprinklered parking would take (i)-(ii): "
+                   "no fire detectors and a Manual Fire Detection and Alarm System per Section 4.10."
+                   + (" Applied by analogy: Table 8.13 has no open-parking row (ruling R10, "
+                      "12.10.2026)." if analogy else "")),
+        "code_ref": ref, "page_ref": "p.506"})
+
+
+def evaluate_fa(b: Building, rules: Dict[str, Any],
+                sprinklered: Optional[bool] = None) -> ChapterReport:
+    """Ch 8 - Fire Detection & Alarm. `sprinklered`: True when the building is known to be
+    sprinklered by another building's system (attached parking in a sprinklered host)."""
     blocks = []
     # Table 8.13 item 28 PLANT NURSERY (p.508): no FA system is required, so neither the
     # Table 8.1 system lines nor the Table 8.14 / 8.15 lines apply (owner rulings
     # 12.10.2026, Ch8 Q4 and follow-up F1).
     nursery = b.occupancy == "storage_industrial" and b.is_plant_nursery
-    gen = [] if nursery else _dedupe(_collect_general(rules, b))
+    # Audit 28.10.2026, CH8-03: infrastructure (yard-hydrant network) is not a building and
+    # Table 8.13 prints no row for it: one line (fa_infrastructure), no Table 8.1 / 8.14 /
+    # 8.15 lines. CH8-07: a temporary tent or a site office (Table 9.21.f rows A, D, E,
+    # p.712) takes Table 8.14 items 32 / 33, not the addressable building system, so the
+    # Table 8.1 system lines are not printed (its Table 8.14 / 8.15 lines stay).
+    infra = b.occupancy == "infrastructure"
+    temporary = b.tent_marquee_kind in _FA_TEMPORARY_KINDS
+    no_rooms = nursery or infra
+    gen = [] if (no_rooms or temporary) else _dedupe(_collect_general(rules, b))
     if gen:
         blocks.append(SectionBlock(title="FA - General Requirements (Ch 8, #3 + #4 / Table 8.1.a)", items=gen))
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    if any((it.system or "").startswith("Conditional FA System") for it in branch_items):
+        spr = _fa_sprinklered(b, sprinklered)
+        branch_items = [_fa_parking_detection(it, spr)
+                        if (it.system or "").startswith("Conditional FA System") else it
+                        for it in branch_items]
     if branch_items:
         blocks.append(SectionBlock(title="FA - Detection & Alarm by Occupancy / Height (Ch 8, Table 8.13)", items=_dedupe(branch_items)))
 
-    aux = [] if nursery else _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
+    aux = [] if no_rooms else _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
     if aux:
         blocks.append(SectionBlock(title="FA - Auxiliary Rooms (Ch 8, Table 8.14)", items=aux))
 
-    eq = [] if nursery else _dedupe(_collect_flag(rules.get("equipment", []), b))
+    eq = [] if no_rooms else _dedupe(_collect_flag(rules.get("equipment", []), b))
     if eq:
         blocks.append(SectionBlock(title="FA - Equipment (Ch 8, Table 8.15)", items=eq))
 
@@ -1563,7 +1629,7 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
     if fe_rules:  chapters.append(evaluate_fe(synth, fe_rules))
     if es_rules:  chapters.append(evaluate_es(synth, es_rules))
     if el_rules:  chapters.append(evaluate_el(synth, el_rules))
-    if fa_rules:  chapters.append(evaluate_fa(synth, fa_rules))
+    if fa_rules:  chapters.append(evaluate_fa(synth, fa_rules, sprinklered=host_spr))   # CH8-18
     if fp_rules:
         # P3 App Q2: Ch 9 sprinklers still follow the host building's table.
         host_line = _host_sprinkler_line(b, fp_rules) if host_spr else None

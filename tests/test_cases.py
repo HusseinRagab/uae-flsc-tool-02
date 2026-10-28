@@ -358,8 +358,9 @@ CASES = [
                      ground_floor_bua_m2=1000, plot_area_m2=2000,
                      has_diesel_generator_room=True, has_commercial_kitchen=True),
          expect_fa_aux=["Heat Detection (Diesel Generator Room)"],
-         expect_fa_eq=["Fusible-Link Heat Detection (Kitchen Hood)",
-                       "Heat Detection (Diesel Generator Area)"]),
+         # Audit 28.10.2026, CH8-12: Table 8.15 item 5 is cited on the one Table 8.14
+         # item 8 room line (same requirement printed twice).
+         expect_fa_eq=["Fusible-Link Heat Detection (Kitchen Hood)"]),
 
     # Ruling R10 (12.10.2026): no open-parking row; item 22 applied by analogy.
     dict(name="FA: Open parking -> item 22 by analogy, labelled",
@@ -367,7 +368,8 @@ CASES = [
                      ground_floor_bua_m2=3000, plot_area_m2=5000),
          expect_fa_branch="fa_parking_open",
          expect_fa_systems=["Open Parking - not in Table 8.13; item 22 (Enclosed Parking) applied by analogy",
-                            "Conditional FA System (per sprinkler presence) - by analogy with item 22"]),
+                            # Audit 28.10.2026, CH8-18: the item 22 (i)-(iii) branch that applies is named.
+                            "Manual Fire Detection and Alarm System - parking sprinklered, no fire detectors - by analogy with item 22 (ruling R10)"]),
 
     dict(name="FA: Villa -> Smoke OR Wireless RF + external A/V",
          inputs=dict(occupancy="villa_private", height_m=6, floors_above_grade=2,
