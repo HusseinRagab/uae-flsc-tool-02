@@ -324,3 +324,15 @@ def test_verifier_recheck_first_load_sample_is_a_complete_report():
     at.run()
     assert not at.exception and not at.error
     assert not [w for w in at.warning if "Report incomplete" in w.value]
+
+
+def test_bugbot_tenancy_blank_storage_gated_lines_not_evaluated():
+    # PR #38 review on fbfdd08: the storage MSDS line made a blank tenancy look like a
+    # resolved row; the Table 9.29 / 9.30 lines must be NOT EVALUATED, not a pass.
+    r = evaluate(Building(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+                          ground_floor_bua_m2=800, gross_floor_area_m2=800, sum_gf_bua_m2=800,
+                          plot_area_m2=2000, hazard_class="OH1"))
+    fp = next(c for c in r.chapters if c.chapter_code == "FP")
+    gated = [it for bl in fp.blocks for it in bl.items
+             if "Table 9.29" in (it.code_ref or "") or "Table 9.30" in (it.code_ref or "")]
+    assert gated and all(it.status == "not_evaluated" for it in gated)
