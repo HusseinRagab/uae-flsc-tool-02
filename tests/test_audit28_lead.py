@@ -159,3 +159,43 @@ def test_UX03_exports_say_incomplete_and_list_not_evaluated_lines():
     d = docx.Document(io.BytesIO(export.report_to_docx_bytes(ok, "compact")))
     assert "REPORT INCOMPLETE" not in "\n".join(p.text for p in d.paragraphs)
     assert export.report_to_pdf_bytes(r, "compact")[:4] == b"%PDF"
+
+
+def test_bugbot_villa_not_mandatory_line_dropped_beside_facility_el():
+    # PR #38 review: villa + fuel station with a basement printed the villa "not mandatory"
+    # line beside the fuel station's required stand-alone line (one kind only).
+    r = evaluate(Building(occupancy="villa_private", secondary_occupancies=["motor_fuel_dispensing"],
+                          mixed_occupancy_mode="most_restrictive", height_m=8, floors_above_grade=2,
+                          floors_below_grade=1, basement_bua_m2=300, ground_floor_bua_m2=400,
+                          gross_floor_area_m2=800, plot_area_m2=1000))
+    el = next(c for c in r.chapters if c.chapter_code == "EL")
+    its = [it for bl in el.blocks if bl.title.startswith("EL - System") for it in bl.items]
+    assert any(it.status == "required" for it in its)
+    assert not any(it.status == "not_required" and it.system.startswith("Emergency Lighting (")
+                   for it in its)
+    # Two villas: only the basement stand-alone line is required; the villa line stays.
+    r2 = evaluate(Building(occupancy="villa_private", secondary_occupancies=["villa_commercial"],
+                           mixed_occupancy_mode="most_restrictive", height_m=8, floors_above_grade=2,
+                           floors_below_grade=1, basement_bua_m2=300, ground_floor_bua_m2=400,
+                           gross_floor_area_m2=800, plot_area_m2=1000))
+    el2 = next(c for c in r2.chapters if c.chapter_code == "EL")
+    assert any(it.status == "not_required" and it.system.startswith("Emergency Lighting (")
+               for bl in el2.blocks for it in bl.items)
+
+
+def test_bugbot_parking_duty_promoted_when_host_has_none():
+    # PR #38 review, ruling Q-3: a host whose own table prints no pump / tank takes the
+    # attached parking's duty into its Ch 9 chapter; the parking chapter keeps none.
+    from engine import _merge_attached_parking_duties
+    from flsc_schema import ChapterReport, Requirement, SectionBlock
+    host = [ChapterReport(chapter_code="FP", chapter_title="FP", blocks=[SectionBlock(
+        title="FP - Branch Requirements (Ch 9)", items=[Requirement(system="Hose Reel System")])])]
+    park = [ChapterReport(chapter_code="FP", chapter_title="FP", blocks=[SectionBlock(
+        title="FP - Branch Requirements (Ch 9)", items=[
+            Requirement(system="Fire Pump", spec="750 gpm @ 6.9 bar", duty="pump"),
+            Requirement(system="Fire Water Tank", spec="60 minutes duration", duty="tank")])])]
+    h, p = _merge_attached_parking_duties(host, park)
+    duties = [it.duty for bl in h[0].blocks for it in bl.items if it.duty]
+    assert sorted(duties) == ["pump", "tank"]
+    assert not [it for bl in p[0].blocks for it in bl.items if it.duty]
+    assert all("Q-3" in it.detail for bl in h[0].blocks for it in bl.items if it.duty)

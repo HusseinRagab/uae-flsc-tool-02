@@ -1972,6 +1972,25 @@ def _merge_attached_parking_duties(chapters: List[ChapterReport],
 
     for duty in ("pump", "tank"):
         h, p = find(host, duty), find(park, duty)
+        if not h and len(p) == 1 and host.blocks:
+            # The host prints no fire pump / tank of its own: the parking's duty is the
+            # building's one governing line, carried into the host Ch 9 chapter (Q-3).
+            pit = park.blocks[p[0][0]].items[p[0][1]]
+            what = "fire pump set" if duty == "pump" else "fire water tank"
+            moved = pit.model_copy(update={"detail": (pit.detail or "") + (
+                f" One {what} for the whole building, host and attached parking (owner ruling "
+                f"Q-3, 28.10.2026; #4.1.17, p.695): the host building's own table prints no "
+                f"{what}, so the attached parking's governs.")})
+            ti = next((bi for bi, blk in enumerate(host.blocks)
+                       if blk.title.startswith("FP - Branch")), 0)
+            host = host.model_copy(update={"blocks": [
+                blk.model_copy(update={"items": list(blk.items) + [moved]}) if bi == ti else blk
+                for bi, blk in enumerate(host.blocks)]})
+            park = park.model_copy(update={"blocks": [
+                blk.model_copy(update={"items": [it for ii, it in enumerate(blk.items)
+                                                 if (bi, ii) != p[0]]})
+                if bi == p[0][0] else blk for bi, blk in enumerate(park.blocks)]})
+            continue
         if len(h) != 1 or len(p) != 1:
             continue
         hit = host.blocks[h[0][0]].items[h[0][1]]
@@ -2237,7 +2256,15 @@ def _r13_one_el_package(items: List[Requirement]) -> List[Requirement]:
     Monitored" rows. The rows not printed are named in the kept line."""
     kinds = {_el_kind(it) for it in items if it.status == "required"} - {None}
     if len(kinds) < 2:
-        return items
+        # A villa row's "not mandatory" line cannot stand beside a required system that
+        # serves the facility (not the villa's own basement-only line).
+        facility = any(_el_kind(it) and it.status == "required"
+                       and "basement only" not in (it.system or "") for it in items)
+        if not facility:
+            return items
+        return [it for it in items if not (
+            _el_kind(it) is None and it.status == "not_required"
+            and (it.system or "").startswith("Emergency Lighting ("))]
     gov = max(kinds, key=lambda k: _EL_KIND_RANK[k])
     typed = [it for it in items if _el_kind(it) and it.status == "required"]
     nums = sorted({n for it in typed for n in _t65_items(it.code_ref)})
