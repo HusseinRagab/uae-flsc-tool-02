@@ -2424,7 +2424,11 @@ if ((occupancy == "storage_industrial" or _storage_secondary)
           "28.10.2026).")
 # Verifier re-check 28.10.2026: an outlet ticked with its area blank decides Table 9.21.e
 # row 1 / 2 (and the sprinkler system); a blank is never a pass.
+# Same scope as the control and the Building flag (lowrise villas, business, Assembly C),
+# so a tick left behind by a height or occupancy change never blocks the evaluation.
 if (st.session_state.get("has_attached_commercial_outlet")
+        and float(height_m) <= 15
+        and occupancy in ("villa_private", "villa_commercial", "business", "assembly_c")
         and float(st.session_state.get("commercial_outlet_gf_bua_m2_input") or 0.0) <= 0):
     _stop("Enter the commercial outlet built-up ground floor area (sidebar: Ch 9 routing, under "
           "'Commercial / mercantile outlet attached'), or clear the tick. Table 9.21.e rows "

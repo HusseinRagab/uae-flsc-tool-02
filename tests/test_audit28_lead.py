@@ -302,7 +302,8 @@ def test_verifier_recheck_outlet_area_blank_gated_lines_not_evaluated():
     assert not [it for it in its if it.status == "not_required" and (
         "Table 9.29 row D" in (it.code_ref or "") or "Table 9.30.M" in (it.code_ref or ""))]
     src = open(os.path.join(os.path.dirname(__file__), "..", "app.py"), encoding="utf-8").read()
-    assert 'has_attached_commercial_outlet")\n        and float(st.session_state.get("commercial_outlet_gf_bua_m2_input")' in src
+    i = src.index('if (st.session_state.get("has_attached_commercial_outlet")')
+    assert 'commercial_outlet_gf_bua_m2_input' in src[i:i + 500] and "_stop(" in src[i:i + 700]
 
 
 def test_verifier_recheck_parking_run_keeps_the_choice_with_a_carried_tick():
@@ -336,3 +337,12 @@ def test_bugbot_tenancy_blank_storage_gated_lines_not_evaluated():
     gated = [it for bl in fp.blocks for it in bl.items
              if "Table 9.29" in (it.code_ref or "") or "Table 9.30" in (it.code_ref or "")]
     assert gated and all(it.status == "not_evaluated" for it in gated)
+
+
+def test_bugbot_outlet_stop_has_the_control_scope():
+    # PR #38 review: the outlet-area stop must use the control's scope (lowrise villas,
+    # business, Assembly C), or a stale tick blocks a building that cannot clear it.
+    src = open(os.path.join(os.path.dirname(__file__), "..", "app.py"), encoding="utf-8").read()
+    i = src.index('if (st.session_state.get("has_attached_commercial_outlet")')
+    stop = src[i:i + 500]
+    assert "float(height_m) <= 15" in stop and '"assembly_c")' in stop
