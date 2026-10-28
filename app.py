@@ -197,7 +197,7 @@ GLOSSARY = [
     ("PRV", "Pressure Relief Valve — required on every LPG container; replace every 10 years per Table 11.14."),
     ("RMU", "Ring Main Unit — medium-voltage switchgear in a small dedicated room."),
     ("STI", "Speech Transmission Index — voice-evacuation intelligibility metric."),
-    ("UL / FM", "Underwriters Laboratories / Factory Mutual — US product-listing bodies (FACP, sprinkler heads, fire pumps must be UL/FM listed)."),
+    ("UL / FM", "Underwriters Laboratories / Factory Mutual — US product-listing bodies (Ch 9 #6.1.1 / #6.1.3, p.770: equipment must be listed, approved and registered by the Civil Defence Material Approval Department; UL, FM, LPS and EN listings are among the accepted standards)."),
     ("UPS", "Uninterruptible Power Supply room (electrical auxiliary, Table 9.30.U)."),
     ("VESDA", "Very Early Smoke Detection Apparatus — brand-leading aspiration smoke detector."),
     ("Wet Riser", "Vertical water-filled pipe with fire-brigade landing valves on each floor; sized 750 gpm (2 standpipes) or 1000 gpm (3+ standpipes) @ 6.9 bar."),
@@ -357,7 +357,7 @@ def _invalid_scenario_values(data: dict) -> list:
             "3 or more standpipes (Fire pump 1000 gpm @ 6.9 bar)")),
         "motor_fuel_group_radio": ("Motor fuel group", (
             "Group A - mini-marts/restaurants/retail/service as INDIVIDUAL buildings (sprinklers + 300 gpm @ 4.5 bar)",
-            "Group B - restaurants/bakeries WITHIN single mini-mart, fleet, marine (hose reel only + 50 gpm @ 6.9 bar)",
+            "Group B - restaurants/bakeries within a single mini mart, service/repair stations, fleet, marine (hose reel only + 50 gpm @ 6.9 bar)",
             "Group C - mini-mart ONLY without service/repair, OR EV charging (extinguishers only - no water-based system)")),
         "tunnel_kind_radio": ("Tunnel kind", ("Road / Rail tunnel", "Cable tunnel")),
         "height_datum_input": ("Height datum", ("grade", "occupiable_ceiling")),
@@ -582,6 +582,12 @@ def _apply_loaded_scenario(state, data: dict, save_keys: list) -> tuple:
             del state[k]
     for k, v in FIRST_LOAD_DEFAULTS.items():
         state[k] = v
+    # Owner ruling Q-4 (28.10.2026): an old file's "is_single_tenant_storage: true" is
+    # single tenant; false or absent stays blank (a required choice, never multi by default).
+    if "is_single_tenant_storage" in data and "storage_tenancy_input" not in data:
+        data = dict(data)
+        if data.pop("is_single_tenant_storage") is True:
+            data["storage_tenancy_input"] = "single"
     ignored = sorted(k for k in data if k not in save_keys)
     for k in save_keys:
         if k not in data:
@@ -669,7 +675,7 @@ ANIMAL_HOUSING_INCOMPATIBLE_FLAGS = [
 ]
 
 
-# Daycare Group B (7-12 clients) — often in a villa-sized building.
+# Daycare Group B (adult day care, Table 1.1 row 10, p.50) — often in a villa-sized building.
 DAYCARE_B_INCOMPATIBLE_FLAGS = [
     "has_elevator", "has_lift_machine_room", "has_diesel_generator_room",
     "has_main_telephone_room", "has_fire_pump_room",
@@ -680,7 +686,7 @@ DAYCARE_B_INCOMPATIBLE_FLAGS = [
 ]
 
 
-# Daycare Group C (4-6 clients, family daycare) — villa-like in scale.
+# Daycare Group C (group not printed in Table 1.1 row 10) — villa-like in scale.
 DAYCARE_C_INCOMPATIBLE_FLAGS = VILLA_INCOMPATIBLE_FLAGS
 
 
@@ -820,14 +826,20 @@ def _sum_gf_bua_input() -> None:
 def _storage_specialty_inputs() -> None:
     """Table 9.27 specialty groups (K-V), commodity groups (L-O), unit compartment
     and tank inputs, in one expander under the storage hazard class."""
-    with st.expander("Storage / industrial specialty (Table 9.27)", expanded=False):
-        st.caption("Tick only what applies. Unticked: the multi-tenant hazard-class groups "
-                   "A-E of Table 9.27 (p.724-728) apply.")
-        st.checkbox(
-            "Single-tenant variant (Groups F-J - distinct pump/tank from multi-tenant)",
-            key="is_single_tenant_storage",
-            help="Single tenant: Table 9.27 Groups F (LH) / G (OH1) / H (OH2) / I (EH1) / J "
-                 "(EH2) (p.729-733) instead of the multi-tenant Groups A-E (p.724-728).")
+    with st.expander("Storage / industrial specialty (Table 9.27)",
+                     expanded=not st.session_state.get("storage_tenancy_input")):
+        st.caption("Choose the tenancy, then tick only the specialty groups that apply.")
+        # Owner ruling Q-4 (28.10.2026): tenancy is a required choice with no default.
+        st.radio(
+            "Storage tenancy (required)", ["multi", "single"], index=None, horizontal=True,
+            key="storage_tenancy_input",
+            format_func=lambda x: {"multi": "Multi-tenant (Groups A-E)",
+                                   "single": "Single tenant (Groups F-J)"}[x],
+            help="Table 9.27 (p.724-733): multi-tenant Groups A (LH) / B (OH1) / C (OH2) / D "
+                 "(EH1) / E (EH2), p.724-728, or single tenant Groups F / G / H / I / J, "
+                 "p.729-733. Tanks and pumps differ, e.g. row 1 tank 30 min multi-tenant, "
+                 "45 min single tenant. No default: the tool stops until it is chosen "
+                 "(owner ruling Q-4, 28.10.2026).")
         st.checkbox(
             "Idle wood / plastic pallet warehouse (Group K - high-challenge fire load)",
             key="is_idle_pallet_storage",
@@ -852,7 +864,8 @@ def _storage_specialty_inputs() -> None:
             "Flammable / combustible liquid WAREHOUSE (Group R - foam, 120-min tank)",
             key="is_flammable_liquid_warehouse",
             help="Table 9.27 Group R (p.743): warehouse storing flammable or combustible "
-                 "liquids.")
+                 "liquids. Also Ch 4 Table 4.3 row 3 item 2.i (p.376): 50 L wheeled foam + "
+                 "4 kg dry powder (owner ruling Q-2, 28.10.2026).")
         st.checkbox(
             "Flammable / combustible liquid INDUSTRIAL process (Group S - foam per Table 9.11.C)",
             key="is_flammable_liquid_industrial",
@@ -873,7 +886,9 @@ def _storage_specialty_inputs() -> None:
             key="is_aboveground_tank_storage",
             help="Table 9.27 Group T (p.745): storage of flammable and combustible liquids "
                  "in aboveground tanks; the row follows the tank storage area and capacity "
-                 "below.")
+                 "below. Also Ch 4 Table 4.3 row 3 item 2.i wheeled foam (p.376) and Ch 8 "
+                 "Table 8.15 item 3 tank detection (p.512). Ch 5-8 / 10 warehouse packages are "
+                 "conditional on an enclosed building on the site (owner ruling R-B).")
         if st.session_state.get("is_aboveground_tank_storage"):
             st.session_state.setdefault("ast_storage_area_m2_input", 0.0)
             st.session_state.setdefault("ast_tank_capacity_m3_input", 0.0)
@@ -1126,7 +1141,7 @@ ARCHETYPE_PRESETS = {
         "gfa_input": 4000.0, "plot_area_input": 8000.0,
         "has_parking_area": False,
         "storage_hazard_input": "OH2", "is_extra_hazard_2": False,
-        "is_single_tenant_storage": False, "sum_gf_bua_m2_input": 4000.0,
+        "storage_tenancy_input": "multi", "sum_gf_bua_m2_input": 4000.0,
     },
     "Petrol station (Group A)": {
         "occ": "motor_fuel_dispensing",
@@ -1311,7 +1326,7 @@ with st.sidebar:
             "has_lpg_tank_at_grade", "new_or_modified_building_input", "has_cd_cylinder_approval",
             "lpg_flame_effect_show_input",
             "wet_riser_radio", "motor_fuel_group_radio",
-            "is_single_tenant_storage", "is_idle_pallet_storage",
+            "storage_tenancy_input", "is_idle_pallet_storage",
             "is_cold_storage", "is_aircraft_hanger",
             "is_flammable_liquid_warehouse", "is_flammable_liquid_industrial",
             "is_open_yard_storage", "is_plant_nursery",
@@ -1690,7 +1705,8 @@ with st.sidebar:
                  "the outside walls, with no deductions for hallways, stairs, closets, "
                  "interior walls, columns and shafts, excluding atrium floor openings (Ch 3 "
                  "#1.4.6, p.242). Drives the occupant load (Ch 3 Table 3.13) when no "
-                 "per-storey or per-use areas are entered, and the GFA-keyed rows. "
+                 "per-storey or per-use areas are entered, and the GFA-keyed rows (e.g. Ch 7 "
+                 "Table 7.3 item 9 takes the larger of GFA and GF BUA, p.439). "
                  "Required: 0 stops the evaluation.")
     with c2:
         st.markdown("**Below-grade + plot**")
@@ -1863,7 +1879,9 @@ with st.sidebar:
                 if hazard == "HH":
                     st.checkbox("Extra Hazard Group 2 (#1.1.13.5)", key="is_extra_hazard_2",
                                 help="Unticked = Extra Hazard Group 1 (#1.1.13.4): Table 9.27 "
-                                     "Group D / I. Ticked = Group E / J.")
+                                     "Group D / I and the Group B egress rows (Ch 3 Table 3.16 "
+                                     "rows 17 / 19, Table 3.13 rows 16 / 18). Ticked = Group E / "
+                                     "J and the Group A high hazard egress rows.")
                 else:
                     st.session_state["is_extra_hazard_2"] = False
                 if st.session_state.get("has_robotic_parking"):
@@ -2142,7 +2160,9 @@ with st.sidebar:
                     help="#2.8.10: the Table 2.8 line is printed as required when ticked.")
         st.checkbox("Theme / amusement park (Table 2.5, #2.9.3, #2.9.4)", key="is_theme_park",
                     help="Table 2.5 extent (3/4 perimeter, not less than Table 2.3 / 2.4), "
-                         "Emergency Command Centre, and a Fire Lift when multi storey.")
+                         "Emergency Command Centre, and a Fire Lift when multi storey. Also Ch 5 "
+                         "Table 5.3 item 6.vi photoluminescent strips (p.397) and Ch 7 Table 7.3 "
+                         "item 5 EVC + two-way telephone (p.439).")
         st.checkbox("Tower set back more than 30 m from the fire access road "
                     "(#2.8.6.b / #2.8.7.b)", key="tower_setback_over_30m",
                     help="Highrise / super highrise tower facade more than 30 m from the fire "
@@ -2380,6 +2400,12 @@ if occupancy == "storage_industrial" and hazard is None:
              "groups depend on the stored materials and activities (#1.1.13, Tables 9.1 "
              "and 9.2), so the tool does not assume one.")
 
+if occupancy == "storage_industrial" and not st.session_state.get("storage_tenancy_input"):
+    _stop("Select the storage tenancy (sidebar: under 'Storage hazard class', Storage / "
+          "industrial specialty): multi-tenant Groups A-E or single tenant Groups F-J of "
+          "Table 9.27 (p.724-733). Tanks and pumps differ, so the tool does not assume one "
+          "(owner ruling Q-4, 28.10.2026).")
+
 # ---------- Owner rulings 12.10.2026, Ch9 Q1 and Q9 -------------------------
 _storage_secondary = (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
                       and "storage_industrial" in (st.session_state.get("secondary_occupancies_input") or [])
@@ -2502,7 +2528,7 @@ with st.sidebar:
                 "Motor fuel dispensing sub-group (Table 9.25)",
                 options=[
                     "Group A - mini-marts/restaurants/retail/service as INDIVIDUAL buildings (sprinklers + 300 gpm @ 4.5 bar)",
-                    "Group B - restaurants/bakeries WITHIN single mini-mart, fleet, marine (hose reel only + 50 gpm @ 6.9 bar)",
+                    "Group B - restaurants/bakeries within a single mini mart, service/repair stations, fleet, marine (hose reel only + 50 gpm @ 6.9 bar)",
                     "Group C - mini-mart ONLY without service/repair, OR EV charging (extinguishers only - no water-based system)",
                 ],
                 key="motor_fuel_group_radio", on_change=_touch, args=("motor_fuel_group_radio",),
@@ -2555,7 +2581,9 @@ with st.sidebar:
             st.checkbox("Single exit stair (Tables 9.20.c, 9.21.c, 9.21.d)",
                         key="has_single_exit_stair",
                         help="Midrise/lowrise residential, business and similar buildings with "
-                             "only one exit stair have their own rows.")
+                             "only one exit stair have their own rows (Ch 9 Tables 9.20.c / "
+                             "9.21.c, p.703 / p.709) and the single-exit conditions of Ch 3 "
+                             "Table 3.24 item 2 (p.317) / Table 3.19 item 2 (p.304).")
         if int(floors_below) > 0:
             st.checkbox("Fire pump room at grade (not in the lowest basement)",
                         key="pump_room_at_grade",
@@ -2707,7 +2735,8 @@ building = Building(
     is_flammable_liquid_industrial=gs("is_flammable_liquid_industrial"),
     is_open_yard_storage=gs("is_open_yard_storage"),
     is_plant_nursery=gs("is_plant_nursery"),
-    is_single_tenant_storage=gs("is_single_tenant_storage"),
+    storage_tenancy=(st.session_state.get("storage_tenancy_input")
+                     if occupancy == "storage_industrial" else None),   # ruling Q-4
     is_idle_pallet_storage=gs("is_idle_pallet_storage"),
     is_extra_hazard_2=(gs("is_extra_hazard_2") and occupancy == "storage_industrial")
     or _robotic_eh2,   # owner ruling 12.10.2026, Ch9 Q7
@@ -2997,6 +3026,16 @@ with d4:
     st.metric("Fire access (perimeter)", _short_extent(_fa.extent if _fa else ""))
     st.caption(((_fa.extent + " · ") if _fa and _fa.extent else "") + (_fa.extent_ref if _fa else ""))
 st.markdown(ui.status_summary_html(_tot), unsafe_allow_html=True)
+# Audit UX-03: a missing input is its own status and the report says it is incomplete.
+_ne_lines = list(dict.fromkeys(
+    f"{ch.chapter_code}: {it.system}"
+    for ch in list(report.chapters) + list(report.attached_parking_chapters or [])
+    for blk in ch.blocks for it in blk.items if it.status == "not_evaluated"))
+if _ne_lines:
+    st.warning(f"**Report incomplete: {len(_ne_lines)} line(s) NOT EVALUATED.** An input is "
+               "missing; a missing input is never taken as a pass. Enter it and the line is "
+               "evaluated. The exports carry the same notice.\n\n"
+               + "\n".join(f"- {x}" for x in _ne_lines))
 if _ol and _ol.note:
     st.caption(f"OL: {_ol.note}")
 for _w in (_ol.warnings if _ol else []):   # owner answer 12.10.2026, F6
@@ -3378,9 +3417,10 @@ _STATUS_BADGE = {
     "recommended":  ("🔵", "RECOMMENDED"),
     "conditional":  ("🟡", "CONDITIONAL"),
     "not_required": ("⚪", "NOT REQUIRED"),
+    "not_evaluated": ("🟣", "NOT EVALUATED"),   # audit UX-03
 }
 
-_STATUS_ORDER = ["required", "recommended", "conditional", "not_required"]
+_STATUS_ORDER = ["required", "not_evaluated", "recommended", "conditional", "not_required"]
 
 
 def _badge(s: str) -> tuple:

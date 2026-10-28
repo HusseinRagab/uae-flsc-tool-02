@@ -24,9 +24,11 @@ STATUS_META: dict[str, tuple[str, str, str, str]] = {
     "recommended":  ("Recommended",  "#1D4ED8", "#EFF6FF", "#BFDBFE"),
     "conditional":  ("Conditional",  "#B45309", "#FFFBEB", "#FDE68A"),
     "not_required": ("Not required", "#64748B", "#F8FAFC", "#E2E8F0"),
+    # Audit UX-03: a missing input, never a pass and never a required system.
+    "not_evaluated": ("Not evaluated", "#6D28D9", "#F5F3FF", "#DDD6FE"),
 }
 
-STATUS_ORDER = ["required", "recommended", "conditional", "not_required"]
+STATUS_ORDER = ["required", "not_evaluated", "recommended", "conditional", "not_required"]
 
 
 def esc(text: str) -> str:
@@ -463,6 +465,7 @@ def legend_html() -> str:
         "recommended": "code “should”",
         "conditional": "subject to project context",
         "not_required": "exemption captured for traceability",
+        "not_evaluated": "input missing; never taken as a pass",
     }
     items = "".join(
         f'<span class="flsc-legend__item">{status_badge(s)} {notes[s]}</span>'
@@ -526,7 +529,7 @@ def status_summary_html(counts: dict[str, int]) -> str:
     total = sum(counts.get(s, 0) for s in STATUS_ORDER) or 1
     segs, legend = [], []
     seg_colors = {"required": "#DC2626", "recommended": "#2563EB",
-                  "conditional": "#F59E0B", "not_required": "#CBD5E1"}
+                  "conditional": "#F59E0B", "not_required": "#CBD5E1", "not_evaluated": "#7C3AED"}
     for s in STATUS_ORDER:
         n = counts.get(s, 0)
         label = STATUS_META[s][0]

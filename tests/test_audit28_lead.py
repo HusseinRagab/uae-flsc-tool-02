@@ -141,3 +141,21 @@ def test_UX03_not_evaluated_lines_have_their_own_status():
     ne = [it for c in r.chapters for bl in c.blocks for it in bl.items
           if "NOT EVALUATED" in it.system]
     assert ne and all(it.status == "not_evaluated" for it in ne)
+
+
+def test_UX03_exports_say_incomplete_and_list_not_evaluated_lines():
+    import io
+    import docx
+    import export
+    r = evaluate(Building(occupancy="residential", height_m=18, floors_above_grade=5,
+                          ground_floor_bua_m2=0, gross_floor_area_m2=0))
+    for kind in ("compact", "detailed", "executive"):
+        d = docx.Document(io.BytesIO(export.report_to_docx_bytes(r, kind)))
+        text = "\n".join(p.text for p in d.paragraphs)
+        assert "REPORT INCOMPLETE" in text, kind
+        assert "NOT EVALUATED" in text, kind
+    ok = evaluate(Building(occupancy="residential", height_m=18, floors_above_grade=5,
+                           ground_floor_bua_m2=800, gross_floor_area_m2=4000, plot_area_m2=2000))
+    d = docx.Document(io.BytesIO(export.report_to_docx_bytes(ok, "compact")))
+    assert "REPORT INCOMPLETE" not in "\n".join(p.text for p in d.paragraphs)
+    assert export.report_to_pdf_bytes(r, "compact")[:4] == b"%PDF"

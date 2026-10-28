@@ -100,6 +100,9 @@ def test_UX01_warehouse_stop_draws_the_field_it_asks_for_and_then_evaluates():
     # The field the stop asks for is on screen in the same run.
     assert at.sidebar.number_input(key="sum_gf_bua_m2_input") is not None
     at.sidebar.number_input(key="sum_gf_bua_m2_input").set_value(4000.0).run()
+    # Owner ruling Q-4 (28.10.2026): the tenancy is a required choice, on screen too.
+    assert any("storage tenancy" in e.value for e in at.error)
+    at.sidebar.radio(key="storage_tenancy_input").set_value("multi").run()
     assert not at.exception and not at.error
     b = json.loads(at.session_state["_building_json"])
     assert b["occupancy"] == "storage_industrial" and b["sum_gf_bua_m2"] == 4000.0
@@ -122,7 +125,8 @@ def test_UX01_hazard_stop_also_keeps_every_storage_input_on_screen():
     at = _app(dict(WAREHOUSE))
     assert any("Select the storage hazard class" in e.value for e in at.error)
     keys = {w.key for w in at.sidebar.checkbox}
-    assert {"is_single_tenant_storage", "is_cold_storage", "is_aboveground_tank_storage"} <= keys
+    assert {"is_cold_storage", "is_aboveground_tank_storage"} <= keys
+    assert at.sidebar.radio(key="storage_tenancy_input") is not None   # ruling Q-4
     assert at.sidebar.number_input(key="max_unit_area_m2_input") is not None
 
 

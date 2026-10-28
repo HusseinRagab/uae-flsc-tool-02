@@ -43,14 +43,16 @@ STATUS_HEX = {
     "recommended": "2C4A6E",
     "conditional": "6B4E16",
     "not_required": "5C635E",
+    "not_evaluated": "5B2C91",   # audit UX-03
 }
 STATUS_LABEL = {
     "required": "REQUIRED",
     "recommended": "RECOMMENDED",
     "conditional": "CONDITIONAL",
     "not_required": "NOT REQUIRED",
+    "not_evaluated": "NOT EVALUATED",
 }
-STATUS_ORDER = ["required", "recommended", "conditional", "not_required"]
+STATUS_ORDER = ["required", "not_evaluated", "recommended", "conditional", "not_required"]
 
 
 def _status_hex(s: str) -> str:
@@ -221,6 +223,7 @@ FIELD_LABELS = {
     "is_open_yard_storage": "Open yard storage (Group U)",
     "is_plant_nursery": "Plant nursery (Group V)",
     "is_single_tenant_storage": "Single-tenant storage",
+    "storage_tenancy": "Storage tenancy (Table 9.27)",
     "is_idle_pallet_storage": "Idle pallet storage (Group K)",
     "is_extra_hazard_2": "Extra Hazard Group 2",
     "storage_commodity": "Stored commodity",
@@ -377,7 +380,17 @@ def _meta(r, meta) -> dict:
             m[k] = v
     m["inputs"] = [tuple(x) for x in (m.get("inputs") or [])]
     m["assumptions"] = list(m.get("assumptions") or [])
+    # Audit UX-03: every NOT EVALUATED line, so each export states the report is incomplete.
+    m["not_evaluated"] = list(dict.fromkeys(
+        f"{pre}{ch.chapter_code}: {it.system}" for pre, ch in _all_chapters(r)
+        for blk in ch.blocks for it in blk.items if it.status == "not_evaluated"))
     return m
+
+
+INCOMPLETE_TITLE = "REPORT INCOMPLETE - inputs missing"
+INCOMPLETE_NOTE = ("The lines below are NOT EVALUATED because an input is missing. A missing "
+                   "input is never taken as a pass: enter it and run the report again before "
+                   "relying on these chapters.")
 
 
 def stamp_text(m: dict) -> str:
@@ -422,7 +435,7 @@ _FP_COMPANIONS = ("Fire Pump", "Fire Water Tank")
 
 
 def _is_placeholder(it) -> bool:
-    return "NOT EVALUATED" in (it.system or "")
+    return it.status == "not_evaluated" or "NOT EVALUATED" in (it.system or "")
 
 
 def governing_rows(r: ComplianceReport) -> list:
@@ -437,7 +450,7 @@ def governing_rows(r: ComplianceReport) -> list:
         seen = set()
         for blk in ch.blocks:
             for it in blk.items:
-                if it.status == "required" and it.system not in seen:
+                if it.status in ("required", "not_evaluated") and it.system not in seen:
                     seen.add(it.system)
                     req.append(it)
         if not req:
@@ -469,7 +482,8 @@ def governing_rows(r: ComplianceReport) -> list:
             spec = (spec + "; " if spec else "") + f"{len(missing)} line(s) NOT EVALUATED: " \
                 + ", ".join(missing)
         cite = " - ".join(p for p in (pick.code_ref, pick.page_ref) if p)
-        rows.append((ch.chapter_code, pick.system, spec or "-", cite or "-", len(req)))
+        rows.append((ch.chapter_code, pick.system, spec or "-", cite or "-",
+                     len([it for it in req if it.status == "required"])))
     return rows
 
 
@@ -500,7 +514,8 @@ def _required_systems(ch) -> List[Requirement]:
     seen, items = set(), []
     for blk in ch.blocks:
         for it in blk.items:
-            if it.status != "required" or it.system in seen:
+            # Audit UX-03: a NOT EVALUATED line is listed too, under its own status.
+            if it.status not in ("required", "not_evaluated") or it.system in seen:
                 continue
             seen.add(it.system)
             items.append(it)
@@ -738,7 +753,7 @@ def _pdf_profile_table(rows, styles, label_w, value_w):
     return pt
 
 
-def _pdf_status_chips(tot, styles, chip_w=3.9, slot_w=4.2):
+def _pdf_status_chips(tot, styles, chip_w=3.1, slot_w=3.4):
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.platypus import Paragraph, Table, TableStyle
     from reportlab.lib.units import cm
@@ -762,7 +777,7 @@ def _pdf_status_chips(tot, styles, chip_w=3.9, slot_w=4.2):
             ("BOTTOMPADDING", (0, -1), (-1, -1), 5),
         ]))
         chip_cells.append(inner)
-    chips = Table([chip_cells], colWidths=[slot_w * cm] * 4)
+    chips = Table([chip_cells], colWidths=[slot_w * cm] * len(chip_cells))  # UX-03: 5 statuses
     chips.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 2),
@@ -804,6 +819,12 @@ def _pdf_project_blocks(m: dict, styles, inner: float, inputs: bool = True) -> l
     from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
     P = _pdf_palette()
     out = []
+    if m.get("not_evaluated"):
+        out.append(Paragraph(INCOMPLETE_TITLE, styles["sec"]))
+        out.append(Paragraph(_x(INCOMPLETE_NOTE), styles["v"]))
+        for a in m["not_evaluated"]:
+            out.append(Paragraph("&bull;  " + _x(a), styles["item"]))
+        out.append(Spacer(1, 4))
     notes = (m.get("notes") or "").strip()
     if notes:
         out.append(Paragraph("Project notes", styles["sec"]))
@@ -930,7 +951,7 @@ def _detailed_pdf(r: ComplianceReport, m: dict) -> bytes:
     story.extend(_pdf_project_blocks(m, styles, inner))
     story.append(HRFlowable(width="100%", thickness=0.5, color=P["RULE"], spaceAfter=8))
     story.append(Paragraph("Requirement counts", styles["sec"]))
-    story.append(_pdf_status_chips(tot, styles, chip_w=4.05, slot_w=4.375))
+    story.append(_pdf_status_chips(tot, styles, chip_w=3.25, slot_w=3.5))
 
     def req_table(items: List[Requirement]):
         data = [[Paragraph("System", styles["hdr"]),
@@ -1083,6 +1104,10 @@ def _executive_pdf(r: ComplianceReport, m: dict) -> bytes:
     if m.get("assumptions"):
         story.append(Spacer(1, 4))
         story.append(Paragraph("Assumptions used: " + _x("; ".join(m["assumptions"])),
+                               styles["ital"]))
+    if m.get("not_evaluated"):
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(_x(f"{INCOMPLETE_TITLE}: " + "; ".join(m["not_evaluated"])),
                                styles["ital"]))
     story.append(Spacer(1, 8))
     story.append(Paragraph(
@@ -1309,8 +1334,9 @@ def _docx_kv_table(doc, rows, label_w=4.4, value_w=13.0):
 def _docx_status_chips(doc, tot):
     """Outlined status chips (label + count), mirroring the PDF chip row."""
     from docx.shared import Pt, RGBColor
-    tbl = doc.add_table(rows=1, cols=7)
-    widths = [3.9, 0.6, 3.9, 0.6, 3.9, 0.6, 3.9]
+    n = len(STATUS_ORDER)          # audit UX-03: five statuses incl. not evaluated
+    tbl = doc.add_table(rows=1, cols=2 * n - 1)
+    widths = [3.1 if i % 2 == 0 else 0.5 for i in range(2 * n - 1)]
     _docx_fixed_layout(tbl, widths)
     for idx, s in enumerate(STATUS_ORDER):
         cell = tbl.rows[0].cells[idx * 2]
@@ -1372,6 +1398,11 @@ _DET_W = [4.0, 2.2, 7.7, 3.5]
 def _docx_project_blocks(doc, m: dict, inputs: bool = True) -> None:
     """Project notes, assumptions used and the inputs table (audit UX-08 / UX-11 /
     UX-12)."""
+    if m.get("not_evaluated"):
+        _docx_section_head(doc, INCOMPLETE_TITLE)
+        _docx_para(doc, INCOMPLETE_NOTE, size=9.5, color=INK_HEX)
+        for a in m["not_evaluated"]:
+            doc.add_paragraph(a, style="List Bullet")
     notes = (m.get("notes") or "").strip()
     if notes:
         _docx_section_head(doc, "Project notes")
@@ -1550,6 +1581,9 @@ def _executive_docx(r: ComplianceReport, m: dict) -> bytes:
     if m.get("assumptions"):
         _docx_para(doc, "Assumptions used: " + "; ".join(m["assumptions"]), size=8,
                    italic=True, color=MUTED_HEX, space_before=4)
+    if m.get("not_evaluated"):
+        _docx_para(doc, f"{INCOMPLETE_TITLE}: " + "; ".join(m["not_evaluated"]), size=8,
+                   italic=True, color=INK_HEX, space_before=4)
 
     _docx_disclaimer(
         doc, "Executive extract. Use the Detailed Word/PDF for full clauses, the inputs "

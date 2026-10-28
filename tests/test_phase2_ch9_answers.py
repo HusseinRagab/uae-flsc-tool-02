@@ -96,7 +96,8 @@ def test_CH9_Q1_plot_gf_bua_sum_required_blank_never_takes_a_lower_tier():
     at = _app_test({**_GEO, "occupancy_chosen": ("Storage / Industrial", "storage_industrial"),
                     "occupancy_category_select": "Storage / Industrial",
                     "occupancy_sub_select": "storage_industrial", "storage_hazard_input": "OH1",
-                    "sum_gf_bua_m2_input": 1000.0})
+                    "sum_gf_bua_m2_input": 1000.0,
+                    "storage_tenancy_input": "multi"})   # ruling Q-4 (28.10.2026): required
     assert not at.error
 
 

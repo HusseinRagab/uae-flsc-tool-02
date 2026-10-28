@@ -112,11 +112,11 @@ SCENARIOS = [
         floors_above_grade=2, ground_floor_bua_m2=400, plot_area_m2=900)),
 
     # ---- Daycare ----
-    ("Daycare A 15 clients", dict(occupancy="daycare_a", height_m=8,
+    ("Daycare A (child / old age day care)", dict(occupancy="daycare_a", height_m=8,
         floors_above_grade=2, ground_floor_bua_m2=500, plot_area_m2=1000)),
-    ("Daycare B 10 clients", dict(occupancy="daycare_b", height_m=6,
+    ("Daycare B (adult day care)", dict(occupancy="daycare_b", height_m=6,
         floors_above_grade=2, ground_floor_bua_m2=300, plot_area_m2=600)),
-    ("Daycare C family 5 clients", dict(occupancy="daycare_c", height_m=6,
+    ("Daycare C (group not printed)", dict(occupancy="daycare_c", height_m=6,
         floors_above_grade=1, ground_floor_bua_m2=200, plot_area_m2=500)),
 
     # ---- Mall / Mercantile ----
