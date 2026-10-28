@@ -9,6 +9,25 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-28 — Owner rulings on the 12 open items of the audit fix round ("all as recommended")
+
+Hussein 28.10.2026: all 12 as recommended. Recorded only; no code changed in this entry.
+No code change needed (current output already matches): 2 labour / staff accommodation / hostel
+2.5 kg kitchen extinguisher stays required; 3 robotic logistics warehouse 23 m+ keeps the note;
+4 Ch 2 #2.10 yard hydrants / hose cabinets stay conditional, Ch 9 governs; 7 villa EAP and
+accessibility stay conditional; 8 kitchen ventilation in parking 23 m+ stays conditional;
+9 highrise open parking keeps the Table 10.20 corridor line; 12 blank-input exemptions and
+preset values as coded. 11 Dubai ESL note: Hussein to check the wording against the issued
+document (no code until then).
+TO CODE in a fresh session (each with failing-first tests, grid diff, HANDOFF entry):
+1. Converted villa (villa_converted_use): Class A extinguishers per the new use's Table 4.3
+   row 1 item (drop the villa "recommended" line; Ch 4 L11).
+5. Unsprinklered hospital sleeping areas (Table 3.16 row 4.i prints S only): sprinklers
+   required; replace the NOT EVALUATED line with a required line.
+6. Table 3.32 item 2 (p.331): 1525 mm corridor always; 1 h rating only if unsprinklered.
+10. R-G for Groups T / U: the hazard-class rows A-J apply only as conditional ("enclosed
+   buildings on the site"), as R-B.
+
 ### 2026-10-28 — Audit 28.10.2026 fix round: all findings, rulings R-A to R-J, Q-1 to Q-4 (PR #38, draft)
 
 Audit: `AUDIT_UAE_FLSC_TOOL_28.10.2026.md` (15 HIGH, 53 MEDIUM, 87 LOW; source = the HTML reading copy
