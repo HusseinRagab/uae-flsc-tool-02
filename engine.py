@@ -1671,6 +1671,98 @@ _STATUS_RANK = {"required": 3, "conditional": 2, "recommended": 1, "not_required
 _HAZARD_RANK = {"LH": 0, "OH1": 1, "OH2": 2, "HH": 3}
 
 
+_EL_KIND_RANK = {"monitored": 3, "central_or_monitored": 2, "stand_alone": 1}
+
+
+def _el_kind(it: Requirement) -> Optional[str]:
+    s = it.system or ""
+    if s.startswith("Monitored Self-Contained EL"):
+        return "monitored"
+    if s.startswith("Central Battery"):
+        return "central_or_monitored"
+    if s.startswith("Stand-alone Self-Contained EL"):
+        return "stand_alone"
+    return None
+
+
+def _r13_one_el_package(items: List[Requirement]) -> List[Requirement]:
+    """Owner ruling R-F (28.10.2026): in most restrictive mixed mode the building gets ONE
+    Table 6.5 system type, the one that meets every row that applies. #4.2 (p.419): where
+    central battery or monitored emergency lighting is required, one centralized system
+    covers the entire facility, so a stand-alone line cannot sit beside it, and a
+    Monitored Self-Contained system meets both "Monitored" and "Central Battery OR
+    Monitored" rows. The rows not printed are named in the kept line."""
+    kinds = {_el_kind(it) for it in items if it.status == "required"} - {None}
+    if len(kinds) < 2:
+        return items
+    gov = max(kinds, key=lambda k: _EL_KIND_RANK[k])
+    typed = [it for it in items if _el_kind(it) and it.status == "required"]
+    nums = sorted({n for it in typed for n in _t65_items(it.code_ref)})
+    dropped = [it for it in typed if _el_kind(it) != gov]
+    out, kept = [], False
+    for it in items:
+        k = _el_kind(it)
+        if k and it.status == "required":
+            if k != gov or kept:
+                continue
+            kept = True
+            txt = (", ".join(str(n) for n in nums[:-1]) + f" and {nums[-1]}") if len(nums) > 1 \
+                else (str(nums[0]) if nums else "")
+            names = "; ".join(f"{d.system} ({d.code_ref})" for d in dropped)
+            out.append(it.model_copy(update={
+                "code_ref": f"Ch 6, #4.2 / #4.3 / Table 6.5 items {txt}" if txt else it.code_ref,
+                "detail": (it.detail + " " if it.detail else "") + (
+                    f"Mixed occupancy, most restrictive: one system type for the building "
+                    f"(owner ruling R-F, 28.10.2026). #4.2 (p.419) requires one centralized "
+                    f"emergency lighting system for the entire facility; this package meets every "
+                    f"Table 6.5 row that applies (items {txt}). Not printed separately: {names}."),
+            }))
+            continue
+        # A villa row's "not mandatory" line cannot stand beside a required facility system.
+        if k is None and it.status == "not_required" and (it.system or "").startswith("Emergency Lighting ("):
+            continue
+        out.append(it)
+    return out
+
+
+_FA_HEIGHT_ROWS = {"fa_super_highrise", "fa_highrise", "fa_midrise_lowrise"}
+_FA_PROTOCOL = re.compile(r"Phased Evacuation Alarm|^Positive Alarm Sequence|^General Fire Alarm")
+
+
+def _r13_one_fa_protocol(contrib: List[tuple]) -> List[tuple]:
+    """Owner ruling R-F (28.10.2026), extending R7: a mixed building has ONE alarm
+    protocol. An occupancy's own Table 8.13 row protocol governs over the height row
+    (items 1-4) protocol, as R7 rules for a single occupancy; between occupancy rows the
+    main occupancy's governs, else the first listed. The protocols not applied are named.
+    `contrib` is the list of (occupancy, items) of the Table 8.13 block."""
+    def is_proto(it):
+        return it.status == "required" and bool(_FA_PROTOCOL.search(it.system or ""))
+    own = [(occ, its) for occ, its in contrib
+           if any(is_proto(it) and it.source_rule not in _FA_HEIGHT_ROWS for it in its)]
+    if not own:
+        return contrib
+    gov_occ = own[0][0]
+    dropped = [(occ, it) for occ, its in contrib for it in its if is_proto(it)
+               and not (occ == gov_occ and it.source_rule not in _FA_HEIGHT_ROWS)]
+    if not dropped:
+        return contrib
+    names = "; ".join(f"{it.system} ({occ}, {it.source_rule})" for occ, it in dropped)
+    note = (f" Mixed occupancy, one alarm protocol (owner ruling R-F, 28.10.2026, extending "
+            f"R7): the {gov_occ} Table 8.13 row protocol governs. Not applied: {names}. "
+            f"Confirm the protocol with Civil Defence where portions have different rows.")
+    out = []
+    for occ, its in contrib:
+        new = []
+        for it in its:
+            if is_proto(it) and (occ, it) in [(o, d) for o, d in dropped]:
+                continue
+            if is_proto(it) and occ == gov_occ:
+                it = it.model_copy(update={"detail": (it.detail or "") + note})
+            new.append(it)
+        out.append((occ, new))
+    return out
+
+
 def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
     """Ruling R13 (12.10.2026), Ch 1 #2.4.4 (p.55): a mixed occupancy takes the most
     restrictive requirements of the occupancies involved. `runs` is a list of
@@ -1698,6 +1790,8 @@ def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
         blocks = []
         for t in titles:
             contrib = by_title[t]
+            if ch.chapter_code == "FA" and t.startswith("FA - Detection"):
+                contrib = _r13_one_fa_protocol(contrib)
             block_req = any(it.status != "not_required" for _, its in contrib for it in its)
             tagged = [(occ, it) for occ, its in contrib
                       if not (block_req and all(i.status == "not_required" for i in its))
@@ -1721,6 +1815,8 @@ def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
                         it = it.model_copy(update={"detail": (it.detail + " " if it.detail else "") + (
                             f"[Mixed occupancy, most restrictive (ruling R13): from {', '.join(occs)}.]")})
                     items.append(it)
+            if ch.chapter_code == "EL" and t.startswith("EL - System Type"):
+                items = _r13_one_el_package(items)
             blocks.append(SectionBlock(title=t, items=_merge_duties(items)))
         sec = ch.selected_branch_section
         extra = "; ".join(f"{occ}: {c.selected_branch}" for occ, c in others if c.selected_branch)

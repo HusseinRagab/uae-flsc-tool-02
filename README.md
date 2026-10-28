@@ -70,16 +70,16 @@ python tests/test_cases.py
 | 10 | Smoke Control | 10.19–10.27 |
 | 11 | LPG | 11.1–11.14 |
 
-## Height classes (Ch 1 §1.7.39–1.7.42)
+## Height classes (Ch 1 #1.7.39–1.7.42)
 
 | Class | Height (excluding parapets, from lowest grade / Fire Service access) |
 | --- | --- |
 | Lowrise | ≤ 15 m |
-| Midrise | 15 m < h ≤ 23 m |
-| Highrise | 23 m < h ≤ 90 m |
+| Midrise | 15 m < h < 23 m |
+| Highrise | 23 m ≤ h ≤ 90 m |
 | Super-highrise | > 90 m |
 
-Exactly 23 m is midrise (highrise starts *more than* 23 m). Exactly 90 m is
+Exactly 23 m is highrise in every chapter (owner ruling R1, 12.10.2026; Ch 1 Table 1.7 prints "23 m - < 90 m"). Exactly 90 m is
 highrise (super-highrise starts *more than* 90 m). FAQ Annexure 1 (p.1273)
 alternatively measures occupiable-ceiling height — use the same datum the
 Civil Defence reviewer will use.
@@ -89,7 +89,7 @@ Civil Defence reviewer will use.
 - **Healthcare Group A** (hospitals) → Table 9.20.a / 9.21.a (public / assembly-like).
 - **Healthcare Group B/C** (clinics / ambulatory) → Table 9.20.b / 9.21.b
   (with residential / business), not 9.20.a.
-- **Commercial villa** is a developer-built villa community (Ch 1 §1.7.35), not a
+- **Commercial villa** is a developer-built villa community (Ch 1 #1.7.35), not a
   private villa converted to a shop. Converted villas use the
   `villa converted to other use` flag (Table 8.13 item 14 / Table 9.21.d).
 
@@ -102,7 +102,7 @@ Civil Defence reviewer will use.
   9.21.b.
 - Means-of-egress travel for labour / hostel / staff accommodation split from
   apartments (Table 3.16 rows 6 vs 7: NS 61 m vs NS 30 m).
-- Commercial-villa definition corrected to Ch 1 §1.7.35.
+- Commercial-villa definition corrected to Ch 1 #1.7.35.
 
 ## Extending the rules
 
@@ -115,7 +115,7 @@ Edit the YAML under `rules/`. Each branch has:
     height_m_gt: 23
     height_m_lte: 90
     plot_area_m2_lte: 20000
-  section: "§4.3.1 / Table 9.19.B"
+  section: "#4.3.1 / Table 9.19.B"
   page: "p.698"
   systems:
     - name: "Automatic Sprinkler System"
