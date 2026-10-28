@@ -4,6 +4,19 @@ meta:
   chapter: 10
   chapter_title: "Smoke Control & Smoke Management"
 
+# ---------- GENERAL: Section 2.5 / Table 10.3 (audit C10-09) -------------
+# engine.evaluate_sc prints this block only when at least one smoke control / ventilation
+# system line of the chapter is required.
+general:
+  - id: sc_general_section_2_5
+    when: {}
+    systems:
+      - name: "Smoke Control General Requirements (Section 2.5 / Table 10.3)"
+        code_ref: "Ch 10, #2.5 / Table 10.3 items 5-8; Table 10.11 item 1.v; Table 10.6 item 2.i; Annexure 1 FAQ #24"
+        page_ref: "p.809, p.822, p.836, p.1281"
+        spec: "All the smoke control systems shall be provided with a secondary source of power supply, calculated for the entire smoke control equipment required to activate (Table 10.3 item 5.i-ii); the fans and associated smoke control equipment wired with 2 hour fire-resistance rating and protected circuits (item 6.i); the smoke control system within a smoke zone fully operational within a time that shall not exceed 60 seconds from system activation (item 7.v); smoke exhaust / extract fans capable of operating effectively at 400°C for 2 hours (Table 10.11 item 1.v, Table 10.6 item 2.i; Annexure 1 FAQ #24)."
+        detail: "Each Ch 10 system section refers back to these general requirements (e.g. #2.8.1 p.822, #2.13.1 p.836, #2.17.1 p.847, #2.18.1 p.849: 'shall comply with the relevant general requirements for smoke control systems as per Section 2.5'). Where fire resistance rated wiring is not used, wiring in 2 hour fire resistance rated shafts (item 6.ii). Metal conduits in lieu of 2 hour fire resistance rating shall not be acceptable (item 6.iii). Fan supply on a sub-main circuit exclusive thereto after the main isolator of the building (item 6.iv). Activation by sprinkler activation, smoke detectors or beam detectors in the same smoke control zone (item 7.i); remote manual activation and control switches (Smoke Control Panel) with a visual indication of the operation status at the fire command center or main fire alarm panel (item 7.iv). HVAC within the fire zone shut down automatically on smoke control activation, except the dedicated ventilation of exit stairs and passageways, smoke free and fire fighting lobbies, lift shafts, areas of refuge, basement carparks, emergency command center, flammable and hazardous material storage, emergency generator room and fire pump room (item 8.i-ii)."
+
 # ---------- BRANCHES: Tables 10.19-10.26 application by occupancy/tier -----
 branches:
   # ---------- Table 10.19 - Super-highrise (>90m) ----------
@@ -19,7 +32,7 @@ branches:
         spec: "Per Section 2.6 - lobby door 250 °C / 30 min temperature rise limit; self-closing leaves; smoke detector at door"
         detail: "Elevators opening directly to exit corridors WITHOUT lobby are NOT permitted in super-highrise."
       - name: "Enclosed Corridor Smoke Management (exhaust from roof only)"
-        spec: "Per Section 2.8 - smoke exhaust open to sky; make-up air permitted from intermediate levels"
+        spec: "Per Section 2.8 - smoke exhaust open to sky; make-up air permitted from intermediate levels; corridor smoke purge minimum of 6 air changes per hour (6 ACH) (Table 10.6 item 3.i, p.822; Annexure 1 FAQ #30, p.1282: mechanically ventilated internal corridor purging rate of at least 6 air changes per hour)"
         detail: "No intermediate-level smoke exhaust permitted - must exhaust to sky from roof."
       - name: "Firefighting Lift + Firefighting Lobby (mandatory)"
         spec: "Lobby per Ch 1; pressurized firefighting stairs per Table 10.19.1"
@@ -38,13 +51,13 @@ branches:
         spec: "Per Section 2.6 - multiple injection arrangement for buildings > 30.5 m. Design ΔP per Table 10.3.a (p.806): sprinklered 12.5 Pa, non-sprinklered 25 / 35 / 45 Pa by ceiling height (3 / 4.5 / 6.5 m bands)."
         detail: "Stair pressurization extends to all levels including basements. Multiple-injection arrangement required when building exceeds 30.5 m height. Max allowable ΔP across door per Table 10.3.b (53-113 Pa range, varies with door width 0.81-1.22 m and closer force 25-60 N); door-opening force shall not exceed 133 N."
       - name: "Passenger Elevator Lobby OR Lift Hoistway Pressurization"
-        spec: "If lobby provided: 1-hr fire-rated smoke barrier per Table 10.20.2.1. If no lobby: lift hoistway pressurization per Section 2.19"
-        detail: "Either approach acceptable. Lobby with smoke barrier is preferred; hoistway pressurization is the alternative when no lobby exists."
+        spec: "Buildings with passenger elevator lobby: lobby arranged with smoke barriers (Table 10.20 item 2.1). Buildings without passenger elevator lobby: a lift hoistway pressurization shall be provided in accordance with Section 2.19 (item 2.2.i)"
+        detail: "Table 10.20 item 2 (p.857) prints two cases. 1. BUILDINGS WITH PASSENGER ELEVATOR LOBBY: barriers forming the elevator lobby shall have a minimum 1-hour fire resistance rating; lobby door assemblies not exceeding 250 C above ambient at the end of 30 minutes; door leaves self-closing or automatic-closing, closing on a smoke detector directly outside the lobby (permitted to close on the building fire alarm signal); no smoke control required for a lobby complying with Table 10.20.2 (item 2.1 i-vii). 2. BUILDINGS WITHOUT PASSENGER ELEVATOR LOBBY: a lift hoistway pressurization shall be provided in accordance with Section 2.19 (item 2.2.i). The code states no preference between the two cases (audit C10-07)."
       - name: "Firefighting Lift (mandatory)"
         detail: "Every highrise shall have a fireman's lift connecting all floors including basements. Lobby optional - if provided shall be 1-hr fire-rated smoke partition; if not provided, hoistway pressurization required."
       - name: "Enclosed Corridor Smoke Management (exhaust from roof only)"
-        spec: "Per Section 2.8"
-        detail: "Smoke exhaust only from roof (open to sky); no intermediate-level exhaust."
+        spec: "Per Section 2.8; corridor smoke purge minimum of 6 air changes per hour (6 ACH) (Table 10.6 item 3.i, p.822; Annexure 1 FAQ #30, p.1282: mechanically ventilated internal corridor purging rate of at least 6 air changes per hour)"
+        detail: "Corridor and open circulation areas shall be provided with a smoke management system in accordance with Section 2.8 (Table 10.20 item 4.i). Smoke exhaust only from roof (open to sky); no intermediate-level exhaust; make-up air permitted from intermediate levels (item 4.ii)."
 
   # ---------- Table 10.21 - Midrise / Lowrise default (<23 m) ----------
   # Table 10.21 item 1.i (p.858): stair pressurization not required for
@@ -53,6 +66,7 @@ branches:
   - id: sc_midrise_lowrise_default
     match:
       height_m_lt: 23
+      height_m_gt: 0    # C10-06: Table 10.21 is for buildings; infrastructure with no building (0 m) is out
       occupancy_not: [healthcare_a,
                       mall_covered, mall_open, mall_mixed,
                       assembly_a, assembly_b, assembly_c,
@@ -83,10 +97,10 @@ branches:
       - name: "Passenger Elevator Lobby at Underground / Basement Levels (1-hr smoke barrier)"
         detail: "Every elevator connecting underground and basement areas shall have an elevator lobby arranged as a smoke barrier with at least 1-hour fire resistance; lobby doors limited to 250 C above ambient at the end of 30 minutes, self-closing or automatic-closing, closing on a smoke detector directly outside the lobby (or permitted on the fire alarm signal); no smoke control is then required for the lobby (Table 10.22 item 2.1 i-viii). Underground, basement and basement parking areas without an elevator lobby are not permitted (item 2.2 i)."
       - name: "Corridor and Open Circulation Smoke Management (underground / basement, non-parking)"
-        spec: "Per Section 2.8"
+        spec: "Per Section 2.8; corridor smoke purge minimum of 6 air changes per hour (6 ACH) (Table 10.6 item 3.i, p.822; Annexure 1 FAQ #30, p.1282: mechanically ventilated internal corridor purging rate of at least 6 air changes per hour)"
         detail: "Corridor and open circulation areas at underground spaces and basements, other than parking, shall be provided with a smoke management system per Section 2.8 (Table 10.22 item 4.i)."
       - name: "Enclosed Rooms > 280 m2: Dedicated Smoke Exhaust (Section 2.17) OR Mechanical Smoke Purge (Section 2.13)"
-        detail: "Enclosed rooms having a floor area greater than 280 m2 shall be provided with a dedicated and independent smoke exhaust system per Section 2.17, OR a mechanical smoke purging system using dedicated ducting per Section 2.13 (Table 10.22 item 4.ii)."
+        detail: "Enclosed rooms having a floor area greater than 280 m2 shall be provided with a dedicated and independent smoke exhaust system per Section 2.17, OR a mechanical smoke purging system using dedicated ducting per Section 2.13 (Table 10.22 item 4.ii). A Section 2.13 purge shall be designed to achieve 10 air changes per hour in a single smoke zone of not more than 3600 m2 (Table 10.11 item 3.i, p.836); Annexure 1 FAQ #31 (p.1282): the purge rate for basement shall be at least 9 air changes per hour. The 10 air changes per hour of Table 10.11 is the more onerous and governs a Section 2.13 system; FAQ #31 is named."
 
   # Table 10.22 items 1 and 3 (p.859) print only "a depth of more than 7 m from
   # the fire access level" (CH10-27). The basement-count trigger lives in
@@ -148,15 +162,32 @@ branches:
     page: "p.860"
     systems:
       - name: "Mechanical Smoke Purging via Dedicated Ducting"
-        spec: "Per Section 2.13"
+        spec: "Per Section 2.13: mechanical smoke purging system using a dedicated ducting (Table 10.23 item 1.i), designed to achieve 10 air changes per hour in a single smoke zone of not more than 3600 m2 (Table 10.11 item 3.i, p.836)"
+        detail: "Every parking which does not comply with the open parking definition (Chapter 1 Table 1.9.34 and Table 10.23.2.1), every enclosed parking, enclosed parking structure, enclosed robotic parking structure and parking at an enclosed basement (item 1.i). Make-up air or replacement air shall not be required for single basement carparks, having an area less than 3600 m2; the drive ways (entry and exit) shall be permanently open and provide for the required make-up air (item 1.ii). A jet fan system shall not be permitted in enclosed parking (item 1.iii). Annexure 1 FAQ #31 (p.1282): the purge rate for basement shall be at least 9 air changes per hour; the 10 air changes per hour of Table 10.11 is the more onerous and governs (audit C10-04, C10-10)."
+      # Cross-reference only: the main CO detection line is the Ch 3 rule (Table 3.37 item 7.i).
+      - name: "Carbon Monoxide (CO) Detection Interfaced with the Ventilation System (cross-reference)"
+        code_ref: "Ch 3, Table 3.37 item 7.i"
+        page_ref: "p.338"
+        spec: "CO detection system interfacing with the enclosed parking smoke purge / ventilation system"
+        detail: "Table 3.37 item 7.i (p.338): 'Carbon monoxide detection shall be provided in all enclosed parking structures. Such CO detection system shall be electrically operated, complete with control panel and interfacing with ventilation system.' The main line is in Ch 3 (Means of Egress); this cross-reference records the interface with the Table 10.23 item 1 ventilation fans."
 
   - id: sc_parking_open_small
-    match: {occupancy: parking_open, gross_floor_area_m2_lte: 4000}
+    match: {occupancy: parking_open, gross_floor_area_m2_gt: 0, gross_floor_area_m2_lte: 4000, height_m_lt: 23}
     section: "Ch 10, #3.5 / Table 10.23.2.2"
     page: "p.860"
     systems:
       - name: "Smoke Purging / Ventilation NOT Required"
         required: not_required
+        detail: "Open parking complying with Table 10.23.2.1, and having a total floor area of up to 4000 m2 shall not be required to have any smoke purging or ventilation system (Table 10.23 item 2.2.i). Open parking definition (Table 10.23 item 2.1, p.860; Chapter 1 Table 1.9.34): each parking level shall have permanent wall openings open to the exterior or atmosphere, for an area of not less than 0.4 m2 for each linear meter of its exterior perimeter (ii); such openings distributed over 40 percent of the building perimeter surface or uniformly over each of at least two opposing side surfaces (iii); interior wall lines, column lines and obstructions at least 20 percent open, with openings distributed evenly (iv); any part of the parking within 30 m of the permanent natural ventilation opening on the perimeter surface (v). A parking that does not comply is enclosed parking (item 1.i). At 23 m or more see the Table 10.20 / 10.19 lines (audit C10-03)."
+
+  # C10-02: a blank GFA never takes the 'up to 4000 m2' row (standing rule: a blank never passes).
+  - id: sc_parking_open_gfa_not_entered
+    match: {occupancy: parking_open, gross_floor_area_m2_lte: 0}
+    section: "Ch 10, #3.5 / Table 10.23 items 2.2-2.3"
+    page: "p.860"
+    systems:
+      - name: "Open Parking Smoke Purging (Table 10.23 item 2.2 / 2.3) - NOT EVALUATED (gross floor area not entered)"
+        detail: "Table 10.23 tiers open parking by total floor area: up to 4000 m2, no smoke purging or ventilation system required (item 2.2.i); more than 4000 m2, mechanical smoke purging using ducting per Section 2.13 OR a jet fan system per Section 2.14 OR a combination thereof as a hybrid system (item 2.3.i). The gross floor area is not entered, so neither row is taken; enter it to evaluate (audit C10-02)."
 
   - id: sc_parking_open_large
     match: {occupancy: parking_open, gross_floor_area_m2_gt: 4000}
@@ -164,6 +195,8 @@ branches:
     page: "p.860"
     systems:
       - name: "Mechanical Smoke Purging OR Jet Fan System"
+        spec: "Mechanical smoke purging system using ducting per Section 2.13 OR jet fan system per Section 2.14 OR combination thereof as a hybrid system (Table 10.23 item 2.3.i)"
+        detail: "Open parking complying with Table 10.23.2.1 and having a total floor area of more than 4000 m2 (item 2.3.i). Smoke management system zoning shall be permitted to be 4000 m2 (item 2.3.iii). Section 2.13 purge: 10 air changes per hour in a single smoke zone of not more than 3600 m2 (Table 10.11 item 3.i, p.836); Section 2.14 jet fans: At least 10 air-changes per hour shall be achieved with a jet fan system, during fire condition (Table 10.12 item 3.i, p.839). Open parking definition (Table 10.23 item 2.1, p.860; Chapter 1 Table 1.9.34): each parking level shall have permanent wall openings open to the exterior or atmosphere, for an area of not less than 0.4 m2 for each linear meter of its exterior perimeter (ii); such openings distributed over 40 percent of the building perimeter surface or uniformly over each of at least two opposing side surfaces (iii); interior wall lines, column lines and obstructions at least 20 percent open, with openings distributed evenly (iv); any part of the parking within 30 m of the permanent natural ventilation opening on the perimeter surface (v). A parking that does not comply is enclosed parking (item 1.i)."
 
   # Table 10.23 items 1.iv, 2.2.ii, 2.3.ii (p.860): stairs at parking buildings
   # or structures having a height of more than 23 m. At exactly 23.0 m
@@ -216,10 +249,12 @@ branches:
         spec: "Per Section 2.10"
         detail: "Automatic smoke curtains or permanent downstands installed strategically in open circulation areas as per the engineering analysis, but not more than 122 m of travel distance (Table 10.24 item 1.1.i-ii)."
       - name: "Enclosed Service Corridor Smoke Management"
-        spec: "Per Section 2.8"
+        spec: "Per Section 2.8; corridor smoke purge minimum of 6 air changes per hour (6 ACH) (Table 10.6 item 3.i, p.822; Annexure 1 FAQ #30, p.1282: mechanically ventilated internal corridor purging rate of at least 6 air changes per hour)"
+        detail: "Enclosed service corridors shall be provided with a corridor smoke management in accordance with Section 2.8 (Table 10.24 item 1.3.i)."
       - name: "Anchor / Hypermarket / Tenant > 1000 m² Smoke Management"
-        spec: "Independent and dedicated smoke management per Section 2.8"
-        detail: "Tenant spaces having an area more than 1000 m2: 6 ACH, zone areas restricted to a maximum of 2000 m2 (by listed smoke curtains and/or permanent downstands complying with 20% of the hazard height); make-up air permitted from the mall; listed and approved smoke curtains to isolate the tenant space from the mall (Table 10.24 item 1.4.i-v)."
+        required: conditional
+        spec: "Independent and dedicated smoke management per Section 2.8, 6 ACH, zones of at most 2000 m2"
+        detail: "Applies to anchor stores, hypermarkets and tenant spaces having floor area larger than 1000 m2 (Table 10.24 item 1.4, p.861); the tool has no tenant-area input, so the line is conditional: required for every such tenant space (audit C10-12). Tenant spaces having an area more than 1000 m2: 6 ACH, zone areas restricted to a maximum of 2000 m2 (by listed smoke curtains and/or permanent downstands complying with 20% of the hazard height); make-up air permitted from the mall; listed and approved smoke curtains to isolate the tenant space from the mall (Table 10.24 item 1.4.i-v)."
       - name: "Communicating Spaces - Smoke Containment Approach"
         detail: "Communicating spaces shall not be required to have dedicated smoke control systems; a smoke containment approach shall be implemented per Table 10.5.6 (Table 10.24 item 1.5.i)."
 
@@ -256,12 +291,23 @@ branches:
         spec: "Per Section 2.6"
         detail: "Table 10.21 item 1.i: stair pressurization shall not be required for occupancies other than hospitals, malls, educational and assembly, so the exemption does not cover this building. No Ch 10 row prints a stair item for malls (Table 10.24) or assembly spaces (Table 10.27 items 8-14); the tool reads the item 1.i exclusion as requiring stair pressurization. This is an inference from item 1.i, adopted by owner ruling 12.10.2026, P3 Ch10 Q1."
 
+  # C10-02: a blank (0) ground floor BUA never takes the lowest row; it prints NOT EVALUATED.
+  - id: sc_storage_industrial_gf_bua_not_entered
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_lte: 0}
+    section: "Ch 10, #3.8 / Table 10.26 item 1"
+    page: "p.864"
+    systems:
+      - name: "Factory / Warehouse Smoke Extract (Table 10.26 item 1) - NOT EVALUATED (ground floor built-up area not entered)"
+        detail: "Table 10.26 item 1 tiers factories and warehouses by the total built-up ground floor area: less than 230 m2; 230 m2 - 900 m2; 901 m2 - 2000 m2; more than 2000 m2. The ground floor built-up area is not entered, so no tier is taken (a blank never takes the less-than-230 m2 row); enter it to evaluate (audit C10-02)."
+
   - id: sc_storage_industrial_under_230
-    match: {occupancy: storage_industrial, ground_floor_bua_m2_lt: 230}
+    match: {occupancy: storage_industrial, ground_floor_bua_m2_gt: 0, ground_floor_bua_m2_lt: 230}
     section: "Ch 10, #3.8 / Table 10.26.1.1"
     page: "p.864"
     systems:
       - name: "Roof Ventilation System"
+        spec: "Roof ventilation system in accordance with Section 2.11 (Table 10.26 item 1.1.i)"
+        detail: "Total built-up ground floor area less than 230 m2. Fresh air from the unit entrances and openings shall be sufficient for the make-up or replacement air (item 1.1.ii). Table 10.26 (p.864), left column: roof smoke extraction fan systems or roof venting systems or mechanical ducted extraction systems THAT DO NOT HAVE BACK-UP POWER FOR THEIR OPERATION DURING EMERGENCIES SHALL NOT BE ACCEPTABLE."
 
   - id: sc_storage_industrial_230_900
     match: {occupancy: storage_industrial, ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lte: 900}
@@ -269,7 +315,10 @@ branches:
     page: "p.864"
     systems:
       - name: "Roof Ventilation System"
+        spec: "Roof ventilation system in accordance with Section 2.11 (Table 10.26 item 1.2.i)"
+        detail: "Total built-up ground floor area 230 m2 - 900 m2. Table 10.26 (p.864), left column: roof smoke extraction fan systems or roof venting systems or mechanical ducted extraction systems THAT DO NOT HAVE BACK-UP POWER FOR THEIR OPERATION DURING EMERGENCIES SHALL NOT BE ACCEPTABLE."
       - name: "Make-up Air Fans OR Sufficient Replacement-air Openings"
+        detail: "In addition to the fresh air from the unit entrances and openings, make-up air fans shall be provided OR the sufficient replacement air opening area to the exterior of the perimeter of the facility shall be provided (Table 10.26 item 1.2.ii)."
 
   - id: sc_storage_industrial_901_2000
     match: {occupancy: storage_industrial, ground_floor_bua_m2_gt: 900, ground_floor_bua_m2_lte: 2000}
@@ -277,7 +326,10 @@ branches:
     page: "p.864"
     systems:
       - name: "Roof Ventilation OR Mechanical Roof Exhaust Fans"
+        spec: "Roof ventilation system per Section 2.11 OR mechanical roof exhaust fans per Section 2.12 (Table 10.26 item 1.3.i-ii)"
+        detail: "Total built-up ground floor area 901 m2 - 2000 m2. Table 10.26 (p.864), left column: roof smoke extraction fan systems or roof venting systems or mechanical ducted extraction systems THAT DO NOT HAVE BACK-UP POWER FOR THEIR OPERATION DURING EMERGENCIES SHALL NOT BE ACCEPTABLE."
       - name: "Make-up Air Fans OR Sufficient Replacement-air Openings"
+        detail: "In addition to the fresh air from the unit entrances and openings, make-up air fans shall be provided OR the sufficient replacement air opening area to the exterior of the perimeter of the facility shall be provided (Table 10.26 item 1.3.iii)."
 
   - id: sc_storage_industrial_over_2000
     match: {occupancy: storage_industrial, ground_floor_bua_m2_gt: 2000}
@@ -285,7 +337,10 @@ branches:
     page: "p.864"
     systems:
       - name: "Mechanical Roof Exhaust Fans (with engineering analysis if natural)"
+        spec: "Mechanical roof exhaust fans per Section 2.12 (Table 10.26 item 1.4.ii); a roof ventilation system per Section 2.11 shall be acceptable where justified by the engineering analysis of wind and temperature effects on the proposed system (item 1.4.i)"
+        detail: "Total built-up ground floor area more than 2000 m2. Table 10.26 (p.864), left column: roof smoke extraction fan systems or roof venting systems or mechanical ducted extraction systems THAT DO NOT HAVE BACK-UP POWER FOR THEIR OPERATION DURING EMERGENCIES SHALL NOT BE ACCEPTABLE."
       - name: "Make-up Air Fans OR Sufficient Replacement-air Openings"
+        detail: "In addition to the fresh air from the unit entrances and openings, make-up air fans shall be provided OR the sufficient replacement air opening area to the exterior of the perimeter of the facility shall be provided (Table 10.26 item 1.4.iii)."
 
   # Table 10.27 items 9-13 (p.866): exhibition center, assembly halls, sports
   # halls, auditorium, indoor stadium HAVING AREA MORE THAN 2000 m2. Triggered
@@ -324,7 +379,7 @@ branches:
     page: "p.865"
     systems:
       - name: "Corridor & Open-spaces Smoke Management"
-        spec: "Per Section 2.8"
+        spec: "Per Section 2.8; corridor smoke purge minimum of 6 air changes per hour (6 ACH) (Table 10.6 item 3.i, p.822; Annexure 1 FAQ #30, p.1282: mechanically ventilated internal corridor purging rate of at least 6 air changes per hour)"
         detail: "Hospitals shall have corridor and open spaces smoke management per Section 2.8; every hospital floor shall have a minimum of two smoke zones, separated by smoke compartments and smoke doors; activation by sprinkler activation or cross-zoned smoke detection in that zone; HVAC permitted to operate in zones other than the fire zone (Table 10.27 item 1.i-v)."
 
   - id: sc_hospital_stair
@@ -342,7 +397,7 @@ branches:
     page: "p.865"
     systems:
       - name: "Enclosed Corridor / Circulation Smoke Management"
-        spec: "Per Section 2.8"
+        spec: "Per Section 2.8; corridor smoke purge minimum of 6 air changes per hour (6 ACH) (Table 10.6 item 3.i, p.822; Annexure 1 FAQ #30, p.1282: mechanically ventilated internal corridor purging rate of at least 6 air changes per hour)"
         detail: "Enclosed corridors and enclosed circulation spaces shall be provided with a smoke management system per Section 2.8; HVAC permitted to operate in zones other than the fire zone; where the exterior façade or roof is accessible, natural ventilation per Section 2.15 is permitted (Table 10.27 item 2.1.i-iii)."
 
   # Table 10.27 item 2.2.i (p.865): "The stair pressurization is not mandatory
@@ -437,17 +492,14 @@ branches:
       - name: "Open-Plan Office: Openable Ventilation Panels"
         required: conditional
 
-  - id: sc_business_open_plan_highrise
-    match: {occupancy: business, height_m_gte: 23}
-    section: "Ch 10, #3.9 / Table 10.27 item 3"
-    page: "p.865"
-    systems:
-      - name: "Stair Pressurization (open-plan office in highrise)"
-        required: conditional
+  # Table 10.27 item 3.iii (p.865) "stairs of open plan offices in highrise buildings shall be
+  # pressurized": the same stair system as Table 10.20 / 10.19 item 1. engine.evaluate_sc cites it
+  # on that one stair line (audit C10-08; the separate conditional line is removed).
 
   - id: sc_midrise_lowrise_lobby
     match:
       height_m_lt: 23
+      height_m_gt: 0    # C10-06: Table 10.21 is for buildings; infrastructure with no building (0 m) is out
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
     section: "Ch 10, #3.3 / Table 10.21 item 2"
     page: "p.858"
@@ -462,6 +514,7 @@ branches:
   - id: sc_midrise_lowrise_corridor
     match:
       height_m_lt: 23
+      height_m_gt: 0    # C10-06: Table 10.21 is for buildings; infrastructure with no building (0 m) is out
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing,
                       healthcare_a, education_a, education_b, education_c,
                       mall_covered, mall_open, mall_mixed]
@@ -478,6 +531,7 @@ branches:
   - id: sc_midrise_lowrise_ff_lift
     match:
       height_m_lt: 23
+      height_m_gt: 0    # C10-06: Table 10.21 is for buildings; infrastructure with no building (0 m) is out
       occupancy_not: [villa_private, villa_commercial, parking_enclosed, parking_open, storage_industrial, motor_fuel_dispensing]
       requires_fire_lift_2_9_4_is: false
     section: "Ch 10, #3.3 / Table 10.21 item 3"
@@ -497,18 +551,24 @@ auxiliary_rooms:
     flag: has_fire_pump_room
     systems:
       - name: "Fire Pump Room - Dedicated Mechanical Ventilation"
+        spec: "A dedicated mechanical ventilation system in accordance with Section 2.17 shall be provided; rooms shall be temperature controlled (Table 10.27 items 5-7 i-ii)"
+        detail: "Table 10.27 items 5, 6 and 7 (p.866) share one cell: i. A dedicated mechanical ventilation system in accordance with Section 2.17 shall be provided; item ii: Rooms shall be temperature controlled. Dedicated AHU are recommended to be provided to maintain the temperatures in these rooms as recommended by the equipment and control panel manufacturers (audit C10-05)."
         code_ref: "Ch 10, #3.9 / Table 10.27 item 5"
         page_ref: "p.866"
   - id: sc_aux_command_centre
     flag: has_control_room
     systems:
       - name: "Emergency Command Centre - Dedicated Mechanical Ventilation"
+        spec: "A dedicated mechanical ventilation system in accordance with Section 2.17 shall be provided; rooms shall be temperature controlled (Table 10.27 items 5-7 i-ii)"
+        detail: "Table 10.27 items 5, 6 and 7 (p.866) share one cell: i. A dedicated mechanical ventilation system in accordance with Section 2.17 shall be provided; item ii: Rooms shall be temperature controlled. Dedicated AHU are recommended to be provided to maintain the temperatures in these rooms as recommended by the equipment and control panel manufacturers (audit C10-05)."
         code_ref: "Ch 10, #3.9 / Table 10.27 item 6"
         page_ref: "p.866"
   - id: sc_aux_diesel_generator
     flag: has_diesel_generator_room
     systems:
       - name: "Diesel Generator Room - Dedicated Mechanical Ventilation"
+        spec: "A dedicated mechanical ventilation system in accordance with Section 2.17 shall be provided; rooms shall be temperature controlled (Table 10.27 items 5-7 i-ii)"
+        detail: "Table 10.27 items 5, 6 and 7 (p.866) share one cell: i. A dedicated mechanical ventilation system in accordance with Section 2.17 shall be provided; item ii: Rooms shall be temperature controlled. Dedicated AHU are recommended to be provided to maintain the temperatures in these rooms as recommended by the equipment and control panel manufacturers (audit C10-05)."
         code_ref: "Ch 10, #3.9 / Table 10.27 item 7"
         page_ref: "p.866"
   # Table 10.27 item 8 (cinemas: #2.13 purge, 6 ACH) and item 14 (theaters:
@@ -538,11 +598,56 @@ auxiliary_rooms:
         detail: "Cinemas: dedicated mechanical smoke purge per Section 2.13, permitted at 6 air changes per hour (Table 10.27 item 8). Theaters: smoke management system per Section 2.9 (item 14). Choose cinema, theatre or both in SC settings."
         code_ref: "Ch 10, #3.9 / Table 10.27 items 8, 14"
         page_ref: "p.866"
+  # Table 10.27 item 16 (p.866). 16.i / 16.ii: independent commercial kitchens and restaurant
+  # kitchens (the 'Commercial kitchen' tick). 16.iii: all kitchens in malls, hospitals and highrise
+  # buildings: owner ruling R-D (28.10.2026) required for malls, hospitals (healthcare_a) and every
+  # non-residential building of 23 m or more; conditional for apartment / hotel-room kitchens in
+  # highrise residential buildings and hotels (audit C10-01, H11).
   - id: sc_aux_kitchen
     flag: has_commercial_kitchen
     systems:
       - name: "Kitchen Cooking Operation Ventilation"
-        code_ref: "Ch 10, #3.9 / Table 10.27 item 16"
+        spec: "Ventilation systems for cooking operations in accordance with Section 2.18"
+        detail: "Table 10.27 item 16.i: All independent commercial kitchens shall be provided with ventilation systems for cooking operations in accordance with Section 2.18. Item 16.ii: All restaurant kitchens shall be provided with ventilation systems for cooking operations in accordance with Section 2.18."
+        code_ref: "Ch 10, #3.9 / Table 10.27 items 16.i-16.ii"
+        page_ref: "p.866"
+  - id: sc_aux_kitchen_16iii
+    always_on: true
+    when:
+      any_of:
+        - {occupancy_in: [mall_covered, mall_open, mall_mixed, healthcare_a]}
+        - {height_m_gte: 23, occupancy_not: [residential, labour_accommodation, staff_accommodation, hostel, hotel_a, hotel_b, hotel_c, villa_private, villa_commercial, parking_enclosed, parking_open]}
+    systems:
+      - name: "Kitchen Cooking Operation Ventilation (malls, hospitals, highrise - all kitchens)"
+        spec: "All kitchens in the building: ventilation systems for cooking operations in accordance with Section 2.18"
+        detail: "Table 10.27 item 16.iii: All Kitchens located in Malls, Hospitals and Highrise buildings shall be provided with ventilation systems for cooking operations in accordance with Section 2.18. Required for malls, hospitals and every non-residential building of 23 m or more, with or without the commercial kitchen tick (owner ruling R-D, 28.10.2026; audit C10-01)."
+        code_ref: "Ch 10, #3.9 / Table 10.27 item 16.iii"
+        page_ref: "p.866"
+  - id: sc_aux_kitchen_16iii_residential_highrise
+    always_on: true
+    when:
+      height_m_gte: 23
+      occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, hotel_a, hotel_b, hotel_c, villa_private, villa_commercial]
+    systems:
+      - name: "Kitchen Cooking Operation Ventilation - apartment / hotel-room kitchens (highrise residential / hotel)"
+        required: conditional
+        spec: "Ventilation systems for cooking operations in accordance with Section 2.18 for apartment and hotel-room kitchens"
+        detail: "Table 10.27 item 16.iii: All Kitchens located in Malls, Hospitals and Highrise buildings shall be provided with ventilation systems for cooking operations in accordance with Section 2.18. Whether apartment kitchens of a highrise residential building and hotel-room kitchens are meant is not stated; conditional line (owner ruling R-D, 28.10.2026; audit C10-01). Commercial and restaurant kitchens in this building follow items 16.i / 16.ii (tick 'Commercial kitchen')."
+        code_ref: "Ch 10, #3.9 / Table 10.27 item 16.iii"
+        page_ref: "p.866"
+  # A parking use has no kitchen of its own: conditional for any kitchen in a parking building of
+  # 23 m or more (needs ruling: R-D names every non-residential building of 23 m or more).
+  - id: sc_aux_kitchen_16iii_parking_highrise
+    always_on: true
+    when:
+      height_m_gte: 23
+      occupancy_in: [parking_enclosed, parking_open]
+    systems:
+      - name: "Kitchen Cooking Operation Ventilation (highrise parking building - any kitchen)"
+        required: conditional
+        spec: "Any kitchen in the parking building: ventilation systems for cooking operations in accordance with Section 2.18"
+        detail: "Table 10.27 item 16.iii: All Kitchens located in Malls, Hospitals and Highrise buildings shall be provided with ventilation systems for cooking operations in accordance with Section 2.18. A parking use has no kitchen of its own, so the line applies to any kitchen in this parking building of 23 m or more (owner ruling R-D, 28.10.2026, read for parking; open question listed for the owner; audit C10-01)."
+        code_ref: "Ch 10, #3.9 / Table 10.27 item 16.iii"
         page_ref: "p.866"
   # Table 10.26 item 2 (p.864): ROOMS STORING HAZARDOUS AND FLAMMABLE CHEMICALS,
   # ventilation per Section 2.20 (#2.20.1 / Table 10.18, p.853-854). The row does

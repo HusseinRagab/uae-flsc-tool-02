@@ -1031,16 +1031,115 @@ def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     )
 
 
+_SC_TALL = ("sc_highrise", "sc_super_highrise")
+_SC_PARKING = ("parking_enclosed", "parking_open")
+
+# Owner ruling R-B (28.10.2026): Groups T (aboveground tanks) and U (open yard) keep the
+# Table 10.26 warehouse rows, as conditional (Cursor PRs #29, #30).
+_SC_RULING_RB = ("Applies to any enclosed building on the site (warehouse, pump house, office). "
+                 "Ch 10 prints no row for open yards / aboveground tank farms (owner ruling R-B, "
+                 "28.10.2026). ")
+
+
+def _sc_reconcile(items: List[Requirement], b: Building) -> List[Requirement]:
+    """One line per system where two Ch 10 tables print the same one (audit C10-03, C10-08).
+
+    Parking of 23 m or more: #3.2.1 (p.857) applies Table 10.20 to 'Highrise buildings' with no
+    parking exclusion (Table 10.22, p.859, is the only Ch 10 table titled 'other than Parking
+    usage'), and #3.5.1 (p.860) applies Table 10.23 to parking, which prints its own stair rows
+    for parking more than 23 m. Both apply. The stair pressurization is printed once, on the
+    parking line, carrying the more onerous Table 10.20 / 10.19 item 1 text. Open parking up to
+    4000 m2: Table 10.23 item 2.2.i (no smoke purging or ventilation) and Table 10.20 item 4
+    (corridor and open circulation area smoke management) differ; the text does not say which
+    governs, so the more onerous Table 10.20 line is kept and item 2.2.i is named.
+    Business of 23 m or more: Table 10.27 item 3.iii (p.865) is the same stair system."""
+    tall_i = next((i for i, it in enumerate(items) if it.source_rule in _SC_TALL
+                   and it.system.startswith("Stair Pressurization")), None)
+    if tall_i is None:
+        return items
+    tall = items[tall_i]
+    out = list(items)
+    tname = "Table 10.19" if tall.source_rule == "sc_super_highrise" else "Table 10.20"
+    tsec = "#3.1.1" if tall.source_rule == "sc_super_highrise" else "#3.2.1"
+    if b.occupancy in _SC_PARKING:
+        park_i = next((i for i, it in enumerate(out)
+                       if it.source_rule == "sc_parking_stair_23_or_more"), None)
+        if park_i is not None:
+            pk = out[park_i]
+            out[park_i] = pk.model_copy(update={
+                "spec": tall.spec,
+                "detail": (f"{pk.detail} One stair pressurization line (audit C10-03): {tname} "
+                           f"({tsec}, highrise buildings, p.857) and Table 10.23 (#3.5.1, parking, "
+                           f"p.860) both apply to this parking building; this line carries the more "
+                           f"onerous {tname} item 1 text: {tall.detail}"),
+                "code_ref": f"{pk.code_ref}; {tall.code_ref} item 1",
+                "page_ref": f"{pk.page_ref}, {tall.page_ref}"})
+            out[tall_i] = None
+        cor_i = next((i for i, it in enumerate(out) if it is not None and it.source_rule in _SC_TALL
+                      and it.system.startswith("Enclosed Corridor Smoke Management")), None)
+        if cor_i is not None:
+            c = out[cor_i]
+            why = (f" Parking building of 23 m or more (audit C10-03): {tsec} (p.857) applies "
+                   f"{tname} to highrise buildings with no parking exclusion, and #3.5.1 (p.860) "
+                   f"applies Table 10.23 to parking; both apply. ")
+            gfa = b.gross_floor_area_m2
+            if b.occupancy == "parking_open" and 0 < gfa <= 4000:
+                why += ("Table 10.23 item 2.2.i: open parking complying with Table 10.23.2.1 and "
+                        "having a total floor area of up to 4000 m2 shall not be required to have any "
+                        "smoke purging or ventilation system. The code does not state which table "
+                        f"governs; this {tname} line is the more onerous and is kept; Table 10.23 item "
+                        "2.2.i is checked, not governing.")
+            elif b.occupancy == "parking_open" and gfa > 4000:
+                why += ("The parking floors also take Table 10.23 item 2.3 (mechanical smoke purging "
+                        "OR jet fan system OR hybrid, line below).")
+            elif b.occupancy == "parking_enclosed":
+                why += ("The parking floors also take Table 10.23 item 1 (mechanical smoke purging "
+                        "via dedicated ducting, line below).")
+            else:
+                why += "Table 10.23 item 2.2 / 2.3 is NOT EVALUATED (gross floor area not entered)."
+            out[cor_i] = c.model_copy(update={"detail": (c.detail or "") + why})
+    elif b.occupancy == "business":
+        out[tall_i] = tall.model_copy(update={
+            "detail": (f"{tall.detail} Table 10.27 item 3.iii (p.865): However, stairs of open plan "
+                       f"offices in highrise buildings shall be pressurized in accordance with Section "
+                       f"2.6; the same stair system, printed once (audit C10-08)."),
+            "code_ref": f"{tall.code_ref}; Table 10.27 item 3.iii",
+            "page_ref": f"{tall.page_ref}, p.865"})
+    return [it for it in out if it is not None]
+
+
+def _sc_ruling_rb(items: List[Requirement], b: Building) -> List[Requirement]:
+    if b.occupancy != "storage_industrial" or not (
+            b.is_aboveground_tank_storage or b.is_open_yard_storage):
+        return items
+    return [it.model_copy(update={"status": "conditional",
+                                  "detail": _SC_RULING_RB + (it.detail or "")})
+            if (it.source_rule or "").startswith("sc_storage_industrial_")
+            and "NOT EVALUATED" not in it.system and it.status == "required" else it
+            for it in items]
+
+
 def evaluate_sc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 10 - Smoke Control & Smoke Management."""
     blocks = []
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    branch_items = _sc_ruling_rb(_sc_reconcile(branch_items, b), b)
     if branch_items:
         blocks.append(SectionBlock(title="SC - Smoke Control by Tier / Occupancy (Ch 10, Tables 10.19-10.27)", items=_dedupe(branch_items)))
 
     aux = _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
     if aux:
         blocks.append(SectionBlock(title="SC - Auxiliary Zones / Equipment (Ch 10, Table 10.27)", items=aux))
+
+    # Section 2.5 / Table 10.3 general requirements, printed when a smoke control or
+    # ventilation system line is required (audit C10-09). NOT EVALUATED lines and the Ch 3
+    # CO cross-reference do not count as a system.
+    if any(it.status == "required" and "NOT EVALUATED" not in it.system
+           and not it.system.startswith("Carbon Monoxide")
+           for blk in blocks for it in blk.items):
+        gen = _dedupe(_collect_general(rules, b))
+        if gen:
+            blocks.append(SectionBlock(title="SC - General Requirements (Ch 10, Section 2.5 / Table 10.3)", items=gen))
 
     return ChapterReport(
         chapter_code="SC", chapter_title="Smoke Control (Ch 10)",

@@ -200,7 +200,9 @@ def test_F_a1_2_villa_written_eap_conditional_pending_p1233():
         r = report(occupancy=occ, height_m=6, ground_floor_bua_m2=300)
         eap = get(r, "EAP", "Written Emergency Action Plan")
         assert eap.status == "conditional", occ
-        assert "p.1233" in eap.detail and "not yet read" in eap.detail
+        # Re-pointed by audit 28.10.2026 EAP-04: p.1233 is now read (#2.1.1, no villa
+        # exclusion or inclusion printed); the line stays conditional (was "not yet read").
+        assert "p.1233" in eap.detail and "#2.1.1" in eap.detail and "not yet read" not in eap.detail
         assert "Table 19.2 #3.1.i (p.1246)" in eap.detail and "P3 follow-up F-a1-2" in eap.detail
         assert not [it for it in items(r, "EAP") if it.status == "not_required"]
         for prefix in ("Assembly point", "Drills and training"):
