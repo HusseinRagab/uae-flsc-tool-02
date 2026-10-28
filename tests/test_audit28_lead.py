@@ -90,3 +90,14 @@ def test_RF_evc_mixed_one_package():
     req = [it for it in items if it.status == "required"]
     assert len(req) == 2
     assert all("items 2 and 3" in it.code_ref for it in req)
+
+
+def test_RB_fa_general_lines_conditional_for_tank_farm_tank_detection_required():
+    r = evaluate(Building(occupancy="storage_industrial", height_m=10, floors_above_grade=1,
+                          ground_floor_bua_m2=2000, gross_floor_area_m2=2000, sum_gf_bua_m2=2000,
+                          hazard_class="HH", is_aboveground_tank_storage=True))
+    fa = next(c for c in r.chapters if c.chapter_code == "FA")
+    gen = [it for bl in fa.blocks if bl.title.startswith("FA - General") for it in bl.items]
+    assert gen and all(it.status != "required" for it in gen)
+    eq = [it for bl in fa.blocks if bl.title.startswith("FA - Equipment") for it in bl.items]
+    assert any(it.status == "required" and "Table 8.15 item 3" in (it.code_ref or "") for it in eq)

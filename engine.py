@@ -1178,7 +1178,11 @@ def evaluate_fa(b: Building, rules: Dict[str, Any],
     no_rooms = nursery or infra
     gen = [] if (no_rooms or temporary) else _dedupe(_collect_general(rules, b))
     if gen:
-        blocks.append(SectionBlock(title="FA - General Requirements (Ch 8, #3 + #4 / Table 8.1.a)", items=gen))
+        # Owner ruling R-B (28.10.2026): for Group T / U storage the Table 8.1 system lines
+        # belong to the warehouse package, conditional like the Table 8.13 row
+        # (fa_storage_yard_tank) and Ch 5-7; Table 8.15 tank lines stay required.
+        blocks.extend(_rb_yard_tank_conditional(
+            [SectionBlock(title="FA - General Requirements (Ch 8, #3 + #4 / Table 8.1.a)", items=gen)], b, 8))
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
     if any((it.system or "").startswith("Conditional FA System") for it in branch_items):
         spr = _fa_sprinklered(b, sprinklered)
