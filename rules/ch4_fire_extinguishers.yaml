@@ -109,10 +109,24 @@ general:
     systems:
       - name: "Class A Fire Extinguisher (recommended for villas)"
         required: recommended
-        spec: "Multi-purpose Dry Powder 2.5 kg or 4 kg per villa floor"
-        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1"
-        page_ref: "p.373"
-        detail: "Class A extinguisher recommended at each villa floor (kitchen, living areas). INTERPRETATION NOTE: Treated as 'recommended' rather than 'required' as a pragmatic interpretation; UAE Ch 4 Table 4.3 row 1 uses 'shall' without explicit villa carve-out. See `fe_g_class_a` for the universal mandate. The '2.5 kg' size option is industry-practice carryover; Table 4.3 row 1 text only specifies 4 kg. Designer may justify either approach with Civil Defence approval."
+        spec: "Tool recommendation (villas are not listed in Table 4.3 row 1): Multi-purpose Dry Powder 2-A, 20-B, C 4 kg per villa floor; the kitchen takes the row 6 KITCHEN, HOMES 2.5 kg unit"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1 (villas not listed; tool recommendation)"
+        page_ref: "p.373, p.377"
+        detail: "Tool recommendation, not a printed row (fix round 28.10.2026, CH04-07 L8). Table 4.3 row 1 (p.373-374) lists Class A extinguishers by occupancy; item 5 RESIDENTIAL lists 'i. Apartments ii. Corridors', and private and commercial villas are not listed at all. The tool therefore recommends, and does not require, one Class A unit of the row 1 type (Multi-purpose Dry Powder 2-A, 20-B, C 4 kg) at each villa floor (living areas). Row 1 prints no 2.5 kg Class A size: 2.5 kg is the Table 4.3 row 6 KITCHEN, HOMES unit (p.377, 3A, 20-B, C), which is printed as its own line for the villa kitchen."
+
+  # Fix round 28.10.2026 (CH04-07 L11, UNSURE, needs an owner ruling): routing unchanged;
+  # the open question is stated as a named conditional line.
+  - id: fe_g_class_a_villa_converted
+    when:
+      occupancy_in: [villa_private, villa_commercial]
+      villa_converted_use_is: true
+    systems:
+      - name: "Class A Fire Extinguisher - Converted Villa (open question)"
+        required: conditional
+        spec: "Where the villa is converted to another use: the new use's Table 4.3 row 1 item may apply (row 1 types: Multi-purpose Dry Powder 2-A, 20-B, C 4 kg AND CO2 5 kg, p.373; or Dry Powder 4 kg OR Clean Agent 4 kg, AND CO2 5 kg, p.374); open question, owner ruling needed"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 1 (no villa conversion clause)"
+        page_ref: "p.373-374"
+        detail: "Open question, not a printed row (fix round 28.10.2026, CH04-07 L11; needs an owner ruling). Ch 5 Table 5.3 items 18-19 (p.399) treat a converted villa as the new occupancy ('unless usage has changed and converted into another occupancy'), but Ch 4 prints no conversion clause and Table 4.3 row 1 (p.373-374) has no villa row. The tool keeps the villa recommendation above and does not change routing; where the converted use is listed in row 1 (for example business, mercantile, daycare), that item's extinguishers may apply. Confirm with Civil Defence."
 
   # Class K - Residential/Hotel kitchens (homes)
   # NOTE: Despite the "Class K" naming (kept for industry convention + test stability),
@@ -120,13 +134,27 @@ general:
   # NOT a Class K wet-chemical agent. See detail.
   - id: fe_g_class_k_residential
     when:
-      occupancy_in: [residential, villa_private, villa_commercial, hotel_a, hotel_b, hotel_c, labour_accommodation, staff_accommodation, hostel]
+      occupancy_in: [residential, villa_private, villa_commercial, labour_accommodation, staff_accommodation, hostel]
     systems:
       - name: "Class K Fire Extinguisher (Residential Kitchen)"
         spec: "Multi-purpose Dry Powder 2.5 kg, rating 3-A:20-B:C"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 6 item 1"
         page_ref: "p.377"
-        detail: "Per code Table 4.3 row 6 (KITCHEN, HOMES): Multi-purpose Dry Powder unit (Class A/B:C), NOT a Class K wet-chemical agent. The 'Class K' naming follows industry convention for residential-kitchen extinguishers; the spec follows the code verbatim. For commercial / restaurant kitchens use `fe_class_k_commercial` (true Wet Chemical). Inside residential / home / guest-room kitchens, placed next to the kitchen exit door."
+        detail: "Per code Table 4.3 row 6 (KITCHEN, HOMES): Multi-purpose Dry Powder unit (Class A/B:C), NOT a Class K wet-chemical agent. The 'Class K' naming follows industry convention for residential-kitchen extinguishers; the spec follows the code verbatim. For commercial / restaurant kitchens use `fe_class_k_commercial` (true Wet Chemical). Inside residential / home kitchens, placed next to the kitchen exit door."
+
+  # Fix round 28.10.2026 (CH04-07 M5): a hotel's guest rooms do not always have a kitchen,
+  # and the hotel's main kitchen is a row 7 COMMERCIAL / RESTAURANT kitchen (wet chemical
+  # 9 L AND CO2 5 kg), not row 6 KITCHEN, HOMES. The homes line is conditional for hotels.
+  - id: fe_g_class_k_hotel_rooms
+    when:
+      occupancy_in: [hotel_a, hotel_b, hotel_c]
+    systems:
+      - name: "Class K Fire Extinguisher (Residential Kitchen)"
+        required: conditional
+        spec: "Where guest rooms / apartments have kitchens: Multi-purpose Dry Powder 2.5 kg, rating 3-A:20-B:C, inside each such kitchen next to the kitchen exit door"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 6 item 1"
+        page_ref: "p.377"
+        detail: "Table 4.3 row 6 item 1 KITCHEN, HOMES (p.377): Multi-purpose Dry Powder (ONE) 3A, 20-B, C 2.5 Kg, placed inside kitchen next to Kitchen exit door. Applies where the hotel's guest rooms / apartments have kitchens (fix round 28.10.2026, CH04-07 M5). The hotel's main, restaurant and food court kitchens take Table 4.3 row 7 (p.377): Wet Chemical Type 9 Liters (3 Gal) AND CO2 Type 5 Kg - tick 'Commercial kitchen' for that line."
 
 # ---------- BRANCHES: Class B 'wheeled' branches by occupancy ----------------
 branches:
@@ -254,14 +282,22 @@ addons:
         spec: "Wheeled Foam 50 L + Multi-purpose Dry Powder 4 kg"
         detail: "Wheeled foam extinguisher at the diesel generator room / generator set / shed. Max travel 15 m. Place near the hazard."
 
+  # Fix round 28.10.2026 (CH04-07 H2 + owner ruling Q-2): row 3 item 2.i also fires on
+  # Table 9.27 Group T (aboveground tank storage of flammable / combustible liquids) and
+  # Group R (flammable-liquid warehouse).
   - id: fe_class_b_wheeled_bulk_flammable
-    flag: has_bulk_flammable_liquid_storage
+    always_on: true
+    when:
+      any_of:
+        - {has_bulk_flammable_liquid_storage_is: true}
+        - {is_aboveground_tank_storage_is: true}
+        - {is_flammable_liquid_warehouse_is: true}
     systems:
       - name: "Class B Wheeled Foam Extinguisher - Bulk Flammable Liquid"
         code_ref: "Ch 4, #2.5.1 / Table 4.3 row 3 item 2"
         page_ref: "p.376"
         spec: "Wheeled Type Foam 50 L (13 Gal) AND Multi-purpose Dry Powder 2-A, 20-B, C 4 kg; maximum travel distance 15 m"
-        detail: "Table 4.3 row 3 item 2.i (p.376): bulk storage of flammable liquids. Maximum travel distance 15 m; placed near the hazard in protected environment as per manufacturer's guidelines."
+        detail: "Table 4.3 row 3 item 2 STORAGE (WAREHOUSE) AND FACTORIES, i. Bulk storage of flammable liquids (p.376): Wheeled Type Foam (ONE) 50 Liters (13 Gal) AND Multi-purpose Dry Powder (ONE) 2-A, 20-B, C 4 Kg. Maximum travel distance 15 m; placed near the hazard in protected environment as per manufacturer's guidelines. Fires on 'bulk flammable liquid storage', on Table 9.27 Group T aboveground tank storage of flammable / combustible liquids (fix round 28.10.2026, CH04-07 H2) and on Group R flammable-liquid warehouses (owner ruling Q-2, 28.10.2026)."
 
   - id: fe_class_b_wheeled_group_a_plastic
     flag: has_group_a_plastic_storage
@@ -312,11 +348,11 @@ addons:
   - id: fe_class_c_ahu
     flag: has_ahu_room
     systems:
-      - name: "Class C Extinguisher - AHU Room"
-        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 item 4"
+      - name: "Class C Extinguisher - AHU Room / Mechanical Plant Room"
+        code_ref: "Ch 4, #2.5.1 / Table 4.3 row 4 items 4-5"
         page_ref: "p.376"
         spec: "CO2 5 kg OR Clean Agent 5 kg"
-        detail: "Inside the AHU / mechanical plant room next to the exit. Max travel 9 m."
+        detail: "Table 4.3 row 4 (p.376) lists '4. AHU ROOM' and '5. MECHANICAL PLANT ROOM' as separate items with the same extinguisher: CO2 Type (ONE) 5 Kg OR Clean Agent Type (ONE) 5 Kg, placed inside the room next to exit; maximum travel distance 9 m. One unit in each AHU room and each mechanical plant room."
 
   - id: fe_class_c_cable_spread
     flag: has_cable_spread_areas

@@ -20,10 +20,13 @@ general:
     when:
       occupancy_not: [villa_private, villa_commercial]
     systems:
-      - name: "Mandatory EL Coverage Locations (Table 6.6 items 1-27)"
-        code_ref: "Ch 6, #4.4 / Table 6.6"
-        page_ref: "p.420"
-        detail: "EL luminaires shall be installed at (Table 6.6 items 1-27): fire pump room / EPS room / plant rooms; emergency command centre (inside + outside); stairways (inside + outside) - EVERY landing of each stair; outside exit stair at discharge level; lift lobby; firefighter lift lobby; exit corridors / exit access corridors / exit passageways; EVERY change in direction of exit corridor or walking path; tunnels; all enclosed basements + ramps; service corridors; outside exit discharge; reception; FACP location; smoke control panel; #15 EVERY Fire Hose Cabinet (FHC) location; #16 EVERY Fire Extinguisher location; #17 EVERY First Aid Kit location; LPG tank location; #24 indoor loading/unloading areas; LV room; transformer room; #27 washrooms; toilets; elevators; car parks; escalators."
+      # Fix round 28.10.2026 (CH04-07 L5): the landing / change-of-direction / outside
+      # stair / toilets-elevators-car parks-escalators locations are Table 6.1 item 1
+      # (p.408), not Table 6.6; both are cited and each list says where it comes from.
+      - name: "Mandatory EL Coverage Locations (Table 6.6 items 1-27 + Table 6.1 item 1)"
+        code_ref: "Ch 6, #4.4 / Table 6.6 items 1-27; #3.1 / Table 6.1 item 1.ii-iv, 1.viii"
+        page_ref: "p.420, p.408"
+        detail: "Table 6.6 (p.420), 'Emergency Lighting Luminaire is mandatory' at each of these locations present in the building: 1 inside fire pump room, EPS room and large plant rooms; 2 inside and outside emergency command center; 3 inside and outside stairways; 4 inside lift lobby; 5 inside fire fighters lift lobby; 6 in exit corridors; 7 inside exit access corridors; 8 inside exit passageways; 9 inside tunnels; 10 all areas of enclosed basements and ramps; 11 in service corridors; 12 outside exit discharge; 13 reception; 14 location of FACP; 15 location of fire hose cabinet; 16 location of fire extinguisher; 17 location of first aid kit; 18 location of smoke control panel; 19 LPG tank location; 20 inside hotel guest room; 21 assembly seating areas; 22 inside commercial kitchen; 23 kitchen delivery areas; 24 indoor loading and unloading areas; 25 inside LV room; 26 inside transformer room; 27 inside wash rooms (items 9 and 19-23 also print their own lines where the building has them). Table 6.1 item 1 PRE-DESIGN CONSIDERATIONS (p.408): ii. every landing of each stair shall have emergency luminaire; iii. every change in direction of the exit corridor, walking path shall have emergency luminaire; iv. outside exit stair at the discharge level shall be provided with emergency luminaire; viii. additional emergency luminaires shall be required at toilets, elevators, car parks, escalators, plant rooms, fire pump rooms etc. (fix round 28.10.2026, CH04-07 L5)."
       - name: "EL Proximity Rule (within 2m)"
         spec: "Every FHC / first-aid box / externally-illuminated exit sign shall be within 2 m of an EL luminaire"
         code_ref: "Ch 6, #3.1 / Table 6.1 item 1.v-vii (Pre-Design Considerations)"

@@ -35,22 +35,47 @@ general:
         spec: "Pre-recorded / synthesized / live messages; speakers listed and approved by Civil Defence"
         detail: "Evacuation messages shall be PRECEDED and FOLLOWED by a minimum of TWO CYCLES of the emergency evacuation signal. Non-evacuation (relocation) messages shall use a continuous alert tone of 3-10 seconds, followed by message, sequence repeated at least 3 times. Voice messages developed for each scenario in the emergency response plan. Speakers listed and approved by Civil Defence."
 
+  # Fix round 28.10.2026 (CH04-07 L4): #2.2.5 automatic response.
+  - id: evc_general_automatic_response
+    when: {}
+    systems:
+      - name: "Automatic Voice Messages on Confirmed Fire Alarm"
+        code_ref: "Ch 7, #2.2.5"
+        page_ref: "p.431"
+        spec: "Voice messages automatic: the EVC responds automatically on receipt of a confirmed Fire Alarm Signal, automatic or manually triggered"
+        detail: "#2.2.5 (p.431): Voice messages shall be automatic. The Emergency Voice Evacuation or Communication System response shall be an automatic response, upon the receipt of confirmed Fire Alarm Signal, be it automatic or manually triggered (fix round 28.10.2026, CH04-07 L4)."
+
+  # Fix round 28.10.2026 (CH04-07 L4): Table 7.1 item 2.2 microphone.
+  - id: evc_general_microphone_instructions
+    when: {}
+    systems:
+      - name: "Microphone Usage Instructions with Schematics"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 2.2"
+        page_ref: "p.433"
+        spec: "Where microphones are provided for live emergency voice messages: usage instructions with schematics posted next to the microphone (for example the distance to hold the microphone from the mouth)"
+        detail: "Table 7.1 item 2.2.i (p.433): Where microphones are provided for the live emergency voice messages to be delivered, 'usage instructions' with schematics shall be posted next to the microphone with user instructions such as distance that the microphone to be held from mouth. Table 7.1 item 7.1.iii (p.435) requires manual voice transmission capability, so the control unit has a microphone (fix round 28.10.2026, CH04-07 L4)."
+
+  # Fix round 28.10.2026 (CH04-07 L3): Table 7.1 item 3 is a permission ('shall be
+  # permitted'), printed as conditional, not required.
   - id: evc_general_positive_alarm_sequence
     when: {}
     systems:
       - name: "Positive Alarm Sequence (Delayed Alarm)"
+        required: conditional
         code_ref: "Table 7.1 #3 + Ch 8 Table 8.1 #14"
         page_ref: "p.433"
-        spec: "PAS permitted per Ch 8 Table 8.1.14.2; numeric timings live in Ch 8 (not Ch 7)"
+        spec: "Permitted, not required: where a Positive Alarm Sequence is used, per Ch 8 Table 8.1.14.2; numeric timings live in Ch 8 (not Ch 7)"
         detail: "Ch 7 Table 7.1 #3 only states that PAS (Delayed Alarm sequence) per Ch 8 Table 8.1.14.2 shall be permitted - it is NOT mandatory. The timings are in Ch 8: acknowledged at the fire alarm control unit within 15 seconds of annunciation, and up to 180 seconds during the alarm investigation phase (Table 8.1 #14.2.i and iii, p.459); staged evacuation timings follow the building's Table 8.13 row (for super highrise and highrise buildings, items 1-2 vi-vii, p.502: 15 s / 180 s, then the entire building within 240 seconds). Backup duration is also not specified in Ch 7 - defer to Ch 8."
 
+  # Fix round 28.10.2026 (CH04-07 L3): Table 7.1 item 4.1 is a permission.
   - id: evc_general_sleeping_risk_tone
     when: {}
     systems:
       - name: "Tone in Sleeping-Risk Occupancies"
+        required: conditional
         code_ref: "Ch 7, #2.4 / Table 7.1 item 4.1"
         page_ref: "p.434"
-        spec: "Tone preceding voice message may be part of the voice message in sleeping-risk occupancies"
+        spec: "Permitted, not required: where sleeping risk is involved, the tone preceding a voice message may be part of the voice message"
         detail: "Per Table 7.1 #4.1, the tone preceding any voice message shall be permitted to be part of the voice message in occupancies where sleeping risk is involved (hotels, residential highrise, hospitals, dormitories). Allows a single continuous tone-plus-message stream rather than separated tone + announcement."
 
   - id: evc_general_private_mode_audibility
@@ -89,6 +114,28 @@ general:
         spec: "Life safety > property protection > trouble > all other"
         detail: "Voice evacuation messages override prior signals, music, communication signals to the selected notification zone. Live voice (microphone) overrides recorded; on microphone release, recorded messages do NOT auto-resume - must be re-triggered manually or per emergency response plan. Manual zone selection or all-call from control unit."
 
+  # Fix round 28.10.2026 (CH04-07 L4): Table 7.1 item 7.1 i-iii.
+  - id: evc_general_control_system
+    when: {}
+    systems:
+      - name: "EVC Control System - Operating Instructions, Zone Status, Manual Voice"
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 7.1"
+        page_ref: "p.435"
+        spec: "EVC operating instructions posted at the control system; visible on/off indication of each manual control's signaling zone; manual voice transmission selectively to one or more zones or on an all-call basis"
+        detail: "Table 7.1 item 7.1 GENERAL (p.435): i. EVC operating instructions shall be posted at the control system. ii. Manual controls shall be arranged to provide visible indication of the on/off status for their associated signaling zone. iii. Systems shall be provided with manual voice transmission capabilities selectively to one or more zones or on an all-call basis (fix round 28.10.2026, CH04-07 L4)."
+
+  # Fix round 28.10.2026 (CH04-07 L4): Table 7.1 item 8 ancillary functions; applies
+  # where the speakers also serve music, commentary, paging and the like.
+  - id: evc_general_ancillary_functions
+    when: {}
+    systems:
+      - name: "Ancillary Functions (Music, Paging) - Safeguards + Annual Test"
+        required: conditional
+        code_ref: "Ch 7, #2.4 / Table 7.1 item 8 (8.i-8.iii)"
+        page_ref: "p.435"
+        spec: "Where ancillary (non-emergency) functions are provided: they shall not impair the EVC; shared loudspeakers and audio equipment safeguarded against tampering or misadjustment with integrity monitoring maintained; ancillary functions inspected and tested annually"
+        detail: "Table 7.1 item 8 ANCILLARY FUNCTIONS (p.435): i. Ancillary functions (non-emergency functions) such as music, commentary, live shows, general communication messages etc., shall be permitted but shall not impair the required operation of the emergency voice evacuation or communications system. ii. Loudspeakers used for emergency communications system functions also providing ancillary functions shall meet the following conditions: a. the loudspeakers and associated audio equipment are installed or located with safeguards to resist tampering or misadjustment of those components essential for intended emergency notification; b. the monitoring integrity requirements continue to be met while the system is used for non-emergency purposes. iii. Ancillary functions shall be inspected and tested annually to verify they will not impair the operation of the fire alarm system or the emergency voice evacuation system (fix round 28.10.2026, CH04-07 L4)."
+
   - id: evc_general_circuits_wiring
     when: {}
     systems:
@@ -105,7 +152,7 @@ general:
         code_ref: "Ch 7, #2.4 / Table 7.1 item 10"
         page_ref: "p.436"
         spec: "Operable controls 910 mm min / 1220 mm max (horizontal reach < 25 cm); text & indicators 1020-1520 mm"
-        detail: "Per Table 7.1 #10, user-accessible controls (control units, switches, microphone, latches) shall be located 910 mm minimum and 1220 mm maximum above finished floor where horizontal reach is less than 25 cm. For a horizontal reach of 25-61 cm, maximum elevation is limited to 1070 mm and minimum to 710 mm. Text and visual indicators (lamps, screens, displays, labels) shall be visible within 1020-1520 mm above finished floor."
+        detail: "Per Table 7.1 #10, user-accessible controls (control units, switches, microphone, latches) shall be located 910 mm minimum and 1220 mm maximum above finished floor where horizontal reach is less than 25 cm. READING OF A PRINT TYPO: Table 7.1 item 10.i (p.436) prints 'a minimum of 910 mm and a maximum of 122 mm'; a maximum below the minimum is impossible, so the tool reads the printed 122 mm as 1220 mm, the value Table 7.2 item 5.ii (p.438) prints for a public telephone appliance ('not more than 1220 mm above floor level'). Confirm with Civil Defence (fix round 28.10.2026, CH04-07 L2). For a horizontal reach of 25-61 cm, maximum elevation is limited to 1070 mm and minimum to 710 mm. Text and visual indicators (lamps, screens, displays, labels) shall be visible within 1020-1520 mm above finished floor."
 
   - id: evc_general_facp_interfacing
     when: {}
@@ -167,6 +214,25 @@ general:
         page_ref: "p.434"
         spec: "Undivided, non-compartmentalized fire or smoke zones not divided into multiple voice evacuation zones; all appliances of one zone activate together; fire in one zone shall not impair the appliances outside it"
         detail: "Table 7.1 #6 (p.434): i. if acceptable to the authority having jurisdiction, the system shall permit the application of an automatic evacuation signal to one or more signalling zones and at the same time permit manual voice paging to the other signalling zones selectively or in any combination; ii. undivided, non-compartmentalized fire or smoke zones of the building shall not be divided into multiple voice evacuation signalling zones; iii. if multiple notification appliance circuits are provided within a single zone, all of the notification appliances within the zone shall be arranged to activate or deactivate simultaneously; iv. fire alarm systems used for partial evacuation and relocation shall be designed and installed such that attack by fire within an evacuation signalling zone shall not impair control and operation of the notification appliances outside the evacuation signalling zone."
+
+  # Fix round 28.10.2026 (CH04-07 L4): #5.1 / Table 7.4 acceptance and #4.4.2 inspection.
+  - id: evc_general_acceptance_test
+    when: {}
+    systems:
+      - name: "EVC Acceptance Test - Speech Intelligibility (Table 7.4)"
+        code_ref: "Ch 7, #5.1 / Table 7.4"
+        page_ref: "p.441"
+        spec: "Acceptance test based on the clear audibility, intelligibility and understanding of the voice messages delivered in the building (subject based or instrument based testing)"
+        detail: "#5.1 (p.441): Intelligibility of Emergency Voice Evacuation or Communication Systems shall comply with Table 7.4. Table 7.4 item 1 ACCEPTANCE TEST: ii. two basic categories of intelligibility testing: a. subject (human) based testing, b. instrument based test methods; iii. subject based examples include the Phonetically Balanced (PB) word scores (256 words or 1000 words) and Modified Rhyme Test (MRT); vi. acceptance test for voice evacuation systems shall be completely based on the clear audibility, intelligibility and understanding of the voice messages delivered in a particular building. #4.3.2 (p.440): the main consultant shall inspect the work during installation and acceptance and ensure that voice speakers are delivering intelligible messages in accordance with Section 5 (fix round 28.10.2026, CH04-07 L4)."
+
+  - id: evc_general_inspection_maintenance
+    when: {}
+    systems:
+      - name: "EVC + Two-way Telephone Inspection and Maintenance (Ch 8 schedule)"
+        code_ref: "Ch 7, #4.4.1-#4.4.2"
+        page_ref: "p.440"
+        spec: "Inspected and maintained as per the Chapter 8 Fire Detection and Alarm System schedule and requirements"
+        detail: "#4.4.1 (p.440): the building owner, his appointed representative and the facility management shall be responsible to ensure that Voice evacuation System and Two-way telephone systems are installed in compliance with this chapter. #4.4.2 (p.440): Emergency Voice Evacuation System and Two-way telephone systems shall be inspected and maintained as per Chapter 8 Fire Detection and Alarm System's schedule and requirements (fix round 28.10.2026, CH04-07 L4)."
 
   - id: evc_general_two_way_wiring
     when: {}
@@ -269,15 +335,19 @@ branches:
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
 
+  # Fix round 28.10.2026 (CH04-07 H1): item 5 fires on the theme / amusement park tick as
+  # well as on the amusement (mazes / mirrors / play areas) box.
   - id: evc_amusement
     match:
-      has_amusement_confounding_is: true
+      any_of:
+        - {has_amusement_confounding_is: true}
+        - {is_theme_park_is: true}
     section: "Ch 7, #3.1 / Table 7.3 item 5"
     page: "p.439"
     systems:
-      - name: "Emergency Voice Evacuation (Amusement / Theme Parks)"
+      - name: "Emergency Voice Evacuation or Communication System (EVC)"
         spec: "Per Section 2.4 + Table 7.1 - standalone EVC trigger irrespective of occupant load"
-        detail: "Per Table 7.3 item 5, Amusement and Theme Parks require EVC + Two-way Telephone IRRESPECTIVE OF OCCUPANT LOAD and irrespective of occupancy classification - this is a STANDALONE trigger, not gated on Assembly. Includes mazes, mirror houses, motion simulators, dark rides, indoor play areas with confounding layouts."
+        detail: "Per Table 7.3 item 5 (p.439), AMUSEMENT AND THEME PARKS require EVC + Two-way Telephone irrespective of occupant load and of occupancy classification - a standalone trigger, not gated on Assembly. Fires on 'Theme / amusement park' or on 'Amusement / mazes / mirrors / play areas' (fix round 28.10.2026, CH04-07 H1). Includes mazes, mirror houses, motion simulators, dark rides, indoor play areas with confounding layouts."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
         detail: "Two-way telephone jacks at every fire-command interface and major circulation/ride control node."
@@ -319,16 +389,18 @@ branches:
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
 
+  # Fix round 28.10.2026 (CH04-07 H3): the built-up area is the larger of the total GFA
+  # and the ground-floor BUA (Building.storage_total_bua_m2); both blank = NOT EVALUATED.
   - id: evc_storage_industrial_large
     match:
       occupancy: storage_industrial
-      gross_floor_area_m2_gt: 5000
+      storage_total_bua_m2_gt: 5000
     section: "Ch 7, #3.1 / Table 7.3 item 9"
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation or Communication System (EVC)"
         spec: "Per Section 2.4 + Table 7.1 - 30 dBA storage / 80 dBA industrial / 85 dBA mechanical-room average ambient sound levels for information (Ch 7 #2.3, p.432)"
-        detail: "EVC required for storage and industrial occupancies with built-up area > 5,000 m². Speaker placement to overcome high industrial ambient noise. The 30/80/85 dBA figures from Ch 7 #2.3 (p.432) are 'average ambient sound levels for information' (informational reference) - NOT design thresholds. Public-mode audibility design target is 15 dB above the measured ambient (Table 7.1 #4.3)."
+        detail: "EVC required for storage and industrial occupancies with built-up area more than 5000 m2 (the larger of the total GFA and the ground-floor BUA entered). Speaker placement to overcome high industrial ambient noise. The 30/80/85 dBA figures from Ch 7 #2.3 (p.432) are 'average ambient sound levels for information' (informational reference) - NOT design thresholds. Public-mode audibility design target is 15 dB above the measured ambient (Table 7.1 #4.3)."
       - name: "Two-way Telephone Communication System"
         spec: "Per Section 2.5 + Table 7.2"
 
@@ -426,11 +498,25 @@ branches:
   - id: evc_storage_industrial_small
     match:
       occupancy: storage_industrial
-      gross_floor_area_m2_lte: 5000
+      storage_total_bua_m2_gt: 0
+      storage_total_bua_m2_lte: 5000
       height_m_lt: 23
     section: "Ch 7, #3.1 / Table 7.3 item 9 (BUA threshold)"
     page: "p.439"
     systems:
       - name: "Emergency Voice Evacuation (EVC) - small storage/industrial"
         required: not_required
-        detail: "EVC and two-way telephone are NOT mandatory for storage and industrial occupancies with built-up area <= 5,000 m². Once BUA exceeds 5,000 m² the requirement triggers."
+        detail: "EVC and two-way telephone are NOT mandatory for storage and industrial occupancies with built-up area of 5000 m2 or less (the larger of the total GFA and the ground-floor BUA entered). Once the built-up area is more than 5000 m2 Table 7.3 item 9 (p.439) requires them."
+
+  # Fix round 28.10.2026 (CH04-07 H3): a blank never counts as a pass.
+  - id: evc_storage_industrial_bua_not_evaluated
+    match:
+      occupancy: storage_industrial
+      storage_total_bua_m2_lte: 0
+      height_m_lt: 23
+    section: "Ch 7, #3.1 / Table 7.3 item 9 (BUA threshold)"
+    page: "p.439"
+    systems:
+      - name: "Emergency Voice Evacuation (EVC) - Storage / Industrial - NOT EVALUATED"
+        spec: "Not evaluated: enter the total GFA or the ground-floor BUA (Table 7.3 item 9 keys on more than 5000 m2 built-up area)"
+        detail: "Table 7.3 item 9 (p.439) STORAGE AND INDUSTRIAL OCCUPANCIES HAVING BUILT-UP AREA MORE THAN 5000 m2: Emergency Voice Evacuation or Communication System (EVC) per Section 2.4 and Two-way Telephone System per Section 2.5 shall be provided. Neither the total GFA nor the ground-floor BUA is entered, so the 5000 m2 test is not evaluated; a blank is never taken as 5000 m2 or less (fix round 28.10.2026, CH04-07 H3)."

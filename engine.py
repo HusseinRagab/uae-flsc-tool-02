@@ -826,6 +826,9 @@ def evaluate_moe(b: Building, rules: Dict[str, Any],
     )
 
 
+_TRUCK_NO_ROOMS = ("has_main_electrical_room", "has_main_telephone_room", "has_lift_machine_room")
+
+
 def evaluate_fe(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 4 - Fire Extinguishers."""
     blocks = []
@@ -837,7 +840,12 @@ def evaluate_fe(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     if branch_items:
         blocks.append(SectionBlock(title="FE - Occupancy-specific (Class B Wheeled, Ch 4, Table 4.3 row 3)", items=_dedupe(branch_items)))
 
-    addons = _dedupe(_collect_flag(rules.get("addons", []), b))
+    # Fix round 28.10.2026 (CH04-07 L10): Table 4.3 row 4 items 1-3 (p.376) are rooms
+    # (electrical / LV, telephone, lift machine). Their inputs default to ticked for any
+    # building; a food truck or mercantile truck has no such room, so they are not read.
+    fb = b.model_copy(update=dict.fromkeys(_TRUCK_NO_ROOMS, False)) \
+        if b.is_mercantile_c_truck else b
+    addons = _dedupe(_collect_flag(rules.get("addons", []), fb))
     if addons:
         blocks.append(SectionBlock(title="FE - Hazard-zone Add-ons (Class B / C / D / K)", items=addons))
 
@@ -867,28 +875,117 @@ def evaluate_es(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     return ChapterReport(
         chapter_code="ES", chapter_title="Exit Signs (Ch 5)",
         selected_branch=sel_id, selected_branch_section=sel_section,
-        blocks=blocks,
+        blocks=_rb_yard_tank_conditional(blocks, b, 5),
     )
+
+
+# Owner ruling R-B (28.10.2026): Groups T (aboveground tank storage) and U (open yard)
+# keep the Ch 5 / 6 / 7 warehouse packages, as conditional, with this wording.
+_RB_WORDING = ("Applies to any enclosed building on the site (warehouse, pump house, office). "
+               "Ch {n} prints no row for open yards / aboveground tank farms (owner ruling R-B, "
+               "28.10.2026).")
+
+
+def _rb_yard_tank_conditional(blocks: List[SectionBlock], b: Building, n: int) -> List[SectionBlock]:
+    """Owner ruling R-B (28.10.2026), CH04-07 M6: a storage / industrial building ticked as
+    Table 9.27 Group T or Group U takes the Ch {n} warehouse lines as conditional, each
+    naming the ruling; never 'not required'. NOT EVALUATED lines and not_required lines
+    are left as they are."""
+    if not (b.occupancy == "storage_industrial"
+            and (b.is_open_yard_storage or b.is_aboveground_tank_storage)):
+        return blocks
+    note = _RB_WORDING.format(n=n)
+    out = []
+    for blk in blocks:
+        its = []
+        for it in blk.items:
+            if it.status == "not_required" or "NOT EVALUATED" in it.system.upper():
+                its.append(it)
+                continue
+            its.append(it.model_copy(update={
+                "status": "conditional" if it.status == "required" else it.status,
+                "detail": f"{note} {it.detail}" if it.detail else note}))
+        out.append(blk.model_copy(update={"items": its}))
+    return out
+
+
+_T73_ITEM = re.compile(r"Table 7\.3 item (\d+)")
+_T73_PREFIX = {"evc": "Per Section 2.4 + Table 7.1", "two_way": "Per Section 2.5 + Table 7.2"}
+
+
+def _evc_one_package(items: List[Requirement]) -> Tuple[List[Requirement], bool]:
+    """Fix round 28.10.2026 (CH04-07 L1, Cursor PR #19, sweep class 3): Table 7.3 (p.439)
+    prints one requirement for all nine rows (i. EVC per Section 2.4, ii. two-way
+    telephone per Section 2.5). When rows match, one EVC line and one two-way line are
+    printed, each citing every row that requires it (as Ch 6 `_el_cite_every_row`). A
+    'not listed' / not_required row, or the item 9 area NOT EVALUATED line, does not print
+    beside a row that requires the package. Returns (items, EVC required)."""
+    req = [it for it in items if it.status == "required" and "NOT EVALUATED" not in it.system
+           and _T73_ITEM.search(it.code_ref or "")]
+    if not req:
+        return items, False
+    out = []
+    for kind in ("evc", "two_way"):
+        lines = [it for it in req if ("Two-way" in it.system) == (kind == "two_way")]
+        if not lines:
+            continue
+        nums = sorted({int(_T73_ITEM.search(it.code_ref).group(1)) for it in lines})
+        first = lines[0]
+        if len(nums) < 2:
+            out.append(first)
+            continue
+        txt = ", ".join(str(x) for x in nums[:-1]) + f" and {nums[-1]}"
+        pre = _T73_PREFIX[kind]
+        extras = []
+        for it in lines:
+            s = (it.spec or "").strip()
+            x = s[len(pre):].lstrip(" -") if s.startswith(pre) else s
+            if x and x not in extras:
+                extras.append(x)
+        rows = " ".join(f"Table 7.3 item {_T73_ITEM.search(it.code_ref).group(1)}: {it.detail}"
+                        for it in lines if it.detail)
+        out.append(first.model_copy(update={
+            "spec": pre + (" - " + "; ".join(extras) if extras else ""),
+            "code_ref": f"Ch 7, #3.1 / Table 7.3 items {txt}",
+            "page_ref": "p.439",
+            "detail": ((rows + " ") if rows else "") + (
+                f"Table 7.3 items {txt} each require this same system (p.439 prints one "
+                f"requirement for all its rows); one line is printed for all of them (fix "
+                f"round 28.10.2026, CH04-07 L1)."),
+        }))
+    return out, True
+
+
+def _mixed_evc_not_evaluated() -> Requirement:
+    return Requirement(
+        system="Emergency Voice Evacuation (EVC) - NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: list the occupancies of this mixed building (most restrictive, R13)",
+        detail=("Table 7.3 (p.439) requires EVC and two-way telephone by height (items 1-2) "
+                "and, at any height, by occupancy (items 3-9: malls, assembly, amusement and "
+                "theme parks, educational, hotel, detention and correctional, storage and "
+                "industrial with built-up area more than 5000 m2); it does not list 'mixed and "
+                "multiple'. Below 23 m the requirement follows the occupancies in the building, "
+                "so it is not evaluated until they are listed under 'most restrictive' (fix "
+                "round 28.10.2026, CH04-07 M2; same rule as Ch 4 Class A, owner ruling "
+                "12.10.2026, P3 Ch47 Q2; ruling R13)."),
+        code_ref="Ch 7, #3.1 / Table 7.3; ruling R13", page_ref="p.439",
+        source_rule="audit28_m2_mixed_evc")
 
 
 def evaluate_evc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 7 - Emergency Voice Evacuation + Two-way Telephone."""
     blocks = []
-    # General requirements only fire when an EVC system IS actually required.
-    # Determine that from the matched branches' system STATUSES (robust) rather
-    # than from a naming convention on the branch id (fragile - a branch like
-    # `evc_storage_industrial_small` emits only a not_required item but its id
-    # doesn't contain "_not_required", which used to wrongly trigger the full
-    # general block for a building that doesn't need EVC).
-    branch_items, sel_id, sel_section, matched = _collect_branch(rules.get("branches", []), b)
-    evc_required = False
-    for br in matched:
-        for e in br.get("systems", []):
-            if e.get("required", "required") != "not_required":
-                evc_required = True
-                break
-        if evc_required:
-            break
+    # General requirements only fire when an EVC system IS actually required: a matched
+    # Table 7.3 row prints a required EVC line (not a not_required row, nor a NOT
+    # EVALUATED line).
+    branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    branch_items, evc_required = _evc_one_package(branch_items)
+    # Fix round 28.10.2026 (CH04-07 M2): mixed_multiple with no occupancy listed (not an
+    # R13 run) is NOT EVALUATED below the height rows, as Ch 4 Class A.
+    if (not evc_required and b.occupancy == "mixed_multiple"
+            and _R13_SOURCE.get() is None):
+        branch_items = [_mixed_evc_not_evaluated()]
     if evc_required:
         gen = _dedupe(_collect_general(rules, b))
         if gen:
@@ -899,7 +996,7 @@ def evaluate_evc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     return ChapterReport(
         chapter_code="EVC", chapter_title="Emergency Voice Evacuation (Ch 7)",
         selected_branch=sel_id, selected_branch_section=sel_section,
-        blocks=blocks,
+        blocks=_rb_yard_tank_conditional(blocks, b, 7),
     )
 
 
@@ -946,7 +1043,7 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     return ChapterReport(
         chapter_code="EL", chapter_title="Emergency Lighting (Ch 6)",
         selected_branch=sel_id, selected_branch_section=sel_section,
-        blocks=blocks,
+        blocks=_rb_yard_tank_conditional(blocks, b, 6),
     )
 
 
