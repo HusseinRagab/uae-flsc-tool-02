@@ -49,12 +49,24 @@ Lead-session changes (this branch, besides the six fixer merges listed below):
 - README: exactly 23.0 m is highrise (R1); "#" for clauses.
 - Commit message correction: 13cb240 says 561 pytest; measured 559.
 
-Verification (HEAD before this HANDOFF entry): 590 pytest, 115 cases (tests/test_cases.py),
+Verification at the HANDOFF entry (282d45a): 590 pytest, 115 cases (tests/test_cases.py),
 _structural_check no errors / warnings. Full grid vs 4b69f4f (grid 9870, flags 832, storage 2856,
 mixed 2520): 0 crashes, 0 new refusals; every removed required line traced to a finding or ruling
 (renamed lines, required -> conditional per the code's "permitted / where", R-B / R-F / Q-4 /
 blank-input NOT EVALUATED, infrastructure no building FA, trucks no room extinguishers).
-Independent verifier: see the next entry when it reports.
+Independent verifier (read-only, base 4b69f4f vs HEAD, 6,544 buildings, all HIGH + 41 MEDIUM
+findings traced to page text): round 1 on 24e6579 NOT CLEAR (5 items), round 2 on fbfdd08 NOT
+CLEAR (1 residual), round 3 on 390c1dd CLEAR: 603 pytest, 115 cases, structural 0, 0 crashes,
+every removed / demoted required line (124) justified. Fixed between rounds: secondary storage
+tenancy input + stop; conditional NOT EVALUATED lines -> not_evaluated; sprinkler-gated Table
+9.29 / 9.30 lines NOT EVALUATED when any Ch 9 input is missing and no sprinkler line is
+required (blank outlet area stops in the app); unranked pump / tank lines name each other;
+R-D hotels' own kitchens required; attached parking carries the cinema kind / flame-effect
+show / new-or-modified choice; complete first-load sample and presets. Cursor Bugbot on PR
+#38: 4 findings, all real, all fixed with failing-first tests (villa EL line in mixed mode,
+lone parking duty, exports counting NOT EVALUATED as required, blank tenancy gating).
+Verifier note (accepted, not changed): a blank tunnel length also marks the gated Table 9.29 /
+9.30 lines NOT EVALUATED (over-cautious, never a pass). Report: VERIFY.md with the project files.
 
 Open for Hussein (needs a ruling; each is a conditional / note line now, routing unchanged):
 1. Converted villa Class A extinguishers (Ch 4 L11). 2. Labour / staff accommodation / hostel keep
