@@ -909,7 +909,14 @@ def _rb_yard_tank_conditional(blocks: List[SectionBlock], b: Building, n: int) -
     return out
 
 
-_T73_ITEM = re.compile(r"Table 7\.3 item (\d+)")
+_T73_ITEM = re.compile(r"Table 7\.3 items? (\d+)")
+_T73_LIST = re.compile(r"Table 7\.3 items? ((?:\d+(?:, | and )?)+)")
+
+
+def _t73_nums(code_ref: Optional[str]) -> List[int]:
+    """Every Table 7.3 item cited: "item 2", "items 2 and 9", "items 2, 3 and 9"."""
+    return [int(n) for m in _T73_LIST.finditer(code_ref or "")
+            for n in re.findall(r"\d+", m.group(1))]
 _T73_PREFIX = {"evc": "Per Section 2.4 + Table 7.1", "two_way": "Per Section 2.5 + Table 7.2"}
 
 
@@ -929,7 +936,7 @@ def _evc_one_package(items: List[Requirement]) -> Tuple[List[Requirement], bool]
         lines = [it for it in req if ("Two-way" in it.system) == (kind == "two_way")]
         if not lines:
             continue
-        nums = sorted({int(_T73_ITEM.search(it.code_ref).group(1)) for it in lines})
+        nums = sorted({n for it in lines for n in _t73_nums(it.code_ref)})
         first = lines[0]
         if len(nums) < 2:
             out.append(first)
@@ -942,8 +949,10 @@ def _evc_one_package(items: List[Requirement]) -> Tuple[List[Requirement], bool]
             x = s[len(pre):].lstrip(" -") if s.startswith(pre) else s
             if x and x not in extras:
                 extras.append(x)
-        rows = " ".join(f"Table 7.3 item {_T73_ITEM.search(it.code_ref).group(1)}: {it.detail}"
-                        for it in lines if it.detail)
+        rows = " ".join(dict.fromkeys(
+            f"Table 7.3 item{'s' if len(_t73_nums(it.code_ref)) > 1 else ''} "
+            f"{', '.join(map(str, _t73_nums(it.code_ref)))}: {it.detail}"
+            for it in lines if it.detail))
         out.append(first.model_copy(update={
             "spec": pre + (" - " + "; ".join(extras) if extras else ""),
             "code_ref": f"Ch 7, #3.1 / Table 7.3 items {txt}",
@@ -1860,6 +1869,43 @@ def _r13_one_fa_protocol(contrib: List[tuple]) -> List[tuple]:
     return out
 
 
+def _r13_one_evc_package(contrib: List[tuple]) -> List[tuple]:
+    """Owner ruling R-F (28.10.2026) with CH04-07 L1: in most restrictive mixed mode the
+    Table 7.3 rows of every occupancy give ONE EVC line and ONE two-way line, citing every
+    row that requires the package. Each occupancy's run is already collapsed by
+    `_evc_one_package`; here the lines with the most rows are kept, their citation widened
+    to every row, and the 'not listed' / NOT EVALUATED lines of other occupancies dropped."""
+    def is_req(it):
+        return (it.status == "required" and "NOT EVALUATED" not in it.system
+                and _T73_ITEM.search(it.code_ref or ""))
+    req_occ = [occ for occ, its in contrib if any(is_req(it) for it in its)]
+    if not req_occ:
+        return contrib
+    out = []
+    for two_way in (False, True):
+        lines = [it for _, its in contrib for it in its
+                 if is_req(it) and ("Two-way" in it.system) == two_way]
+        if not lines:
+            continue
+        nums = sorted({n for it in lines for n in _t73_nums(it.code_ref)})
+        base = max(lines, key=lambda it: len(_t73_nums(it.code_ref)))
+        if len(nums) > len(_t73_nums(base.code_ref)):
+            txt = ", ".join(str(x) for x in nums[:-1]) + f" and {nums[-1]}"
+            extra = " ".join(dict.fromkeys(
+                f"Table 7.3 item {_t73_nums(it.code_ref)[0]}: {it.detail}" for it in lines
+                if it.detail and len(_t73_nums(it.code_ref)) == 1
+                and _t73_nums(it.code_ref)[0] not in _t73_nums(base.code_ref)))
+            base = base.model_copy(update={
+                "code_ref": f"Ch 7, #3.1 / Table 7.3 items {txt}", "page_ref": "p.439",
+                "detail": (base.detail or "") + (" " + extra if extra else "") + (
+                    f" Table 7.3 items {txt} each require this same system; one line is "
+                    f"printed for all of them.")})
+        out.append(base.model_copy(update={"detail": (base.detail or "") + (
+            f" [Mixed occupancy, most restrictive (ruling R13, R-F): required by "
+            f"{', '.join(req_occ)}.]")}))
+    return [(contrib[0][0], out)]
+
+
 def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
     """Ruling R13 (12.10.2026), Ch 1 #2.4.4 (p.55): a mixed occupancy takes the most
     restrictive requirements of the occupancies involved. `runs` is a list of
@@ -1889,6 +1935,8 @@ def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
             contrib = by_title[t]
             if ch.chapter_code == "FA" and t.startswith("FA - Detection"):
                 contrib = _r13_one_fa_protocol(contrib)
+            if ch.chapter_code == "EVC" and t.startswith("EVC - Voice Evac"):
+                contrib = _r13_one_evc_package(contrib)
             block_req = any(it.status != "not_required" for _, its in contrib for it in its)
             tagged = [(occ, it) for occ, its in contrib
                       if not (block_req and all(i.status == "not_required" for i in its))

@@ -81,3 +81,12 @@ def test_RF_fa_single_highrise_keeps_height_protocol():
                         mixed_occupancy_mode="none", height_m=30), "FA", "FA - Detection")
     names = [s for _, s in _protocols(items)]
     assert "5-Floor Phased Evacuation Alarm" in names
+
+
+def test_RF_evc_mixed_one_package():
+    # residential + mall at 30 m: Table 7.3 items 2 and 3 print one EVC and one two-way line
+    items = _block(dict(occupancy="residential", secondary_occupancies=["mall_covered"],
+                        height_m=30), "EVC", "EVC - Voice")
+    req = [it for it in items if it.status == "required"]
+    assert len(req) == 2
+    assert all("items 2 and 3" in it.code_ref for it in req)
