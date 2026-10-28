@@ -76,7 +76,8 @@ CASES = [
          inputs=dict(occupancy="storage_industrial", height_m=14,
                      has_high_ceiling=True, ceiling_height_m=15.0,
                      hazard_class="OH2", floors_above_grade=1,
-                     ground_floor_bua_m2=5000, plot_area_m2=10000),
+                     ground_floor_bua_m2=5000, plot_area_m2=10000,
+                     storage_tenancy="multi"),  # owner ruling Q-4 (28.10.2026): required choice
          expect_high_ceiling_band="13.5 m to 18 m"),
 
     dict(name="FP: Mall with atrium",
@@ -563,7 +564,8 @@ CASES = [
     dict(name="AUDIT FP: Storage LH 500 m2 -> Tier 2 LH (Table 9.27 A.2 - 250 gpm pump)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=500,
                      sum_gf_bua_m2=500,  # owner ruling 12.10.2026, Ch9 Q1: sum required
-                     plot_area_m2=2000, hazard_class="LH"),
+                     plot_area_m2=2000, hazard_class="LH",
+                     storage_tenancy="multi"),  # owner ruling Q-4 (28.10.2026): required choice
          expect_fp_branch="storage_industrial_tier2_lh",
          expect_fp_systems=[
              "Automatic Sprinkler System (full coverage)",
@@ -573,7 +575,8 @@ CASES = [
 
     dict(name="AUDIT FP: Storage OH 4000 m2 -> Tier 4 OH (Table 9.27 B.4 - 750 gpm @ hydrant)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=4000,
-                     plot_area_m2=10000, hazard_class="OH1"),
+                     plot_area_m2=10000, hazard_class="OH1",
+                     storage_tenancy="multi"),  # owner ruling Q-4 (28.10.2026): required choice
          expect_fp_branch="storage_industrial_tier4_oh",
          expect_fp_systems=[
              "Yard Fire Hydrants (loop covering entire facility)",
@@ -614,7 +617,7 @@ CASES = [
                      plot_area_m2=1000, hazard_class="LH", is_plant_nursery=True),
          expect_fp_branch="storage_plant_nursery",
          expect_fp_systems=[
-             "Portable Fire Extinguishers (only)",
+             "Portable Fire Extinguishers (Table 9.27 Group V)",  # renamed 28.10.2026 (R-G)
          ]),
 
     # ---- AUDIT FA: Ch 8 patches (general + CD/HoE gating) ----

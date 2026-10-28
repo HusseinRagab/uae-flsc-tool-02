@@ -77,7 +77,7 @@ def test_CH9D_01_each_aux_room_keeps_its_own_row():
 
 def test_ENG_09_one_pump_and_one_tank_line_when_two_tables_apply():
     r = report(occupancy="storage_industrial", height_m=24, ground_floor_bua_m2=1000,
-               gross_floor_area_m2=1000)
+               gross_floor_area_m2=1000, storage_tenancy="multi")  # Q-4, 28.10.2026
     p, t = pump(r), tank(r)
     assert "not governing" in p.detail or "also required by" in p.detail
     assert t is not None
@@ -413,10 +413,13 @@ def test_attached_parking_carries_routing_inputs():
                parking_area_m2=1000,  # phase 3 (ENG-11): the parking area is required
                # P3 App Q2 (owner ruling 12.10.2026): the parking's own height and levels
                parking_height_m=18, parking_basement_levels=0)
+    # Owner ruling Q-3 (28.10.2026): one governing pump for host + parking, kept in the
+    # host's Ch 9 chapter; the parking's Table 9.24.C.2 pump (3 stairs: 1000 gpm) governs.
     ch = next(c for c in r.attached_parking_chapters if c.chapter_code == "FP")
-    p = [it for b in ch.blocks for it in b.items
-         if it.system.startswith("Fire Pump") and it.status == "required"]
-    assert len(p) == 1 and p[0].spec.startswith("1000 gpm")
+    assert not [it for b in ch.blocks for it in b.items
+                if it.system.startswith("Fire Pump") and it.status == "required"]
+    p = pump(r)
+    assert p.spec.startswith("1000 gpm") and "Table 9.24.C.2" in p.code_ref
 
 
 # ------------------------------------------- R14 / CH9A-09 (#4.1.5, p.694)
@@ -439,11 +442,15 @@ def test_R14b_every_table_9_30_room_gated_by_4_1_5():
     kw = dict(has_main_electrical_room=True, has_diesel_generator_room=True,
               has_main_server_room=True, has_battery_room=True)
     r = report(occupancy="residential", height_m=10, ground_floor_bua_m2=300, **kw)
+    # Owner ruling R-E (28.10.2026): the diesel generator room takes Table 9.31.E regardless
+    # of sprinklers (citing Table 9.30.G too), so it has no #4.1.5 note.
     assert not [it for it in items(r, "FP")
-                if "Table 9.30" in (it.code_ref or "") and it.status != "not_required"]
+                if "Table 9.30" in (it.code_ref or "") and it.status != "not_required"
+                and not it.system.startswith("Diesel Generator Room")]
     notes = [it for it in items(r, "FP") if "#4.1.5" in (it.code_ref or "")]
-    assert {n.system.split(" - ")[0] for n in notes} >= {
-        "Main Electrical Room", "Diesel Generator Room", "Main Server Room"}
+    assert {n.system.split(" - ")[0] for n in notes} >= {"Main Electrical Room", "Main Server Room"}
+    assert "Diesel Generator Room" not in {n.system.split(" - ")[0] for n in notes}
+    assert lines(r, "FP", "Diesel Generator Room")[0].source_rule == "eq_E_diesel_generator"
     assert lines(r, "FP", "Battery Room", status="not_required")      # 9.30.D "None", ungated
     r = report(occupancy="business", height_m=21, floors_above_grade=6, floors_below_grade=3,
                depth_below_grade_m=10.5, ground_floor_bua_m2=1000, plot_area_m2=5000, **kw)

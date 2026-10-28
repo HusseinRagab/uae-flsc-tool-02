@@ -26,6 +26,15 @@ def store(**kw):
     kw.setdefault("occupancy", "storage_industrial")
     kw.setdefault("height_m", 8)
     kw.setdefault("plot_area_m2", 20000)
+    # Owner ruling Q-4 (28.10.2026): tenancy is a required choice; these tests model the
+    # multi-tenant groups unless they tick single tenant. A specialty-group test (K, P-V)
+    # leaves it blank, so only the specialty row prints here (owner ruling R-G evaluates
+    # the hazard-class rows beside it: pinned in tests/test_audit28_ch9.py).
+    specialty = ("is_aircraft_hanger", "is_cold_storage", "is_flammable_liquid_warehouse",
+                 "is_flammable_liquid_industrial", "is_open_yard_storage", "is_plant_nursery",
+                 "is_idle_pallet_storage", "is_aboveground_tank_storage")
+    if not kw.get("is_single_tenant_storage") and not any(kw.get(f) for f in specialty):
+        kw.setdefault("storage_tenancy", "multi")
     return report(**kw)
 
 
@@ -176,10 +185,13 @@ def test_CH9_Q9_secondary_storage_hazard_required_never_OH2_by_default():
     assert r.building.hazard_class == "LH"                 # not the old silent OH2
     assert "storage_industrial" not in (r.chapter("FP").selected_branch_section or "")
     assert "Ch9 Q9" in r.mixed_occupancy_note
-    chosen = report(**kw, secondary_storage_hazard="OH2", sum_gf_bua_m2=1000)
+    # Owner ruling Q-4 (28.10.2026): the tenancy is a required choice as well.
+    chosen = report(**kw, secondary_storage_hazard="OH2", sum_gf_bua_m2=1000,
+                    storage_tenancy="multi")
     assert chosen.building.hazard_class == "OH2" and not fp_line(chosen, "Storage / Industrial (secondary")
     assert "storage_industrial_tier3_oh2" in chosen.chapter("FP").selected_branch_section
-    eh2 = report(**kw, secondary_storage_hazard="EH2", sum_gf_bua_m2=1000)
+    eh2 = report(**kw, secondary_storage_hazard="EH2", sum_gf_bua_m2=1000,
+                 storage_tenancy="multi")
     assert eh2.building.hazard_class == "HH" and eh2.building.is_extra_hazard_2
     assert "storage_industrial_eh2_tier1" in eh2.chapter("FP").selected_branch_section
     # Save key and Load check.

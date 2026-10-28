@@ -369,7 +369,14 @@ class Building(BaseModel):
     is_flammable_liquid_industrial: bool = False    # Group S - foam sprinklers, processes
     is_open_yard_storage: bool = False              # Group U - outdoor/yard storage (no building envelope)
     is_plant_nursery: bool = False                  # Group V - extinguishers only
-    is_single_tenant_storage: bool = False          # Groups F-J - single-tenant variants (different pump/tank than multi-tenant Groups A-E)
+    is_single_tenant_storage: bool = False          # Legacy key (saved files): True = single tenant; kept in step with `storage_tenancy` (Ch 8 Table 8.13 items 19-20 still read it)
+    # --- fix round 28.10.2026 (ch9) ---
+    # Owner ruling Q-4 (28.10.2026): storage tenancy is a REQUIRED choice with no default.
+    # Table 9.27 prints multi-tenant Groups A-E (p.724-728) and single-tenant Groups F-J
+    # (p.729-733) with different pumps and tanks. None = not chosen: the app stops and the
+    # engine prints the Groups A-J tier lines as NOT EVALUATED. An older saved file with
+    # `is_single_tenant_storage: true` loads as "single"; false or absent loads as None.
+    storage_tenancy: Optional[Literal["single", "multi"]] = None
     is_idle_pallet_storage: bool = False            # Group K - idle wood/plastic pallet warehouse
     is_extra_hazard_2: bool = False                 # Multi-tenant HH: Group E (EH2, Definition 1.1.13.5) vs Group D (EH1, Definition 1.1.13.4 - default). Drives EH2's higher density (0.40 vs 0.30), higher pump (1000/1500 vs 750/1250 gpm), and 120-min tank.
     is_commodity_specific_storage: bool = False     # Legacy key (no longer routed): Groups L-O now follow `storage_commodity`.
@@ -664,6 +671,16 @@ class Building(BaseModel):
                     self.is_flammable_liquid_warehouse, self.is_flammable_liquid_industrial,
                     self.is_open_yard_storage, self.is_plant_nursery,
                     self.is_idle_pallet_storage, self.is_aboveground_tank_storage))
+
+    @model_validator(mode="after")
+    def _storage_tenancy_legacy(self):
+        """Owner ruling Q-4 (28.10.2026): an older input with the legacy tick
+        `is_single_tenant_storage: true` means single tenant; false or absent is not a
+        choice (None). The legacy key then follows the choice, for the rules that read it."""
+        if self.storage_tenancy is None and self.is_single_tenant_storage:
+            self.storage_tenancy = "single"
+        self.is_single_tenant_storage = self.storage_tenancy == "single"
+        return self
 
     @property
     def largest_storey_area_min_m2(self) -> float:
