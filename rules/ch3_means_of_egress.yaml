@@ -436,14 +436,15 @@ branches:
         spec_s: "Hospitals, sleeping areas (4.i): commonpath 30 m, dead end 9.1 m, travel 61 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
         spec_ns: "Hospitals, sleeping areas (4.i): no non-sprinklered values are printed (Table 3.16 row 4.i prints the S column only), so the commonpath, dead end and travel distance of the sleeping areas are NOT EVALUATED for this non-sprinklered building (see the line below). Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
         detail: "Per Table 3.16 row 4 (p.293): hospitals are tabulated as sprinklered-only. Two-exit requirement is absolute (Table 3.22 #4, p.313): single exit is NOT permitted, and every corridor must access two approved exits without passing through intervening rooms."
-      # Audit CH123-05: a hospital Ch 9 does not sprinkler has no printed Table 3.16
-      # row 4.i limit; named, never left blank (standing rule: a blank never passes).
+      # Owner ruling 28.10.2026 (audit CH123-05 item 5): healthcare_a is sprinklered
+      # (`g_hospital_sleeping_sprinklers`), so this NS-only line does not print. Kept as
+      # a safety net if a path ever evaluates a hospital without that Ch 9 line.
       - name: "Travel / Dead-end / Commonpath (Hospital Sleeping Areas, Non-sprinklered) - NOT EVALUATED"
         sprinkler_column: NS
-        spec: "Not evaluated: Table 3.16 row 4.i (p.293) prints 'Hospitals, Sleeping areas | S 30 m | S 9.1 m | S 61 m' with no non-sprinklered (NS) values, and Ch 9 does not require sprinklers in this building. No commonpath, dead end or travel limit is stated for the sleeping areas; confirm the limits with Civil Defence (or sprinkler the building, which gives the S values)."
+        spec: "Not evaluated: Table 3.16 row 4.i (p.293) prints 'Hospitals, Sleeping areas | S 30 m | S 9.1 m | S 61 m' with no non-sprinklered (NS) values. Owner ruling 28.10.2026 requires sprinklers for hospital sleeping areas (Ch 9 g_hospital_sleeping_sprinklers); this line is only reached if that requirement was not applied."
         code_ref: "Ch 3, #4.5 / Table 3.16 row 4.i"
         page_ref: "p.293"
-        detail: "Audit CH123-05. Open question for an owner ruling: apply the printed S values, or require sprinklers for hospital sleeping areas, when Ch 9 gives no sprinkler system."
+        detail: "Audit CH123-05. Owner ruling 28.10.2026 item 5: sprinklers required; the printed S values apply. This NS-only line is a safety net."
       - name: "Smoke Compartments (Table 3.22 item 7)"
         spec: "Every floor having healthcare activity divided into a minimum of 2 smoke compartments, each not exceeding 2100 m2 in area; smoke barrier 1 hour fire resistance rated"
         code_ref: "Ch 3, #5.4.1 / Table 3.22 item 7"

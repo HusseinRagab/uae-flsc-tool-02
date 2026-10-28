@@ -110,6 +110,24 @@ general:
         code_ref: "Ch 9, #4.1.8"
         page_ref: "p.694"
         detail: "#4.1.8 (p.694): 'All High Hazard Industrial, Storage and special purpose occupancies not addressed in this code, a Fire risk analysis report of the facility and the required fire suppression systems, prepared by the Civil Defence approved House of Expertise shall be furnished for Civil Defence review and approval.' Applies where this high hazard facility is not one of the Table 9.27 groups (audit CH9B2-18)."
+  # Owner ruling 28.10.2026 (audit CH123-05 item 5): Table 3.16 row 4.i (p.293) prints
+  # hospital sleeping-area travel / dead-end / commonpath as the S column only. A lowrise
+  # Healthcare Group A building on Table 9.21.a.1 (GF BUA up to 500 m2) would otherwise
+  # take hose reels only, leaving sleeping-area egress NOT EVALUATED. Sprinklers are
+  # required; Ch 3 then uses the printed S values. Always-on for healthcare_a so
+  # building_sprinklered() (Ch 2 access, Ch 3 columns, Table 9.29 / 9.30 gates) sees it
+  # even when the occupancy table has no sprinkler line. Beside a table that already
+  # requires sprinklers the extra line is the Table 3.16 reason; beside a hose-reel-only
+  # or extinguishers-only row, _reconcile_not_required keeps this required line.
+  - id: g_hospital_sleeping_sprinklers
+    when:
+      occupancy: healthcare_a
+    systems:
+      - name: "Automatic Sprinkler System (hospital sleeping areas)"
+        spec: "Throughout, including sleeping areas, per Section 3.5"
+        code_ref: "Ch 3, Table 3.16 row 4.i; Ch 9, Section 3.5"
+        page_ref: "p.293, p.694"
+        detail: "Table 3.16 row 4.i (p.293) prints hospital sleeping-area commonpath 30 m, dead end 9.1 m and travel 61 m in the sprinklered (S) column only, with no NS values. Owner ruling 28.10.2026 (audit CH123-05 item 5): an automatic sprinkler system is required so those printed S limits apply. A Ch 9 occupancy row that prints only hose reels or extinguishers (Table 9.21.a.1, Table 9.21.f) does not waive it. Where that row's pump and tank are sized for hose reels only, size the pump and tank for this sprinkler system by hydraulic calculation and verify with Civil Defence (#4.1.9, p.694)."
   # Audit F9A-12: #4.1.17 / #4.1.18 (p.695) for developments and large plots.
   - id: g_common_pump_master_tank
     when:

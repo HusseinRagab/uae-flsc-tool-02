@@ -129,16 +129,30 @@ def test_CH123_04_daycare_groups_by_use_not_headcount():
     assert ">12 clients" not in text and "7-12 clients" not in text and "4-6 clients" not in text
 
 
-# ------------------------------------------------------------ CH123-05
-def test_CH123_05_unsprinklered_hospital_sleeping_areas_not_evaluated():
-    assert spr(**HOSPITAL_NS) is False
+# ------------------------------------------------------------ CH123-05 / owner ruling 28.10.2026 item 5
+def test_CH123_05_hospital_sleeping_areas_require_sprinklers():
+    """Table 3.16 row 4.i p.293 prints S only. Table 9.21.a.1 (GF BUA up to 500 m2)
+    would otherwise be hose-reel only. Owner ruling: sprinklers required; S limits apply."""
+    assert spr(**HOSPITAL_NS) is True
     r = report(**HOSPITAL_NS)
-    (ne,) = named(r, "MOE", "Travel / Dead-end / Commonpath (Hospital Sleeping Areas, "
-                            "Non-sprinklered) - NOT EVALUATED")
-    assert ne.status == "not_evaluated" and ne.spec.startswith("Not evaluated:")
-    assert "S 30 m | S 9.1 m | S 61 m" in ne.spec and ne.page_ref == "p.293"
+    assert not [it for it in items(r, "MOE") if "Hospital Sleeping Areas" in it.system
+                and "NOT EVALUATED" in it.system]
     (t,) = named(r, "MOE", "Travel / Dead-end / Commonpath (Hospitals")
-    assert "NOT EVALUATED" in t.spec
+    assert t.status == "required"
+    assert "Column S (sprinklered)" in t.spec
+    assert "commonpath 30 m" in t.spec and "dead end 9.1 m" in t.spec and "travel 61 m" in t.spec
+    assert "NOT EVALUATED" not in t.spec
+    sp = named(r, "FP", "Automatic Sprinkler System (hospital sleeping areas)")
+    assert len(sp) == 1 and sp[0].status == "required"
+    assert "Table 3.16 row 4.i" in sp[0].code_ref
+    # Table 9.21.f.F (extinguishers only) does not waive hospital sleeping-area sprinklers.
+    tiny = report(occupancy="healthcare_a", height_m=8, floors_above_grade=2,
+                  ground_floor_bua_m2=150, plot_area_m2=500, tent_marquee_kind="small_detached")
+    assert spr(occupancy="healthcare_a", height_m=8, floors_above_grade=2,
+               ground_floor_bua_m2=150, tent_marquee_kind="small_detached") is True
+    assert not [it for it in items(tiny, "FP") if it.system == "Automatic Sprinkler System"
+                and it.status == "not_required"]
+    assert named(tiny, "FP", "Automatic Sprinkler System (hospital sleeping areas)")[0].status == "required"
 
 
 def test_CH123_05_sprinklered_hospital_has_no_not_evaluated_line():
