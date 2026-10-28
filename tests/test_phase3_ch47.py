@@ -139,7 +139,7 @@ def test_CH47_07_offices_and_retail_get_one_system_type():
         assert not [it for it in items(r, "EL") if it.system.startswith("Stand-alone")]
     ne = [it for it in items(report(occupancy="business", height_m=10), "EL")
           if it.system.endswith("NOT EVALUATED")]
-    assert len(ne) == 1 and ne[0].status == "required" and "P4 Q1" in ne[0].detail
+    assert len(ne) == 1 and ne[0].status == "not_evaluated" and "P4 Q1" in ne[0].detail
     hi = report(occupancy="business", height_m=40)
     assert [x.system for x in el_system_types(hi)] == [
         "Central Battery (Section 3.2) OR Monitored Self-Contained (Section 3.3) Emergency Lighting"]

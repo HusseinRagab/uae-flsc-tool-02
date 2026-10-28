@@ -145,7 +145,8 @@ def test_P3_STOREY_Q4_secondary_animal_housing_group_is_required():
     assert "Group B, OH2 (#1.1.13.3.a, p.529" in r.mixed_occupancy_note
     blank = report(**MIXED)
     assert blank.building.hazard_class == "LH"         # business LH; animal brings nothing
-    ne = lines(blank, "FP", "Animal Housing (secondary occupancy) - Ch 9 NOT EVALUATED")
+    ne = lines(blank, "FP", "Animal Housing (secondary occupancy) - Ch 9 NOT EVALUATED",
+               status="not_evaluated")
     assert ne and "P3 Storey Q4" in ne[0].detail and ne[0].code_ref == "Ch 9, #1.1.13"
     assert "Animal housing group not chosen" in blank.mixed_occupancy_note
     with pytest.raises(ValueError):

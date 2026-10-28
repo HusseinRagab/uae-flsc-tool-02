@@ -61,7 +61,7 @@ def test_H3_item_9_uses_larger_of_gfa_and_gf_bua_and_blank_is_not_evaluated():
     blank = report(occupancy="storage_industrial", height_m=10, gross_floor_area_m2=0,
                    ground_floor_bua_m2=0)
     ne = [it for it in items(blank, "EVC") if "NOT EVALUATED" in it.system]
-    assert len(ne) == 1 and ne[0].status == "required"
+    assert len(ne) == 1 and ne[0].status == "not_evaluated"
     assert "Table 7.3 item 9" in ne[0].code_ref and "5000 m2" in ne[0].detail
     assert not [it for it in items(blank, "EVC") if it.status == "not_required"]
     small = report(occupancy="storage_industrial", height_m=10, gross_floor_area_m2=3000,
@@ -75,7 +75,7 @@ def test_M2_mixed_multiple_no_occupancy_listed_is_not_evaluated():
     occupancies are not listed cannot be passed (same rule as Ch 4 Class A, P3 Ch47 Q2)."""
     r = report(occupancy="mixed_multiple", height_m=10)
     ne = [it for it in items(r, "EVC") if "NOT EVALUATED" in it.system]
-    assert len(ne) == 1 and ne[0].status == "required" and "Table 7.3" in ne[0].code_ref
+    assert len(ne) == 1 and ne[0].status == "not_evaluated" and "Table 7.3" in ne[0].code_ref
     assert not [it for it in items(r, "EVC") if it.status == "not_required"]
     tall = report(occupancy="mixed_multiple", height_m=30)
     assert status_of(tall, "EVC", EVC) == ["required"]

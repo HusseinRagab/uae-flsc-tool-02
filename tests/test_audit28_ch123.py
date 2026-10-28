@@ -135,7 +135,7 @@ def test_CH123_05_unsprinklered_hospital_sleeping_areas_not_evaluated():
     r = report(**HOSPITAL_NS)
     (ne,) = named(r, "MOE", "Travel / Dead-end / Commonpath (Hospital Sleeping Areas, "
                             "Non-sprinklered) - NOT EVALUATED")
-    assert ne.status == "required" and ne.spec.startswith("Not evaluated:")
+    assert ne.status == "not_evaluated" and ne.spec.startswith("Not evaluated:")
     assert "S 30 m | S 9.1 m | S 61 m" in ne.spec and ne.page_ref == "p.293"
     (t,) = named(r, "MOE", "Travel / Dead-end / Commonpath (Hospitals")
     assert "NOT EVALUATED" in t.spec

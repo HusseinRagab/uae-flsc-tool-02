@@ -2432,7 +2432,7 @@ def _r13_single(base: Building, o: str) -> Building:
                                    "mixed_occupancy_mode": "none"})
 
 
-def evaluate(b: Building) -> ComplianceReport:
+def _evaluate_core(b: Building) -> ComplianceReport:
     """Ruling R13 (12.10.2026): in most_restrictive mixed mode every listed occupancy is
     evaluated on the same building, at the highest hazard class of those listed, and the
     chapters are merged keeping the most onerous line per system."""
@@ -2482,6 +2482,26 @@ def evaluate(b: Building) -> ComplianceReport:
     if b.occupancy == "mixed_multiple":
         r = _mixed_class_a_not_evaluated(r)
     return r
+
+
+def _mark_not_evaluated(ch: ChapterReport) -> ChapterReport:
+    blocks = [blk.model_copy(update={"items": [
+        it.model_copy(update={"status": "not_evaluated"})
+        if "NOT EVALUATED" in (it.system or "") and it.status == "required" else it
+        for it in blk.items]}) for blk in ch.blocks]
+    return ch.model_copy(update={"blocks": blocks})
+
+
+def evaluate(b: Building) -> ComplianceReport:
+    """Evaluate the building (see `_evaluate_core`). Audit UX-03 (28.10.2026): a line that
+    names a missing input ("... - NOT EVALUATED") is reported with its own status
+    `not_evaluated`, never counted as a required system; the engine builds it as a
+    required line internally so that no chapter logic treats the gap as a pass."""
+    r = _evaluate_core(b)
+    return r.model_copy(update={
+        "chapters": [_mark_not_evaluated(c) for c in r.chapters],
+        "attached_parking_chapters": [_mark_not_evaluated(c) for c in r.attached_parking_chapters],
+    })
 
 
 def _mixed_class_a_not_evaluated(r: ComplianceReport) -> ComplianceReport:

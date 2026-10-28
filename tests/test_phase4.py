@@ -42,7 +42,7 @@ def test_P4_Q1_business_group_required_no_default():
     assert Building.model_fields["business_group"].default is None
     r = report(occupancy="business", height_m=10, ground_floor_bua_m2=500)
     ne = named(r, "EL", "Emergency Lighting System Type (Business) - NOT EVALUATED")
-    assert len(ne) == 1 and ne[0].status == "required" and "P4 Q1" in ne[0].detail
+    assert len(ne) == 1 and ne[0].status == "not_evaluated" and "P4 Q1" in ne[0].detail
     assert not named(r, "EL", "Monitored") and not named(r, "EL", STAND)
     c = report(occupancy="business", business_group="C", height_m=10, ground_floor_bua_m2=500)
     assert [it.status for it in named(c, "EL", STAND)] == ["required"]
@@ -156,7 +156,7 @@ def test_P4_Q5_type_required_every_chapter_not_evaluated():
     for c in r.chapters:
         its = [it for b in c.blocks for it in b.items]
         assert [it.system for it in its] == ["Mercantile Group C Type - NOT EVALUATED"], c.chapter_code
-        assert its[0].status == "required" and "P4 Q5" in its[0].detail
+        assert its[0].status == "not_evaluated" and "P4 Q5" in its[0].detail
     assert r.occupant_load is None and r.fire_access is None
 
 
@@ -222,7 +222,7 @@ def test_P4_Q5_kiosk_item_48_iii_three_states():
     assert not engine.building_sprinklered(no.building)
     blank = report(height_m=4, **KIOSK)
     ne = named(blank, "FP", "Kiosk Location (Table 1.9 item 48 iii) - NOT EVALUATED")
-    assert len(ne) == 1 and ne[0].status == "required"
+    assert len(ne) == 1 and ne[0].status == "not_evaluated"
     assert not named(blank, "FP", name)
     assert not engine.building_sprinklered(blank.building)   # blank never counts as protected
 

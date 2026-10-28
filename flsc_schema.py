@@ -750,7 +750,7 @@ class Building(BaseModel):
 
 class Requirement(BaseModel):
     system: str
-    status: Literal["required", "recommended", "conditional", "not_required"] = "required"
+    status: Literal["required", "recommended", "conditional", "not_required", "not_evaluated"] = "required"
     spec: Optional[str] = None
     detail: Optional[str] = None
     code_ref: Optional[str] = None

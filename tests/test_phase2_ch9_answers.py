@@ -77,7 +77,7 @@ def test_CH9_Q1_plot_gf_bua_sum_required_blank_never_takes_a_lower_tier():
     blank = store(ground_floor_bua_m2=800, max_unit_area_m2=100, hazard_class="LH")
     assert branch(blank) == "storage_industrial_tier4_lh"
     ne = fp_line(blank, "Sum of GF BUAs on the plot (#4.1.13) - NOT EVALUATED")
-    assert ne and ne[0].status == "required"
+    assert ne and ne[0].status == "not_evaluated"
     assert "enter the plot GF BUA sum (#4.1.13)" in ne[0].spec
     assert "owner ruling 12.10.2026, Ch9 Q1" in ne[0].detail
     assert pump(blank).spec.startswith("750 gpm @ 6.9 bar")
@@ -181,7 +181,7 @@ def test_CH9_Q9_secondary_storage_hazard_required_never_OH2_by_default():
               secondary_occupancies=["storage_industrial"])
     r = report(**kw)
     ne = fp_line(r, "Storage / Industrial (secondary occupancy) - Table 9.27 NOT EVALUATED")
-    assert ne and ne[0].status == "required" and "owner ruling 12.10.2026, Ch9 Q9" in ne[0].detail
+    assert ne and ne[0].status == "not_evaluated" and "owner ruling 12.10.2026, Ch9 Q9" in ne[0].detail
     assert r.building.hazard_class == "LH"                 # not the old silent OH2
     assert "storage_industrial" not in (r.chapter("FP").selected_branch_section or "")
     assert "Ch9 Q9" in r.mixed_occupancy_note

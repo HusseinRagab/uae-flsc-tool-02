@@ -76,7 +76,7 @@ def test_PR26_blank_outlet_area_keeps_host_tier_with_named_line():
     r = report(occupancy="business", business_group="B", height_m=7, floors_above_grade=2,
                ground_floor_bua_m2=2000, plot_area_m2=5000, has_attached_commercial_outlet=True)
     assert "lowrise_residential_upto_3600" in branches(r)
-    assert named(r, "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED", "required")
+    assert named(r, "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED", "not_evaluated")
 
 
 def test_F9A_13_villa_outlet_row_is_G_plus_1_and_mosque_wording():
@@ -114,35 +114,35 @@ def test_F9A_03_blank_gf_bua_never_takes_the_lowest_row():
     mid = report(occupancy="residential", height_m=18, floors_above_grade=5,
                  ground_floor_bua_m2=0, plot_area_m2=5000)
     assert "midrise_residential_upto_900" not in branches(mid)
-    assert named(mid, "Built-up Ground Floor Area (Table 9.20.b) - NOT EVALUATED", "required")
+    assert named(mid, "Built-up Ground Floor Area (Table 9.20.b) - NOT EVALUATED", "not_evaluated")
     low = report(occupancy="hotel_a", height_m=10, floors_above_grade=3,
                  ground_floor_bua_m2=0, plot_area_m2=5000)
     assert "lowrise_public_upto_500" not in branches(low)
-    assert named(low, "Built-up Ground Floor Area (Table 9.21.a) - NOT EVALUATED", "required")
+    assert named(low, "Built-up Ground Floor Area (Table 9.21.a) - NOT EVALUATED", "not_evaluated")
     res = report(occupancy="residential", height_m=10, floors_above_grade=3,
                  ground_floor_bua_m2=0, plot_area_m2=5000)
     assert "lowrise_residential_upto_3600" not in branches(res)
-    assert named(res, "Built-up Ground Floor Area (Table 9.21.b) - NOT EVALUATED", "required")
+    assert named(res, "Built-up Ground Floor Area (Table 9.21.b) - NOT EVALUATED", "not_evaluated")
     park = report(occupancy="parking_enclosed", height_m=10, floors_above_grade=3,
                   ground_floor_bua_m2=0, plot_area_m2=5000)
     assert "parking_enclosed_a1" not in branches(park)
-    assert named(park, "Built-up Ground Floor Area (Table 9.24) - NOT EVALUATED", "required")
+    assert named(park, "Built-up Ground Floor Area (Table 9.24) - NOT EVALUATED", "not_evaluated")
 
 
 def test_F9A_03_blank_plot_never_takes_the_lowest_row():
     mall = report(occupancy="mall_open", height_m=6, floors_above_grade=1,
                   ground_floor_bua_m2=3000, plot_area_m2=0)
     assert "mall_open_small" not in branches(mall)
-    assert named(mall, "Plot Area (Table 9.22.B) - NOT EVALUATED", "required")
+    assert named(mall, "Plot Area (Table 9.22.B) - NOT EVALUATED", "not_evaluated")
     res = report(occupancy="residential", height_m=10, floors_above_grade=3,
                  ground_floor_bua_m2=2000, plot_area_m2=0)
     assert "lowrise_residential_upto_3600" not in branches(res)
-    assert named(res, "Plot Area (Table 9.21.b) - NOT EVALUATED", "required")
+    assert named(res, "Plot Area (Table 9.21.b) - NOT EVALUATED", "not_evaluated")
     pub = report(occupancy="hotel_a", height_m=10, floors_above_grade=3,
                  ground_floor_bua_m2=2000, plot_area_m2=0)
     assert "lowrise_public_501_3600" in branches(pub)
     assert named(pub, "Plot Area more than 20,000 m2 (Table 9.21.a row 4) - NOT EVALUATED",
-                 "required")
+                 "not_evaluated")
 
 
 # ------------------------------------------------------------ F9A-04 / PR #18 residual
@@ -198,7 +198,7 @@ def test_F9A_07_row_F_gated_to_detached_G1_up_to_150():
     assert not [b for b in branches(ok) if b and b.startswith("lowrise_public_")]
     over = report(ground_floor_bua_m2=2000, **kw)
     assert "lowrise_small_detached_limits_missing" in branches(over)
-    assert named(over, "Detached G+1 / 150 m2 (Table 9.21.f.F) - NOT EVALUATED", "required")
+    assert named(over, "Detached G+1 / 150 m2 (Table 9.21.f.F) - NOT EVALUATED", "not_evaluated")
     assert not named(over, "Automatic Sprinkler", "required")
     tall = report(ground_floor_bua_m2=100, **{**kw, "floors_above_grade": 3})
     assert "lowrise_small_detached_limits_missing" in branches(tall)
@@ -427,7 +427,7 @@ def test_CH9B2_16_17_tunnel_edge_and_missing_length():
     assert wr and "60 m exactly" in wr[0].detail
     m = report(occupancy="infrastructure", plot_area_m2=30000, has_tunnel=True,
                tunnel_kind="cable", tunnel_length_m=0)
-    ne = named(m, "Tunnel Length (Table 9.28) - NOT EVALUATED", "required")
+    ne = named(m, "Tunnel Length (Table 9.28) - NOT EVALUATED", "not_evaluated")
     assert ne and "Not evaluated" in ne[0].spec
 
 
@@ -449,7 +449,7 @@ def test_Q4_storage_tenancy_required_no_default():
                     storage_tenancy="multi").is_single_tenant_storage is False
     blank = store(storage_tenancy=None, hazard_class="LH", ground_floor_bua_m2=500,
                   sum_gf_bua_m2=500)
-    ne = named(blank, "Storage Tenancy (Table 9.27 Groups A-J) - NOT EVALUATED", "required")
+    ne = named(blank, "Storage Tenancy (Table 9.27 Groups A-J) - NOT EVALUATED", "not_evaluated")
     assert ne and "Q-4" in ne[0].detail
     assert not [b for b in branches(blank) if b and b.startswith(("storage_industrial_tier",
                                                                    "storage_single_tenant"))]

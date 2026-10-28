@@ -108,7 +108,7 @@ def test_group_I_blank_sum_takes_row_2_and_is_named_not_evaluated():
     r = group_i(2000)            # plot GF BUA sum not entered
     assert branch(r) == "storage_single_tenant_eh1_tier2"
     ne = any_line(r, NE)
-    assert ne and ne[0].status == "required"
+    assert ne and ne[0].status == "not_evaluated"
     assert pump(r).spec.startswith("1250 gpm @ 6.9 bar")
     assert lines(r, "FP", "Yard Fire Hydrants (loop covering entire facility)")
     # Same handling as Group J (owner ruling 12.10.2026, Ch9 Q1).

@@ -303,7 +303,7 @@ def test_CH9C_27_tunnel_length_0_is_a_missing_input():
     r = report(occupancy="business", height_m=20, ground_floor_bua_m2=1000, plot_area_m2=2000,
                has_tunnel=True, tunnel_kind="road_rail", tunnel_length_m=0)
     # Audit CH9B2-17 (28.10.2026): a missing length is a required NOT EVALUATED line.
-    assert lines(r, "FP", "Tunnel Length (Table 9.28) - NOT EVALUATED", status="required")
+    assert lines(r, "FP", "Tunnel Length (Table 9.28) - NOT EVALUATED", status="not_evaluated")
     assert not lines(r, "FP", "No Tunnel Fire Protection System Required", status="not_required")
     short = report(occupancy="business", height_m=20, ground_floor_bua_m2=1000, plot_area_m2=2000,
                    has_tunnel=True, tunnel_kind="road_rail", tunnel_length_m=50)

@@ -97,7 +97,7 @@ def test_C10_02_storage_blank_gf_bua_not_evaluated_not_lowest_row():
     takes the less than 230 m2 row."""
     r = report(occupancy="storage_industrial", height_m=8, hazard_class="OH1", sum_gf_bua_m2=1000)
     ne = one(r, "SC", "Factory / Warehouse Smoke Extract (Table 10.26 item 1) - NOT EVALUATED")
-    assert ne.status == "required" and "ground floor built-up area" in ne.system
+    assert ne.status == "not_evaluated" and "ground floor built-up area" in ne.system
     assert ne.code_ref == "Ch 10, #3.8 / Table 10.26 item 1" and ne.page_ref == "p.864"
     assert not [it for it in sc(r) if it.source_rule and it.source_rule.startswith("sc_storage_industrial_")
                 and "NOT EVALUATED" not in it.system]
@@ -111,7 +111,7 @@ def test_C10_02_open_parking_blank_gfa_not_evaluated_not_purging_not_required():
     """p.860 Table 10.23 item 2.2 (up to 4000 m2) vs 2.3 (more than 4000 m2)."""
     r = report(occupancy="parking_open", height_m=10, **BASE)
     ne = one(r, "SC", "Open Parking Smoke Purging (Table 10.23 item 2.2 / 2.3) - NOT EVALUATED")
-    assert ne.status == "required" and "gross floor area" in ne.system
+    assert ne.status == "not_evaluated" and "gross floor area" in ne.system
     assert not starts(r, "SC", "Smoke Purging / Ventilation NOT Required")
     assert not starts(r, "SC", "Mechanical Smoke Purging OR Jet Fan")
     small = report(occupancy="parking_open", height_m=10, gross_floor_area_m2=3000, **BASE)

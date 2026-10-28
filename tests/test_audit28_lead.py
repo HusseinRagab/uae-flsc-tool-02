@@ -132,3 +132,12 @@ def test_Q4_fa_facp_line_follows_storage_tenancy():
     assert "fa_storage_single_tenant_facp" in fa("single")
     assert "fa_storage_multi_tenant_facp" in fa("multi")
     assert not {"fa_storage_single_tenant_facp", "fa_storage_multi_tenant_facp"} & fa(None)
+
+
+def test_UX03_not_evaluated_lines_have_their_own_status():
+    # A missing input is never counted as a required system (audit UX-03).
+    r = evaluate(Building(occupancy="residential", height_m=18, floors_above_grade=5,
+                          ground_floor_bua_m2=0, gross_floor_area_m2=0))
+    ne = [it for c in r.chapters for bl in c.blocks for it in bl.items
+          if "NOT EVALUATED" in it.system]
+    assert ne and all(it.status == "not_evaluated" for it in ne)
