@@ -99,18 +99,16 @@ _PUMP_FALLBACK = {
         "source": "UAE FLSC 2018 Ch 9 Section 4 occupancy tables; Table 9.6 item 3.iii",
         "pressure_bar": 6.9,
         "pressure_note": "at most remote landing valve",
-        "pump_description": "UL/FM listed electric or diesel-driven pump set "
-                            "with jockey pump and controller.",
+        "pump_description": "",
         "brackets": [{"max_standpipes": 2, "gpm": 750},
                      {"max_standpipes": 999, "gpm": 1000}],
     },
     "fixed_1000": {
-        "source": "UAE FLSC 2018 Ch. 9 (yard hydrant network)",
+        "source": "UAE FLSC 2018 Table 9.26 A.vi (p.723); Table 9.23.B.2 ii (p.717)",
         "pressure_bar": 6.9,
         "pressure_note": "at most remote hydrant outlet valve",
         "gpm": 1000,
-        "pump_description": "Electric or diesel driven UL/FM listed pump set "
-                            "for yard hydrant network.",
+        "pump_description": "Yard hydrant duty (Table 9.26 A.vi, p.723).",
     },
 }
 
@@ -158,7 +156,7 @@ def _resolve_pump(entry: Dict[str, Any], b: Building):
     # Backward-compatibility fallback - older pump_specs.yaml without `fixed_250`.
     if pst == "fixed_250":
         return ("250 gpm @ 4.5 bar at most remote hose-reel outlet valve",
-                "Electric-driven UL/FM listed fire pump set with jockey pump and controller.")
+                "Table 9.23 item v (p.716-717).")
     return None, None
 
 
@@ -644,6 +642,180 @@ _P4_Q4_NOTE = (" Mercantile Group C (kiosks) is not listed in Table 9.21.b (p.70
                "MERCANTILE GROUP C (KIOSKS), p.701 (owner ruling 13.10.2026, P4 Q4).")
 
 
+# ---------------------------- Fix round 28.10.2026 (ch9) ----------------------
+
+# Audit CH9B2-01 / 06 / 07 (H9): every governing fire pump line states the pump set the
+# code prints for every water-based system (Table 9.3, p.567-568), never "electric or
+# diesel"; and #4.1.9 (audit F9A-12).
+_PUMP_SET_NOTE = (
+    " Fire pump set: 1 electric driven fire pump, 1 diesel driven fire pump and 1 jockey "
+    "pump, complete with controllers (Table 9.3 item 1.xii, p.567; Tables 9.5 / 9.6 / 9.7 "
+    "item 3.i, p.580 / p.582 / p.589); the diesel fire pump has 8 hour operating capacity "
+    "(Table 9.3 item 2.iii, p.568). The pump set is located at the lowest level of the system "
+    "in the building, or from the lowest level of the building to the ground floor level with "
+    "fire access (Table 9.3 item 1.xv, p.568); pump room location and size per Ch 1 Table "
+    "1.9.2 (items 1.xi / 1.xvi); primary power to the electric fire pump and the jockey pump "
+    "directly from the power utility company, in a dedicated distribution board inside the "
+    "pump room (item 2.i). Fire pumps are dedicated to and listed for fire protection "
+    "service, tested as an assembly, and registered and listed by Civil Defence (Table 9.3 "
+    "items 1.ii-1.iii, p.567; #6.1.1 and #6.1.3, p.770). Pump capacities in Section 4 are "
+    "minimum guidelines and may vary; they shall be verified with the Civil Defence "
+    "engineers (#4.1.9, p.694).")
+
+# Audit CH9B2-21 (INFO): Dubai pump verification, not part of the 2018 code.
+_ESL_NOTE = (
+    " Dubai projects (not part of the 2018 code): fire pumps with a 500 US gpm capacity and "
+    "above are to be certified by a UAE approved certification body and verified for the "
+    "particular project by ESL (Emirates Safety Laboratory), whose verification certificate "
+    "is submitted to DCD (ESL information pack 'Fire Pumps - DXB New Regulation', "
+    "commencement Jan 2024; taken from a scanned copy, confirm against the issued document).")
+
+
+def _with_pump_set_note(items: List[Requirement]) -> List[Requirement]:
+    out = []
+    for it in items:
+        if it.duty == "pump" and it.status == "required" and \
+                "Table 9.3 item 1.xii" not in (it.detail or ""):
+            extra = _PUMP_SET_NOTE + (_ESL_NOTE if _max_num(it.spec, "gpm") >= 500 else "")
+            it = it.model_copy(update={"detail": (it.detail or "") + extra})
+        out.append(it)
+    return out
+
+
+def _system_kinds(name: Optional[str]) -> set:
+    """The system kinds a line names, for the required / not-required reconciliation."""
+    n = (name or "").lower()
+    if "extinguisher" in n:
+        return set()
+    kinds = set()
+    if "sprinkler" in n:
+        kinds.add("sprinkler")
+    if "wet riser" in n or "internal landing valve" in n:
+        kinds.add("wet_riser")
+    if "dry riser" in n or "dry landing valve" in n:
+        kinds.add("dry_riser")
+    if "hose reel" in n:
+        kinds.add("hose_reel")
+    if n.startswith("fire pump"):
+        kinds.add("pump")
+    if n.startswith("fire water tank"):
+        kinds.add("tank")
+    if "yard" in n and "hydrant" in n:
+        kinds.add("yard_hydrant")
+    return kinds
+
+
+_TALL_RULES = ("superhighrise_", "highrise_")
+
+
+def _reconcile_not_required(gen: List[Requirement], branch: List[Requirement]):
+    """Audit CH9B2-05 and the 28.10.2026 sweep (systemic class 3): when two code tables apply
+    to one building, a line one table prints 'not required' beside a required line of the
+    same system from another table is dropped; the required line governs (the most onerous)
+    and names it. E.g. Table 9.19 wet riser vs Table 9.27 row 4 'wet risers not required';
+    a highrise or G+4 plant nursery (Group V) vs the height row or #4.1.7; the hazard-class
+    rows vs a specialty group (owner ruling R-G)."""
+    allitems = list(gen) + list(branch)
+    notes: Dict[int, List[str]] = {}
+    drop = set()
+    for i, it in enumerate(allitems):
+        if it.status != "not_required":
+            continue
+        kinds = _system_kinds(it.system)
+        if not kinds:
+            continue
+        cover = {}
+        for j, other in enumerate(allitems):
+            if other.status != "required" or other.source_rule == it.source_rule:
+                continue
+            for k in kinds & _system_kinds(other.system):
+                cover.setdefault(k, j)
+        if not cover:
+            continue
+        drop.add(i)
+        j = cover[sorted(cover)[0]]
+        gov = allitems[j]
+        why = ("Tables 9.18 / 9.19 apply to buildings of any occupancy of 23 m or more (#4.2.1 / "
+               "#4.3.1) and govern" if (gov.source_rule or "").startswith(_TALL_RULES)
+               else "the required line governs")
+        notes.setdefault(j, []).append(
+            f" {it.code_ref or it.source_rule} ({it.page_ref}) prints '{it.system}' as not "
+            f"required; more than one code table applies to this building and {why} (the most "
+            f"onerous is kept, audit CH9B2-05, 28.10.2026).")
+    if not drop:
+        return list(gen), list(branch)
+    fixed = [it.model_copy(update={"detail": (it.detail or "") + "".join(notes[i])})
+             if i in notes else it for i, it in enumerate(allitems)]
+    keep = [(i, it) for i, it in enumerate(fixed) if i not in drop]
+    n = len(gen)
+    return [it for i, it in keep if i < n], [it for i, it in keep if i >= n]
+
+
+def _high_ceiling_pump_line(b: Building, rules: Dict[str, Any],
+                            items: List[Requirement]) -> Optional[Requirement]:
+    """Audit CH9B2-02 (H10): the Table 9.29.A pump enters the governing pump merge. The
+    'with hydrants' value is used when the building's Ch 9 result requires yard fire
+    hydrants, else the 'without hydrant' value."""
+    hc = _eval_high_ceiling(rules, b)
+    if not hc or hc.not_required or not hc.pump_without_hydrant_gpm:
+        return None
+    yards = [it for it in items if it.status == "required" and "yard" in (it.system or "").lower()
+             and "hydrant" in (it.system or "").lower()]
+    yard = any("NOT EVALUATED" not in (it.system or "") for it in yards)
+    # A yard hydrant line that is NOT EVALUATED never counts as 'no hydrants'.
+    unknown = bool(yards) and not yard
+    which = "with hydrants" if (yard or unknown) else "without hydrant"
+    gpm = hc.pump_with_hydrant_gpm if (yard or unknown) else hc.pump_without_hydrant_gpm
+    why = ("A yard fire hydrant line of this building is NOT EVALUATED, so the 'with hydrants' "
+           "value is used until it is evaluated." if unknown else
+           f"The building's Ch 9 result {'requires' if yard else 'does not require'} yard fire "
+           f"hydrants, so the '{which}' value is used.")
+    return Requirement(
+        system="Fire Pump (Table 9.29.A high ceiling)", status="required",
+        spec=f"{gpm} gpm ({which}; Table 9.29.A, {hc.hazard_class}, ceiling {hc.height_range})",
+        detail=(f"Table 9.29.A (p.750-751), hazard {hc.hazard_class}, ceiling height "
+                f"{hc.height_range}: pump capacity without hydrant "
+                f"{hc.pump_without_hydrant_gpm} gpm, with hydrants {hc.pump_with_hydrant_gpm} gpm. "
+                f"{why} #4.13.1 (p.749): the building "
+                f"sprinkler system shall be extended to comply with Table 9.29; Table 9.29 row M "
+                f"(p.750): ceilings over 10 m per Section 3.5 and Table 9.29.A. Table 9.29.A "
+                f"prints no pressure for this pump (audit CH9B2-02)."),
+        code_ref="Ch 9, #4.13.1 / Table 9.29.A", page_ref="p.749-751",
+        source_rule="high_ceiling_9_29_A", duty="pump")
+
+
+def _sprinkler_pump_warning() -> Requirement:
+    """Owner ruling Q-1 (28.10.2026), audit CH9B2-03: #4.1.7 sprinklers beside a Table 9.27
+    row that gives only a hose-reel pump and tank."""
+    return Requirement(
+        system="Sprinkler Pump / Tank Sizing (#4.1.7) - the row's hose-reel pump and tank do not size it",
+        status="required",
+        spec="Size the fire pump and fire water tank for the #4.1.7 sprinkler system by hydraulic "
+             "calculation and verify with the Civil Defence engineers (#4.1.9)",
+        detail=("#4.1.7 (p.694) requires an automatic sprinkler system, but this building's "
+                "Table 9.27 row prints only a hose reel fire pump and tank (e.g. 50 gpm at "
+                "4.5 bar at the most remote hose reel outlet valve), which do not size a "
+                "sprinkler system. The code prints no pump for the #4.1.7 case; #4.1.9 "
+                "(p.694): fire pump capacities may vary and shall be verified with the Civil "
+                "Defence engineers and the relevant NFPA references (owner ruling Q-1, "
+                "28.10.2026)."),
+        code_ref="Ch 9, #4.1.7 / #4.1.9", page_ref="p.694", source_rule="owner_ruling_q1_pump")
+
+
+_MSDS_LINE = Requirement(
+    system="MSDS Review (DESIGNER OBLIGATION)", status="required", spec="Per #4.11.1 (p.724)",
+    detail=("#4.11.1 (p.724): all warehouse and industrial sprinkler protection designers shall "
+            "first consider and consult the relevant Material Safety Data Sheet (MSDS) before "
+            "designing and proposing the sprinkler system (audit CH9B2-10)."),
+    code_ref="Ch 9, #4.11.1", page_ref="p.724", source_rule="ch9_4_11_1_msds")
+
+_RG_NOTE = (" Owner ruling R-G (28.10.2026): the Table 9.27 specialty group row and the "
+            "hazard-class / commodity row are both evaluated; the most onerous pump and tank "
+            "govern and the other is named.")
+_BASE_STORAGE_RULES = ("storage_industrial_tier", "storage_industrial_eh", "storage_single_tenant_",
+                       "storage_commodity_")
+
+
 # ---------------------------- Per-chapter evaluators -------------------------
 
 def evaluate_fp(b: Building, rules: Dict[str, Any],
@@ -666,6 +838,14 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
         branch_items[yard] = y.model_copy(update={
             "detail": (y.detail or "") + f" Also triggered by {refs}."})
         gen = [it for it in gen if it not in gen_yard]
+    # Fix round 28.10.2026 (ch9): a not-required line beside a required line of the same
+    # system from another table is dropped and named (CH9B2-05, sweep); #4.1.7 sprinklers
+    # beside a hose-reel-only Table 9.27 row get the pump / tank sizing warning (Q-1).
+    gen, branch_items = _reconcile_not_required(gen, branch_items)
+    if any(it.source_rule == "g_storage_sprinkler_over_3floors" for it in gen) and not any(
+            "sprinkler" in (it.system or "").lower() and it.status == "required"
+            for it in branch_items):
+        gen = list(gen) + [_sprinkler_pump_warning()]
     if gen:
         blocks.append(SectionBlock(title="FP - General Requirements (Ch 9, #4.1)", items=gen))
 
@@ -690,6 +870,33 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
         branch_items = [it.model_copy(update={"detail": (it.detail or "") + _P4_Q4_NOTE})
                         for it in branch_items]
         sel_section = f"{sel_section} (Mercantile Group C by inference, owner ruling 13.10.2026, P4 Q4)"
+
+    # Audit CH9B2-02 (H10): the Table 9.29.A high-ceiling pump enters the governing merge.
+    hc_pump = _high_ceiling_pump_line(b, rules, list(gen) + list(branch_items))
+    if hc_pump:
+        branch_items = _merge_duties(list(branch_items) + [hc_pump])
+    if b.occupancy == "storage_industrial":
+        # Owner ruling R-G (28.10.2026): specialty and hazard / commodity rows both apply.
+        if b.storage_has_specialty and any(
+                (br.get("id") or "").startswith(_BASE_STORAGE_RULES) for br in _matched):
+            branch_items = [it.model_copy(update={"detail": (it.detail or "") + _RG_NOTE})
+                            if it.duty in ("pump", "tank") and it.status == "required" else it
+                            for it in branch_items]
+        # The ticked specialty group names the selected row (the hazard / commodity row and
+        # a blank-tenancy line are printed beside it, ruling R-G).
+        spec_br = next((br for br in _matched if b.storage_has_specialty
+                        and (br.get("id") or "").startswith("storage_")
+                        and not (br.get("id") or "").startswith(_BASE_STORAGE_RULES)
+                        and br.get("id") != "storage_tenancy_not_evaluated"), None)
+        if spec_br and spec_br.get("id") != sel_id:
+            sel_id = spec_br["id"]
+            sel_section = (f"{spec_br.get('section')} (with the Table 9.27 hazard-class / "
+                           f"commodity row, owner ruling R-G, 28.10.2026)")
+        # Audit CH9B2-10: one #4.11.1 MSDS line for every storage group.
+        if not any((it.system or "").startswith("MSDS Review") for it in branch_items):
+            branch_items = list(branch_items) + [_MSDS_LINE]
+    # Audit CH9B2-01 (H9): the pump set composition on the governing pump line.
+    branch_items = _with_pump_set_note(branch_items)
 
     if branch_items:
         blocks.append(SectionBlock(title="FP - Branch Requirements (Ch 9)", items=_dedupe(branch_items)))
@@ -1427,7 +1634,11 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         **flags, **geo,
         project_name=b.project_name + " (parking sub-occupancy)" if b.project_name else "",
         occupancy=synth_occ,
-        floors_above_grade=b.floors_above_grade,
+        # Audit F9A-02 (28.10.2026): Table 9.24.D (p.721) is a covered / shaded parking
+        # "having one level only"; the tick states the parking's own single level, so the
+        # one-level test reads the parking, never the host's floors.
+        floors_above_grade=(1 if (b.is_covered_shaded_parking and synth_occ == "parking_open")
+                            else b.floors_above_grade),
         floors_below_grade=levels,
         depth_below_grade_m=_parking_depth(b) if levels > 0 else 0.0,
         gross_floor_area_m2=parking_area,
@@ -1465,6 +1676,63 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         chapters.append(_with_host_sprinklers(fp, host_line) if host_line else fp)
     if sc_rules:  chapters.append(evaluate_sc(synth, sc_rules))
     return chapters
+
+
+def _merge_attached_parking_duties(chapters: List[ChapterReport],
+                                   attached: List[ChapterReport]):
+    """Owner ruling Q-3 (28.10.2026), audit F9A-05: one governing fire pump and one fire
+    water tank line for the whole building, the most onerous of the host and the attached
+    parking, citing both tables and #4.1.17 (p.695). The governing line stays in the host's
+    Ch 9 chapter; the parking chapter's own line is removed. A line that cannot be ranked
+    (no printed flow or minutes, or a NOT EVALUATED probe) is left as it is."""
+    hi = next((i for i, c in enumerate(chapters) if c.chapter_code == "FP"), None)
+    pi = next((i for i, c in enumerate(attached) if c.chapter_code == "FP"), None)
+    if hi is None or pi is None:
+        return chapters, attached
+    host, park = chapters[hi], attached[pi]
+
+    def find(ch, duty):
+        return [(bi, ii) for bi, blk in enumerate(ch.blocks) for ii, it in enumerate(blk.items)
+                if it.duty == duty and it.status == "required"]
+
+    for duty in ("pump", "tank"):
+        h, p = find(host, duty), find(park, duty)
+        if len(h) != 1 or len(p) != 1:
+            continue
+        hit = host.blocks[h[0][0]].items[h[0][1]]
+        pit = park.blocks[p[0][0]].items[p[0][1]]
+        hk, pk = _duty_key(hit), _duty_key(pit)
+        if hk[0] == 0 or pk[0] == 0:
+            continue
+        w, o, where = (hit, pit, "attached parking") if hk >= pk else (pit, hit, "host building")
+        what = "fire pump set" if duty == "pump" else "fire water tank"
+        same = "the same duty" if hk == pk else "not governing"
+        note = (f" One {what} for the whole building, host and attached parking (owner ruling "
+                f"Q-3, 28.10.2026; #4.1.17, p.695: a common fire pump set and fire water tank "
+                f"are permitted where the arrangement satisfies the required hydraulic "
+                f"calculations); "
+                + ("both tables give the same duty. " if hk == pk else
+                   "this line is the most onerous of the two. ")
+                + f"Also checked ({where}, {same}): {o.spec} ({o.code_ref}).")
+        if duty == "pump" and _max_num(o.spec, "bar") > _max_num(w.spec, "bar"):
+            note += f" The pump must also meet {_max_num(o.spec, 'bar'):g} bar where that table requires it."
+        merged = w.model_copy(update={
+            "detail": (w.detail or "") + note,
+            "code_ref": " + ".join(dict.fromkeys(r for r in (w.code_ref, o.code_ref) if r)),
+            "page_ref": ", ".join(dict.fromkeys(r for r in (w.page_ref, o.page_ref) if r)) or None})
+        host = host.model_copy(update={"blocks": [
+            blk.model_copy(update={"items": [merged if (bi, ii) == h[0] else it
+                                             for ii, it in enumerate(blk.items)]})
+            if bi == h[0][0] else blk for bi, blk in enumerate(host.blocks)]})
+        park = park.model_copy(update={"blocks": [
+            blk.model_copy(update={"items": [it for ii, it in enumerate(blk.items)
+                                             if (bi, ii) != p[0]]})
+            if bi == p[0][0] else blk for bi, blk in enumerate(park.blocks)]})
+    park = park.model_copy(update={"blocks": [blk for blk in park.blocks if blk.items]})
+    chapters = list(chapters)
+    attached = list(attached)
+    chapters[hi], attached[pi] = host, park
+    return chapters, attached
 
 
 def _line_key(title: str, it: Requirement) -> tuple:
@@ -1904,6 +2172,8 @@ def _evaluate_single(b: Building) -> ComplianceReport:
                 "spec": "Not evaluated: the parking inputs were refused",
                 "detail": f"The attached parking could not be evaluated: {e}"})
             attached = [nev]
+    # Owner ruling Q-3 (28.10.2026): one governing fire pump and tank for host + parking.
+    chapters, attached = _merge_attached_parking_duties(chapters, attached)
 
     # Never leave a report section silently blank — append an explanatory
     # "not required" note to any chapter that produced zero requirements.

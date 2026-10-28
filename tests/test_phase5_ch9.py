@@ -27,6 +27,15 @@ def store(**kw):
     kw.setdefault("occupancy", "storage_industrial")
     kw.setdefault("height_m", 8)
     kw.setdefault("plot_area_m2", 20000)
+    # Owner ruling Q-4 (28.10.2026): tenancy is a required choice; these tests model the
+    # multi-tenant groups unless they tick single tenant. A specialty-group test (K, P-V)
+    # leaves it blank, so only the specialty row prints here (owner ruling R-G evaluates
+    # the hazard-class rows beside it: pinned in tests/test_audit28_ch9.py).
+    specialty = ("is_aircraft_hanger", "is_cold_storage", "is_flammable_liquid_warehouse",
+                 "is_flammable_liquid_industrial", "is_open_yard_storage", "is_plant_nursery",
+                 "is_idle_pallet_storage", "is_aboveground_tank_storage")
+    if not kw.get("is_single_tenant_storage") and not any(kw.get(f) for f in specialty):
+        kw.setdefault("storage_tenancy", "multi")
     return report(**kw)
 
 

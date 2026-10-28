@@ -136,7 +136,9 @@ def test_P4_Q4_midrise_kiosk_takes_table_9_20_b_row_C():
 def test_P4_Q4_lowrise_kiosk_takes_table_9_21_b_by_inference():
     """Table 9.21.b p.707 does not list Mercantile Group C: applied by inference (owner
     ruling P4 Q4), never Table 9.21.a (public)."""
-    r = report(height_m=4, kiosk_in_sprinklered_area_or_mall=False, **KIOSK)
+    # Audit F9A-03 (28.10.2026): Table 9.21.b rows 1-2 need the plot area (row 3 is a plot
+    # of more than 20,000 m2); a blank plot is NOT EVALUATED, so the plot is entered here.
+    r = report(height_m=4, kiosk_in_sprinklered_area_or_mall=False, plot_area_m2=500, **KIOSK)
     fp = r.chapter("FP")
     assert fp.selected_branch == "lowrise_residential_upto_3600"
     assert "P4 Q4" in fp.selected_branch_section
