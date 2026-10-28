@@ -426,7 +426,7 @@ def test_attached_parking_carries_routing_inputs():
 def test_R14_lift_machine_room_sprinkler_only_in_sprinklered_buildings():
     """Ruling R14 12.10.2026: Table 9.30.M only when the building is sprinklered."""
     r = report(occupancy="assembly_c", height_m=7, floors_above_grade=2, ground_floor_bua_m2=600,
-               villa_converted_use=True)
+               plot_area_m2=1000, villa_converted_use=True)  # blank plot = row NOT EVALUATED
     assert not lines(r, "FP", "Lift Machine Room")
     lmr = lines(r, "FP", "Lift Machine Room", status="not_required")
     assert lmr

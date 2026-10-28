@@ -928,10 +928,11 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
     # Verifier 28.10.2026 (blank-input residual): when the table row itself is NOT
     # EVALUATED (a missing input) and no sprinkler line was found, the sprinkler-gated
     # Table 9.29 / 9.30 lines are NOT EVALUATED too, never "not required".
+    # Any missing input in the Ch 9 branch can decide the sprinkler system (outlet area,
+    # tenancy, plot, row F size ...): with no sprinkler line required, the gated lines are
+    # NOT EVALUATED, never a pass (verifier re-check 28.10.2026).
     row_unknown = (not sprinkler_required
-                   and any("NOT EVALUATED" in (it.system or "") for it in branch_items)
-                   and not any(it.status == "required" and "NOT EVALUATED" not in (it.system or "")
-                               for it in branch_items))
+                   and any("NOT EVALUATED" in (it.system or "") for it in branch_items))
 
     def _gated(it, why, ref):
         if row_unknown:
@@ -1968,6 +1969,11 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         wet_riser_standpipes=b.wet_riser_standpipes,
         exit_stairs=b.exit_stairs,
         tunnel_kind=b.tunnel_kind, tunnel_length_m=b.tunnel_length_m,
+        # Verifier re-check 28.10.2026: a carried-over tick keeps the choice that goes with
+        # it, so the parking run does not print NOT EVALUATED for an input the user gave.
+        theater_cinema_kind=b.theater_cinema_kind,
+        lpg_flame_effect_show=b.lpg_flame_effect_show,
+        is_new_or_modified_building=b.is_new_or_modified_building,
     )
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")

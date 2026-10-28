@@ -289,3 +289,38 @@ def test_verifier_no_itm_pointer_for_a_not_evaluated_system():
     fp = next(c for c in r.chapters if c.chapter_code == "FP")
     rules = {it.source_rule for bl in fp.blocks for it in bl.items}
     assert "itm_sprinkler" not in rules and "itm_clean_agent" not in rules
+
+
+def test_verifier_recheck_outlet_area_blank_gated_lines_not_evaluated():
+    # Business 12 m, outlet ticked, outlet area blank: Table 9.21.e row 2 (over 900 m2, p.711)
+    # would require sprinklers, so the Table 9.29 / 9.30 lines are NOT EVALUATED, not a pass.
+    r = evaluate(Building(occupancy="business", business_group="B", height_m=12,
+                          floors_above_grade=3, ground_floor_bua_m2=800, gross_floor_area_m2=2400,
+                          plot_area_m2=2000, has_attached_commercial_outlet=True))
+    fp = next(c for c in r.chapters if c.chapter_code == "FP")
+    its = [it for bl in fp.blocks for it in bl.items]
+    assert not [it for it in its if it.status == "not_required" and (
+        "Table 9.29 row D" in (it.code_ref or "") or "Table 9.30.M" in (it.code_ref or ""))]
+    src = open(os.path.join(os.path.dirname(__file__), "..", "app.py"), encoding="utf-8").read()
+    assert 'has_attached_commercial_outlet")\n        and float(st.session_state.get("commercial_outlet_gf_bua_m2_input")' in src
+
+
+def test_verifier_recheck_parking_run_keeps_the_choice_with_a_carried_tick():
+    r = evaluate(Building(occupancy="mall_covered", height_m=18, floors_above_grade=3,
+                          floors_below_grade=2, basement_bua_m2=25000, depth_below_grade_m=7,
+                          ground_floor_bua_m2=25000, gross_floor_area_m2=75000, plot_area_m2=50000,
+                          has_theater_cinema=True, theater_cinema_kind="cinema",
+                          has_parking_area=True, parking_area_m2=25000, parking_height_m=0,
+                          parking_basement_levels=2, parking_depth_m=7))
+    ne = [it.system for c in list(r.chapters) + list(r.attached_parking_chapters)
+          for bl in c.blocks for it in bl.items if it.status == "not_evaluated"]
+    assert not ne, ne
+
+
+def test_verifier_recheck_first_load_sample_is_a_complete_report():
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(os.path.join(os.path.dirname(__file__), "..", "app.py"),
+                           default_timeout=180)
+    at.run()
+    assert not at.exception and not at.error
+    assert not [w for w in at.warning if "Report incomplete" in w.value]

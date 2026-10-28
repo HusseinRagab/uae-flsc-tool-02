@@ -559,10 +559,12 @@ FIRST_LOAD_DEFAULTS = {
     "floors_above_input": 12,
     "floors_below_input": 1,
     "ground_bua_input": 800.0,
-    "basement_bua_input": 0.0,
+    "basement_bua_input": 800.0,
     "gfa_input": 8000.0,
     "plot_area_input": 4000.0,
-    "depth_below_grade_input": 0.0,
+    # Verifier re-check 28.10.2026: the sample states its one basement's depth, so the
+    # first screen is a complete report (3.5 m per basement, as the presets).
+    "depth_below_grade_input": 3.5,
     # Owner ruling 12.10.2026, P3 follow-up F-a1-1: "New or modified building" is a
     # required choice with no pre-fill (new_or_modified_building_input starts blank).
 }
@@ -1131,6 +1133,7 @@ ARCHETYPE_PRESETS = {
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
         **_basement_parking(25000.0, 2),
         "has_atrium": True, "has_commercial_kitchen": True, "has_theater_cinema": True,
+        "theater_cinema_kind_input": "cinema",
     },
     "Office, Business Group B (highrise, 30 m, 8 storeys)": {
         "occ": "business", "business_group_input": "B",
@@ -2419,6 +2422,13 @@ if ((occupancy == "storage_industrial" or _storage_secondary)
           "multi-tenant Groups A-E or single tenant Groups F-J of Table 9.27 (p.724-733). "
           "Tanks and pumps differ, so the tool does not assume one (owner ruling Q-4, "
           "28.10.2026).")
+# Verifier re-check 28.10.2026: an outlet ticked with its area blank decides Table 9.21.e
+# row 1 / 2 (and the sprinkler system); a blank is never a pass.
+if (st.session_state.get("has_attached_commercial_outlet")
+        and float(st.session_state.get("commercial_outlet_gf_bua_m2_input") or 0.0) <= 0):
+    _stop("Enter the commercial outlet built-up ground floor area (sidebar: Ch 9 routing, under "
+          "'Commercial / mercantile outlet attached'), or clear the tick. Table 9.21.e rows "
+          "(p.711) split at 900 m2 of the outlet's GF BUA: row 2 adds sprinklers.")
 if _storage_secondary and not st.session_state.get("secondary_storage_hazard_input"):
     _stop("Select the hazard class of the storage / industrial occupancy listed under "
              "'Other occupancies' (sidebar, Mixed occupancy). Table 9.27 groups depend on the "
