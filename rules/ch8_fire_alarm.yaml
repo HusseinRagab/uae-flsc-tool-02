@@ -24,13 +24,27 @@ general:
         spec: "Ambient sound level greater than 105 dBA: visible notification devices required; total sound pressure level not more than 110 dBA at the minimum hearing distance; sleeping areas 75 dBA; wall-mounted tops not less than 2.29 m above floor"
         detail: "Table 8.1 item 16, p.463: (ii) all notification devices shall be approved and listed by Civil Defence; (vi) an average ambient sound level greater than 105 dBA shall require the use of visible notification devices; (vii) the total sound pressure level produced by combining the ambient sound pressure level with all audible notification appliances operating shall not exceed 110 dBA at the minimum hearing distance; (viii) where audible appliances are installed to provide signals for sleeping areas, they shall have a sound level of 75 dBA; (ix) if ceiling heights allow, wall-mounted notification devices shall have their tops above the finished floors at heights of not less than 2.29 m and below the finished ceilings at distances of not less than 150 mm. Listing standards, Ch 8 #7.1.14 (p.521): UL 464, UL 1480, FM 3150, EN 54-3."
   - id: fa_general_wiring
-    when: {}
+    when:
+      occupancy_not: [villa_private, villa_commercial]
     systems:
       - name: "Fire Alarm Wiring - 2 hour fire rated, Class A, loop isolators"
         code_ref: "Ch 8, Table 8.1 item 13 (i), (v), (vi)"
         page_ref: "p.458"
         spec: "2 hour fire rated and Civil Defence listed; Class A; loop isolators"
         detail: "Table 8.1 item 13, p.458: (i) all Fire Detection and Alarm wiring shall be 2 hour fire rated and Civil Defence listed; (v) all fire detection alarm wiring shall be Class A type where circuit redundancy is ensured and operational capability continues even when single open condition, single ground fault and single fault in the circuitry exists, and such faults are annunciated in the control panel; (vi) loop isolators shall be installed to monitor and maintain wiring integrity and safeguard from short circuits, as per manufacturer's guidelines."
+  # Audit 28.10.2026, CH8-14: Table 8.13 items 14, 25 and 26 (i) (p.503, p.507-508) permit
+  # a wireless / low powered radio frequency based system per Section 4.11 in villas; the
+  # wiring items then apply to the wired parts only.
+  - id: fa_general_wiring_villa
+    when:
+      occupancy_in: [villa_private, villa_commercial]
+    systems:
+      - name: "Fire Alarm Wiring - 2 hour fire rated, Class A, loop isolators"
+        required: conditional
+        code_ref: "Ch 8, Table 8.1 item 13 (i), (v), (vi); Table 8.13 items 14, 25, 26 (i)"
+        page_ref: "p.458; p.503, p.507-508"
+        spec: "2 hour fire rated and Civil Defence listed; Class A; loop isolators - for a wired system"
+        detail: "Applies to a wired system and to the wired parts of a wireless system. Table 8.13 item 26 (i) PRIVATE VILLA (p.508), item 25 (i) COMMERCIAL VILLA (p.507) and item 14 (i) converted villa (p.503) permit, as the alternative to the smoke detection system, a 'Wireless /Low powered radio frequency based Fire Detection and Alarm System ... as per Section 4.11' (Table 8.11, p.499-500). Table 8.1 item 13, p.458: (i) all Fire Detection and Alarm wiring shall be 2 hour fire rated and Civil Defence listed; (v) Class A wiring; (vi) loop isolators as per manufacturer's guidelines."
   # Owner ruling 13.10.2026 (card "Add all", Phase 5 G6): Table 8.1 item 15 (i)-(x).
   - id: fa_general_power_sources
     when: {}
@@ -53,10 +67,10 @@ general:
     when: {}
     systems:
       - name: "Addressable Fire Detection & Alarm Control Panel (FACP)"
-        code_ref: "Ch 8, #3 / Section 4.1 / Table 8.1 item 1"
-        page_ref: "p.455"
+        code_ref: "Ch 8, #4.1.1 / Table 8.1 item 1 (i)-(ii); #6.2.1"
+        page_ref: "p.455; p.514"
         spec: "Only listed and approved ADDRESSABLE Fire Detection & Alarm System permitted in new constructions. Conventional type NOT acceptable except for existing buildings."
-        detail: "All system components shall be Civil Defence approved and listed (Section 7). FACP installation by Civil Defence licensed FA contractors only - general contractors / MEP / electrical / BMS / home-automation contractors NOT permitted to install FA systems."
+        detail: "Table 8.1 item 1, p.455: (i) only listed and approved addressable Fire Detection and Alarm System shall be provided in all new constructions; conventional type Fire detection Systems are not acceptable, unless it is existing; (ii) all Fire Detection and Alarm System equipment, material, accessories, wiring shall be Civil Defence approved and listed as per Section 7. #6.2.1, p.514: installation of Fire Detection and Alarm Systems shall be carried out only by Civil Defence approved and licensed contractors. General contractors, MEP Contractors, Electrical contractors, BMS Contractors, Home automation Contractors shall not be allowed to install Fire Detection and Alarm Systems."
   - id: fa_general_civil_defence_interface
     when: {}
     systems:
@@ -98,6 +112,65 @@ general:
         spec: "Listed barrier gateway required at each FACP / group of control units"
         detail: "Table 8.1 item 14.3 (v), p.459: a listed barrier gateway, integral with or attached to each control unit or group of control units, as appropriate, shall be provided to prevent the other systems from interfering with or controlling the fire alarm system. Item 14.3 (ix): all non-fire alarm components shall be listed for fire alarm use or for fire conditions."
 
+  # Audit 28.10.2026, CH8-19: Table 8.1 items not encoded before, as general lines with
+  # the values as printed (p.456-466).
+  - id: fa_general_mcp_actuation
+    when: {}
+    systems:
+      - name: "Manual Call Point to Alarm Signal - not more than 10 s"
+        code_ref: "Ch 8, Table 8.1 item 4 (ii)"
+        page_ref: "p.456"
+        spec: "Time from the operation of call point to the actuation of alarm signal not more than 10 seconds"
+        detail: "Table 8.1 item 4 (ii), p.456: 'Time from the operation of call point to the actuation of alarm signal shall not exceed (10) seconds.'"
+  - id: fa_general_stairs_voice
+    when: {}
+    systems:
+      - name: "Stairs - Voice Speakers; Sounders Not Required"
+        code_ref: "Ch 8, Table 8.1 item 6 (iii)-(iv)"
+        page_ref: "p.456"
+        spec: "Voice speakers with clear speech audibility in stairs; sounders not required in stairs"
+        detail: "Table 8.1 item 6 STAIRS, p.456: (iii) 'Stairs shall be provided with Voice speakers with clear speech audibility.' (iv) 'Sounders shall not be required in stairs.'"
+  - id: fa_general_hvac_diffusers
+    when: {}
+    systems:
+      - name: "Detectors Not Less Than 1 m from Supply / Return Diffusers"
+        code_ref: "Ch 8, Table 8.1 item 9 (i)"
+        page_ref: "p.457"
+        spec: "In spaces served by air-handling systems, detectors not less than 1 m from supply or return diffusers"
+        detail: "Table 8.1 item 9 HVAC, p.457: (i) in spaces served by air-handling systems, detectors shall not be located lesser than 1m from supply or return diffusers, where airflow prevents operation of the detectors."
+  - id: fa_general_facp_capacity_location
+    when: {}
+    systems:
+      - name: "FACP Spare Capacity 20% and Attended Location"
+        code_ref: "Ch 8, Table 8.1 item 14.1 (v)-(viii)"
+        page_ref: "p.458"
+        spec: "Spare capacity to add 20% more detectors; FACP at a location attended at all times, visible and accessible; not in an unattended room, service room or mechanical room"
+        detail: "Table 8.1 item 14.1, p.458: (v) generally FACP should have spare capacity to add 20% more detectors with additional wiring and interface modules without adding additional circuit boards (modules); (vi) FACP shall be installed in a location which is attended by facility management or designated personnel at all times, such as reception areas, security guard houses, Emergency command centres, Facility monitoring rooms, nurse stations at hospitals etc.; (vii) FACP shall be located in a visible and accessible location; (viii) FACP shall not be installed in an unattended room, service rooms, mechanical rooms."
+  - id: fa_general_actuation_time
+    when: {}
+    systems:
+      - name: "Actuation within 10 s; Trouble Signal within 200 s"
+        code_ref: "Ch 8, Table 8.1 item 14.3 (i)-(iv)"
+        page_ref: "p.459"
+        spec: "Notification / fire safety functions within 10 s of an initiating device; open or ground trouble signal within 200 s; critical communications within 10 s, failure indicated within 200 s"
+        detail: "Table 8.1 item 14.3 ACTUATION TIME, p.459: (i) actuation of alarm notification devices or emergency voice communications, fire safety functions, and annunciation at the protected premises shall occur within 10 seconds after the activation of an initiating device; (ii) an open or ground condition of any fire alarm circuits shall result in the annunciation of a trouble signal at the protected premise within 200 seconds; (iii) system bandwidth is monitored to confirm that all communications between equipment that is critical to the operation of the fire alarm system or fire safety functions take place within 10 seconds; failure shall be indicated within 200 seconds; (iv) failure of any equipment that is critical to the operation of the fire alarm system or fire safety functions is indicated at the master fire alarm control unit within 200 seconds."
+  - id: fa_general_notification_each_floor
+    when: {}
+    systems:
+      - name: "Notification on Each Floor / Notification Zones"
+        code_ref: "Ch 8, Table 8.1 item 14.12 (i); item 18 (i)"
+        page_ref: "p.461; p.466"
+        spec: "One or more notification zones on each floor of the building"
+        detail: "Table 8.1 item 14.12 (i), p.461: fire alarm and mass notification systems provided for evacuation or relocation of occupants shall have one or more notification on each floor of the building. Item 18 NOTIFICATION ZONES (i), p.466: the same systems shall have one or more notification zones on each floor of the building."
+  - id: fa_general_visible_performance
+    when: {}
+    systems:
+      - name: "Visible Notification Devices - Flash Rate, Pulse, Intensity, Low-Ceiling Mounting"
+        code_ref: "Ch 8, Table 8.1 item 17 (ii)-(v), (ix)"
+        page_ref: "p.463"
+        spec: "Flash rate not more than 2 flashes per second (2 Hz) nor less than one flash every second (1 Hz); maximum pulse duration 0.2 s with a maximum duty cycle of 40%; evacuation signalling lights clear or nominal white, not more than 1000 cd (effective intensity); where low ceilings do not permit 2 m, wall-mounted within 150 mm of the ceiling"
+        detail: "Table 8.1 item 17 VISUAL NOTIFICATION DEVICES, p.463: (ii) the flash rate shall not exceed two flashes per second (2 Hz) nor be less than one flash every second (1 Hz) throughout the listed voltage range of the appliance; (iii) a maximum pulse duration shall be 0.2 second with a maximum duty cycle of 40%; (iv) the pulse duration shall be defined as the time interval between initial and final points of 10% of maximum signal; (v) lights used for fire alarm signalling only or to signal the intent for complete evacuation shall be clear or nominal white and shall not exceed 1000 cd (effective intensity); (ix) where low ceiling heights do not permit wall mounting at a minimum of 2 m, wall mounted visible appliances shall be mounted within 150 mm of the ceiling."
+
   # Ruling R7 (12.10.2026): the height-driven items of Table 8.13 items 1-2 apply
   # to every building of 23 m or more, whatever its occupancy row; the alarm
   # protocol comes from one row only (the occupancy row where Table 8.13 has one).
@@ -128,6 +201,41 @@ general:
         code_ref: "Ch 8, #5.1 / Table 8.13 items 1-2 (v)-(vii)"
         page_ref: "p.502"
         detail: "Not applied: this occupancy has its own Table 8.13 row and its evacuation protocol governs, so the building has one alarm protocol (ruling R7, 12.10.2026). The highrise height items (Sub-FACP every 45 m, FACP redundancy) still apply."
+  # Audit 28.10.2026, CH8-08: warehouses and parkings of 23 m or more also leave the
+  # highrise rows (fa_highrise / fa_super_highrise exclude them); the R7 note names
+  # their own protocol.
+  - id: fa_general_highrise_protocol_note_storage
+    when:
+      height_m_gte: 23
+      occupancy: storage_industrial
+      has_robotic_parking_is: false
+    systems:
+      - name: "Highrise 5-Floor Phased Evacuation and PAS 15/180/240 s - not applied"
+        required: not_required
+        code_ref: "Ch 8, #5.1 / Table 8.13 items 1-2 (v)-(vii); items 19-20 (vii)"
+        page_ref: "p.502; p.506"
+        detail: "Not applied: Table 8.13 items 19-20 STORAGE AND WAREHOUSE / INDUSTRIAL BUILDINGS (p.506) is this building's row and its protocol governs: (vii) 'General Fire Alarm shall be the evacuation alarm.' (item 21 COLD STORAGE prints no protocol and carries items 19-20 (vii), owner ruling 12.10.2026, Ch8 Q2). The building has one alarm protocol (ruling R7, 12.10.2026, applied to storage by audit CH8-08, 28.10.2026). The highrise height items (Sub-FACP every 45 m, FACP redundancy) still apply."
+  - id: fa_general_highrise_protocol_note_robotic_storage
+    when:
+      height_m_gte: 23
+      occupancy: storage_industrial
+      has_robotic_parking_is: true
+    systems:
+      - name: "Evacuation Alarm Protocol - Table 8.13 item 23 prints none (open question)"
+        required: conditional
+        code_ref: "Ch 8, #5.1 / Table 8.13 items 1-2 (v)-(vii); item 23"
+        page_ref: "p.502; p.506"
+        detail: "Open question, needs an owner ruling: Table 8.13 item 23 ROBOTIC OR MECHANICAL PARKING OR ROBOTIC LOGISTICS (p.506) prints detection items (i)-(ii) only and no evacuation protocol, and the highrise rows (items 1-2 (v)-(vii), p.502: 5-floor phased evacuation, PAS 15 s / 180 s / 240 s) are not applied to this building (ruling R7, 12.10.2026). Confirm the protocol with Civil Defence. The highrise height items (Sub-FACP every 45 m, FACP redundancy) still apply."
+  - id: fa_general_highrise_protocol_note_parking
+    when:
+      height_m_gte: 23
+      occupancy_in: [parking_enclosed, parking_open]
+    systems:
+      - name: "Highrise 5-Floor Phased Evacuation and PAS 15/180/240 s - not applied"
+        required: not_required
+        code_ref: "Ch 8, #5.1 / Table 8.13 items 1-2 (v)-(vii); item 22 (vii)-(viii)"
+        page_ref: "p.502; p.506"
+        detail: "Not applied: Table 8.13 item 22 ENCLOSED PARKING (p.506; open parking by analogy, ruling R10) is this building's row and its protocol governs: item 22 (vii)-(viii), the general fire alarm does not trigger the evacuation alarm (owner ruling 12.10.2026, Ch8 Q6) and the 120 s PAS then evacuation throughout. The building has one alarm protocol (ruling R7, 12.10.2026, applied to parking by audit CH8-08, 28.10.2026). The highrise height items (Sub-FACP every 45 m, FACP redundancy) still apply."
 
 branches:
   - id: fa_super_highrise
@@ -145,7 +253,7 @@ branches:
                       detention_a, detention_b, detention_c,
                       healthcare_a, healthcare_b, healthcare_c,
                       education_a, education_b, education_c,
-                      hotel_a, hotel_b, hotel_c]
+                      hotel_a, hotel_b, hotel_c, infrastructure]
     section: "Ch 8, #5.1 / Table 8.13 item 1"
     page: "p.502"
     systems:
@@ -164,7 +272,8 @@ branches:
         detail: "Table 8.13 items 1-2 (ii), p.502: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1."
 
   - id: fa_highrise
-    # Highrise = more than 23 m up to 90 m (Ch 1 #1.7.41, p.45; FAQ Q3, p.1273).
+    # Highrise = 23 m or more up to 90 m (Ch 1 #1.7.41, p.45 "between 23 Meters to 90
+    # meters"; ruling R1: exactly 23.0 m is highrise; FAQ Q3, p.1273).
     # Table 8.13 items 1-2 use the defined terms and print no height numbers.
     # Specific-occupancy branches (mall, education, healthcare, detention, parking,
     # villa, storage_industrial, motor_fuel_dispensing, hotel) are excluded so they
@@ -180,13 +289,13 @@ branches:
                       detention_a, detention_b, detention_c,
                       healthcare_a, healthcare_b, healthcare_c,
                       education_a, education_b, education_c,
-                      hotel_a, hotel_b, hotel_c]
+                      hotel_a, hotel_b, hotel_c, infrastructure]
     section: "Ch 8, #5.1 / Table 8.13 item 2"
     page: "p.502"
     systems:
       - name: "Smoke Detection and Alarm System (entire building)"
         spec: "Addressable, per Section 4.3"
-        detail: "Highrise = more than 23 m up to 90 m (Ch 1 #1.7.41, p.45; FAQ Q3, p.1273). Table 8.13 item 2 applies the highrise row to these buildings."
+        detail: "Highrise = 23 m or more up to 90 m (Ch 1 #1.7.41, p.45: 'between 23 Meters to 90 meters'; ruling R1, 12.10.2026: exactly 23.0 m is highrise; FAQ Q3, p.1273). Table 8.13 item 2 applies the highrise row to these buildings."
       - name: "5-Floor Phased Evacuation Alarm"
         spec: "Fire floor + 3 above + 1 below"
       - name: "Positive Alarm Sequence (PAS) - 15/180/240 s"
@@ -199,16 +308,15 @@ branches:
   - id: fa_midrise_lowrise
     # Midrise / Lowrise = up to 23 m (Ch 1 #1.7.39-#1.7.40, p.44). Table 8.13
     # items 3-4 use the defined terms; above 23 m the building takes fa_highrise.
+    # Audit 28.10.2026, CH8-16: items 9-13 (p.503) are ASSEMBLY, BUSINESS, RESIDENTIAL,
+    # DAY CARE, MERCANTILE only (open mall = item 13, ruling R10); every other occupancy
+    # without its own row takes fa_midrise_lowrise_height_only (items 3-4).
     match:
       height_m_lt: 23
-      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
-                      mall_covered, mall_mixed,
-                      parking_enclosed, parking_open,
-                      storage_industrial,
-                      detention_a, detention_b, detention_c,
-                      healthcare_a, healthcare_b, healthcare_c,
-                      education_a, education_b, education_c,
-                      hotel_a, hotel_b, hotel_c]
+      occupancy_in: [assembly_a, assembly_b, assembly_c, business,
+                     residential, labour_accommodation, staff_accommodation, hostel,
+                     daycare_a, daycare_b, daycare_c,
+                     mercantile_a, mercantile_b, mercantile_c, mall_open]
     section: "Ch 8, #5.1 / Table 8.13 items 3-4 + 9-13"
     page: "p.503"
     systems:
@@ -221,6 +329,79 @@ branches:
         detail: "Per Table 8.1.14.2 (Table 8.13 items 3-4 (iv) and items 9-13 (iv), p.503): if the fire alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 180 s, evacuation alarm is triggered throughout the entire building."
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
         detail: "Table 8.13 items 3-4 (ii) and items 9-13 (ii), p.503: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1."
+
+  - id: fa_midrise_lowrise_height_only
+    # Audit 28.10.2026, CH8-16: occupancies with no Table 8.13 occupancy row (animal
+    # housing, mixed and multiple, high / low depth underground) take the height rows
+    # items 3-4 (MIDRISE / LOWRISE BUILDINGS, p.503) only.
+    match:
+      height_m_lt: 23
+      occupancy_not: [villa_private, villa_commercial, motor_fuel_dispensing,
+                      mall_covered, mall_mixed,
+                      parking_enclosed, parking_open,
+                      storage_industrial,
+                      detention_a, detention_b, detention_c,
+                      healthcare_a, healthcare_b, healthcare_c,
+                      education_a, education_b, education_c,
+                      hotel_a, hotel_b, hotel_c, infrastructure,
+                      assembly_a, assembly_b, assembly_c, business,
+                      residential, labour_accommodation, staff_accommodation, hostel,
+                      daycare_a, daycare_b, daycare_c,
+                      mercantile_a, mercantile_b, mercantile_c, mall_open]
+    section: "Ch 8, #5.1 / Table 8.13 items 3-4"
+    page: "p.503"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        spec: "Addressable, per Section 4.3"
+        detail: "Table 8.13 items 3-4 (i), p.503: Smoke Detection and Alarm System shall be provided throughout the building as per Section 4.3 (midrise / lowrise = below 23 m, ruling R1; Ch 1 #1.7.39-#1.7.40, p.44). Table 8.13 prints no occupancy row for this occupancy; items 9-13 are assembly, business, residential, day care and mercantile only."
+      - name: "Single Main FACP"
+        detail: "Table 8.13 items 3-4 (iii), p.503: Main FACP shall be located at the continuously attended location such as Emergency Command Centre or Reception or Security guard house, as per the building fire strategy."
+      - name: "Positive Alarm Sequence (PAS) - 180 s"
+        detail: "Per Table 8.1.14.2 (Table 8.13 items 3-4 (iv), p.503): if the Fire Detection Alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 180 s, the entire building shall have evacuation alarm."
+      - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
+        detail: "Table 8.13 items 3-4 (ii), p.503: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1."
+
+  - id: fa_infrastructure
+    # Audit 28.10.2026, CH8-03: infrastructure is a yard-hydrant network, not a
+    # building; Table 8.13 prints no row for it. No building fire alarm is printed
+    # (the engine also skips the Table 8.1 / 8.14 / 8.15 lines for it).
+    match: {occupancy: infrastructure}
+    section: "Ch 8, #5.1 / Table 8.13 (no infrastructure row)"
+    page: "p.502-508"
+    systems:
+      - name: "Fire Detection and Alarm - any building on the site takes its own Table 8.13 occupancy row"
+        required: conditional
+        code_ref: "Ch 8, #5.1 / Table 8.13"
+        page_ref: "p.502-508"
+        detail: "Table 8.13 (p.502-508) prints no row for a yard hydrant network / infrastructure (Ch 9 #4.10.1, p.723, Table 9.26), so no building fire detection and alarm system is printed for it. Any building on the site (pump house, control building) is a building in its own right and takes its own Table 8.13 occupancy row, with its Table 8.14 rooms and Table 8.15 equipment, evaluated as that building."
+
+  - id: fa_temporary_tent_site_office
+    # Audit 28.10.2026, CH8-07: #4.5.6 (p.712) gives tents, marquees, site offices and
+    # site dwellings their own Table 9.21.f rows. Table 8.14 prints item 32 TEMPORARY
+    # TENTS (battery operated smoke detectors) and item 33 TEMPORARY MODULAR HOUSES /
+    # OFFICES (smoke detector, Section 4.3), p.511. For a temporary tent (row A) and a site
+    # office (rows D / E) those items govern and the Table 8.13 addressable building
+    # system is not printed (the engine also skips the Table 8.1 lines). Permanent tents,
+    # desert camps (rows B / C) and row F buildings keep their occupancy row.
+    match:
+      tent_marquee_kind_in: [temporary, site_office_short, site_office_long]
+    suppresses: [fa_super_highrise, fa_highrise, fa_midrise_lowrise, fa_midrise_lowrise_height_only,
+                 fa_mall, fa_education, fa_healthcare, fa_detention, fa_hotel,
+                 fa_nursery_plants, fa_cold_storage, fa_robotic_parking,
+                 fa_storage_industrial, fa_storage_yard_tank,
+                 fa_storage_single_tenant_facp, fa_storage_multi_tenant_facp,
+                 fa_parking_enclosed, fa_parking_enclosed_robotic,
+                 fa_mall_open, fa_parking_open, fa_parking_open_robotic,
+                 fa_villa_converted, fa_villa_private, fa_villa_commercial, fa_motor_fuel,
+                 fa_infrastructure]
+    section: "Ch 8, #5.2 / Table 8.14 items 32-33 (temporary tent / site office)"
+    page: "p.511"
+    systems:
+      - name: "Table 8.13 Building Fire Detection and Alarm System - not applied (temporary tent / site office)"
+        required: not_required
+        code_ref: "Ch 8, #5.1 / Table 8.13; #5.2 / Table 8.14 items 32-33"
+        page_ref: "p.502-508; p.511"
+        detail: "The building is a temporary tent (Table 9.21.f row A) or a site office (rows D / E), p.712 (#4.5.6: tents, marquees, site offices, site dwellings take Table 9.21.f). Table 8.14 prints item 32 TEMPORARY TENTS: 'Battery Operated Smoke Detectors, listed and approved by Civil Defence shall be provided' and item 33 TEMPORARY MODULAR HOUSES/OFFICES: 'Smoke Detector shall be provided as per Section 4.3' (p.511); a site office is read as a temporary modular office. Those items govern, so the Table 8.13 addressable building system and the Table 8.1 system lines are not printed (Table 8.1 item 5 (i), p.456, asks for an automatic addressable system in every building and enclosed structure; the specific Table 8.14 row is applied, audit CH8-07, 28.10.2026)."
 
   - id: fa_mall
     # Item 24 is headed "COVERED MALL" (p.507). An open mall has no Table 8.13 row
@@ -363,11 +544,11 @@ branches:
         spec: "Visible from common entrance"
         code_ref: "Ch 8, #5.1 / Table 8.13 items 19-20 (vi)"
         page_ref: "p.506"
-        detail: "Not printed in Table 8.13 item 21 COLD STORAGE (p.506); carried from items 19-20 STORAGE AND WAREHOUSE (vi): each warehouse shall be provided with audio visual notification devices outside such that notification devices are visible from the common entrance. Owner ruling pending on whether items 19-20 apply to cold storage."
+        detail: "Not printed in Table 8.13 item 21 COLD STORAGE (p.506); carried from items 19-20 STORAGE AND WAREHOUSE (vi): each warehouse shall be provided with audio visual notification devices outside such that notification devices are visible from the common entrance. Carried from items 19-20 by owner ruling 12.10.2026, Ch8 Q2 (cold storage lines)."
       - name: "General Fire Alarm = Evacuation Alarm"
         code_ref: "Ch 8, #5.1 / Table 8.13 items 19-20 (vii)"
         page_ref: "p.506"
-        detail: "Not printed in Table 8.13 item 21 COLD STORAGE (p.506); carried from items 19-20 (vii): 'General Fire Alarm shall be the evacuation alarm.' Owner ruling pending on whether items 19-20 apply to cold storage."
+        detail: "Not printed in Table 8.13 item 21 COLD STORAGE (p.506); carried from items 19-20 (vii): 'General Fire Alarm shall be the evacuation alarm.' Carried from items 19-20 by owner ruling 12.10.2026, Ch8 Q2 (cold storage lines)."
 
   - id: fa_robotic_parking
     # Robotic / Mechanical Parking or Robotic Logistics (Table 8.13 item 23, p.506).
@@ -381,13 +562,20 @@ branches:
         detail: "Aspiration Type Air Sampling Smoke Detection System throughout vehicle stacking and storing areas of robotic / mechanical parking or robotic logistics facility."
       - name: "Smoke Detection (Office / Maintenance / Reception / Store Rooms)"
         spec: "Addressable, per Section 4.3"
+        detail: "Table 8.13 item 23 (ii), p.506: Smoke Detection and Alarm System shall be provided throughout, Office, maintenance, reception, store rooms areas of the building as per Section 4.3."
+      # Table 8.13 item 23 prints only (i)-(ii) (p.506); the FACP location comes from
+      # Table 8.1 item 14.1 (vi) (audit 28.10.2026, Cursor PR #14 side note).
       - name: "Main FACP at Continuously Attended Location"
+        code_ref: "Ch 8, Table 8.1 item 14.1 (vi)"
+        page_ref: "p.458"
+        detail: "Table 8.13 item 23 (p.506) prints items (i)-(ii) only and names no FACP location. Table 8.1 item 14.1 (vi), p.458: FACP shall be installed in a location which is attended by facility management or designated personnel at all times, such as reception areas, security guard houses, Emergency command centres, Facility monitoring rooms."
 
   - id: fa_storage_industrial
     # Items 21 (cold storage), 23 (robotic) and 28 (plant nursery) are the
     # specific rows for those buildings; the engine unions matching branches,
     # so this general storage row must exclude them.
-    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false}
+    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false,
+           is_open_yard_storage_is: false, is_aboveground_tank_storage_is: false}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20"
     page: "p.506"
     systems:
@@ -401,9 +589,43 @@ branches:
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
         detail: "Table 8.13 items 19-20 (ii), p.506: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1."
 
+  - id: fa_storage_yard_tank
+    # Owner ruling R-B (28.10.2026), audit CH8-02: Group U open yard storage and Group T
+    # aboveground tank storage keep the items 19-20 package as conditional: it applies to
+    # any enclosed building on the site. Table 8.13 prints no open-yard / tank-farm row.
+    match:
+      occupancy: storage_industrial
+      is_plant_nursery_is: false
+      is_cold_storage_is: false
+      has_robotic_parking_is: false
+      any_of:
+        - {is_open_yard_storage_is: true}
+        - {is_aboveground_tank_storage_is: true}
+    section: "Ch 8, #5.1 / Table 8.13 items 19-20 (conditional, owner ruling R-B)"
+    page: "p.506"
+    systems:
+      - name: "Smoke Detection and Alarm System (entire building)"
+        required: conditional
+        spec: "Addressable, per Section 4.3 - in any enclosed building on the site"
+        detail: "Applies to any enclosed building on the site (warehouse, pump house, office). Ch 8 prints no row for open yards / aboveground tank farms (owner ruling R-B, 28.10.2026). Table 8.13 items 19-20 (i), p.506: Smoke Detection and Alarm System shall be provided throughout as per Section 4.3."
+      - name: "External Audio-Visual Notification Devices"
+        required: conditional
+        spec: "Visible from common entrance"
+        detail: "Applies to any enclosed building on the site (warehouse, pump house, office). Ch 8 prints no row for open yards / aboveground tank farms (owner ruling R-B, 28.10.2026). Table 8.13 items 19-20 (vi), p.506: each warehouse shall be provided with audio visual notification devices outside such that notification devices are visible from the common entrance."
+      - name: "General Fire Alarm = Evacuation Alarm"
+        required: conditional
+        detail: "Applies to any enclosed building on the site (warehouse, pump house, office). Ch 8 prints no row for open yards / aboveground tank farms (owner ruling R-B, 28.10.2026). Table 8.13 items 19-20 (vii), p.506: 'General Fire Alarm shall be the evacuation alarm.'"
+      - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
+        required: conditional
+        detail: "Applies to any enclosed building on the site (warehouse, pump house, office). Ch 8 prints no row for open yards / aboveground tank farms (owner ruling R-B, 28.10.2026). Table 8.13 items 19-20 (ii), p.506: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1."
+      - name: "Main FACP at Continuously Attended Location (single tenant) / single FACP permitted (multi-tenant)"
+        required: conditional
+        detail: "Applies to any enclosed building on the site (warehouse, pump house, office). Ch 8 prints no row for open yards / aboveground tank farms (owner ruling R-B, 28.10.2026). Table 8.13 items 19-20 (iv)-(v), p.506: in a single tenant warehouse, the main FACP shall be located at the continuously attended location such as Emergency Command Centre or Supervisor or Security guard house; in a multi-tenant warehouse, a single main FACP shall be permitted to monitor all the warehouses in the group, located at the security guard house or the facility management office."
+
   - id: fa_storage_single_tenant_facp
     # Table 8.13 items 19-20 (iv): single-tenant warehouse main FACP location.
-    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false, is_single_tenant_storage_is: true}
+    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false,
+           is_open_yard_storage_is: false, is_aboveground_tank_storage_is: false, storage_tenancy_is: single}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20 (iv)"
     page: "p.506"
     systems:
@@ -412,7 +634,8 @@ branches:
 
   - id: fa_storage_multi_tenant_facp
     # Table 8.13 items 19-20 (v): one main FACP for a multi-tenant group is permitted.
-    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false, is_single_tenant_storage_is: false}
+    match: {occupancy: storage_industrial, is_plant_nursery_is: false, is_cold_storage_is: false, has_robotic_parking_is: false,
+           is_open_yard_storage_is: false, is_aboveground_tank_storage_is: false, storage_tenancy_is: multi}
     section: "Ch 8, #5.1 / Table 8.13 items 19-20 (v)"
     page: "p.506"
     systems:
@@ -421,11 +644,18 @@ branches:
         detail: "Permitted, not required: Table 8.13 items 19-20 (v), p.506: in a multi-tenant warehouse, a single main FACP shall be permitted to monitor all the warehouses in the group, and FACPs for individual warehouses shall not be required. Such main FACP shall be located at the security guard house or the facility management office."
 
   - id: fa_parking_enclosed
-    match: {occupancy: parking_enclosed}
+    # Owner ruling R-I (28.10.2026): robotic / mechanical parking takes item 23 for
+    # detection, so the sprinkler-dependent item 22 (i)-(iii) line is for non-robotic
+    # parking only; fa_parking_enclosed_robotic keeps the other item 22 lines.
+    # Audit CH8-18: the engine names which of (i)-(ii) / (iii) applies from the
+    # building's Ch 9 sprinkler result.
+    match: {occupancy: parking_enclosed, has_robotic_parking_is: false}
     section: "Ch 8, #5.1 / Table 8.13 item 22"
     page: "p.506"
     systems:
       - name: "Conditional FA System (per sprinkler presence)"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (i)-(iii)"
+        page_ref: "p.506"
         detail: "If enclosed parking is fully sprinklered: Manual Fire Detection and Alarm System only (per Section 4.10) - no automatic detectors required. If NOT sprinklered: Heat Detection and Alarm System (per Section 4.7) throughout."
       - name: "Audio-Visual Notification (throughout parking areas)"
       - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
@@ -434,6 +664,31 @@ branches:
         detail: "Table 8.13 item 22 (vii), p.506, printed 'General Fire Alarm shall not trigger be the evacuation alarm.' Read as 'shall not trigger the evacuation alarm' (owner ruling 12.10.2026, Ch8 Q6): the general fire alarm does not evacuate; the 120 s PAS of item (viii) governs evacuation."
       - name: "Positive Alarm Sequence (PAS) - 120 s"
         detail: "Table 8.13 item 22 (viii), p.506: if the general fire alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 120 s, evacuation alarm is triggered throughout."
+
+  - id: fa_parking_enclosed_robotic
+    # Owner ruling R-I (28.10.2026, Cursor PR #14): fa_robotic_parking (item 23) governs
+    # detection; item 22 notification, interfaces and delayed evacuation are kept.
+    match: {occupancy: parking_enclosed, has_robotic_parking_is: true}
+    section: "Ch 8, #5.1 / Table 8.13 item 22 (with item 23, ruling R-I)"
+    page: "p.506"
+    systems:
+      - name: "Item 22 Sprinkler-Dependent Detection - not applied (item 23 governs, ruling R-I)"
+        required: not_required
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (i)-(iii); item 23"
+        page_ref: "p.506"
+        detail: "Not applied: Table 8.13 item 22 (i)-(iii) (no detectors and a Manual Fire Detection and Alarm System per Section 4.10 where sprinklered; a Heat Detection and Alarm System per Section 4.7 where not) is replaced, for robotic or mechanical parking, by item 23 (i)-(ii): aspiration type air sampling smoke detection throughout the vehicle stacking and storing areas per Section 4.5 and smoke detection in office, maintenance, reception and store room areas per Section 4.3 (owner ruling R-I, 28.10.2026)."
+      - name: "Audio-Visual Notification (throughout parking areas)"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (iv)"
+        detail: "Table 8.13 item 22 (iv), p.506: Audio Visual notification devices shall be provided throughout the parking areas. Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
+      - name: "System Interfaces (pump, suppression, gas, door release, elevator recall, smoke control)"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (v)"
+        detail: "Table 8.13 item 22 (v), p.506: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1. Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
+      - name: "General Fire Alarm Does NOT Trigger Evacuation"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (vii)"
+        detail: "Table 8.13 item 22 (vii), p.506, printed 'General Fire Alarm shall not trigger be the evacuation alarm.' Read as 'shall not trigger the evacuation alarm' (owner ruling 12.10.2026, Ch8 Q6): the general fire alarm does not evacuate; the 120 s PAS of item (viii) governs evacuation. Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
+      - name: "Positive Alarm Sequence (PAS) - 120 s"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (viii)"
+        detail: "Table 8.13 item 22 (viii), p.506: if the general fire alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 120 s, evacuation alarm is triggered throughout. Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
 
   - id: fa_mall_open
     # Ruling R10 (12.10.2026): label only; the requirements come from the height
@@ -449,7 +704,8 @@ branches:
   - id: fa_parking_open
     # Ruling R10 (12.10.2026): Table 8.13 has no open-parking row. Item 22 ENCLOSED
     # PARKING is applied by analogy and every line says so.
-    match: {occupancy: parking_open}
+    # Owner ruling R-I (28.10.2026): robotic / mechanical parking -> fa_parking_open_robotic.
+    match: {occupancy: parking_open, has_robotic_parking_is: false}
     section: "Ch 8, #5.1 / not in Table 8.13 - item 22 applied by analogy (ruling R10)"
     page: "p.506"
     systems:
@@ -457,6 +713,8 @@ branches:
         required: conditional
         detail: "Table 8.13 (p.502-508) has no open-parking row. Item 22 ENCLOSED PARKING is applied by analogy (ruling R10, 12.10.2026); confirm with Civil Defence. Table 8.1 item 5 (i) (p.456) asks for automatic addressable detection in every building and enclosed structure."
       - name: "Conditional FA System (per sprinkler presence) - by analogy with item 22"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (i)-(iii), by analogy (ruling R10)"
+        page_ref: "p.506"
         detail: "By analogy with Table 8.13 item 22 (i)-(iii): if the parking is fully sprinklered, Manual Fire Detection and Alarm System (Section 4.10), no automatic detectors; if NOT sprinklered, Heat Detection and Alarm System (Section 4.7) throughout."
       - name: "Audio-Visual Notification (throughout parking areas) - by analogy with item 22"
         detail: "Table 8.13 item 22 (iv), applied by analogy."
@@ -466,6 +724,33 @@ branches:
         detail: "Table 8.13 item 22 (vii), p.506, applied by analogy, read as 'shall not trigger the evacuation alarm' (owner ruling 12.10.2026, Ch8 Q6): the general fire alarm does not evacuate; the 120 s PAS governs evacuation."
       - name: "Positive Alarm Sequence (PAS) - 120 s - by analogy with item 22"
         detail: "Table 8.13 item 22 (viii), applied by analogy: if the general fire alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 120 s, evacuation alarm is triggered throughout the parking."
+
+  - id: fa_parking_open_robotic
+    # Owner ruling R-I (28.10.2026) with ruling R10: open robotic / mechanical parking.
+    match: {occupancy: parking_open, has_robotic_parking_is: true}
+    section: "Ch 8, #5.1 / not in Table 8.13 - item 22 by analogy (ruling R10) with item 23 (ruling R-I)"
+    page: "p.506"
+    systems:
+      - name: "Open Parking - not in Table 8.13; item 22 (Enclosed Parking) applied by analogy"
+        required: conditional
+        detail: "Table 8.13 (p.502-508) has no open-parking row. Item 22 ENCLOSED PARKING is applied by analogy (ruling R10, 12.10.2026); confirm with Civil Defence. Robotic or mechanical parking: item 23 governs detection (owner ruling R-I, 28.10.2026)."
+      - name: "Item 22 Sprinkler-Dependent Detection - not applied (item 23 governs, ruling R-I)"
+        required: not_required
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (i)-(iii) by analogy; item 23"
+        page_ref: "p.506"
+        detail: "Not applied: Table 8.13 item 22 (i)-(iii), applied by analogy (ruling R10), is replaced, for robotic or mechanical parking, by item 23 (i)-(ii): aspiration type air sampling smoke detection throughout the vehicle stacking and storing areas per Section 4.5 and smoke detection in office, maintenance, reception and store room areas per Section 4.3 (owner ruling R-I, 28.10.2026)."
+      - name: "Audio-Visual Notification (throughout parking areas) - by analogy with item 22"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (iv), by analogy"
+        detail: "Table 8.13 item 22 (iv), applied by analogy (ruling R10). Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
+      - name: "System Interfaces - by analogy with item 22"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (v), by analogy"
+        detail: "Table 8.13 item 22 (v), applied by analogy: Fire Pump, all building fire suppression systems, Fire Water Level, LP Gas detection, CO Monitoring and other interconnected systems like door release, Elevator recall, Smoke Control etc. shall be interfaced with the Fire Detection and Alarm System, based on building fire strategy, as per Section 4.1. Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
+      - name: "General Fire Alarm Does NOT Trigger Evacuation - by analogy with item 22"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (vii), by analogy"
+        detail: "Table 8.13 item 22 (vii), p.506, applied by analogy, read as 'shall not trigger the evacuation alarm' (owner ruling 12.10.2026, Ch8 Q6): the general fire alarm does not evacuate; the 120 s PAS governs evacuation. Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
+      - name: "Positive Alarm Sequence (PAS) - 120 s - by analogy with item 22"
+        code_ref: "Ch 8, #5.1 / Table 8.13 item 22 (viii), by analogy"
+        detail: "Table 8.13 item 22 (viii), applied by analogy: if the general fire alarm is not silenced by authorized personnel or the FACP is not reset, or multiple alarms are triggered from other initiating devices, within 120 s, evacuation alarm is triggered throughout the parking. Kept for robotic / mechanical parking with Table 8.13 item 23 (owner ruling R-I, 28.10.2026: item 23 governs detection; item 22 notification, interfaces and delayed evacuation stay)."
 
   - id: fa_villa_converted
     # Table 8.13 item 14: existing private villas (G+1) converted to nurseries,
@@ -494,7 +779,8 @@ branches:
         detail: "OR Wireless / Low-powered radio-frequency based Fire Detection and Alarm System per Section 4.11."
       - name: "External Audio-Visual Notification Devices"
         spec: "Visible from common approach road"
-      - name: "FACP / Cluster Radio HUB at Continuously Attended Location"
+      - name: "FACP or Monitoring Panel at Continuously Attended Location"
+        detail: "Table 8.13 item 26 (iii), p.508: FACP OR the monitoring panel shall be located at the continuously attended location. (The 'cluster radio HUB' wording is item 25 (iii) COMMERCIAL VILLA and item 14 (iii) converted villa, not item 26.)"
 
   - id: fa_villa_commercial
     match: {occupancy: villa_commercial}
@@ -594,10 +880,10 @@ auxiliary_rooms:
     flag: has_diesel_generator_room
     systems:
       - name: "Heat Detection (Diesel Generator Room)"
-        code_ref: "Ch 8, #5.2 / Table 8.14 item 8"
-        page_ref: "p.509"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 8; #5.3 / Table 8.15 item 5"
+        page_ref: "p.509; p.512"
         spec: "Per Section 4.7"
-        detail: "Heat detection (NOT smoke) - diesel exhaust would defeat smoke detection."
+        detail: "Table 8.14 item 8 DIESEL GENERATOR ROOM, p.509, and Table 8.15 item 5 DIESEL GENERATORS AREA, p.512, both print: 'Heat Detection and Alarm System shall be provided as per Section 4.7.' One line for the one room (audit CH8-12, 28.10.2026). Heat detection (NOT smoke) - diesel exhaust would defeat smoke detection."
 
   - id: fa_aux_main_electrical
     flag: has_main_electrical_room
@@ -700,6 +986,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 25"
         page_ref: "p.511"
         spec: "Per Section 4.7"
+        detail: "Table 8.14 item 25 GARBAGE ROOM, p.511: 'Heat Detector shall be provided as per Section 4.7.' The row prints no chute condition: every garbage room, with or without a chute (the chute is the Ch 9 Table 9.29 row L sprinkler condition; audit CH8-10, 28.10.2026)."
 
   - id: fa_aux_pantries
     flag: has_pantries
@@ -708,7 +995,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 23"
         page_ref: "p.510"
         spec: "Per Section 4.7"
-        detail: "Heat detection in pantries (cooking activity defeats smoke detection)."
+        detail: "Table 8.14 item 23 PANTRY, p.510: 'Heat Detection and Alarm System shall be provided as per Section 4.7.' The row prints no occupancy condition: every pantry (the 'business / commercial' condition is Ch 9 Table 9.29 row I sprinklers only; audit CH8-10, 28.10.2026)."
 
   - id: fa_aux_laundry_storage
     flag: has_laundry_storage_rooms
@@ -717,6 +1004,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 items 21-22"
         page_ref: "p.510"
         spec: "Per Section 4.3"
+        detail: "Table 8.14 item 21 LAUNDRY and item 22 STORAGE ROOM, p.510: 'Smoke Detectors shall be provided in the void as per Section 4.3.' The rows print no occupancy condition: every laundry and storage room (the 'residential' condition is Ch 9 Table 9.29 row H sprinklers only; audit CH8-10, 28.10.2026)."
 
   - id: fa_aux_pump_room
     flag: has_fire_pump_room
@@ -725,6 +1013,7 @@ auxiliary_rooms:
         code_ref: "Ch 8, #5.2 / Table 8.14 item 24"
         page_ref: "p.511"
         spec: "Per Section 4.7"
+        detail: "Table 8.14 item 24 PUMP ROOM, p.511: 'Heat Detector shall be provided as per Section 4.7.' The row is printed PUMP ROOM with no pump type: every pump room, not only the fire pump room (audit CH8-10, 28.10.2026)."
 
   - id: fa_aux_roof_restaurant
     flag: has_roof_restaurant_assembly
@@ -758,6 +1047,22 @@ auxiliary_rooms:
         page_ref: "p.510"
         spec: "Per Section 4.3"
         detail: "At least one smoke detector at the top of the stair shaft (non-highrise). In Highrise and Super-Highrise buildings, additional smoke detectors at intermediate landings every 23 m of vertical shaft height."
+
+  # Audit 28.10.2026, CH8-09: villas of G+1 and above. The app clears has_stairs for
+  # villas (Ch 9 stair sprinklers); Table 8.13 items 25-26 (ii) (p.507-508) apply
+  # Table 8.14 to villas, so item 14 (i) is printed from the storey count.
+  - id: fa_aux_stair_villa
+    always_on: true
+    when:
+      occupancy_in: [villa_private, villa_commercial]
+      floors_above_grade_gte: 2
+      has_stairs_is: false
+    systems:
+      - name: "Smoke Detection at Top of Stair Shaft (+ every 23 m for Highrise)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 14"
+        page_ref: "p.510"
+        spec: "Per Section 4.3"
+        detail: "Table 8.14 item 14 STAIR (i), p.510: at least one smoke detector shall be installed at the top of the stair of a non-highrise building as per Section 4.3 (also Table 8.1 item 6 (i), p.456). The villa has 2 or more floors above grade (G+1 and above), so it has a stair; Table 8.13 item 26 (ii) PRIVATE VILLA / item 25 (ii) COMMERCIAL VILLA (p.507-508) apply Table 8.14."
 
   # Item 15: Elevator shaft. Smoke detector at top + (highrise) every 23 m intermediate levels.
   - id: fa_aux_elevator_shaft
@@ -870,7 +1175,9 @@ auxiliary_rooms:
   # Items 31-33: Temporary structures - conditional general reminder.
   - id: fa_aux_temporary_structures
     always_on: true
-    when: {not: {occupancy: storage_industrial, is_plant_nursery_is: true}}
+    when:
+      not: {occupancy: storage_industrial, is_plant_nursery_is: true}
+      tent_marquee_kind_in: [none, permanent, commercial_desert, small_detached]
     systems:
       - name: "Smoke Detection in Temporary Kiosks / Tents / Modular Houses-Offices (Conditional)"
         code_ref: "Ch 8, #5.2 / Table 8.14 items 31-33"
@@ -878,6 +1185,30 @@ auxiliary_rooms:
         spec: "Battery-operated listed smoke detectors (kiosks / tents) OR Section 4.3 (modular)"
         required: conditional
         detail: "CONDITIONAL: Temporary kiosks (item 31) and temporary tents (item 32) shall be provided with battery-operated smoke detectors listed and approved by Civil Defence. Temporary modular houses / offices (item 33) shall be provided with smoke detectors per Section 4.3. Applies only when the project includes any of these temporary structures."
+
+  # Audit 28.10.2026, CH8-07: the building is a temporary tent (Table 9.21.f row A,
+  # p.712): Table 8.14 item 32 required.
+  - id: fa_aux_temporary_tent
+    always_on: true
+    when: {tent_marquee_kind_is: temporary}
+    systems:
+      - name: "Battery Operated Smoke Detectors (Temporary Tent)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 32"
+        page_ref: "p.511"
+        spec: "Battery Operated Smoke Detectors, listed and approved by Civil Defence"
+        detail: "Table 8.14 item 32 TEMPORARY TENTS, p.511: 'Battery Operated Smoke Detectors, listed and approved by Civil Defence shall be provided.' The building is a temporary tent / marquee (Table 9.21.f row A, p.712)."
+
+  # Audit 28.10.2026, CH8-07: the building is a site office (Table 9.21.f rows D / E,
+  # p.712), read as a temporary modular office: Table 8.14 item 33 required.
+  - id: fa_aux_temporary_modular_office
+    always_on: true
+    when: {tent_marquee_kind_in: [site_office_short, site_office_long]}
+    systems:
+      - name: "Smoke Detector (Temporary Modular House / Office)"
+        code_ref: "Ch 8, #5.2 / Table 8.14 item 33"
+        page_ref: "p.511"
+        spec: "Smoke Detector per Section 4.3"
+        detail: "Table 8.14 item 33 TEMPORARY MODULAR HOUSES/OFFICES, p.511: 'Smoke Detector shall be provided as per Section 4.3.' The building is a site office (Table 9.21.f row D, required for less than 6 months, or row E, more than 6 months, p.712), read as a temporary modular office."
 
   # Item 31: the building is a temporary kiosk (Mercantile Group C, owner ruling
   # 13.10.2026, P4 Q5).
@@ -936,11 +1267,12 @@ auxiliary_rooms:
   - id: fa_aux_open_storage_shed
     flag: is_open_yard_storage
     systems:
-      - name: "Manual FA System (Open Storage Shed)"
+      - name: "Manual FA System (Open Storage Shed) - where a shed / structure exists"
+        required: conditional
         code_ref: "Ch 8, #5.2 / Table 8.14 item 37"
         page_ref: "p.511"
-        spec: "Per Section 4.10"
-        detail: "Open storage sheds (yard / outdoor storage) shall be provided with Manual Fire Detection and Alarm System per Section 4.10 (manual call points only; automatic detection not required given the open-air envelope)."
+        spec: "Per Section 4.10 - where a shed / structure exists in the open yard"
+        detail: "Table 8.14 item 37 OPEN STORAGE SHEDS, p.511: 'Manual Fire Detection and Alarm System, as per Section 4.10.' Applies where a shed / structure exists in the open yard; an open yard with no shed or structure has no Table 8.14 row (owner ruling R-B, 28.10.2026). Any enclosed building on the site takes the items 19-20 package, shown as conditional."
 
 # ---------- EQUIPMENT: Table 8.15 -------------------------------------------
 equipment:
@@ -951,7 +1283,7 @@ equipment:
         code_ref: "Ch 8, #5.3 / Table 8.15 item 1"
         page_ref: "p.512"
         spec: "Per Section 4.6 - pre-engineered systems acceptable"
-        detail: "Table 8.15 item 1, p.512: 'Fusible Link Heat Detection and Alarm System shall be provided as per Section 4.6. (Pre-engineered Systems shall be acceptable)'."
+        detail: "Table 8.15 item 1 KITCHEN HOOD, p.512: 'Fusible Link Heat Detection and Alarm System shall be provided as per Section 4.6. (Pre-engineered Systems shall be acceptable)'. The row prints no burner count: every kitchen hood (the '3 or more burners' condition is Ch 9 Table 9.31.A, p.756, only; audit CH8-06, 28.10.2026)."
 
   - id: fa_eq_lpg_tanks
     flag: has_lpg_tanks
@@ -961,14 +1293,20 @@ equipment:
         page_ref: "p.512"
         detail: "LP Gas Detection (per Ch 11) interfaced with FACP. Deluge water spray for LP Gas tank triggered by: (a) gas detection at tank, (b) fire detection from roof + floor below, (c) cross-zoned fire detection elsewhere, (d) manual actuation from gas-detection panel."
 
+  # Audit 28.10.2026, CH8-01: also for a Group T building (Table 9.27 T, p.745: storage of
+  # flammable and combustible liquids in aboveground storage tanks).
   - id: fa_eq_flammable_liquid_tanks
-    flag: has_flammable_liquid_tanks
+    always_on: true
+    when:
+      any_of:
+        - {has_flammable_liquid_tanks_is: true}
+        - {is_aboveground_tank_storage_is: true}
     systems:
       - name: "Intrinsically Safe Flame + Linear Heat (Flammable Liquid Tanks)"
         code_ref: "Ch 8, #5.3 / Table 8.15 item 3"
-        page_ref: "p.512"
+        page_ref: "p.512; p.513"
         spec: "IS Flame (Section 4.9) + IS Linear Heat (Section 4.8) on tank roof"
-        detail: "Both required. Risk-assessment-based design stamped by CD-approved House of Expertise."
+        detail: "Table 8.15 item 3 FLAMMABLE LIQUID TANKS, p.512: Intrinsically Safe Flame (Radiant Energy) Detection and Alarm System as per Section 4.9 AND Intrinsically Safe Linear Type Heat Detection System on the tank roof as per Section 4.8, both as per Risk assessment proposed and stamped by the Civil Defence approved House of Expertise. Items 10-11 BULK FLAMMABLE LIQUID STORAGE (p.513) print the same two systems. Applies to the flammable liquid tanks and to a Group T building (Table 9.27 T, p.745: flammable and combustible liquids in aboveground storage tanks); Table 8.15 prints no separate combustible-liquid tank row (audit CH8-01, 28.10.2026)."
 
   - id: fa_eq_cable_spread
     flag: has_cable_spread_areas
@@ -978,13 +1316,8 @@ equipment:
         page_ref: "p.512"
         spec: "Aspiration (Section 4.5) at room ceiling AND Linear Heat (Section 4.8) on cable trays"
 
-  - id: fa_eq_diesel_gen_area
-    flag: has_diesel_generator_room
-    systems:
-      - name: "Heat Detection (Diesel Generator Area)"
-        code_ref: "Ch 8, #5.3 / Table 8.15 item 5"
-        page_ref: "p.512"
-        spec: "Per Section 4.7"
+  # Table 8.15 item 5 DIESEL GENERATORS AREA (p.512) prints the same requirement as
+  # Table 8.14 item 8 (p.509); fa_aux_diesel_gen cites both (audit CH8-12, 28.10.2026).
 
   - id: fa_eq_boilers
     flag: has_boilers
@@ -1003,7 +1336,7 @@ equipment:
         code_ref: "Ch 8, #5.3 / Table 8.15 item 7"
         page_ref: "p.512"
         spec: "On the cable trays, per Section 4.8"
-        detail: "Table 8.15 item 7 COOLING TOWERS, p.512: 'Linear Type Heat Detection System shall be provided on the cable trays as per Section 4.8.'"
+        detail: "Table 8.15 item 7 COOLING TOWERS, p.512: 'Linear Type Heat Detection System shall be provided on the cable trays as per Section 4.8.' The row prints no material condition: every cooling tower (the 'not tested and certified for non-combustibility' condition is Ch 9 Table 9.31.G, p.756, only; audit CH8-05, 28.10.2026)."
 
   # Item 8 TRANSFORMERS: any transformer type (oil-filled input or a transformer room).
   - id: fa_eq_oil_filled_transformers

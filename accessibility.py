@@ -15,18 +15,26 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
         items.append(Requirement(
             system="Accessibility (Ch 15) — villa",
             status="conditional",
-            spec="Private villas: accessible features apply where the project opts into public/visitor access or is commercial villa with common facilities",
-            detail="Confirm with Civil Defence / Municipality for commercial villa clusters with shared amenities.",
-            code_ref="Ch 15, #2.2 Scope",
+            spec="Ch 15 scope (#2.2.1): only accessible routes, doors, elevators, stairs, refuge areas and parking are addressed in this chapter as 'Accessible Means of Egress'; other accessible requirements, where required by designers, per NFPA 5000 and ICC ANSI A117.1",
+            detail=("#2.2.1 (p.1090) prints no villa exclusion and no opt-in condition (audit "
+                    "CH123-22: the earlier wording 'where the project opts into public/visitor "
+                    "access' is not in the code). Kept conditional for villas pending an owner "
+                    "ruling on whether the Ch 15 items apply to private and commercial villas."),
+            code_ref="Ch 15, #2.2.1 Scope",
             page_ref="p.1090",
             source_rule="acc_villa",
         ))
-        # Owner ruling 12.10.2026, P3 Ch11 Q2: conditional until the scope page is read.
+        # Owner ruling 12.10.2026, P3 Ch11 Q2: conditional until the scope page is read. The
+        # scope page is now read (audit CH123-22); the status waits for an owner ruling.
         items.append(Requirement(
             system="Foldable wheelchairs (minimum 2)",
             status="conditional",
             spec="Foldable wheelchairs provided in every facility, stored in an easily accessible location; minimum of 2 in all occupancies (#5.2.8)",
-            detail="Villa: conditional. #5.2.8 (p.1119) reads 'minimum of 2 such wheel chairs shall be available in all occupancies'; the Ch 15 scope page (#2.2, p.1090) is not yet read, so whether private / commercial villas fall in scope is not confirmed (owner ruling 12.10.2026, P3 Ch11 Q2).",
+            detail=("Villa: conditional (owner ruling 12.10.2026, P3 Ch11 Q2). #5.2.8 (p.1119) "
+                    "reads 'minimum of 2 such wheel chairs shall be available in all occupancies'; "
+                    "the Ch 15 scope (#2.2.1, p.1090) lists accessible routes, doors, elevators, "
+                    "stairs, refuge areas and parking and prints no villa exclusion. Whether the "
+                    "villa line becomes required needs an owner ruling (audit CH123-22)."),
             code_ref="Ch 15, #5.2.8",
             page_ref="p.1119",
             source_rule="acc_wheelchairs",

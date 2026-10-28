@@ -76,7 +76,8 @@ CASES = [
          inputs=dict(occupancy="storage_industrial", height_m=14,
                      has_high_ceiling=True, ceiling_height_m=15.0,
                      hazard_class="OH2", floors_above_grade=1,
-                     ground_floor_bua_m2=5000, plot_area_m2=10000),
+                     ground_floor_bua_m2=5000, plot_area_m2=10000,
+                     storage_tenancy="multi"),  # owner ruling Q-4 (28.10.2026): required choice
          expect_high_ceiling_band="13.5 m to 18 m"),
 
     dict(name="FP: Mall with atrium",
@@ -358,8 +359,9 @@ CASES = [
                      ground_floor_bua_m2=1000, plot_area_m2=2000,
                      has_diesel_generator_room=True, has_commercial_kitchen=True),
          expect_fa_aux=["Heat Detection (Diesel Generator Room)"],
-         expect_fa_eq=["Fusible-Link Heat Detection (Kitchen Hood)",
-                       "Heat Detection (Diesel Generator Area)"]),
+         # Audit 28.10.2026, CH8-12: Table 8.15 item 5 is cited on the one Table 8.14
+         # item 8 room line (same requirement printed twice).
+         expect_fa_eq=["Fusible-Link Heat Detection (Kitchen Hood)"]),
 
     # Ruling R10 (12.10.2026): no open-parking row; item 22 applied by analogy.
     dict(name="FA: Open parking -> item 22 by analogy, labelled",
@@ -367,7 +369,8 @@ CASES = [
                      ground_floor_bua_m2=3000, plot_area_m2=5000),
          expect_fa_branch="fa_parking_open",
          expect_fa_systems=["Open Parking - not in Table 8.13; item 22 (Enclosed Parking) applied by analogy",
-                            "Conditional FA System (per sprinkler presence) - by analogy with item 22"]),
+                            # Audit 28.10.2026, CH8-18: the item 22 (i)-(iii) branch that applies is named.
+                            "Manual Fire Detection and Alarm System - parking sprinklered, no fire detectors - by analogy with item 22 (ruling R10)"]),
 
     dict(name="FA: Villa -> Smoke OR Wireless RF + external A/V",
          inputs=dict(occupancy="villa_private", height_m=6, floors_above_grade=2,
@@ -561,7 +564,8 @@ CASES = [
     dict(name="AUDIT FP: Storage LH 500 m2 -> Tier 2 LH (Table 9.27 A.2 - 250 gpm pump)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=500,
                      sum_gf_bua_m2=500,  # owner ruling 12.10.2026, Ch9 Q1: sum required
-                     plot_area_m2=2000, hazard_class="LH"),
+                     plot_area_m2=2000, hazard_class="LH",
+                     storage_tenancy="multi"),  # owner ruling Q-4 (28.10.2026): required choice
          expect_fp_branch="storage_industrial_tier2_lh",
          expect_fp_systems=[
              "Automatic Sprinkler System (full coverage)",
@@ -571,7 +575,8 @@ CASES = [
 
     dict(name="AUDIT FP: Storage OH 4000 m2 -> Tier 4 OH (Table 9.27 B.4 - 750 gpm @ hydrant)",
          inputs=dict(occupancy="storage_industrial", height_m=10, ground_floor_bua_m2=4000,
-                     plot_area_m2=10000, hazard_class="OH1"),
+                     plot_area_m2=10000, hazard_class="OH1",
+                     storage_tenancy="multi"),  # owner ruling Q-4 (28.10.2026): required choice
          expect_fp_branch="storage_industrial_tier4_oh",
          expect_fp_systems=[
              "Yard Fire Hydrants (loop covering entire facility)",
@@ -612,7 +617,7 @@ CASES = [
                      plot_area_m2=1000, hazard_class="LH", is_plant_nursery=True),
          expect_fp_branch="storage_plant_nursery",
          expect_fp_systems=[
-             "Portable Fire Extinguishers (only)",
+             "Portable Fire Extinguishers (Table 9.27 Group V)",  # renamed 28.10.2026 (R-G)
          ]),
 
     # ---- AUDIT FA: Ch 8 patches (general + CD/HoE gating) ----
@@ -701,10 +706,18 @@ CASES = [
          inputs=dict(occupancy="detention_b", height_m=10, ground_floor_bua_m2=800, plot_area_m2=2000),
          expect_moe_branch="moe_detention"),
 
-    dict(name="AUDIT MOE: Storage HH -> 0m commonpath/dead-end + 23m travel (Table 3.16 row 16/18)",
+    # Audit CH123-03 (28.10.2026): Table 3.16 rows 16/18 are Storage / Industrial Group A =
+    # Extra Hazard Group 2 (#1.1.13.5.a, p.530); HH without EH2 = Extra Hazard Group 1 =
+    # Group B (#1.1.13.4.a, p.529) takes rows 17/19.
+    dict(name="AUDIT MOE: Storage HH EH2 -> 0m commonpath/dead-end + 23m travel (Table 3.16 row 16/18)",
+         inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=4000,
+                     plot_area_m2=10000, hazard_class="HH", is_extra_hazard_2=True),
+         expect_moe_branch="moe_storage_industrial_high_hazard"),
+
+    dict(name="AUDIT MOE: Storage HH EH1 -> Group B rows (Table 3.16 rows 17/19, CH123-03)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=4000,
                      plot_area_m2=10000, hazard_class="HH"),
-         expect_moe_branch="moe_storage_industrial_high_hazard"),
+         expect_moe_branch="moe_storage_industrial_eh1"),
 
     dict(name="AUDIT MOE: Storage LH/OH -> 122/61 m travel (Table 3.16 rows 17, 19)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2000,
@@ -871,9 +884,10 @@ CASES = [
                      ground_floor_bua_m2=3000, plot_area_m2=5000, hazard_class="OH2"),
          expect_moe_branch="moe_parking_enclosed"),
 
-    dict(name="AUDIT MOE: HH storage uses 18mm/person stair capacity",
+    dict(name="AUDIT MOE: HH EH2 storage uses 18mm/person stair capacity",
          inputs=dict(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
-                     ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="HH"),
+                     ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="HH",
+                     is_extra_hazard_2=True),
          expect_moe_branch="moe_storage_industrial_high_hazard"),
 
     # ---- ES archetypes (Ch 5) ----

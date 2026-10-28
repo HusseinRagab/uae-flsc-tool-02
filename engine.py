@@ -99,18 +99,16 @@ _PUMP_FALLBACK = {
         "source": "UAE FLSC 2018 Ch 9 Section 4 occupancy tables; Table 9.6 item 3.iii",
         "pressure_bar": 6.9,
         "pressure_note": "at most remote landing valve",
-        "pump_description": "UL/FM listed electric or diesel-driven pump set "
-                            "with jockey pump and controller.",
+        "pump_description": "",
         "brackets": [{"max_standpipes": 2, "gpm": 750},
                      {"max_standpipes": 999, "gpm": 1000}],
     },
     "fixed_1000": {
-        "source": "UAE FLSC 2018 Ch. 9 (yard hydrant network)",
+        "source": "UAE FLSC 2018 Table 9.26 A.vi (p.723); Table 9.23.B.2 ii (p.717)",
         "pressure_bar": 6.9,
         "pressure_note": "at most remote hydrant outlet valve",
         "gpm": 1000,
-        "pump_description": "Electric or diesel driven UL/FM listed pump set "
-                            "for yard hydrant network.",
+        "pump_description": "Yard hydrant duty (Table 9.26 A.vi, p.723).",
     },
 }
 
@@ -158,7 +156,7 @@ def _resolve_pump(entry: Dict[str, Any], b: Building):
     # Backward-compatibility fallback - older pump_specs.yaml without `fixed_250`.
     if pst == "fixed_250":
         return ("250 gpm @ 4.5 bar at most remote hose-reel outlet valve",
-                "Electric-driven UL/FM listed fire pump set with jockey pump and controller.")
+                "Table 9.23 item v (p.716-717).")
     return None, None
 
 
@@ -251,8 +249,17 @@ def _merge_duties(items: List[Requirement]) -> List[Requirement]:
         if len({items[i].source_rule for i in idx}) < 2:
             continue
         # A line whose flow (or minutes) is not printed as a number, e.g.
-        # "2 adjacent deluge zones", cannot be ranked: keep every line.
+        # "2 adjacent deluge zones", cannot be ranked: keep every line, each naming the
+        # others, and none is called governing (verifier 28.10.2026, ruling R-G).
         if any(_duty_key(items[i])[0] == 0 for i in idx):
+            what = "fire pump set" if duty == "pump" else "fire water tank"
+            for i in idx:
+                others = "; ".join(f"{items[j].spec or items[j].system} ({items[j].code_ref})"
+                                   for j in idx if j != i)
+                replace[i] = items[i].model_copy(update={"detail": (items[i].detail or "") + (
+                    f" More than one code table gives a {what} for this building and at least "
+                    f"one prints no flow or duration that can be ranked, so none is named as "
+                    f"governing: the {what} shall meet each of them. Also required: {others}.")})
             continue
         best = max(idx, key=lambda i: _duty_key(items[i]))
         w = items[best]
@@ -592,8 +599,9 @@ def _itm_lines(blocks) -> List[Requirement]:
     """One Section 5 pointer line per system type that a required Ch 9 line names. A line
     offering alternatives ("Clean Agent OR Deluge Water Spray") points to each table, for
     the option installed."""
+    # A NOT EVALUATED line names a system whose need is not known: no pointer for it.
     names = [(it.system or "").lower() for blk in blocks for it in blk.items
-             if it.status == "required"]
+             if it.status == "required" and "NOT EVALUATED" not in (it.system or "")]
     out = []
     for _key, label, table, clause, pages, stds, words in _ITM_TABLES:
         hits = [n for n in names if any(w in n for w in words) and "extinguisher" not in n]
@@ -644,6 +652,180 @@ _P4_Q4_NOTE = (" Mercantile Group C (kiosks) is not listed in Table 9.21.b (p.70
                "MERCANTILE GROUP C (KIOSKS), p.701 (owner ruling 13.10.2026, P4 Q4).")
 
 
+# ---------------------------- Fix round 28.10.2026 (ch9) ----------------------
+
+# Audit CH9B2-01 / 06 / 07 (H9): every governing fire pump line states the pump set the
+# code prints for every water-based system (Table 9.3, p.567-568), never "electric or
+# diesel"; and #4.1.9 (audit F9A-12).
+_PUMP_SET_NOTE = (
+    " Fire pump set: 1 electric driven fire pump, 1 diesel driven fire pump and 1 jockey "
+    "pump, complete with controllers (Table 9.3 item 1.xii, p.567; Tables 9.5 / 9.6 / 9.7 "
+    "item 3.i, p.580 / p.582 / p.589); the diesel fire pump has 8 hour operating capacity "
+    "(Table 9.3 item 2.iii, p.568). The pump set is located at the lowest level of the system "
+    "in the building, or from the lowest level of the building to the ground floor level with "
+    "fire access (Table 9.3 item 1.xv, p.568); pump room location and size per Ch 1 Table "
+    "1.9.2 (items 1.xi / 1.xvi); primary power to the electric fire pump and the jockey pump "
+    "directly from the power utility company, in a dedicated distribution board inside the "
+    "pump room (item 2.i). Fire pumps are dedicated to and listed for fire protection "
+    "service, tested as an assembly, and registered and listed by Civil Defence (Table 9.3 "
+    "items 1.ii-1.iii, p.567; #6.1.1 and #6.1.3, p.770). Pump capacities in Section 4 are "
+    "minimum guidelines and may vary; they shall be verified with the Civil Defence "
+    "engineers (#4.1.9, p.694).")
+
+# Audit CH9B2-21 (INFO): Dubai pump verification, not part of the 2018 code.
+_ESL_NOTE = (
+    " Dubai projects (not part of the 2018 code): fire pumps with a 500 US gpm capacity and "
+    "above are to be certified by a UAE approved certification body and verified for the "
+    "particular project by ESL (Emirates Safety Laboratory), whose verification certificate "
+    "is submitted to DCD (ESL information pack 'Fire Pumps - DXB New Regulation', "
+    "commencement Jan 2024; taken from a scanned copy, confirm against the issued document).")
+
+
+def _with_pump_set_note(items: List[Requirement]) -> List[Requirement]:
+    out = []
+    for it in items:
+        if it.duty == "pump" and it.status == "required" and \
+                "Table 9.3 item 1.xii" not in (it.detail or ""):
+            extra = _PUMP_SET_NOTE + (_ESL_NOTE if _max_num(it.spec, "gpm") >= 500 else "")
+            it = it.model_copy(update={"detail": (it.detail or "") + extra})
+        out.append(it)
+    return out
+
+
+def _system_kinds(name: Optional[str]) -> set:
+    """The system kinds a line names, for the required / not-required reconciliation."""
+    n = (name or "").lower()
+    if "extinguisher" in n:
+        return set()
+    kinds = set()
+    if "sprinkler" in n:
+        kinds.add("sprinkler")
+    if "wet riser" in n or "internal landing valve" in n:
+        kinds.add("wet_riser")
+    if "dry riser" in n or "dry landing valve" in n:
+        kinds.add("dry_riser")
+    if "hose reel" in n:
+        kinds.add("hose_reel")
+    if n.startswith("fire pump"):
+        kinds.add("pump")
+    if n.startswith("fire water tank"):
+        kinds.add("tank")
+    if "yard" in n and "hydrant" in n:
+        kinds.add("yard_hydrant")
+    return kinds
+
+
+_TALL_RULES = ("superhighrise_", "highrise_")
+
+
+def _reconcile_not_required(gen: List[Requirement], branch: List[Requirement]):
+    """Audit CH9B2-05 and the 28.10.2026 sweep (systemic class 3): when two code tables apply
+    to one building, a line one table prints 'not required' beside a required line of the
+    same system from another table is dropped; the required line governs (the most onerous)
+    and names it. E.g. Table 9.19 wet riser vs Table 9.27 row 4 'wet risers not required';
+    a highrise or G+4 plant nursery (Group V) vs the height row or #4.1.7; the hazard-class
+    rows vs a specialty group (owner ruling R-G)."""
+    allitems = list(gen) + list(branch)
+    notes: Dict[int, List[str]] = {}
+    drop = set()
+    for i, it in enumerate(allitems):
+        if it.status != "not_required":
+            continue
+        kinds = _system_kinds(it.system)
+        if not kinds:
+            continue
+        cover = {}
+        for j, other in enumerate(allitems):
+            if other.status != "required" or other.source_rule == it.source_rule:
+                continue
+            for k in kinds & _system_kinds(other.system):
+                cover.setdefault(k, j)
+        if not cover:
+            continue
+        drop.add(i)
+        j = cover[sorted(cover)[0]]
+        gov = allitems[j]
+        why = ("Tables 9.18 / 9.19 apply to buildings of any occupancy of 23 m or more (#4.2.1 / "
+               "#4.3.1) and govern" if (gov.source_rule or "").startswith(_TALL_RULES)
+               else "the required line governs")
+        notes.setdefault(j, []).append(
+            f" {it.code_ref or it.source_rule} ({it.page_ref}) prints '{it.system}' as not "
+            f"required; more than one code table applies to this building and {why} (the most "
+            f"onerous is kept, audit CH9B2-05, 28.10.2026).")
+    if not drop:
+        return list(gen), list(branch)
+    fixed = [it.model_copy(update={"detail": (it.detail or "") + "".join(notes[i])})
+             if i in notes else it for i, it in enumerate(allitems)]
+    keep = [(i, it) for i, it in enumerate(fixed) if i not in drop]
+    n = len(gen)
+    return [it for i, it in keep if i < n], [it for i, it in keep if i >= n]
+
+
+def _high_ceiling_pump_line(b: Building, rules: Dict[str, Any],
+                            items: List[Requirement]) -> Optional[Requirement]:
+    """Audit CH9B2-02 (H10): the Table 9.29.A pump enters the governing pump merge. The
+    'with hydrants' value is used when the building's Ch 9 result requires yard fire
+    hydrants, else the 'without hydrant' value."""
+    hc = _eval_high_ceiling(rules, b)
+    if not hc or hc.not_required or not hc.pump_without_hydrant_gpm:
+        return None
+    yards = [it for it in items if it.status == "required" and "yard" in (it.system or "").lower()
+             and "hydrant" in (it.system or "").lower()]
+    yard = any("NOT EVALUATED" not in (it.system or "") for it in yards)
+    # A yard hydrant line that is NOT EVALUATED never counts as 'no hydrants'.
+    unknown = bool(yards) and not yard
+    which = "with hydrants" if (yard or unknown) else "without hydrant"
+    gpm = hc.pump_with_hydrant_gpm if (yard or unknown) else hc.pump_without_hydrant_gpm
+    why = ("A yard fire hydrant line of this building is NOT EVALUATED, so the 'with hydrants' "
+           "value is used until it is evaluated." if unknown else
+           f"The building's Ch 9 result {'requires' if yard else 'does not require'} yard fire "
+           f"hydrants, so the '{which}' value is used.")
+    return Requirement(
+        system="Fire Pump (Table 9.29.A high ceiling)", status="required",
+        spec=f"{gpm} gpm ({which}; Table 9.29.A, {hc.hazard_class}, ceiling {hc.height_range})",
+        detail=(f"Table 9.29.A (p.750-751), hazard {hc.hazard_class}, ceiling height "
+                f"{hc.height_range}: pump capacity without hydrant "
+                f"{hc.pump_without_hydrant_gpm} gpm, with hydrants {hc.pump_with_hydrant_gpm} gpm. "
+                f"{why} #4.13.1 (p.749): the building "
+                f"sprinkler system shall be extended to comply with Table 9.29; Table 9.29 row M "
+                f"(p.750): ceilings over 10 m per Section 3.5 and Table 9.29.A. Table 9.29.A "
+                f"prints no pressure for this pump (audit CH9B2-02)."),
+        code_ref="Ch 9, #4.13.1 / Table 9.29.A", page_ref="p.749-751",
+        source_rule="high_ceiling_9_29_A", duty="pump")
+
+
+def _sprinkler_pump_warning() -> Requirement:
+    """Owner ruling Q-1 (28.10.2026), audit CH9B2-03: #4.1.7 sprinklers beside a Table 9.27
+    row that gives only a hose-reel pump and tank."""
+    return Requirement(
+        system="Sprinkler Pump / Tank Sizing (#4.1.7) - the row's hose-reel pump and tank do not size it",
+        status="required",
+        spec="Size the fire pump and fire water tank for the #4.1.7 sprinkler system by hydraulic "
+             "calculation and verify with the Civil Defence engineers (#4.1.9)",
+        detail=("#4.1.7 (p.694) requires an automatic sprinkler system, but this building's "
+                "Table 9.27 row prints only a hose reel fire pump and tank (e.g. 50 gpm at "
+                "4.5 bar at the most remote hose reel outlet valve), which do not size a "
+                "sprinkler system. The code prints no pump for the #4.1.7 case; #4.1.9 "
+                "(p.694): fire pump capacities may vary and shall be verified with the Civil "
+                "Defence engineers and the relevant NFPA references (owner ruling Q-1, "
+                "28.10.2026)."),
+        code_ref="Ch 9, #4.1.7 / #4.1.9", page_ref="p.694", source_rule="owner_ruling_q1_pump")
+
+
+_MSDS_LINE = Requirement(
+    system="MSDS Review (DESIGNER OBLIGATION)", status="required", spec="Per #4.11.1 (p.724)",
+    detail=("#4.11.1 (p.724): all warehouse and industrial sprinkler protection designers shall "
+            "first consider and consult the relevant Material Safety Data Sheet (MSDS) before "
+            "designing and proposing the sprinkler system (audit CH9B2-10)."),
+    code_ref="Ch 9, #4.11.1", page_ref="p.724", source_rule="ch9_4_11_1_msds")
+
+_RG_NOTE = (" Owner ruling R-G (28.10.2026): the Table 9.27 specialty group row and the "
+            "hazard-class / commodity row are both evaluated; the most onerous pump and tank "
+            "govern and the other is named.")
+_BASE_STORAGE_RULES = ("storage_industrial_tier", "storage_industrial_eh", "storage_single_tenant_",
+                       "storage_commodity_")
+
+
 # ---------------------------- Per-chapter evaluators -------------------------
 
 def evaluate_fp(b: Building, rules: Dict[str, Any],
@@ -666,6 +848,14 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
         branch_items[yard] = y.model_copy(update={
             "detail": (y.detail or "") + f" Also triggered by {refs}."})
         gen = [it for it in gen if it not in gen_yard]
+    # Fix round 28.10.2026 (ch9): a not-required line beside a required line of the same
+    # system from another table is dropped and named (CH9B2-05, sweep); #4.1.7 sprinklers
+    # beside a hose-reel-only Table 9.27 row get the pump / tank sizing warning (Q-1).
+    gen, branch_items = _reconcile_not_required(gen, branch_items)
+    if any(it.source_rule == "g_storage_sprinkler_over_3floors" for it in gen) and not any(
+            "sprinkler" in (it.system or "").lower() and it.status == "required"
+            for it in branch_items):
+        gen = list(gen) + [_sprinkler_pump_warning()]
     if gen:
         blocks.append(SectionBlock(title="FP - General Requirements (Ch 9, #4.1)", items=gen))
 
@@ -691,6 +881,33 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
                         for it in branch_items]
         sel_section = f"{sel_section} (Mercantile Group C by inference, owner ruling 13.10.2026, P4 Q4)"
 
+    # Audit CH9B2-02 (H10): the Table 9.29.A high-ceiling pump enters the governing merge.
+    hc_pump = _high_ceiling_pump_line(b, rules, list(gen) + list(branch_items))
+    if hc_pump:
+        branch_items = _merge_duties(list(branch_items) + [hc_pump])
+    if b.occupancy == "storage_industrial":
+        # Owner ruling R-G (28.10.2026): specialty and hazard / commodity rows both apply.
+        if b.storage_has_specialty and any(
+                (br.get("id") or "").startswith(_BASE_STORAGE_RULES) for br in _matched):
+            branch_items = [it.model_copy(update={"detail": (it.detail or "") + _RG_NOTE})
+                            if it.duty in ("pump", "tank") and it.status == "required" else it
+                            for it in branch_items]
+        # The ticked specialty group names the selected row (the hazard / commodity row and
+        # a blank-tenancy line are printed beside it, ruling R-G).
+        spec_br = next((br for br in _matched if b.storage_has_specialty
+                        and (br.get("id") or "").startswith("storage_")
+                        and not (br.get("id") or "").startswith(_BASE_STORAGE_RULES)
+                        and br.get("id") != "storage_tenancy_not_evaluated"), None)
+        if spec_br and spec_br.get("id") != sel_id:
+            sel_id = spec_br["id"]
+            sel_section = (f"{spec_br.get('section')} (with the Table 9.27 hazard-class / "
+                           f"commodity row, owner ruling R-G, 28.10.2026)")
+        # Audit CH9B2-10: one #4.11.1 MSDS line for every storage group.
+        if not any((it.system or "").startswith("MSDS Review") for it in branch_items):
+            branch_items = list(branch_items) + [_MSDS_LINE]
+    # Audit CH9B2-01 (H9): the pump set composition on the governing pump line.
+    branch_items = _with_pump_set_note(branch_items)
+
     if branch_items:
         blocks.append(SectionBlock(title="FP - Branch Requirements (Ch 9)", items=_dedupe(branch_items)))
 
@@ -708,12 +925,38 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
     # #4.13.1 (p.749): Table 9.29 extends the building sprinkler system. Ruling R8
     # (12.10.2026): gated rows print a #4.13.1 not_required note in a building whose
     # table row gives no automatic sprinkler system.
+    # Verifier 28.10.2026 (blank-input residual): when the table row itself is NOT
+    # EVALUATED (a missing input) and no sprinkler line was found, the sprinkler-gated
+    # Table 9.29 / 9.30 lines are NOT EVALUATED too, never "not required".
+    # Any missing input in the Ch 9 branch can decide the sprinkler system (outlet area,
+    # tenancy, plot, row F size ...): with no sprinkler line required, the gated lines are
+    # NOT EVALUATED, never a pass (verifier re-check 28.10.2026).
+    row_unknown = (not sprinkler_required
+                   and any("NOT EVALUATED" in (it.system or "") for it in branch_items))
+
+    def _gated(it, why, ref):
+        if row_unknown:
+            return Requirement(
+                system=f"{it.system} - NOT EVALUATED", status="required",
+                spec="Not evaluated: depends on the building sprinkler system",
+                detail=(f"{why} The building's Ch 9 table row is NOT EVALUATED (an input is "
+                        f"missing, named in this chapter), so whether the building is "
+                        f"sprinklered, and this line, is not evaluated. A missing input is "
+                        f"never taken as a pass."),
+                code_ref=ref, page_ref=it.page_ref, source_rule=it.source_rule)
+        return None
     var_rules = rules.get("various_locations") or []
     var_items = _collect_flag(
         [r for r in var_rules if (not r.get("requires_sprinkler_system")) or sprinkler_required], b)
     if not sprinkler_required:
         for it in _collect_flag([r for r in var_rules if r.get("requires_sprinkler_system")
                                  and not r.get("silent_when_unsprinklered")], b):
+            ne = _gated(it, "#4.13.1 extends the building sprinkler system to the Table 9.29 "
+                            "locations (ruling R8).",
+                        "Ch 9, #4.13.1 / " + (it.code_ref or "").replace("Ch 9, #4.13.1 / ", ""))
+            if ne:
+                var_items.append(ne)
+                continue
             var_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: #4.13.1 extends the building sprinkler system to the "
@@ -734,6 +977,12 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
     if not sprinkler_required:
         for it in _collect_flag([r for r in aux_rules if r.get("requires_sprinkler_system")
                                  and not r.get("silent_when_unsprinklered")], b):
+            ne = _gated(it, "Table 9.30 systems apply when the main building is fully "
+                            "protected (#4.1.5).",
+                        "Ch 9, #4.1.5 / " + (it.code_ref or "").replace("Ch 9, ", ""))
+            if ne:
+                aux_items.append(ne)
+                continue
             aux_items.append(Requirement(
                 system=it.system, status="not_required",
                 detail=("Not required: Table 9.30 systems apply only when the main building is "
@@ -826,6 +1075,9 @@ def evaluate_moe(b: Building, rules: Dict[str, Any],
     )
 
 
+_TRUCK_NO_ROOMS = ("has_main_electrical_room", "has_main_telephone_room", "has_lift_machine_room")
+
+
 def evaluate_fe(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 4 - Fire Extinguishers."""
     blocks = []
@@ -837,7 +1089,12 @@ def evaluate_fe(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     if branch_items:
         blocks.append(SectionBlock(title="FE - Occupancy-specific (Class B Wheeled, Ch 4, Table 4.3 row 3)", items=_dedupe(branch_items)))
 
-    addons = _dedupe(_collect_flag(rules.get("addons", []), b))
+    # Fix round 28.10.2026 (CH04-07 L10): Table 4.3 row 4 items 1-3 (p.376) are rooms
+    # (electrical / LV, telephone, lift machine). Their inputs default to ticked for any
+    # building; a food truck or mercantile truck has no such room, so they are not read.
+    fb = b.model_copy(update=dict.fromkeys(_TRUCK_NO_ROOMS, False)) \
+        if b.is_mercantile_c_truck else b
+    addons = _dedupe(_collect_flag(rules.get("addons", []), fb))
     if addons:
         blocks.append(SectionBlock(title="FE - Hazard-zone Add-ons (Class B / C / D / K)", items=addons))
 
@@ -867,28 +1124,126 @@ def evaluate_es(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     return ChapterReport(
         chapter_code="ES", chapter_title="Exit Signs (Ch 5)",
         selected_branch=sel_id, selected_branch_section=sel_section,
-        blocks=blocks,
+        blocks=_rb_yard_tank_conditional(blocks, b, 5),
     )
+
+
+# Owner ruling R-B (28.10.2026): Groups T (aboveground tank storage) and U (open yard)
+# keep the Ch 5 / 6 / 7 warehouse packages, as conditional, with this wording.
+_RB_WORDING = ("Applies to any enclosed building on the site (warehouse, pump house, office). "
+               "Ch {n} prints no row for open yards / aboveground tank farms (owner ruling R-B, "
+               "28.10.2026).")
+
+
+def _rb_yard_tank_conditional(blocks: List[SectionBlock], b: Building, n: int) -> List[SectionBlock]:
+    """Owner ruling R-B (28.10.2026), CH04-07 M6: a storage / industrial building ticked as
+    Table 9.27 Group T or Group U takes the Ch {n} warehouse lines as conditional, each
+    naming the ruling; never 'not required'. NOT EVALUATED lines and not_required lines
+    are left as they are."""
+    if not (b.occupancy == "storage_industrial"
+            and (b.is_open_yard_storage or b.is_aboveground_tank_storage)):
+        return blocks
+    note = _RB_WORDING.format(n=n)
+    out = []
+    for blk in blocks:
+        its = []
+        for it in blk.items:
+            if it.status == "not_required" or "NOT EVALUATED" in it.system.upper():
+                its.append(it)
+                continue
+            its.append(it.model_copy(update={
+                "status": "conditional" if it.status == "required" else it.status,
+                "detail": f"{note} {it.detail}" if it.detail else note}))
+        out.append(blk.model_copy(update={"items": its}))
+    return out
+
+
+_T73_ITEM = re.compile(r"Table 7\.3 items? (\d+)")
+_T73_LIST = re.compile(r"Table 7\.3 items? ((?:\d+(?:, | and )?)+)")
+
+
+def _t73_nums(code_ref: Optional[str]) -> List[int]:
+    """Every Table 7.3 item cited: "item 2", "items 2 and 9", "items 2, 3 and 9"."""
+    return [int(n) for m in _T73_LIST.finditer(code_ref or "")
+            for n in re.findall(r"\d+", m.group(1))]
+_T73_PREFIX = {"evc": "Per Section 2.4 + Table 7.1", "two_way": "Per Section 2.5 + Table 7.2"}
+
+
+def _evc_one_package(items: List[Requirement]) -> Tuple[List[Requirement], bool]:
+    """Fix round 28.10.2026 (CH04-07 L1, Cursor PR #19, sweep class 3): Table 7.3 (p.439)
+    prints one requirement for all nine rows (i. EVC per Section 2.4, ii. two-way
+    telephone per Section 2.5). When rows match, one EVC line and one two-way line are
+    printed, each citing every row that requires it (as Ch 6 `_el_cite_every_row`). A
+    'not listed' / not_required row, or the item 9 area NOT EVALUATED line, does not print
+    beside a row that requires the package. Returns (items, EVC required)."""
+    req = [it for it in items if it.status == "required" and "NOT EVALUATED" not in it.system
+           and _T73_ITEM.search(it.code_ref or "")]
+    if not req:
+        return items, False
+    out = []
+    for kind in ("evc", "two_way"):
+        lines = [it for it in req if ("Two-way" in it.system) == (kind == "two_way")]
+        if not lines:
+            continue
+        nums = sorted({n for it in lines for n in _t73_nums(it.code_ref)})
+        first = lines[0]
+        if len(nums) < 2:
+            out.append(first)
+            continue
+        txt = ", ".join(str(x) for x in nums[:-1]) + f" and {nums[-1]}"
+        pre = _T73_PREFIX[kind]
+        extras = []
+        for it in lines:
+            s = (it.spec or "").strip()
+            x = s[len(pre):].lstrip(" -") if s.startswith(pre) else s
+            if x and x not in extras:
+                extras.append(x)
+        rows = " ".join(dict.fromkeys(
+            f"Table 7.3 item{'s' if len(_t73_nums(it.code_ref)) > 1 else ''} "
+            f"{', '.join(map(str, _t73_nums(it.code_ref)))}: {it.detail}"
+            for it in lines if it.detail))
+        out.append(first.model_copy(update={
+            "spec": pre + (" - " + "; ".join(extras) if extras else ""),
+            "code_ref": f"Ch 7, #3.1 / Table 7.3 items {txt}",
+            "page_ref": "p.439",
+            "detail": ((rows + " ") if rows else "") + (
+                f"Table 7.3 items {txt} each require this same system (p.439 prints one "
+                f"requirement for all its rows); one line is printed for all of them (fix "
+                f"round 28.10.2026, CH04-07 L1)."),
+        }))
+    return out, True
+
+
+def _mixed_evc_not_evaluated() -> Requirement:
+    return Requirement(
+        system="Emergency Voice Evacuation (EVC) - NOT EVALUATED",
+        status="required",
+        spec="Not evaluated: list the occupancies of this mixed building (most restrictive, R13)",
+        detail=("Table 7.3 (p.439) requires EVC and two-way telephone by height (items 1-2) "
+                "and, at any height, by occupancy (items 3-9: malls, assembly, amusement and "
+                "theme parks, educational, hotel, detention and correctional, storage and "
+                "industrial with built-up area more than 5000 m2); it does not list 'mixed and "
+                "multiple'. Below 23 m the requirement follows the occupancies in the building, "
+                "so it is not evaluated until they are listed under 'most restrictive' (fix "
+                "round 28.10.2026, CH04-07 M2; same rule as Ch 4 Class A, owner ruling "
+                "12.10.2026, P3 Ch47 Q2; ruling R13)."),
+        code_ref="Ch 7, #3.1 / Table 7.3; ruling R13", page_ref="p.439",
+        source_rule="audit28_m2_mixed_evc")
 
 
 def evaluate_evc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 7 - Emergency Voice Evacuation + Two-way Telephone."""
     blocks = []
-    # General requirements only fire when an EVC system IS actually required.
-    # Determine that from the matched branches' system STATUSES (robust) rather
-    # than from a naming convention on the branch id (fragile - a branch like
-    # `evc_storage_industrial_small` emits only a not_required item but its id
-    # doesn't contain "_not_required", which used to wrongly trigger the full
-    # general block for a building that doesn't need EVC).
-    branch_items, sel_id, sel_section, matched = _collect_branch(rules.get("branches", []), b)
-    evc_required = False
-    for br in matched:
-        for e in br.get("systems", []):
-            if e.get("required", "required") != "not_required":
-                evc_required = True
-                break
-        if evc_required:
-            break
+    # General requirements only fire when an EVC system IS actually required: a matched
+    # Table 7.3 row prints a required EVC line (not a not_required row, nor a NOT
+    # EVALUATED line).
+    branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    branch_items, evc_required = _evc_one_package(branch_items)
+    # Fix round 28.10.2026 (CH04-07 M2): mixed_multiple with no occupancy listed (not an
+    # R13 run) is NOT EVALUATED below the height rows, as Ch 4 Class A.
+    if (not evc_required and b.occupancy == "mixed_multiple"
+            and _R13_SOURCE.get() is None):
+        branch_items = [_mixed_evc_not_evaluated()]
     if evc_required:
         gen = _dedupe(_collect_general(rules, b))
         if gen:
@@ -899,7 +1254,7 @@ def evaluate_evc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     return ChapterReport(
         chapter_code="EVC", chapter_title="Emergency Voice Evacuation (Ch 7)",
         selected_branch=sel_id, selected_branch_section=sel_section,
-        blocks=blocks,
+        blocks=_rb_yard_tank_conditional(blocks, b, 7),
     )
 
 
@@ -946,7 +1301,7 @@ def evaluate_el(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     return ChapterReport(
         chapter_code="EL", chapter_title="Emergency Lighting (Ch 6)",
         selected_branch=sel_id, selected_branch_section=sel_section,
-        blocks=blocks,
+        blocks=_rb_yard_tank_conditional(blocks, b, 6),
     )
 
 
@@ -1002,25 +1357,95 @@ def _business_group_not_evaluated_el() -> Requirement:
         source_rule="p4_q1_business_group")
 
 
-def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
-    """Ch 8 - Fire Detection & Alarm."""
+_FA_TEMPORARY_KINDS = ("temporary", "site_office_short", "site_office_long")
+
+
+def _fa_sprinklered(b: Building, sprinklered: Optional[bool] = None) -> bool:
+    """Sprinkler status for Table 8.13 item 22 (i)-(iii) (audit 28.10.2026, CH8-18): true
+    when the caller says so (an attached parking in a sprinklered host building), when the
+    building's own Ch 9 rows require sprinklers, or, under ruling R13 most restrictive,
+    when any listed occupancy's Ch 9 rows require them."""
+    if sprinklered or building_sprinklered(b):
+        return True
+    src = _R13_SOURCE.get()
+    if src is not None and src.mixed_occupancy_mode == "most_restrictive" and src.secondary_occupancies:
+        occs, base = _r13_base(src)
+        return any(building_sprinklered(_r13_single(base, o)) for o in occs)
+    return False
+
+
+def _fa_parking_detection(it: Requirement, spr: bool) -> Requirement:
+    """Audit 28.10.2026, CH8-18: Table 8.13 item 22 (i)-(iii), p.506, printed as the
+    branch that applies to this building, with the other branch named."""
+    analogy = "by analogy" in (it.system or "")
+    tail = " - by analogy with item 22 (ruling R10)" if analogy else ""
+    ref = "Ch 8, #5.1 / Table 8.13 item 22 " + ("(i)-(ii)" if spr else "(iii)") + (
+        ", by analogy (ruling R10)" if analogy else "")
+    if spr:
+        return it.model_copy(update={
+            "system": "Manual Fire Detection and Alarm System - parking sprinklered, no fire detectors" + tail,
+            "spec": "Manual Fire Detection and Alarm System per Section 4.10; no fire detectors",
+            "detail": ("Table 8.13 item 22, p.506: (i) no Fire Detectors are required if the "
+                       "enclosed parking is provided fully with automatic sprinkler System; (ii) "
+                       "where enclosed parking is provided with automatic sprinkler system, Manual "
+                       "Fire Detection and Alarm System shall be provided as per Section 4.10. "
+                       "This building's Ch 9 result requires automatic sprinklers, so (i)-(ii) "
+                       "apply. Were the parking not sprinklered, (iii) a Heat Detection and Alarm "
+                       "System per Section 4.7 would apply."
+                       + (" Applied by analogy: Table 8.13 has no open-parking row (ruling R10, "
+                          "12.10.2026)." if analogy else "")),
+            "code_ref": ref, "page_ref": "p.506"})
+    return it.model_copy(update={
+        "system": "Heat Detection and Alarm System - parking not sprinklered" + tail,
+        "spec": "Heat Detection and Alarm System per Section 4.7, throughout",
+        "detail": ("Table 8.13 item 22 (iii), p.506: where enclosed parking is not provided with "
+                   "automatic sprinkler system, Heat Detection and Alarm System shall be provided "
+                   "as per Section 4.7. This building's Ch 9 result does not require automatic "
+                   "sprinklers, so (iii) applies. A fully sprinklered parking would take (i)-(ii): "
+                   "no fire detectors and a Manual Fire Detection and Alarm System per Section 4.10."
+                   + (" Applied by analogy: Table 8.13 has no open-parking row (ruling R10, "
+                      "12.10.2026)." if analogy else "")),
+        "code_ref": ref, "page_ref": "p.506"})
+
+
+def evaluate_fa(b: Building, rules: Dict[str, Any],
+                sprinklered: Optional[bool] = None) -> ChapterReport:
+    """Ch 8 - Fire Detection & Alarm. `sprinklered`: True when the building is known to be
+    sprinklered by another building's system (attached parking in a sprinklered host)."""
     blocks = []
     # Table 8.13 item 28 PLANT NURSERY (p.508): no FA system is required, so neither the
     # Table 8.1 system lines nor the Table 8.14 / 8.15 lines apply (owner rulings
     # 12.10.2026, Ch8 Q4 and follow-up F1).
     nursery = b.occupancy == "storage_industrial" and b.is_plant_nursery
-    gen = [] if nursery else _dedupe(_collect_general(rules, b))
+    # Audit 28.10.2026, CH8-03: infrastructure (yard-hydrant network) is not a building and
+    # Table 8.13 prints no row for it: one line (fa_infrastructure), no Table 8.1 / 8.14 /
+    # 8.15 lines. CH8-07: a temporary tent or a site office (Table 9.21.f rows A, D, E,
+    # p.712) takes Table 8.14 items 32 / 33, not the addressable building system, so the
+    # Table 8.1 system lines are not printed (its Table 8.14 / 8.15 lines stay).
+    infra = b.occupancy == "infrastructure"
+    temporary = b.tent_marquee_kind in _FA_TEMPORARY_KINDS
+    no_rooms = nursery or infra
+    gen = [] if (no_rooms or temporary) else _dedupe(_collect_general(rules, b))
     if gen:
-        blocks.append(SectionBlock(title="FA - General Requirements (Ch 8, #3 + #4 / Table 8.1.a)", items=gen))
+        # Owner ruling R-B (28.10.2026): for Group T / U storage the Table 8.1 system lines
+        # belong to the warehouse package, conditional like the Table 8.13 row
+        # (fa_storage_yard_tank) and Ch 5-7; Table 8.15 tank lines stay required.
+        blocks.extend(_rb_yard_tank_conditional(
+            [SectionBlock(title="FA - General Requirements (Ch 8, #3 + #4 / Table 8.1.a)", items=gen)], b, 8))
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    if any((it.system or "").startswith("Conditional FA System") for it in branch_items):
+        spr = _fa_sprinklered(b, sprinklered)
+        branch_items = [_fa_parking_detection(it, spr)
+                        if (it.system or "").startswith("Conditional FA System") else it
+                        for it in branch_items]
     if branch_items:
         blocks.append(SectionBlock(title="FA - Detection & Alarm by Occupancy / Height (Ch 8, Table 8.13)", items=_dedupe(branch_items)))
 
-    aux = [] if nursery else _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
+    aux = [] if no_rooms else _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
     if aux:
         blocks.append(SectionBlock(title="FA - Auxiliary Rooms (Ch 8, Table 8.14)", items=aux))
 
-    eq = [] if nursery else _dedupe(_collect_flag(rules.get("equipment", []), b))
+    eq = [] if no_rooms else _dedupe(_collect_flag(rules.get("equipment", []), b))
     if eq:
         blocks.append(SectionBlock(title="FA - Equipment (Ch 8, Table 8.15)", items=eq))
 
@@ -1031,16 +1456,115 @@ def evaluate_fa(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     )
 
 
+_SC_TALL = ("sc_highrise", "sc_super_highrise")
+_SC_PARKING = ("parking_enclosed", "parking_open")
+
+# Owner ruling R-B (28.10.2026): Groups T (aboveground tanks) and U (open yard) keep the
+# Table 10.26 warehouse rows, as conditional (Cursor PRs #29, #30).
+_SC_RULING_RB = ("Applies to any enclosed building on the site (warehouse, pump house, office). "
+                 "Ch 10 prints no row for open yards / aboveground tank farms (owner ruling R-B, "
+                 "28.10.2026). ")
+
+
+def _sc_reconcile(items: List[Requirement], b: Building) -> List[Requirement]:
+    """One line per system where two Ch 10 tables print the same one (audit C10-03, C10-08).
+
+    Parking of 23 m or more: #3.2.1 (p.857) applies Table 10.20 to 'Highrise buildings' with no
+    parking exclusion (Table 10.22, p.859, is the only Ch 10 table titled 'other than Parking
+    usage'), and #3.5.1 (p.860) applies Table 10.23 to parking, which prints its own stair rows
+    for parking more than 23 m. Both apply. The stair pressurization is printed once, on the
+    parking line, carrying the more onerous Table 10.20 / 10.19 item 1 text. Open parking up to
+    4000 m2: Table 10.23 item 2.2.i (no smoke purging or ventilation) and Table 10.20 item 4
+    (corridor and open circulation area smoke management) differ; the text does not say which
+    governs, so the more onerous Table 10.20 line is kept and item 2.2.i is named.
+    Business of 23 m or more: Table 10.27 item 3.iii (p.865) is the same stair system."""
+    tall_i = next((i for i, it in enumerate(items) if it.source_rule in _SC_TALL
+                   and it.system.startswith("Stair Pressurization")), None)
+    if tall_i is None:
+        return items
+    tall = items[tall_i]
+    out = list(items)
+    tname = "Table 10.19" if tall.source_rule == "sc_super_highrise" else "Table 10.20"
+    tsec = "#3.1.1" if tall.source_rule == "sc_super_highrise" else "#3.2.1"
+    if b.occupancy in _SC_PARKING:
+        park_i = next((i for i, it in enumerate(out)
+                       if it.source_rule == "sc_parking_stair_23_or_more"), None)
+        if park_i is not None:
+            pk = out[park_i]
+            out[park_i] = pk.model_copy(update={
+                "spec": tall.spec,
+                "detail": (f"{pk.detail} One stair pressurization line (audit C10-03): {tname} "
+                           f"({tsec}, highrise buildings, p.857) and Table 10.23 (#3.5.1, parking, "
+                           f"p.860) both apply to this parking building; this line carries the more "
+                           f"onerous {tname} item 1 text: {tall.detail}"),
+                "code_ref": f"{pk.code_ref}; {tall.code_ref} item 1",
+                "page_ref": f"{pk.page_ref}, {tall.page_ref}"})
+            out[tall_i] = None
+        cor_i = next((i for i, it in enumerate(out) if it is not None and it.source_rule in _SC_TALL
+                      and it.system.startswith("Enclosed Corridor Smoke Management")), None)
+        if cor_i is not None:
+            c = out[cor_i]
+            why = (f" Parking building of 23 m or more (audit C10-03): {tsec} (p.857) applies "
+                   f"{tname} to highrise buildings with no parking exclusion, and #3.5.1 (p.860) "
+                   f"applies Table 10.23 to parking; both apply. ")
+            gfa = b.gross_floor_area_m2
+            if b.occupancy == "parking_open" and 0 < gfa <= 4000:
+                why += ("Table 10.23 item 2.2.i: open parking complying with Table 10.23.2.1 and "
+                        "having a total floor area of up to 4000 m2 shall not be required to have any "
+                        "smoke purging or ventilation system. The code does not state which table "
+                        f"governs; this {tname} line is the more onerous and is kept; Table 10.23 item "
+                        "2.2.i is checked, not governing.")
+            elif b.occupancy == "parking_open" and gfa > 4000:
+                why += ("The parking floors also take Table 10.23 item 2.3 (mechanical smoke purging "
+                        "OR jet fan system OR hybrid, line below).")
+            elif b.occupancy == "parking_enclosed":
+                why += ("The parking floors also take Table 10.23 item 1 (mechanical smoke purging "
+                        "via dedicated ducting, line below).")
+            else:
+                why += "Table 10.23 item 2.2 / 2.3 is NOT EVALUATED (gross floor area not entered)."
+            out[cor_i] = c.model_copy(update={"detail": (c.detail or "") + why})
+    elif b.occupancy == "business":
+        out[tall_i] = tall.model_copy(update={
+            "detail": (f"{tall.detail} Table 10.27 item 3.iii (p.865): However, stairs of open plan "
+                       f"offices in highrise buildings shall be pressurized in accordance with Section "
+                       f"2.6; the same stair system, printed once (audit C10-08)."),
+            "code_ref": f"{tall.code_ref}; Table 10.27 item 3.iii",
+            "page_ref": f"{tall.page_ref}, p.865"})
+    return [it for it in out if it is not None]
+
+
+def _sc_ruling_rb(items: List[Requirement], b: Building) -> List[Requirement]:
+    if b.occupancy != "storage_industrial" or not (
+            b.is_aboveground_tank_storage or b.is_open_yard_storage):
+        return items
+    return [it.model_copy(update={"status": "conditional",
+                                  "detail": _SC_RULING_RB + (it.detail or "")})
+            if (it.source_rule or "").startswith("sc_storage_industrial_")
+            and "NOT EVALUATED" not in it.system and it.status == "required" else it
+            for it in items]
+
+
 def evaluate_sc(b: Building, rules: Dict[str, Any]) -> ChapterReport:
     """Ch 10 - Smoke Control & Smoke Management."""
     blocks = []
     branch_items, sel_id, sel_section, _ = _collect_branch(rules.get("branches", []), b)
+    branch_items = _sc_ruling_rb(_sc_reconcile(branch_items, b), b)
     if branch_items:
         blocks.append(SectionBlock(title="SC - Smoke Control by Tier / Occupancy (Ch 10, Tables 10.19-10.27)", items=_dedupe(branch_items)))
 
     aux = _dedupe(_collect_flag(rules.get("auxiliary_rooms", []), b))
     if aux:
         blocks.append(SectionBlock(title="SC - Auxiliary Zones / Equipment (Ch 10, Table 10.27)", items=aux))
+
+    # Section 2.5 / Table 10.3 general requirements, printed when a smoke control or
+    # ventilation system line is required (audit C10-09). NOT EVALUATED lines and the Ch 3
+    # CO cross-reference do not count as a system.
+    if any(it.status == "required" and "NOT EVALUATED" not in it.system
+           and not it.system.startswith("Carbon Monoxide")
+           for blk in blocks for it in blk.items):
+        gen = _dedupe(_collect_general(rules, b))
+        if gen:
+            blocks.append(SectionBlock(title="SC - General Requirements (Ch 10, Section 2.5 / Table 10.3)", items=gen))
 
     return ChapterReport(
         chapter_code="SC", chapter_title="Smoke Control (Ch 10)",
@@ -1427,7 +1951,11 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         **flags, **geo,
         project_name=b.project_name + " (parking sub-occupancy)" if b.project_name else "",
         occupancy=synth_occ,
-        floors_above_grade=b.floors_above_grade,
+        # Audit F9A-02 (28.10.2026): Table 9.24.D (p.721) is a covered / shaded parking
+        # "having one level only"; the tick states the parking's own single level, so the
+        # one-level test reads the parking, never the host's floors.
+        floors_above_grade=(1 if (b.is_covered_shaded_parking and synth_occ == "parking_open")
+                            else b.floors_above_grade),
         floors_below_grade=levels,
         depth_below_grade_m=_parking_depth(b) if levels > 0 else 0.0,
         gross_floor_area_m2=parking_area,
@@ -1441,6 +1969,11 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         wet_riser_standpipes=b.wet_riser_standpipes,
         exit_stairs=b.exit_stairs,
         tunnel_kind=b.tunnel_kind, tunnel_length_m=b.tunnel_length_m,
+        # Verifier re-check 28.10.2026: a carried-over tick keeps the choice that goes with
+        # it, so the parking run does not print NOT EVALUATED for an input the user gave.
+        theater_cinema_kind=b.theater_cinema_kind,
+        lpg_flame_effect_show=b.lpg_flame_effect_show,
+        is_new_or_modified_building=b.is_new_or_modified_building,
     )
     chapters = []
     moe_rules = load_rules("ch3_means_of_egress.yaml")
@@ -1457,7 +1990,7 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
     if fe_rules:  chapters.append(evaluate_fe(synth, fe_rules))
     if es_rules:  chapters.append(evaluate_es(synth, es_rules))
     if el_rules:  chapters.append(evaluate_el(synth, el_rules))
-    if fa_rules:  chapters.append(evaluate_fa(synth, fa_rules))
+    if fa_rules:  chapters.append(evaluate_fa(synth, fa_rules, sprinklered=host_spr))   # CH8-18
     if fp_rules:
         # P3 App Q2: Ch 9 sprinklers still follow the host building's table.
         host_line = _host_sprinkler_line(b, fp_rules) if host_spr else None
@@ -1465,6 +1998,82 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
         chapters.append(_with_host_sprinklers(fp, host_line) if host_line else fp)
     if sc_rules:  chapters.append(evaluate_sc(synth, sc_rules))
     return chapters
+
+
+def _merge_attached_parking_duties(chapters: List[ChapterReport],
+                                   attached: List[ChapterReport]):
+    """Owner ruling Q-3 (28.10.2026), audit F9A-05: one governing fire pump and one fire
+    water tank line for the whole building, the most onerous of the host and the attached
+    parking, citing both tables and #4.1.17 (p.695). The governing line stays in the host's
+    Ch 9 chapter; the parking chapter's own line is removed. A line that cannot be ranked
+    (no printed flow or minutes, or a NOT EVALUATED probe) is left as it is."""
+    hi = next((i for i, c in enumerate(chapters) if c.chapter_code == "FP"), None)
+    pi = next((i for i, c in enumerate(attached) if c.chapter_code == "FP"), None)
+    if hi is None or pi is None:
+        return chapters, attached
+    host, park = chapters[hi], attached[pi]
+
+    def find(ch, duty):
+        return [(bi, ii) for bi, blk in enumerate(ch.blocks) for ii, it in enumerate(blk.items)
+                if it.duty == duty and it.status == "required"]
+
+    for duty in ("pump", "tank"):
+        h, p = find(host, duty), find(park, duty)
+        if not h and len(p) == 1 and host.blocks:
+            # The host prints no fire pump / tank of its own: the parking's duty is the
+            # building's one governing line, carried into the host Ch 9 chapter (Q-3).
+            pit = park.blocks[p[0][0]].items[p[0][1]]
+            what = "fire pump set" if duty == "pump" else "fire water tank"
+            moved = pit.model_copy(update={"detail": (pit.detail or "") + (
+                f" One {what} for the whole building, host and attached parking (owner ruling "
+                f"Q-3, 28.10.2026; #4.1.17, p.695): the host building's own table prints no "
+                f"{what}, so the attached parking's governs.")})
+            ti = next((bi for bi, blk in enumerate(host.blocks)
+                       if blk.title.startswith("FP - Branch")), 0)
+            host = host.model_copy(update={"blocks": [
+                blk.model_copy(update={"items": list(blk.items) + [moved]}) if bi == ti else blk
+                for bi, blk in enumerate(host.blocks)]})
+            park = park.model_copy(update={"blocks": [
+                blk.model_copy(update={"items": [it for ii, it in enumerate(blk.items)
+                                                 if (bi, ii) != p[0]]})
+                if bi == p[0][0] else blk for bi, blk in enumerate(park.blocks)]})
+            continue
+        if len(h) != 1 or len(p) != 1:
+            continue
+        hit = host.blocks[h[0][0]].items[h[0][1]]
+        pit = park.blocks[p[0][0]].items[p[0][1]]
+        hk, pk = _duty_key(hit), _duty_key(pit)
+        if hk[0] == 0 or pk[0] == 0:
+            continue
+        w, o, where = (hit, pit, "attached parking") if hk >= pk else (pit, hit, "host building")
+        what = "fire pump set" if duty == "pump" else "fire water tank"
+        same = "the same duty" if hk == pk else "not governing"
+        note = (f" One {what} for the whole building, host and attached parking (owner ruling "
+                f"Q-3, 28.10.2026; #4.1.17, p.695: a common fire pump set and fire water tank "
+                f"are permitted where the arrangement satisfies the required hydraulic "
+                f"calculations); "
+                + ("both tables give the same duty. " if hk == pk else
+                   "this line is the most onerous of the two. ")
+                + f"Also checked ({where}, {same}): {o.spec} ({o.code_ref}).")
+        if duty == "pump" and _max_num(o.spec, "bar") > _max_num(w.spec, "bar"):
+            note += f" The pump must also meet {_max_num(o.spec, 'bar'):g} bar where that table requires it."
+        merged = w.model_copy(update={
+            "detail": (w.detail or "") + note,
+            "code_ref": " + ".join(dict.fromkeys(r for r in (w.code_ref, o.code_ref) if r)),
+            "page_ref": ", ".join(dict.fromkeys(r for r in (w.page_ref, o.page_ref) if r)) or None})
+        host = host.model_copy(update={"blocks": [
+            blk.model_copy(update={"items": [merged if (bi, ii) == h[0] else it
+                                             for ii, it in enumerate(blk.items)]})
+            if bi == h[0][0] else blk for bi, blk in enumerate(host.blocks)]})
+        park = park.model_copy(update={"blocks": [
+            blk.model_copy(update={"items": [it for ii, it in enumerate(blk.items)
+                                             if (bi, ii) != p[0]]})
+            if bi == p[0][0] else blk for bi, blk in enumerate(park.blocks)]})
+    park = park.model_copy(update={"blocks": [blk for blk in park.blocks if blk.items]})
+    chapters = list(chapters)
+    attached = list(attached)
+    chapters[hi], attached[pi] = host, park
+    return chapters, attached
 
 
 def _line_key(title: str, it: Requirement) -> tuple:
@@ -1671,6 +2280,143 @@ _STATUS_RANK = {"required": 3, "conditional": 2, "recommended": 1, "not_required
 _HAZARD_RANK = {"LH": 0, "OH1": 1, "OH2": 2, "HH": 3}
 
 
+_EL_KIND_RANK = {"monitored": 3, "central_or_monitored": 2, "stand_alone": 1}
+
+
+def _el_kind(it: Requirement) -> Optional[str]:
+    s = it.system or ""
+    if s.startswith("Monitored Self-Contained EL"):
+        return "monitored"
+    if s.startswith("Central Battery"):
+        return "central_or_monitored"
+    if s.startswith("Stand-alone Self-Contained EL"):
+        return "stand_alone"
+    return None
+
+
+def _r13_one_el_package(items: List[Requirement]) -> List[Requirement]:
+    """Owner ruling R-F (28.10.2026): in most restrictive mixed mode the building gets ONE
+    Table 6.5 system type, the one that meets every row that applies. #4.2 (p.419): where
+    central battery or monitored emergency lighting is required, one centralized system
+    covers the entire facility, so a stand-alone line cannot sit beside it, and a
+    Monitored Self-Contained system meets both "Monitored" and "Central Battery OR
+    Monitored" rows. The rows not printed are named in the kept line."""
+    kinds = {_el_kind(it) for it in items if it.status == "required"} - {None}
+    if len(kinds) < 2:
+        # A villa row's "not mandatory" line cannot stand beside a required system that
+        # serves the facility (not the villa's own basement-only line).
+        facility = any(_el_kind(it) and it.status == "required"
+                       and "basement only" not in (it.system or "") for it in items)
+        if not facility:
+            return items
+        return [it for it in items if not (
+            _el_kind(it) is None and it.status == "not_required"
+            and (it.system or "").startswith("Emergency Lighting ("))]
+    gov = max(kinds, key=lambda k: _EL_KIND_RANK[k])
+    typed = [it for it in items if _el_kind(it) and it.status == "required"]
+    nums = sorted({n for it in typed for n in _t65_items(it.code_ref)})
+    dropped = [it for it in typed if _el_kind(it) != gov]
+    out, kept = [], False
+    for it in items:
+        k = _el_kind(it)
+        if k and it.status == "required":
+            if k != gov or kept:
+                continue
+            kept = True
+            txt = (", ".join(str(n) for n in nums[:-1]) + f" and {nums[-1]}") if len(nums) > 1 \
+                else (str(nums[0]) if nums else "")
+            names = "; ".join(f"{d.system} ({d.code_ref})" for d in dropped)
+            out.append(it.model_copy(update={
+                "code_ref": f"Ch 6, #4.2 / #4.3 / Table 6.5 items {txt}" if txt else it.code_ref,
+                "detail": (it.detail + " " if it.detail else "") + (
+                    f"Mixed occupancy, most restrictive: one system type for the building "
+                    f"(owner ruling R-F, 28.10.2026). #4.2 (p.419) requires one centralized "
+                    f"emergency lighting system for the entire facility; this package meets every "
+                    f"Table 6.5 row that applies (items {txt}). Not printed separately: {names}."),
+            }))
+            continue
+        # A villa row's "not mandatory" line cannot stand beside a required facility system.
+        if k is None and it.status == "not_required" and (it.system or "").startswith("Emergency Lighting ("):
+            continue
+        out.append(it)
+    return out
+
+
+_FA_HEIGHT_ROWS = {"fa_super_highrise", "fa_highrise", "fa_midrise_lowrise"}
+_FA_PROTOCOL = re.compile(r"Phased Evacuation Alarm|^Positive Alarm Sequence|^General Fire Alarm")
+
+
+def _r13_one_fa_protocol(contrib: List[tuple]) -> List[tuple]:
+    """Owner ruling R-F (28.10.2026), extending R7: a mixed building has ONE alarm
+    protocol. An occupancy's own Table 8.13 row protocol governs over the height row
+    (items 1-4) protocol, as R7 rules for a single occupancy; between occupancy rows the
+    main occupancy's governs, else the first listed. The protocols not applied are named.
+    `contrib` is the list of (occupancy, items) of the Table 8.13 block."""
+    def is_proto(it):
+        return it.status == "required" and bool(_FA_PROTOCOL.search(it.system or ""))
+    own = [(occ, its) for occ, its in contrib
+           if any(is_proto(it) and it.source_rule not in _FA_HEIGHT_ROWS for it in its)]
+    if not own:
+        return contrib
+    gov_occ = own[0][0]
+    dropped = [(occ, it) for occ, its in contrib for it in its if is_proto(it)
+               and not (occ == gov_occ and it.source_rule not in _FA_HEIGHT_ROWS)]
+    if not dropped:
+        return contrib
+    names = "; ".join(f"{it.system} ({occ}, {it.source_rule})" for occ, it in dropped)
+    note = (f" Mixed occupancy, one alarm protocol (owner ruling R-F, 28.10.2026, extending "
+            f"R7): the {gov_occ} Table 8.13 row protocol governs. Not applied: {names}. "
+            f"Confirm the protocol with Civil Defence where portions have different rows.")
+    out = []
+    for occ, its in contrib:
+        new = []
+        for it in its:
+            if is_proto(it) and (occ, it) in [(o, d) for o, d in dropped]:
+                continue
+            if is_proto(it) and occ == gov_occ:
+                it = it.model_copy(update={"detail": (it.detail or "") + note})
+            new.append(it)
+        out.append((occ, new))
+    return out
+
+
+def _r13_one_evc_package(contrib: List[tuple]) -> List[tuple]:
+    """Owner ruling R-F (28.10.2026) with CH04-07 L1: in most restrictive mixed mode the
+    Table 7.3 rows of every occupancy give ONE EVC line and ONE two-way line, citing every
+    row that requires the package. Each occupancy's run is already collapsed by
+    `_evc_one_package`; here the lines with the most rows are kept, their citation widened
+    to every row, and the 'not listed' / NOT EVALUATED lines of other occupancies dropped."""
+    def is_req(it):
+        return (it.status == "required" and "NOT EVALUATED" not in it.system
+                and _T73_ITEM.search(it.code_ref or ""))
+    req_occ = [occ for occ, its in contrib if any(is_req(it) for it in its)]
+    if not req_occ:
+        return contrib
+    out = []
+    for two_way in (False, True):
+        lines = [it for _, its in contrib for it in its
+                 if is_req(it) and ("Two-way" in it.system) == two_way]
+        if not lines:
+            continue
+        nums = sorted({n for it in lines for n in _t73_nums(it.code_ref)})
+        base = max(lines, key=lambda it: len(_t73_nums(it.code_ref)))
+        if len(nums) > len(_t73_nums(base.code_ref)):
+            txt = ", ".join(str(x) for x in nums[:-1]) + f" and {nums[-1]}"
+            extra = " ".join(dict.fromkeys(
+                f"Table 7.3 item {_t73_nums(it.code_ref)[0]}: {it.detail}" for it in lines
+                if it.detail and len(_t73_nums(it.code_ref)) == 1
+                and _t73_nums(it.code_ref)[0] not in _t73_nums(base.code_ref)))
+            base = base.model_copy(update={
+                "code_ref": f"Ch 7, #3.1 / Table 7.3 items {txt}", "page_ref": "p.439",
+                "detail": (base.detail or "") + (" " + extra if extra else "") + (
+                    f" Table 7.3 items {txt} each require this same system; one line is "
+                    f"printed for all of them.")})
+        out.append(base.model_copy(update={"detail": (base.detail or "") + (
+            f" [Mixed occupancy, most restrictive (ruling R13, R-F): required by "
+            f"{', '.join(req_occ)}.]")}))
+    return [(contrib[0][0], out)]
+
+
 def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
     """Ruling R13 (12.10.2026), Ch 1 #2.4.4 (p.55): a mixed occupancy takes the most
     restrictive requirements of the occupancies involved. `runs` is a list of
@@ -1698,6 +2444,10 @@ def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
         blocks = []
         for t in titles:
             contrib = by_title[t]
+            if ch.chapter_code == "FA" and t.startswith("FA - Detection"):
+                contrib = _r13_one_fa_protocol(contrib)
+            if ch.chapter_code == "EVC" and t.startswith("EVC - Voice Evac"):
+                contrib = _r13_one_evc_package(contrib)
             block_req = any(it.status != "not_required" for _, its in contrib for it in its)
             tagged = [(occ, it) for occ, its in contrib
                       if not (block_req and all(i.status == "not_required" for i in its))
@@ -1721,6 +2471,8 @@ def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
                         it = it.model_copy(update={"detail": (it.detail + " " if it.detail else "") + (
                             f"[Mixed occupancy, most restrictive (ruling R13): from {', '.join(occs)}.]")})
                     items.append(it)
+            if ch.chapter_code == "EL" and t.startswith("EL - System Type"):
+                items = _r13_one_el_package(items)
             blocks.append(SectionBlock(title=t, items=_merge_duties(items)))
         sec = ch.selected_branch_section
         extra = "; ".join(f"{occ}: {c.selected_branch}" for occ, c in others if c.selected_branch)
@@ -1754,7 +2506,7 @@ def _r13_single(base: Building, o: str) -> Building:
                                    "mixed_occupancy_mode": "none"})
 
 
-def evaluate(b: Building) -> ComplianceReport:
+def _evaluate_core(b: Building) -> ComplianceReport:
     """Ruling R13 (12.10.2026): in most_restrictive mixed mode every listed occupancy is
     evaluated on the same building, at the highest hazard class of those listed, and the
     chapters are merged keeping the most onerous line per system."""
@@ -1804,6 +2556,27 @@ def evaluate(b: Building) -> ComplianceReport:
     if b.occupancy == "mixed_multiple":
         r = _mixed_class_a_not_evaluated(r)
     return r
+
+
+def _mark_not_evaluated(ch: ChapterReport) -> ChapterReport:
+    blocks = [blk.model_copy(update={"items": [
+        it.model_copy(update={"status": "not_evaluated"})
+        if "NOT EVALUATED" in (it.system or "") and it.status in ("required", "conditional")
+        else it
+        for it in blk.items]}) for blk in ch.blocks]
+    return ch.model_copy(update={"blocks": blocks})
+
+
+def evaluate(b: Building) -> ComplianceReport:
+    """Evaluate the building (see `_evaluate_core`). Audit UX-03 (28.10.2026): a line that
+    names a missing input ("... - NOT EVALUATED") is reported with its own status
+    `not_evaluated`, never counted as a required system; the engine builds it as a
+    required line internally so that no chapter logic treats the gap as a pass."""
+    r = _evaluate_core(b)
+    return r.model_copy(update={
+        "chapters": [_mark_not_evaluated(c) for c in r.chapters],
+        "attached_parking_chapters": [_mark_not_evaluated(c) for c in r.attached_parking_chapters],
+    })
 
 
 def _mixed_class_a_not_evaluated(r: ComplianceReport) -> ComplianceReport:
@@ -1904,6 +2677,8 @@ def _evaluate_single(b: Building) -> ComplianceReport:
                 "spec": "Not evaluated: the parking inputs were refused",
                 "detail": f"The attached parking could not be evaluated: {e}"})
             attached = [nev]
+    # Owner ruling Q-3 (28.10.2026): one governing fire pump and tank for host + parking.
+    chapters, attached = _merge_attached_parking_duties(chapters, attached)
 
     # Never leave a report section silently blank — append an explanatory
     # "not required" note to any chapter that produced zero requirements.

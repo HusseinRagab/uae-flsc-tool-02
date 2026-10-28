@@ -62,11 +62,13 @@ OCCUPANCY_DEFS = {
     "hotel_a": "Hotel Group A - Table 1.1 row 9 (p.50): hotels, hotel apartments, time share properties.",
     "hotel_b": "Hotel Group B - Table 1.1 row 9 (p.50): dormitory, motels, lodging.",
     "hotel_c": "Hotel Group C - Table 1.1 row 9 (p.50): resorts.",
-    "daycare_a": "Daycare Group A - Daycare for more than 12 clients.",
-    "daycare_b": "Daycare Group B - Daycare for 7 to 12 clients.",
-    # daycare_c: UAE FLSC Ch 3 #5.10 only defines Daycare Groups A and B. Schema keeps _c as a
-    # UI convenience for family daycare (4-6 clients); Ch 3 rules treat it the same as Group B.
-    "daycare_c": "Daycare Group C - Family daycare for 4 to 6 clients (UI category; Ch 3 falls back to Group B rules).",
+    # Audit CH123-04: the daycare groups are set by use, not by the number of clients
+    # (Table 1.1 row 10, p.50; #1.1.13.1.k-l, p.527). #1.7.7 (p.40): four or more clients.
+    "daycare_a": "Daycare Group A - Table 1.1 row 10 (p.50): child day care centers, old age care centers (four or more clients, #1.7.7 p.40; Table 3.31).",
+    "daycare_b": "Daycare Group B - Table 1.1 row 10 (p.50): adult day care centers (four or more clients, #1.7.7 p.40; Table 3.31).",
+    # daycare_c: Table 1.1 row 10 prints Groups A and B only. The key is kept so saved
+    # projects load; the Ch 3 rules give it the rows shared by Groups A and B.
+    "daycare_c": "Daycare (group not printed) - Table 1.1 row 10 (p.50) has no Group C; choose Group A (child or old age day care) or Group B (adult day care) by the use. Kept for saved projects: Ch 3 applies the rows shared by Groups A and B.",
     "residential": "Residential Group A - Table 1.1 row 5 (p.49): residential buildings, residential apartments, assisted living homes.",
     "labour_accommodation": "Labour Accommodation - Residential Group C, Table 1.1 row 5 (p.49): labor accommodation.",
     "staff_accommodation": "Staff Accommodation - Residential Group B, Table 1.1 row 5 (p.49): staff accommodation.",
@@ -367,7 +369,14 @@ class Building(BaseModel):
     is_flammable_liquid_industrial: bool = False    # Group S - foam sprinklers, processes
     is_open_yard_storage: bool = False              # Group U - outdoor/yard storage (no building envelope)
     is_plant_nursery: bool = False                  # Group V - extinguishers only
-    is_single_tenant_storage: bool = False          # Groups F-J - single-tenant variants (different pump/tank than multi-tenant Groups A-E)
+    is_single_tenant_storage: bool = False          # Legacy key (saved files): True = single tenant; kept in step with `storage_tenancy` (Ch 8 and Ch 9 read `storage_tenancy`)
+    # --- fix round 28.10.2026 (ch9) ---
+    # Owner ruling Q-4 (28.10.2026): storage tenancy is a REQUIRED choice with no default.
+    # Table 9.27 prints multi-tenant Groups A-E (p.724-728) and single-tenant Groups F-J
+    # (p.729-733) with different pumps and tanks. None = not chosen: the app stops and the
+    # engine prints the Groups A-J tier lines as NOT EVALUATED. An older saved file with
+    # `is_single_tenant_storage: true` loads as "single"; false or absent loads as None.
+    storage_tenancy: Optional[Literal["single", "multi"]] = None
     is_idle_pallet_storage: bool = False            # Group K - idle wood/plastic pallet warehouse
     is_extra_hazard_2: bool = False                 # Multi-tenant HH: Group E (EH2, Definition 1.1.13.5) vs Group D (EH1, Definition 1.1.13.4 - default). Drives EH2's higher density (0.40 vs 0.30), higher pump (1000/1500 vs 750/1250 gpm), and 120-min tank.
     is_commodity_specific_storage: bool = False     # Legacy key (no longer routed): Groups L-O now follow `storage_commodity`.
@@ -663,6 +672,16 @@ class Building(BaseModel):
                     self.is_open_yard_storage, self.is_plant_nursery,
                     self.is_idle_pallet_storage, self.is_aboveground_tank_storage))
 
+    @model_validator(mode="after")
+    def _storage_tenancy_legacy(self):
+        """Owner ruling Q-4 (28.10.2026): an older input with the legacy tick
+        `is_single_tenant_storage: true` means single tenant; false or absent is not a
+        choice (None). The legacy key then follows the choice, for the rules that read it."""
+        if self.storage_tenancy is None and self.is_single_tenant_storage:
+            self.storage_tenancy = "single"
+        self.is_single_tenant_storage = self.storage_tenancy == "single"
+        return self
+
     @property
     def largest_storey_area_min_m2(self) -> float:
         """Largest storey area for Table 3.27 item 2.iii (villa floor over 400 m2):
@@ -731,7 +750,7 @@ class Building(BaseModel):
 
 class Requirement(BaseModel):
     system: str
-    status: Literal["required", "recommended", "conditional", "not_required"] = "required"
+    status: Literal["required", "recommended", "conditional", "not_required", "not_evaluated"] = "required"
     spec: Optional[str] = None
     detail: Optional[str] = None
     code_ref: Optional[str] = None

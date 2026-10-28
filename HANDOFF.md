@@ -9,6 +9,607 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-28 — Audit 28.10.2026 fix round: all findings, rulings R-A to R-J, Q-1 to Q-4 (PR #38, draft)
+
+Audit: `AUDIT_UAE_FLSC_TOOL_28.10.2026.md` (15 HIGH, 53 MEDIUM, 87 LOW; source = the HTML reading copy
+of CDGH-OP-25 Sept 2018 committed in 975ea96, split per page; Ch 1-11, 15, 19, Annex 1-2, app / exports;
+16,078-building scenario sweep; Cursor PRs #1-#37 re-tested). Kept with the project files, not in
+this repo, with the per-chapter ledgers. Branch `claude/vibrant-edison-l0fscc`, draft PR #38.
+Nothing merged to master (the live app is unchanged until Hussein's go).
+
+Owner rulings 28.10.2026 (cards, all on the recommended option):
+- R-A ECC 1 h sprinklered / 2 h unsprinklered (Ch 1 Table 1.9 item 1 p.73, FAQ Q8 p.1273; Ch 2
+  #2.9.3.c p.219 named as the conflict).
+- R-B Groups T (aboveground tanks) / U (open yard): Ch 5 / 6 / 7 / 8 / 10 warehouse packages stay as
+  CONDITIONAL "applies to any enclosed building on the site"; Cursor PRs #28-31, #33-37 not merged.
+- R-C Table 9.21.e outlet AND the host Table 9.21.a / 9.21.b row both apply; most onerous governs.
+- R-D Table 10.27 item 16.iii kitchens: required in malls, hospitals, highrise non-residential;
+  conditional for apartment / hotel-room kitchens.
+- R-E Diesel generator room: Table 9.31.E governs regardless of sprinklers.
+- R-F Mixed most-restrictive mode: one EL package (#4.2), one FA protocol (extends R7), one EVC line.
+- R-G Specialty storage tick and hazard / commodity rows both evaluated; most onerous governs.
+- R-H Detention 23 m or more: Table 9.19 + conditional note on Table 9.20.d. R-J 90.0 m stays 9.19 +
+  note. R-I Robotic parking: Table 8.13 item 23 detection + item 22 notification / interfaces.
+- Q-1 #4.1.7 G+3 trigger kept + pump-sizing warning (#4.1.9). Q-2 Group R also gets the Table 4.3
+  wheeled foam. Q-3 one governing pump / tank for host + attached parking (#4.1.17). Q-4 storage
+  tenancy is a required choice, no default.
+
+Lead-session changes (this branch, besides the six fixer merges listed below):
+- R-F in `engine._merge_most_restrictive`: `_r13_one_el_package`, `_r13_one_fa_protocol`,
+  `_r13_one_evc_package` (mixed grid 2520 pairs: FA / EL / EVC change only).
+- UX-03: `Requirement.status` gains `not_evaluated`; `engine.evaluate` marks every "... - NOT
+  EVALUATED" line (engine builds them as required internally, so no gap is taken as a pass); app
+  badge / legend / status bar, "Report incomplete" warning, REPORT INCOMPLETE block in every PDF /
+  Word export; 28 test assertions in 11 files moved from "required" to "not_evaluated".
+- R-B consistency: Ch 8 Table 8.1 lines conditional for Groups T / U (Table 8.15 item 3 stays
+  required).
+- F9A-03 completed: blank plot NOT EVALUATED for Tables 9.18 / 9.19 / 9.20.a / 9.23.B.
+- Q-4 wiring: Ch 8 FACP lines read `storage_tenancy`; app radio "Storage tenancy (required)",
+  named stop, legacy `is_single_tenant_storage: true` loads as single.
+- README: exactly 23.0 m is highrise (R1); "#" for clauses.
+- Commit message correction: 13cb240 says 561 pytest; measured 559.
+
+Verification at the HANDOFF entry (282d45a): 590 pytest, 115 cases (tests/test_cases.py),
+_structural_check no errors / warnings. Full grid vs 4b69f4f (grid 9870, flags 832, storage 2856,
+mixed 2520): 0 crashes, 0 new refusals; every removed required line traced to a finding or ruling
+(renamed lines, required -> conditional per the code's "permitted / where", R-B / R-F / Q-4 /
+blank-input NOT EVALUATED, infrastructure no building FA, trucks no room extinguishers).
+Independent verifier (read-only, base 4b69f4f vs HEAD, 6,544 buildings, all HIGH + 41 MEDIUM
+findings traced to page text): round 1 on 24e6579 NOT CLEAR (5 items), round 2 on fbfdd08 NOT
+CLEAR (1 residual), round 3 on 390c1dd CLEAR: 603 pytest, 115 cases, structural 0, 0 crashes,
+every removed / demoted required line (124) justified. Fixed between rounds: secondary storage
+tenancy input + stop; conditional NOT EVALUATED lines -> not_evaluated; sprinkler-gated Table
+9.29 / 9.30 lines NOT EVALUATED when any Ch 9 input is missing and no sprinkler line is
+required (blank outlet area stops in the app); unranked pump / tank lines name each other;
+R-D hotels' own kitchens required; attached parking carries the cinema kind / flame-effect
+show / new-or-modified choice; complete first-load sample and presets. Cursor Bugbot on PR
+#38: 4 findings, all real, all fixed with failing-first tests (villa EL line in mixed mode,
+lone parking duty, exports counting NOT EVALUATED as required, blank tenancy gating).
+Verifier note (accepted, not changed): a blank tunnel length also marks the gated Table 9.29 /
+9.30 lines NOT EVALUATED (over-cautious, never a pass). Report: VERIFY.md with the project files.
+
+Open for Hussein (needs a ruling; each is a conditional / note line now, routing unchanged):
+1. Converted villa Class A extinguishers (Ch 4 L11). 2. Labour / staff accommodation / hostel keep
+the 2.5 kg homes-kitchen line required (M5 applied to hotels only). 3. Robotic logistics warehouse of
+23 m or more: no printed protocol (Ch 8). 4. Ch 2 #2.10.1.a yard hydrants "mandatory in all
+developments" and #2.10.3.a hose cabinets "in all buildings" (wider than Ch 9; conditional now).
+5. Unsprinklered hospital sleeping areas: Table 3.16 row 4.i prints S only (NOT EVALUATED now).
+6. Table 3.32 item 2: does "if not sprinklered" govern the 1525 mm width too? 7. Villa EAP and
+accessibility scope (Ch 19 #2.1.1, Ch 15 #2.2.1 print no villa exclusion or inclusion).
+8. R-D for parking of 23 m or more (conditional now). 9. Ch 10 highrise open parking: Table 10.20
+item 4 corridor line kept over Table 10.23 item 2.2.i. 10. R-G for Groups T / U (hazard rows are
+building rows). 11. Dubai ESL pump note wording (scanned source). 12. Blank-stop exemptions (trucks:
+plot; underground: GF BUA when basement BUA given) and preset values listed under Assumptions.
+13. Cursor PRs to close (none merged): fixed on master #1, #4-#10, #12, #15, #16, #32; against
+ruling / print #2, #3, #11, #13, #17; ported here #18, #19, #27; superseded by R-C #26; R-B #28-31,
+#33-37; R-I #14.
+
+Re-run issued jobs (all chapters gained lines; most significant): every report (fire pump set =
+1 electric + 1 diesel + 1 jockey, Table 9.3 item 1.xii); enclosed parking (CO detection); unsprinklered
+buildings with an ECC; theme parks; Group R / T / U storage; storage with blank GFA; business / mosque
+with an outlet; Table 9.21.f row F; high-ceiling warehouses; HH storage without EH2; highrise
+kitchens; LPG tanks and flame effects; attached parking (one pump / tank); mixed most-restrictive
+jobs; any job with plot, GF BUA or GFA left blank (now NOT EVALUATED / stop).
+
+#### Fixer notes (one per area, as delivered; branch names are the worktree branches merged above)
+
+##### 2026-10-28 - Audit fix round, area ch123 (Ch 1 / Ch 2 / Ch 3 / Ch 15)
+
+Ledger findings/CH01-03.md CH123-01 to CH123-25, audit H1 (CO detection) and H2 = CH123-02.
+Rulings applied: **R-A** (ECC 1 h sprinklered / 2 h not). Earlier rulings kept: R1 (23.0 m
+highrise, CH123-14 no change), R9 (open podium NS 91 m, CH123-13 no change), Ch3 Q2 (densest
+row), Ch3 Q7 (Tables 3.1 / 3.2 / 3.4 on villas), P3 Ch11 Q2 (villa wheelchairs conditional).
+Branch `worktree-agent-a6bfc0e57c0459928`.
+
+Changes (finding, page, direction):
+- **H1 / CH123-01** Table 3.37 item 7.i (p.338): required "Carbon Monoxide Detection - Enclosed
+  Parking" on `moe_parking_enclosed` (stand-alone and the attached enclosed parking sub-run).
+  MORE onerous. Ch 10 cross-reference left to the Ch 10 fixer.
+- **H2 / CH123-02 (R-A)** fsa_ecc: "1-hour fire barrier" when Ch 9 sprinklers the building,
+  "2-hour" when not; cites Ch 2 #2.9.3.a-e, Ch 1 Table 1.9 item 1 (p.73), FAQ Table A.1.2 Q8
+  (p.1273); detail names #2.9.3.c (p.219) as the conflict. MORE onerous (unsprinklered).
+- **CH123-03** HH storage without the EH2 tick (Extra Hazard Group 1 = Storage / Industrial
+  Group B, #1.1.13.4.a p.529) now takes Table 3.13 rows 16 / 18 (stair 7.6 mm) and Table 3.16
+  rows 17 / 19 (S 30/30/122 m, NS 15/15/61 m): new branch `moe_storage_industrial_eh1`;
+  `moe_storage_industrial_high_hazard` (rows 15-18 Group A, 18 mm) needs EH2 (#1.1.13.5.a,
+  p.530). occupant_load `_STORAGE_ROWS` keyed on HH and EH2. LESS onerous for EH1 (as printed).
+- **CH123-04** daycare groups by use (Table 1.1 row 10, p.50; #1.1.13.1.k-l, p.527): OCCUPANCY_DEFS
+  daycare_a / _b text; daycare_c relabelled "Daycare (group not printed)"; YAML comments and
+  detail rewritten. Neutral.
+- **CH123-05** unsprinklered hospital: spec_ns says the sleeping-area limits are not evaluated,
+  plus a NS-only "... (Hospital Sleeping Areas, Non-sprinklered) - NOT EVALUATED" line (p.293).
+  MORE onerous (was silent).
+- **CH123-06** Table 3.24 items 1-7 on `moe_residential` (+ item 2 single exit stair: required with
+  `has_single_exit_stair`, conditional without); new branches Table 3.25 (staff accommodation,
+  hostel; item 6 smoke compartments over 2000 m2 required / conditional pair) and Table 3.26
+  (labour accommodation) (p.317-322). MORE onerous.
+- **CH123-07** Table 3.30 hotel items 1-12, Table 3.31 daycare items 1-7 (item 7 Group A with 3+
+  floors required; daycare_c conditional), Table 3.32 mercantile items 1-6 (new branch
+  `moe_mercantile_table_3_32`; parking separation required with `has_parking_area`), Tables
+  3.20 item 5-6 / 3.21 item 4 and 7 (93 m2 rooms conditional; rescue windows NS only)
+  (p.305-332). MORE onerous.
+- **CH123-08** Table 3.37 items 1, 5 (conditional), 6, 8 (required) on enclosed and open
+  parking; item 3 on new branch `moe_parking_robotic` (p.338). MORE onerous.
+- **CH123-09** Table 3.4 item 7 (block-work lowrise low depth / RCC otherwise, 2 h, 3 m above top
+  landing, no common lift shaft) and item 8 (penetrations, no FHR / landing valve cabinets in
+  stair) as general lines (p.259). MORE onerous.
+- **CH123-10 / CH123-23** robotic OLF line only with `has_robotic_parking`; robotic parking OL
+  takes Table 3.13 row 20.i 46.5 m2 (was 27.9) and Table 3.16 row 21 (S 60 / NS 46 m) is printed.
+  OL LESS onerous (as printed), travel 1 m MORE onerous.
+- **CH123-11** fire lift: #2.9.4.i (passenger lift recall, doors open) and #2.9.4.l (BS EN 81-72
+  5.3, 5.6-5.12) added, cite #2.9.4.a-l (p.220). MORE onerous.
+- **CH123-12** #2.10.1-#2.10.4 (p.222-224): yard hydrant (conditional), breeching inlets
+  (required with sprinklers or wet riser), FHC (required with wet riser), pump room access
+  (required with water system + pump room). Ch 9 holds no #2.10 lines; no Ch 9 duty repeated.
+  MORE onerous.
+- **CH123-15** open-parking definition line has a spec (Table 3.37 item 2, Table 1.9 item 34).
+- **CH123-16** HH mercantile detail: swing only, no panic-hardware claim (p.248, 250).
+- **CH123-17** Table 3.19 permission printed with its limits (4570 mm, 280 m2, other stories,
+  S 30 / NS 23 m mezzanine); "over-provisioning" text removed. MORE onerous.
+- **CH123-18** private villa Table 3.27 item 1 (conditional).
+- **CH123-19** waterfront lowrise private villa takes the Table 2.8 lowrise row (60 m).
+- **CH123-20** #2.4.4 gate locks in the gateways line; #2.6.4 / #2.6.5 conditional line;
+  #2.3.1 100 m2 exemption in the width detail.
+- **CH123-21** lowrise (#2.8.4.a): "Fire access road width + clearance", accessway not required.
+- **CH123-22** villa Ch 15 scope wording per #2.2.1 (p.1090); stale "not yet read" removed;
+  status stays conditional pending a ruling.
+- **CH123-24** Table 3.13 parking row labels name both letterings (Table 3.13 vs Table 1.1).
+- **CH123-25** general lines: Table 3.3.a door ratings, Table 3.3.b unit doors by occupancy
+  (office / classroom S/NS), Table 3.6 (required with `has_horizontal_exits`, else conditional),
+  3.7, 3.8, 3.9 (conditional), 3.11 (required with `has_evacuation_elevator`, else conditional),
+  3.12 exit discharge (S/NS columns). Not on villas. MORE onerous.
+- CH123-13, CH123-14: rulings R9 / R1 stand; no change.
+
+Tests: new tests/test_audit28_ch123.py (40 tests; 35 RED before the change, 5 guards green).
+Updated in place: tests/test_cases.py "Storage HH -> 0m ..." and "HH storage uses 18mm" now set
+`is_extra_hazard_2=True` (+ new EH1 case expecting `moe_storage_industrial_eh1`);
+tests/test_phase2_ch3_answers.py::test_CH3_Q6_site_flags_print_required_lines_only_when_ticked
+checks only the site-flag lines for conditional status. Counts: pytest 400 passed (was 360), test_cases 115 passed
+(was 114), structural no errors / no warnings. Grid diff vs master (4 grids, 16,078 cases): 0 crashes;
+fingerprint changes only MOE branch HH storage -> moe_storage_industrial_eh1 (714 storage, 2 mixed)
+and +1 NOT EVALUATED line on 4 unsprinklered healthcare_a cases. Full-item diff on a 5,256-case
+sample: only the MOE, FSA and ACC (villa) chapters change; no other chapter, no occupant-load change.
+
+Needs ruling: #2.10.1.a yard hydrants "mandatory in all developments" vs Ch 9 triggers;
+#2.10.3.a FHC "in all buildings" vs Ch 9 rows; unsprinklered hospital sleeping areas (S values
+or sprinklers); villa Ch 15 items / wheelchairs now that #2.2.1 is read; Table 3.32 item 2
+"if building is not sprinklered" scope.
+
+Re-run issued jobs: any job with an enclosed parking (CO line), an ECC in an unsprinklered
+building, HH storage without EH2, an unsprinklered hospital, robotic parking (OL), and every
+report for the added Ch 3 / Ch 2 lines.
+
+##### 2026-10-28 — Fix round 28.10.2026, area ch47: Ch 4-7 (CH04-07 H1-H3, M2-M6, L1-L11; rulings R-B, Q-2) (worktree branch `worktree-agent-af1b579f2c853c6ab`, commit 1612156, not pushed)
+
+Rulings applied: R-B (Groups T / U keep the Ch 5 / 6 / 7 warehouse packages as conditional,
+with the R-B wording), Q-2 (Group R also gets the Table 4.3 row 3 item 2.i wheeled foam line).
+Standing rules: a blank never passes (H3, M2 NOT EVALUATED lines); direction stated per item.
+Not changed: M1 (mixed EL, lead under R-F), RT1 / RT2 (ruled, info only). Every page re-read
+from scratchpad/pages before writing.
+
+Ch 7 (rules/ch7_evc.yaml, engine.evaluate_evc + new `_evc_one_package`, `_mixed_evc_not_evaluated`)
+- H1 (p.439 Table 7.3 item 5 "AMUSEMENT AND THEME PARKS"): `evc_amusement` matches
+  `is_theme_park` OR `has_amusement_confounding`. MORE onerous (theme park ticked: EVC + two-way
+  now required, e.g. infrastructure, business, storage, villa).
+- H3 (p.439 item 9 "BUILT-UP AREA MORE THAN 5000 m2"): item 9 rows key on
+  `Building.storage_total_bua_m2` (larger of GFA and GF BUA). Both blank below 23 m: new
+  required line "Emergency Voice Evacuation (EVC) - Storage / Industrial - NOT EVALUATED"
+  (`evc_storage_industrial_bua_not_evaluated`). MORE onerous (GFA blank, GF BUA 8000 m2 was
+  "not required").
+- M2 (p.439): `mixed_multiple` with no occupancy listed (not an R13 run) and no Table 7.3 row
+  requiring EVC: "Emergency Voice Evacuation (EVC) - NOT EVALUATED" (source
+  `audit28_m2_mixed_evc`), same rule as Ch 4 Class A (P3 Ch47 Q2). MORE onerous (was "not
+  required"). At 23 m or more the highrise row still prints EVC required.
+- L1 + Cursor PR #19 + sweep class 3: Table 7.3 prints one requirement for all nine rows; one
+  EVC line and one two-way line, citing every matching row ("Table 7.3 items 2 and 9", "items 4
+  and 5"), each row's detail kept; a not_required "not listed" row or the item 9 NOT EVALUATED
+  line no longer prints beside a row that requires EVC. The amusement row's EVC line now has
+  the standard name "Emergency Voice Evacuation or Communication System (EVC)". Neutral
+  (package unchanged). Limit: in R13 most-restrictive mode `_merge_most_restrictive` still
+  keeps two EVC lines when two occupancies' merged specs differ (e.g. residential + mall at
+  30 m); the lead may call `_evc_one_package` on the merged Table 7.3 block.
+- L2 (p.436 Table 7.1 item 10.i prints "maximum of 122 mm"): detail states the tool reads it as
+  1220 mm (Table 7.2 item 5.ii p.438). Neutral.
+- L3 (p.433 item 3, p.434 item 4.1 "shall be permitted"): PAS and sleeping-risk tone lines
+  conditional. LESS onerous (wording; they were never requirements).
+- L4: new general lines (only where EVC is required): #2.2.5 automatic response (p.431); Table
+  7.1 item 2.2 microphone instructions (p.433); item 7.1 i-iii control system (p.435); item 8
+  ancillary functions incl. 8.iii annual test (p.435, conditional); #5.1 / Table 7.4 acceptance
+  intelligibility (p.441, with #4.3.2 p.440); #4.4.1-#4.4.2 inspection per Ch 8 (p.440). MORE.
+- M6 / R-B: Ch 7 lines of a storage building with `is_open_yard_storage` or
+  `is_aboveground_tank_storage` become conditional with "Applies to any enclosed building on the
+  site (warehouse, pump house, office). Ch 7 prints no row for open yards / aboveground tank
+  farms (owner ruling R-B, 28.10.2026)." (`engine._rb_yard_tank_conditional`; NOT EVALUATED and
+  not_required lines untouched). LESS onerous vs master (required -> conditional), as ruled.
+
+Ch 6 (rules/ch6_emergency_lighting.yaml, engine.evaluate_el)
+- M6 / R-B: same conversion, "Ch 6 prints no row ...". LESS (as ruled).
+- L5 (p.408 Table 6.1 item 1.ii-iv, 1.viii; p.420 Table 6.6): coverage line renamed
+  "Mandatory EL Coverage Locations (Table 6.6 items 1-27 + Table 6.1 item 1)", cites both, lists
+  the Table 6.6 items as printed (incl. "large plant rooms"). Neutral.
+
+Ch 5 (rules/ch5_exit_signs.yaml, engine.evaluate_es)
+- M4 (p.397 item 6.vi; Table 1.1 p.48 Assembly Group B items 1 "Amusement Park", 7 "Indoor
+  Kid's Play Areas"): strips line fires on `is_theme_park` too; Assembly Group B with neither
+  box ticked gets the same line as conditional (`es_assembly_b_amusement_photoluminescent`). MORE.
+- M3 (p.399 item 15.ii): strips line also fires in a storage building on `is_cold_storage`,
+  `has_cable_spread_areas`, `floors_below_grade` > 0 or `basement_bua_m2` > 0 (robotic storage
+  and HH areas stay on the existing HH box, whose label already names them). MORE.
+- M6 / R-B: same conversion, "Ch 5 prints no row ...". LESS (as ruled).
+- L7 (p.387 #2.2.5, p.390 Table 5.1 item 4, p.401 #5.1.5): "Photoluminescent Sign
+  Specifications (UL 1994)" conditional (where used or required), cites #5.1.5 / p.401. LESS
+  (wording).
+- L9 (p.395 Table 5.2 item 3 VISIBILITY): new required universal line `es_g_visibility`. MORE.
+
+Ch 4 (rules/ch4_fire_extinguishers.yaml, engine.evaluate_fe)
+- H2 + Q-2 (p.376 row 3 item 2.i): `fe_class_b_wheeled_bulk_flammable` also fires on
+  `is_aboveground_tank_storage` and `is_flammable_liquid_warehouse`. MORE.
+- M5 (p.377 row 6 KITCHEN, HOMES): hotels get the 2.5 kg line as conditional "Where guest rooms /
+  apartments have kitchens" (`fe_g_class_k_hotel_rooms`); residential, villas, labour / staff
+  accommodation, hostel keep it required. LESS for hotels (row 7 commercial kitchen line still
+  on the 'Commercial kitchen' tick).
+- L6 (p.376 row 4 items 4-5): AHU line renamed "Class C Extinguisher - AHU Room / Mechanical
+  Plant Room", cites items 4-5. Neutral.
+- L8 (p.373 row 1 item 5; p.377 row 6): villa Class A recommendation states villas are not
+  listed, 4 kg row 1 type; 2.5 kg is the row 6 kitchen unit. Neutral (recommended line).
+- L10 (p.376 row 4 items 1-3 are rooms): a food / mercantile truck no longer prints the main
+  electrical, main telephone and lift machine room lines (defaults True). LESS (correct).
+- L11 UNSURE: conditional note line `fe_g_class_a_villa_converted` for a converted villa;
+  routing unchanged. Needs a ruling.
+
+Tests: new tests/test_audit28_ch47.py, 20 tests, all 20 RED on the unchanged code, GREEN after.
+No existing test changed. pytest 380 passed; tests/test_cases.py 114 passed, 0 failed;
+_structural_check.py 560 rule IDs, no errors, no warnings.
+
+Grid diff (vs scratchpad/sweep master baseline; 0 crashes, refused counts unchanged):
+flags: EVC_ITEM_STACK cleared (108 cases, L1); `is_theme_park` flips EVC to required for
+business / storage / villa bases (H1). storage: EVC_ITEM_STACK cleared (616); Groups T and U
+EVC no longer "required" (256 cases, conditional per R-B). mixed: EVC_ITEM_STACK cleared (all
+pairs at 30 m). grid: EVC_ITEM_STACK cleared (assembly, detention, education, hotel, mall,
+storage at 23 m or more); mixed_multiple below 23 m +1 NOT EVALUATED line (84 cases, M2). No
+FP / FA / SC / pump / tank / sprinkler change anywhere.
+
+Re-run issued jobs: any issued report with a theme park tick (Ch 5, Ch 7), a storage building
+with GFA blank and GF BUA over 5000 m2 (Ch 7), Group R / T storage (Ch 4), cold-storage /
+cable-spread / basement warehouses (Ch 5), Group T / U storage (Ch 5-7 now conditional),
+mixed_multiple with no occupancy listed below 23 m (Ch 7), hotels (Ch 4 Class K status).
+
+##### 2026-10-28 — Fix round, area ch8 (Ch 8 Fire Detection and Alarm): audit CH8-01 to CH8-19 (not CH8-04), rulings R-B and R-I
+
+Rulings applied: R-B (Groups T / U keep the items 19-20 package as conditional, R-B wording),
+R-I (robotic / mechanical parking: item 23 governs detection, item 22 notification, interfaces
+and delayed evacuation kept). CH8-04 (one FA protocol in mixed mode) is left to the lead (R-F,
+`_merge_most_restrictive`). Files: `rules/ch8_fire_alarm.yaml`, `engine.py` (`evaluate_fa` and two
+new helpers `_fa_sprinklered`, `_fa_parking_detection`; one call-site change in
+`_attached_parking_run` passing `sprinklered=host_spr` to `evaluate_fa`), `tests/test_cases.py`,
+new `tests/test_audit28_ch8.py`.
+
+- CH8-01 (p.512-513): Table 8.15 item 3 IS flame (#4.9) + IS linear heat on the tank roof (#4.8)
+  also fires on `is_aboveground_tank_storage` (Group T, Table 9.27 T p.745). Items 10-11 print the
+  same two systems; named in the one line, not printed twice. MORE onerous.
+- CH8-02 / R-B (p.506, p.511): open yard (U) and aboveground tanks (T) take `fa_storage_yard_tank`:
+  items 19-20 lines (smoke throughout, external AV, GFA = evacuation, interfaces, FACP location
+  iv-v) all conditional with the R-B wording. Table 8.14 item 37 open storage shed now conditional
+  "where a shed / structure exists". LESS onerous (required to conditional), as ruled.
+- CH8-03 (p.502-508): infrastructure prints one conditional line (Table 8.13 has no yard hydrant
+  network / infrastructure row; any building on the site, pump house or control building, takes its
+  own occupancy row). No Table 8.1 / 8.13 / 8.14 / 8.15 lines. LESS onerous (no building system).
+- CH8-05 / 06 / 10 (p.510-512): the cooling tower, kitchen hood, laundry / storage, pantry, pump
+  room and garbage room lines now state the printed Ch 8 row (no material, burner count, occupancy,
+  pump type or chute condition) and name the Ch 9-only condition. Text only; the app labels still
+  gate the flags (UX fixer). Neutral in the engine; MORE onerous once the labels change.
+- CH8-07 (p.511, p.712): tent kind temporary takes Table 8.14 item 32 (battery operated smoke
+  detectors) required; site office short / long takes item 33 (smoke detector, Section 4.3)
+  required. For those three kinds the Table 8.13 building row is replaced by one not_required line
+  naming the routing, and the Table 8.1 system lines are not printed; Table 8.14 / 8.15 lines stay.
+  Permanent tents, desert camps and row F keep their occupancy row. LESS onerous for the system,
+  MORE onerous for item 32 / 33 (conditional to required).
+- CH8-08 (p.502, p.506): warehouse and parking of 23 m or more get the R7 "highrise protocol not
+  applied" note naming their own protocol (items 19-20 (vii); item 22 (vii)-(viii)). Robotic
+  logistics warehouse of 23 m or more: conditional open-question line (item 23 prints no protocol).
+  Neutral.
+- CH8-09 (p.510): villas with 2 or more floors above grade get the Table 8.14 item 14 stair-top
+  smoke detector from the storey count when `has_stairs` is cleared. MORE onerous.
+- R-I (p.506): robotic parking (enclosed and open) drops item 22's sprinkler-dependent detection
+  line (named not_required), keeps item 22 (iv), (v), (vii), (viii). `fa_robotic_parking` FACP line
+  re-cited to Table 8.1 item 14.1 (vi), p.458 (item 23 prints only i-ii). LESS onerous (one
+  detection line fewer), as ruled.
+- CH8-11: cold storage "owner ruling pending" text replaced by "owner ruling 12.10.2026, Ch8 Q2".
+- CH8-12 (p.509, p.512): one diesel generator heat detection line citing Table 8.14 item 8 and
+  Table 8.15 item 5 (`fa_eq_diesel_gen_area` removed). Neutral.
+- CH8-13 (p.508): private villa line "FACP or Monitoring Panel at Continuously Attended Location"
+  (item 26 iii). Neutral.
+- CH8-14 (p.503, p.507-508): villa wiring line conditional, naming the Section 4.11 wireless
+  alternative of items 14 / 25 / 26 (i). LESS onerous for villas (as printed).
+- CH8-15 (p.455, p.514): FACP line cites Table 8.1 item 1 (i)-(ii) and #6.2.1 for the contractor
+  text. Citation only.
+- CH8-16 (p.503): `fa_midrise_lowrise` (items 3-4 + 9-13) only for assembly, business,
+  residential, day care, mercantile (and open mall, R10); animal housing, mixed and multiple,
+  high / low depth underground take `fa_midrise_lowrise_height_only` (items 3-4). Same lines,
+  citation only.
+- CH8-17 (p.45): highrise text "23 m or more up to 90 m" (R1). Text only.
+- CH8-18 (p.506): the parking item 22 line now names the branch that applies from the Ch 9
+  sprinkler result (own rows, the host's for an attached parking, any listed occupancy under R13):
+  "Manual Fire Detection and Alarm System - parking sprinklered, no fire detectors" (i-ii) or
+  "Heat Detection and Alarm System - parking not sprinklered" (iii), the other branch named. Neutral.
+- CH8-19 (p.456-466): new general lines with values as printed: item 4 (ii) 10 s; item 6 (iii)-(iv)
+  stair voice speakers / no sounders; item 9 (i) 1 m from diffusers; item 14.1 (v)-(viii) 20% spare,
+  attended location, not in service rooms; item 14.3 (i)-(iv) 10 s / 200 s; items 14.12 (i) and
+  18 (i) notification on each floor; item 17 (ii)-(v), (ix) 1-2 Hz, 0.2 s, 40%, 1000 cd, 150 mm.
+  MORE onerous (new lines).
+
+Tests: 21 new (tests/test_audit28_ch8.py), 20 RED on master, 1 pins unchanged behaviour (permanent
+tent). Updated in place: tests/test_cases.py "FA: Diesel generator + Commercial kitchen" (no
+"Heat Detection (Diesel Generator Area)" equipment line, CH8-12) and "FA: Open parking -> item 22
+by analogy" (the resolved "Manual Fire Detection and Alarm System - parking sprinklered ..." line in
+place of "Conditional FA System ...", CH8-18). Counts: pytest 381 passed, cases 114 passed,
+structural 0 errors / 0 warnings.
+
+Grid diff vs master (0 crashes in 16,078 cases): FA branch only. Animal housing, mixed_multiple,
+high / low depth underground: fa_midrise_lowrise -> fa_midrise_lowrise_height_only (CH8-16);
+infrastructure: height rows -> fa_infrastructure and FA automatic detection True -> False (CH8-03);
+storage Groups T / U: fa_storage_industrial -> fa_storage_yard_tank (R-B). No change in any other
+chapter, pump, tank, sprinkler or check.
+
+Re-run issued jobs: open yard storage and aboveground tank farms (FA package now conditional,
+Group T gains Table 8.15 item 3); infrastructure jobs (no building FA); temporary tents and site
+offices (item 32 / 33 in place of the addressable system); robotic parking; villas of G+1 and above
+(stair-top detector); highrise warehouses and parkings (R7 note).
+
+##### 28.10.2026 - Fix round, area ch9 (Ch 9 Tables 9.18-9.36, pumps, storage tenancy)
+
+Branch `worktree-agent-a586391b853f291c8`, commit 576940b (base 4b69f4f + 975ea96).
+Rulings applied: R-C, R-E, R-G, R-H, R-J, Q-1, Q-3, Q-4 (owner, 28.10.2026). Sources: ledgers
+CH09A.md (F9A-01..13), CH09B.md (CH9B2-01..21), CURSOR_PRS.md (#18, #26, #27). Page text re-read
+for every value (p.567-568, 580, 582, 589, 694-695, 696, 698, 704-717, 721, 723-731, 746-747,
+750-753, 756, 770; Ch 3 p.304, 317, 327, 331).
+
+Changes (direction vs printed text):
+- F9A-01 / R-C (p.707, p.711): Table 9.21.e rows no longer suppress the host Table 9.21.a / 9.21.b
+  row; both print, `_merge_duties` keeps the most onerous pump / tank and names the other. MORE.
+  Cursor PR #26 NOT ported: it suppressed the host tier on a blank outlet area, against R-C; the
+  host row stays and the outlet line is NOT EVALUATED (test pins it).
+- F9A-13 (p.711): row A villas G+1 only (floors_above_grade <= 2); a villa above G+1 with an outlet
+  gets a conditional "no printed row" line; rows' wording names A villas (G+1), B business,
+  C mosques (Assembly Group C = mosque row). Neutral / MORE.
+- F9A-07 + Cursor PR #27 ported (p.712): Table 9.21.f rows A-E gated to height <= 15 m (#4.5.6
+  under 4.5 Lowrise); row F to GF BUA > 0 and <= 150 m2 and <= 2 floors, else NOT EVALUATED;
+  a tent choice above 15 m prints a conditional "not applied" line. MORE.
+- F9A-04 / PR #18 residual (p.709): 9.21.c.2 also suppresses 9.21.a.3 / 9.21.b.2. LESS (as
+  printed). Ch 3 checked: Table 3.24 item 2.1 ii/iii (p.317) and Table 3.19 item 2 (p.304) have no
+  area limit for a single exit stair; Table 3.30 item 3.i (p.327, hotel) and Table 3.32 item 5.i
+  (p.331, mercantile) do not permit one. Stated in the line.
+- F9A-03 (blank input class): lowest rows of Tables 9.20.b, 9.20.c, 9.21.a, 9.21.b, 9.21.c, 9.21.d,
+  9.22.B, 9.24 A/C/D get `_gt: 0`; NOT EVALUATED branches for blank GF BUA (9.20.b, 9.21.a,
+  9.21.b, 9.21.d, 9.24) and blank plot (9.21.b rows 1-2 need plot > 0; 9.22.B; add-on rows
+  9.20.b.4, 9.21.a.4, 9.24 A.4/B.2/C.4). MORE.
+- F9A-02 (p.721): attached covered / shaded parking evaluated at its own single level (Table 9.24.D).
+  LESS (correct row).
+- F9A-05 / Q-3 (p.695 #4.1.17): one governing fire pump and fire water tank for host + attached
+  parking, in the host FP chapter, citing both tables and #4.1.17; the parking's line is removed.
+  Neutral (most onerous kept).
+- F9A-06, CH9B2-03, CH9B2-15 / Q-1 (p.694): #4.1.7 kept at G+3, reading stated, NFPA 13 density text
+  removed; a required warning line when the Table 9.27 row gives only a hose-reel pump / tank
+  (#4.1.9). MORE (warning).
+- F9A-08 / F9A-09 / F9A-11 (p.704-705, 708, 713, 716-717): tool-added text removed (detention head
+  type, villa podiums / two-compartment tank / multiple breeching, mall Class III); villa rows print
+  iii dry landing valves and risers not required, iv developer pump room / tank (conditional),
+  A.1.b roof; 9.21.a.3 "including basements and podiums (open as well as closed)"; 9.21.b.3 iv.
+- F9A-10 / R-J: exactly 90.0 m stays Table 9.19 with a conditional edge note (p.696, p.698).
+- R-H: detention 23 m or more, conditional line naming Table 9.20.d items (p.704).
+- F9A-12: #4.1.9 on every governing pump line; #4.1.17 / #4.1.18 recommended line for
+  infrastructure and plots over 20,000 m2 (p.695).
+- CH9B2-01 / 06 / 07 (H9, p.567-568, 580, 582, 589, 770): every governing pump line states the set
+  1 electric + 1 diesel + 1 jockey pump with controllers (Table 9.3 item 1.xii; Tables 9.5 / 9.6 /
+  9.7 item 3.i), diesel 8 h (2.iii), location 1.xv, power 2.i, Civil Defence listing (#6.1.1 /
+  #6.1.3); super highrise upper sets: 2 electric from different sources (1.xiii, 2.ii). "Electric
+  or diesel" and "UL/FM" removed. Villa rows keep their printed "fire pump set ... 250 gpm" text.
+  MORE.
+- CH9B2-02 (H10, p.750-751): Table 9.29.A pump (with hydrants when the FP result requires yard
+  hydrants or a yard line is NOT EVALUATED, else without) enters `_merge_duties`. MORE.
+- CH9B2-04 / R-G: specialty groups K, P-V and hazard rows A-J / commodity rows L-O both evaluated;
+  pump / tank merged with an R-G note; the specialty row names the selected branch. MORE.
+- CH9B2-05 + sweep: `_reconcile_not_required` drops a not-required line when another table requires
+  that system, and names it in the governing line (Table 9.19 vs Table 9.27 row 4 wet riser;
+  highrise / G+4 plant nursery; specialty vs hazard rows). Neutral.
+- R-E (p.752, p.756): diesel generator room Table 9.31.E governs regardless of sprinklers, cites
+  Table 9.30.G; no #4.1.5 note for that room. MORE.
+- Q-4 / CH9B2-19: new `Building.storage_tenancy` (single / multi / None); legacy
+  `is_single_tenant_storage: true` maps to single, false / absent to None and the legacy key
+  follows the choice; blank = "Storage Tenancy (Table 9.27 Groups A-J) - NOT EVALUATED". MORE.
+- CH9B2-08 / 09 (pump_specs.yaml): Table 9.6 item 6.i.a / 6.ii text, p.582; fixed_1000 cites
+  Table 9.26 A.vi p.723 and Table 9.23.B.2 ii p.717.
+- CH9B2-10: Groups F / G / H print their not-required riser lines; one #4.11.1 MSDS line for every
+  storage report. CH9B2-13 / 14 / 20: Table 9.30.K, 9.31.C wording; 9.30.F reading labelled.
+  CH9B2-16 / 17: tunnel 60 m edge stated; blank tunnel length is a required NOT EVALUATED line.
+  CH9B2-18: #4.1.8 conditional line for HH storage. CH9B2-21: Dubai ESL note on pumps of 500 gpm
+  or more (source is a scanned copy; owner to confirm the wording).
+- Kitchen hood (p.756 Table 9.31.A i): spec "Automatic wet chemical system (Section 3.12) and
+  grease filters, for commercial kitchens having 3 or more burners".
+
+Tests: tests/test_audit28_ch9.py, 31 tests; 30 RED before the change, 1 green (PR #26 re-check,
+pins master behaviour kept under R-C). pytest 391 passed; tests/test_cases.py 114 passed;
+_structural_check.py no errors / warnings. Updated in place (old -> new): test_phase1_findings
+ENG_09 (tenancy multi), attached_parking_carries_routing_inputs (Q-3: pump in host chapter),
+R14b (R-E diesel room); test_phase2_ch9 / _answers / test_phase5_ch9 store() helpers (Q-4 multi;
+specialty tests leave tenancy blank), CH9C_27 (CH9B2-17 name), Q9 (tenancy multi); test_phase3_app
+CH9B_14 (R-C pump); test_phase4 lowrise kiosk (plot entered, F9A-03); test_phase5 item4 (tenancy);
+test_cases 3 storage cases (tenancy) and plant nursery line name.
+
+Grid diff (scratchpad/fix/ch9/out_*.jsonl vs scratchpad/sweep/out_*.jsonl): 0 crashes. Changes in
+FP only: storage cases without a tenancy choice (Q-4 NOT EVALUATED), business flag base without a
+plot (F9A-03 plot NOT EVALUATED, 104 cases), mixed pairs with a lowrise residential-group or
+storage occupancy (plot / tenancy NOT EVALUATED). REQ_AND_NOTREQ FP: flags 2 -> 0, storage 68 -> 0.
+
+Re-run issued jobs: any saved storage project (tenancy now required); lowrise residential /
+business / healthcare B-C / kiosk projects without a plot area; projects with an attached commercial
+outlet (host table now kept); projects with Table 9.21.f choices; attached parking projects (one pump
+/ tank line); high-ceiling storage; storage with a specialty tick.
+
+##### 2026-10-28 — Fix round ch1011: Ch 10 smoke control, Ch 11 LPG, Ch 19 EAP, Annexure 2 checklist (worktree branch `worktree-agent-ae56c99e1c527dbaa`, not pushed)
+
+Rulings applied: R-B (Groups T / U, Table 10.26 rows conditional; Cursor PRs #29, #30), R-D
+(Table 10.27 item 16.iii kitchens), standing rule "a blank never passes". Ledger:
+scratchpad/findings/CH10-11.md (C10-01..12, C11-01..10, EAP-01..05, A2-01..02). Page text re-read
+for every value (pages/pNNNN.txt).
+
+Ch 10 (rules/ch10_smoke_control.yaml, engine.evaluate_sc + `_sc_reconcile`, `_sc_ruling_rb`)
+- C10-01 / R-D (p.866): new `sc_aux_kitchen_16iii` REQUIRED for malls, healthcare_a and every
+  non-residential building of 23 m or more, no tick needed (MORE onerous); new
+  `sc_aux_kitchen_16iii_residential_highrise` CONDITIONAL for residential / labour / staff /
+  hostel / hotel_a-c of 23 m or more (MORE); parking of 23 m or more gets a CONDITIONAL line
+  (`sc_aux_kitchen_16iii_parking_highrise`, needs ruling). The tick line now cites 16.i-16.ii
+  with the printed text.
+- C10-02 (p.864, p.860): storage with GF BUA 0 prints "Factory / Warehouse Smoke Extract
+  (Table 10.26 item 1) - NOT EVALUATED" (was the < 230 m2 row; MORE); open parking with GFA 0
+  prints "Open Parking Smoke Purging ... - NOT EVALUATED" (was "NOT Required"; MORE).
+- C10-03 (p.857-860): #3.2.1 has no parking exclusion (only Table 10.22 is "other than Parking
+  usage"), #3.5.1 sends parking to Table 10.23: both apply. Stair pressurization printed once
+  (parking line, carrying the Table 10.20 / 10.19 item 1 text and both citations). Open parking
+  of 23 m or more up to 4000 m2: the code does not say which table governs; the more onerous
+  Table 10.20 item 4 corridor line is kept, Table 10.23 item 2.2.i named in it, and the
+  "Smoke Purging / Ventilation NOT Required" line is not printed at 23 m or more (neutral; no
+  required / not-required pair).
+- C10-04 (p.860): enclosed parking line prints 1.ii (no make-up air, single basement < 3600 m2)
+  and 1.iii (no jet fans). CO cross-reference line, Ch 3 Table 3.37 item 7.i (p.338),
+  required for enclosed parking (MORE; the Ch 3 fixer adds the main line).
+- C10-05 (p.866): items 5-7 print Section 2.17 and item ii (temperature control, AHU
+  recommended). C10-06: Table 10.21 rows need a building (height > 0); infrastructure with
+  no building loses the four lines (neutral). C10-07: lobby text as printed, no "preferred".
+  C10-08: business 23 m+: separate conditional stair line removed; Table 10.27 item 3.iii cited
+  on the one required stair line. C10-09: new general block (Section 2.5 / Table 10.3:
+  secondary power, 2 h wiring, 60 s, 400°C / 2 h fans) printed whenever a Ch 10 system line is
+  required (MORE, text only); Table 10.26 back-up power column on the warehouse rows.
+  C10-10: 6 ACH (Table 10.6 3.i, FAQ #30) on corridor lines; 10 ACH / 3600 m2 (Table 10.11 3.i)
+  governing over FAQ #31 9 ACH on Section 2.13 purge lines; jet fans 10 ACH (Table 10.12 3.i).
+  C10-11: hybrid option, 4000 m2 zoning, open-parking definition. C10-12: mall tenant
+  > 1000 m2 line CONDITIONAL (LESS; no tenant-area input).
+- R-B: Table 10.26 rows CONDITIONAL with the ruling wording for Groups T and U (LESS than
+  required, never "not required").
+
+Ch 11 (rules/ch11_lpg.yaml)
+- C11-01 (p.925-926, p.929): tanker parking (#4.8: 14 x 4 m up to 3,300 Gal, 20 x 4 m above,
+  both printed with the condition; no capacity input) and Table 11.13 point of transfer lines
+  REQUIRED with any LPG tank (MORE). C11-02 (p.924): Table 11.12 #3 separations and #4 / #7
+  management lines added; the unprinted "low-pressure interlock" text removed (MORE).
+  C11-03 (p.915-917): underground rows #1.i-viii, #2.i-xv, explosion-proof detector #2.xvi
+  added; monitoring shaft / vent riser / annual corrosion text removed. C11-04: ASME reduction
+  CONDITIONAL (LESS, optional per Table 11.10.a 3.b). C11-05: listing line cites #2.2.1-#2.2.3
+  (p.883), contractor-exclusion sentence removed. C11-06: "Exterior Emergency Shut-off Valve
+  per Building (#2.3.14.6)", p.890 (was "Section 2.5"). C11-07: cylinder regulators print the
+  5 psi commercial stage and #2.3.12.3 hose text. C11-08: new general line #2.2.7 areas and
+  #2.3.9.11 pipe colours (MORE). C11-09: roof tank above 90 m prints only "Not Allowed"
+  (Table 11.7 / 11.8 rows dropped, neutral). C11-10: Tables 11.6.b-d values printed.
+
+Ch 19 (eap.py) and Annexure 2 (submission_checklist.py)
+- EAP-01 (p.1246-1248): drills per Table 19.2 row (#3.2 assembly ... #3.9 mall; #3.4 / #3.5 /
+  #3.6 highrise business / hotel / residential incl. labour, staff, hostel), plus the #3.1 FM
+  drill in every building; lowrise rows name that no occupant frequency is printed (MORE).
+- EAP-02 (p.1237): command roles a-e and the strategy line in every building (MORE).
+- EAP-03: strategy wording as printed ("would be a suitable strategy"; CD certification of
+  remain-in-place / refuge). EAP-04: villa notes say p.1233 #2.1.1 is read and prints no villa
+  exclusion or inclusion; villa routing unchanged (needs ruling). EAP-05: Arabic / English,
+  Ch 5 Table 5.1.8 plan, vests line (item 9, p.1244), one-week notice (#2.1.iii).
+- A2-01 (p.1284-1288): #3 file names, #4 do-not-submit, #5.ii b-n (i, j, k by height),
+  #5.iii-#5.vii discipline rejection lists, #6 legend figures. A2-02: unprinted "Consultant
+  declaration / HoE endorsement" item removed.
+
+Tests: tests/test_audit28_ch1011.py, 77 new (77 failed on HEAD 975ea96 before the change).
+Re-pointed: tests/test_phase3_followups.py::test_F_a1_2_villa_written_eap_conditional_pending_p1233
+(was "not yet read" in the villa EAP detail; now "#2.1.1" and not "not yet read"; EAP-04).
+Totals: 437 pytest passed, 114 cases, structural 0 errors / 0 warnings.
+Grid vs master baseline (grid 9870, flags 832, storage 2856, mixed 2520): 0 crashes; only the
+SC required-line count changes (general line +1 wherever a Ch 10 system is required; kitchen
+16.iii +1; CO cross-reference +1 enclosed parking; parking 23 m+ stair -1; T / U rows to
+conditional). No FP / FA / EVC / branch / NOT EVALUATED-count change in any grid.
+
+Needs ruling: (1) R-D for parking buildings of 23 m or more (tool: conditional); (2) EAP-04
+villa scope (p.1233 read, silent; lines stay conditional); (3) C10-03 open parking of 23 m or
+more up to 4000 m2: Table 10.20 item 4 kept over Table 10.23 item 2.2.i (more onerous).
+
+Re-run issued jobs: every report's SC chapter (general block); malls, hospitals, highrise
+non-residential (kitchen line); parking of 23 m or more; enclosed parking; Group T / U
+warehouses; storage or open parking entered with GF BUA / GFA 0; any LPG tank, flame effect,
+underground or roof tank job above 90 m; every EAP chapter and CD checklist export.
+
+##### 2026-10-28 — Fix round, area ux (app / exports / UI): audit UX-01 to UX-27 (not UX-03), CH8-05 / CH8-06 / CH8-10 labels, blank geometry stops
+
+Rulings applied: standing rules "a blank never counts as a pass" (geometry stops) and "no pre-fill
+the user did not type" (every default the report rests on is now listed in an "Assumptions used"
+box and in every export); R-B wording in the open-yard help; R-I and Ch9 Q7 in the robotic parking
+help; Q-3 named in the attached parking help. UX-03 (NOT EVALUATED status + banner) left to the
+lead. No engine, rule or schema change: the four sweep grids are identical to the master baseline.
+Files: `app.py`, `export.py`, `ui.py`, `requirements.txt`, new `tests/test_audit28_ux.py`.
+
+- UX-01 (p.695 #4.1.13): the plot GF BUA sum and every Table 9.27 input (single tenant, K, P, Q +
+  hangar group, R, S, T + tank area / capacity, U, V, commodity L-O, unit compartment #4.1.14) are
+  drawn under "Storage hazard class", before any stop; the stop names that place. A stand-alone
+  warehouse evaluates (was a dead end). The Warehouse preset now states OH2 and the plot sum
+  (title "Warehouse (multi-tenant OH2, 4000 m², only building on the plot)"). Neutral.
+- UX-09: input stops are collected and shown after the WHOLE sidebar (FP, SC, LPG settings stay
+  drawn during a stop); several stops show together. Neutral.
+- Blank geometry (fix round rule): a building with a height (not infrastructure) stops by name when
+  GF BUA (#4.1.12 p.695), GFA (Ch 3 #1.4.6 p.242) or plot area (#4.1.10 p.695) is 0. Exempt: an
+  underground occupancy with a basement BUA (no GF BUA), a food / mercantile truck (no plot area).
+  MORE onerous (stop instead of a silent 0). Every preset fills its values: basement parking area /
+  height 0 / levels, depth 3.5 m per basement, hospital open parking 3000 m2 at grade, office
+  Business Group B (Table 1.1 row 2 p.48: offices are Group B).
+- UX-02: "?print=1" link removed (it opened a new session = the sample building); a "Print layout"
+  toggle hides sidebar and export column in the same session. Neutral.
+- UX-04: executive PDF / Word print one governing line per chapter (headline system, else the
+  matched row's first line), FP with pump and tank, FSA extent, MOE OL + exits; no truncation;
+  NOT EVALUATED lines named, never chosen as the headline. Neutral.
+- UX-05: flags cleared by an occupancy change are remembered and re-ticked on return; the sidebar
+  names what was cleared / restored. Presets and Load start afresh. LESS silent loss (MORE lines
+  kept on a round trip).
+- UX-06: every input that appears / disappears above an expander sits in a fixed container
+  (occupancy inputs, geometry warnings, hazard notes, storage block, parking, high ceiling, theatre
+  kind); open expanders stay open (checked in Chromium: depth 8 m, basements 0). Neutral.
+- UX-07: exports built on click (download_button callable, kept in a cache_resource store),
+  `on_click="ignore"` on every download; rerun 0.6-1.3 s (was 2.6-4.7 s). Neutral.
+- UX-08: "Assumptions used in this report" box (sample building, preset, first-load pre-ticks never
+  touched, standpipes / motor fuel group / parking type / hangar group / tunnel kind / exit stairs
+  left on default, blank optional inputs and their fallbacks, working hazard class); "Sample
+  building" banner on first load; the list is printed in every export. Neutral.
+- UX-10 / 11 / 12: save name follows `<project>_<date>` until typed; notes, "Generated <date> |
+  FLSC tool revision <git sha>", an "Inputs used" table (every entered value and ticked box, blank
+  parking inputs "not entered") and the assumptions in compact / detailed / executive PDF and Word
+  and in the XLSX (Profile rows + Inputs sheet); detailed tables carry a Status column; file names
+  `<project>_FLSC_<kind>_<YYYY-MM-DD>.<ext>`. PDF text is escaped (a "<" in a project name broke the
+  PDF). Neutral.
+- UX-13 / 22: compact table view is the default (Cards keep "Why triggered"); filter default all
+  statuses except not required; "Required only" toggle; a search with no match says so. Neutral.
+- UX-14: classification chips, chapter captions and exports print the table / row (e.g. "Ch 9,
+  #4.3.1 / Table 9.19.B") not rule IDs; empty chip reads "general rules"; occupancy names, not codes,
+  in captions, mixed note, "Why this row" and sanity texts; rule IDs and raw YAML behind "Show rule
+  IDs". Neutral.
+- UX-15 / 17 / 27: robotic parking moved to the parking block, theatre / cinema kind next to its
+  box; special rooms in one column; "(required)" in the parking height / levels labels.
+- UX-16: every input has help (data_editor has no help parameter; caption kept). Yes/no inputs cite
+  the code_ref / page_ref of every rule line they switch on, read off the rule YAMLs at run time
+  (stays in step with rule fixes); hand-written leads cite Ch 1 #1.7.39-#1.7.45 p.44-45, Ch 9
+  #4.1.4 / #4.1.6 / #4.1.7 p.694, #4.1.10-#4.1.14 p.695, Ch 3 #1.4.5 / #1.4.6 p.242, Table 3.13
+  p.283-287, Table 9.27 groups p.724-746, Table 9.29 / 9.29.A p.749-751, Table 9.30 p.752-755,
+  Table 9.31 p.756-757, Table 8.14 p.509-511, Table 8.15 p.512-513, Tables 9.18-9.20 pump notes
+  p.696-701. No tilde, approximately sign or section sign.
+- CH8-05 / 06 / 10 (p.510-512, p.756): labels "Cooling towers (G)", "Commercial kitchen with
+  cooking hood (A)", "Laundry / storage rooms", "Pantries", "Pump room (fire pump or other)",
+  "Garbage room / chute"; help states the Ch 8 row has no condition and names the Ch 9-only one.
+  MORE onerous in use (users with non-combustible towers / small hoods now tick the box).
+- UX-18 / 19 / 20 / 21 / 23 / 24 / 25 / 26: sidebar "auto" (closed on a phone), compact hero and no
+  mid-word title break under 640 px, "Contents and exports" anchor; unsaved-inputs hint + Save
+  button by the exports; `streamlit==1.66.1`, `use_container_width` gone, pickers state-driven (no
+  index + state warning); dead code-excerpt path removed; "what changed" list + delta on Required
+  systems; muted text #475569, larger legend; fire access metric "1/6" with full text in caption;
+  advisory (LPG roof above 90 m) is a warning, not a red stop; sanity expanders collapsed.
+
+Tests: new `tests/test_audit28_ux.py`, 29 tests (28 RED on the unchanged code, 1 guard test green
+by design: infrastructure / truck exemption). No existing test changed. pytest 389 passed (was
+360), tests/test_cases.py 114 passed, _structural_check no errors / no warnings.
+Grid diff (grid 9870, flags 832, storage 2856, mixed 2520): 0 crashes, 0 changed keys.
+Re-run issued jobs: none from the engine (no result changed). Projects saved as .flsc load as
+before; a file with GF BUA, GFA or plot area 0 now stops by name until filled.
+
 ### 2026-10-25 — Ch 6: highrise warehouse takes the height row only; one EL line cites every row (local branch, not pushed)
 
 Rulings: Hussein 25.10.2026 12:37Z "Both A" (warehouses 23 m or taller: show one package) and

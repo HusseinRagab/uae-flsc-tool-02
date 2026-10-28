@@ -117,6 +117,191 @@ general:
         page_ref: "p.291"
         detail: "Applies to basements and enclosed podiums used only for vehicle parking and service rooms (generator, server, battery, service rooms)."
 
+  # ---------- fix round 28.10.2026 (ch123): Table 3.4 items 7-8 (CH123-09) ----------
+  # Table 3.4 item 7 (p.259): low depth AND lowrise (up to 15 m) -> block-work; high depth,
+  # midrise (more than 15 m), highrise, super highrise -> RCC. Both 2 hour.
+  - id: moe_g_stair_separation_blockwork
+    when:
+      height_m_lte: 15
+      is_high_depth_is: false
+    systems:
+      - name: "Exit Stair Separation (Table 3.4 item 7)"
+        spec: "Every stair serving as an exit in Low depth and Low rise buildings (having height up to 15 m), shall be separated from rest of the building areas by a construction of at least block-work and ensure 2 hour fire resistance rating. Separation shall extend vertically from the lowest level of the stair to a point 3 m above the top most landing of the stairs or to the roofline. Elevators shall not be in a common shaft enclosure with stairway."
+        code_ref: "Ch 3, #3.3 / Table 3.4 item 7.i, 7.iii, 7.iv"
+        page_ref: "p.259"
+        detail: "Audit CH123-09. Villas (owner ruling 12.10.2026, Ch3 Q7): Table 3.4 applies, but Table 3.27 item 2.v / Table 3.28 item 3.v (p.323-324) permit spiral stairs, winders and open stairs other than for access and exit from basements, and the villa table prevails (#5.6.1, #5.7.1; #3.3.2, p.255)."
+  - id: moe_g_stair_separation_rcc
+    when:
+      any_of:
+        - {height_m_gt: 15}
+        - {is_high_depth_is: true}
+    systems:
+      - name: "Exit Stair Separation (Table 3.4 item 7)"
+        spec: "Every stair serving as an exit in High depth, Mid rise, (having height more than 15 m), High rise buildings and superhighrise buildings shall be separated from rest of the building areas by a construction of RCC (Reinforced Concrete) and ensure 2 hour fire resistance rating. Separation shall extend vertically from the lowest level of the stair to a point 3 m above the top most landing of the stairs or to the roofline. Elevators shall not be in a common shaft enclosure with stairway."
+        code_ref: "Ch 3, #3.3 / Table 3.4 item 7.ii, 7.iii, 7.iv"
+        page_ref: "p.259"
+        detail: "Audit CH123-09. High depth = more than two basements or more than 7 m below the level of exit discharge (#1.7.45, p.45)."
+  - id: moe_g_stair_penetrations
+    systems:
+      - name: "Penetrations into Stair Space (Table 3.4 item 8)"
+        spec: "Space within the stair shall not be used for any other purpose than occupant exit and evacuation. Space under the stair shall not be used for any other purpose unless fully isolated from the stair with 2 hour fire resistance construction, with entry / exit not through the stair enclosure. Only penetrations allowed into the stair enclosure: fire hose and sprinkler piping, fire protection piping valves, electrical conduits serving the stair enclosure and fire detection and alarm system wiring enclosed in metal conduits. Fire Hose Reel and Landing valve cabinets shall not be located in the stair enclosure. Pressurization ducting, AC units, fan coil units, ventilation ducts, water piping, heater piping, drainage piping etc. shall not be located in the stair enclosure."
+        code_ref: "Ch 3, #3.3 / Table 3.4 item 8"
+        page_ref: "p.259"
+        detail: "Audit CH123-09."
+
+  # ---------- fix round 28.10.2026 (ch123): component tables (CH123-25) ----------
+  # Table 3.2 item 18 (p.254): doors opening into exit corridors, exit access corridors and
+  # exit stairs follow Tables 3.3.a / 3.3.b unless Section 5 specifies otherwise.
+  - id: moe_g_door_fire_ratings
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "Fire Resistance Rating of Doors (Table 3.3.a)"
+        spec: "Exit stair: 90 Minutes, smoke proof, self closing, latches only. Exit passageway: 90 Minutes, smoke proof, self closing, latches only. Exit corridor of 1 hour fire rating: 60 Minutes, smoke proof, self closing, latches only. Exit corridor of no fire rating: None (latches only). Service corridor of 1 hour fire rating: 60 Minutes, self closing (latches and locks per Table 3.2). Service corridor of no fire rating: None, smoke proof (latches and locks per Table 3.2). Elevator lobby: 60 Minutes, smoke proof, self closing (Table 3.2.10). Garbage room: 60 Minutes, smoke proof, self closing, latches only."
+        code_ref: "Ch 3, #3.2 / Table 3.2 item 18 / Table 3.3.a"
+        page_ref: "p.254"
+        detail: "Audit CH123-25. Table 3.2 item 18.i: the fire resistance rating of doors which open into exit corridors, exit access corridors and into exit stairs complies with Tables 3.3.a and 3.3.b unless specified in individual occupancies as per Section 5; item 18.ii: door fire rating is not required where located in non-fire rated walls. Table 3.3.a prints no row 6."
+  - id: moe_g_unit_doors_residential
+    when: {occupancy: residential}
+    systems:
+      - name: "Unit Door Fire Rating (Table 3.3.b)"
+        spec: "Main doors of units in an enclosed exit corridor: apartment unit main door and residential unit main door 60 Minutes (smoke proof not required, self closing not required, latches and locks per Table 3.2.7). Kitchen door in residential / apartment: None. Unit doors in open external corridor: None."
+        code_ref: "Ch 3, Table 3.3.b rows 1, 2, 7, 8"
+        page_ref: "p.254"
+        detail: "Audit CH123-25."
+  - id: moe_g_unit_doors_accommodation
+    when: {occupancy_in: [labour_accommodation, staff_accommodation, hostel]}
+    systems:
+      - name: "Unit Door Fire Rating (Table 3.3.b)"
+        spec: "Main doors of units in an enclosed exit corridor: labor accommodation unit door and staff accommodation unit door 60 Minutes (smoke proof not required, self closing not required, latches and locks per Table 3.2.7). Unit doors in open external corridor: None."
+        code_ref: "Ch 3, Table 3.3.b rows 3, 4, 8"
+        page_ref: "p.254"
+        detail: "Audit CH123-25. Table 3.3.b prints no hostel row; hostels are Residential Group B with staff accommodation (Table 1.1 row 5, p.49) and take row 4."
+  - id: moe_g_unit_doors_hotel
+    when: {occupancy_in: [hotel_a, hotel_b, hotel_c]}
+    systems:
+      - name: "Unit Door Fire Rating (Table 3.3.b)"
+        spec: "Hotel unit main door in an enclosed exit corridor: 60 Minutes, self closing (smoke proof not required; latches and locks per Table 3.2.7). Unit doors in open external corridor: None."
+        code_ref: "Ch 3, Table 3.3.b rows 5, 8"
+        page_ref: "p.254"
+        detail: "Audit CH123-25."
+  - id: moe_g_unit_doors_office
+    when: {occupancy: business}
+    systems:
+      - name: "Unit Door Fire Rating (Table 3.3.b)"
+        spec_s: "Office unit main door in an enclosed exit corridor (row 6): None if sprinklered; self closing (smoke proof not required; latches and locks per Table 3.2)."
+        spec_ns: "Office unit main door in an enclosed exit corridor (row 6): 60 Minutes, if not sprinklered; self closing (smoke proof not required; latches and locks per Table 3.2)."
+        code_ref: "Ch 3, Table 3.3.b row 6"
+        page_ref: "p.254"
+        detail: "Audit CH123-25."
+  - id: moe_g_unit_doors_education
+    when: {occupancy_in: [education_a, education_b, education_c]}
+    systems:
+      - name: "Unit Door Fire Rating (Table 3.3.b)"
+        spec_s: "Education class room doors in an enclosed exit corridor (row 9): None if sprinklered; self closing (smoke proof not required; latches and locks per Table 3.2)."
+        spec_ns: "Education class room doors in an enclosed exit corridor (row 9): 60 Minutes, if not sprinklered; self closing (smoke proof not required; latches and locks per Table 3.2)."
+        code_ref: "Ch 3, Table 3.3.b row 9"
+        page_ref: "p.254"
+        detail: "Audit CH123-25."
+  # Table 3.6 (p.272-273): input has_horizontal_exits (Ch 5 settings).
+  - id: moe_g_horizontal_exits
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+      has_horizontal_exits: true
+    systems:
+      - name: "Horizontal Exits (Table 3.6)"
+        spec: &t36 "Horizontal exits only where the other non-horizontal exits leading outside give not less than half (50%) of the total egress capacity and number of exits (#3.4.1). Each fire compartment counted as a horizontal exit also has at least one or 50% of the required number of exits that is not a horizontal exit (item 1.i). Fire barrier minimum 2 hour fire resistance rating, continuous from ceiling to finished floor level (item 2.i). Floor area on either side sufficient to hold the occupants of both floor areas, at least 0.28 m2 clear floor area per person (item 5.i). Ducts through the barrier have listed fire dampers; no duct penetration without dampers in non sprinklered buildings (item 6). Doors 90 minutes fire resistance rated, swinging in the direction of egress (two-way swing fire doors with vision glass permitted), self-closing or automatic closing, with approved vision panel, unlocked from the egress side when either side is occupied (items 4, 7). Bridges between buildings: 2 hour fire barrier, openings 45 minutes, width not less than 1200 mm (item 8)."
+        code_ref: "Ch 3, #3.4 / Table 3.6"
+        page_ref: "p.272-273"
+        detail: "Audit CH123-25. Ticked: horizontal exits are provided (Ch 5 settings). Table 3.6 item 2.ii-iv (p.272): floors where the barrier is omitted separated by at least 2 hour; vertical openings 2 hour; outside walls at less than 180 degrees within 3 m: 1 hour walls with 45 minutes openings, or one wall 2 hour with 90 minutes openings. #3.4.2: occupancy sections that allow and modify horizontal exits override Table 3.6."
+  - id: moe_g_horizontal_exits_check
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+      has_horizontal_exits: false
+    systems:
+      - name: "Horizontal Exits (Table 3.6)"
+        required: conditional
+        spec: *t36
+        code_ref: "Ch 3, #3.4 / Table 3.6"
+        page_ref: "p.272-273"
+        detail: "Audit CH123-25. Conditional: applies where horizontal exits are provided (no horizontal exit is ticked in the Ch 5 settings)."
+  - id: moe_g_smokeproof_enclosures
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "Smokeproof Enclosures (Table 3.7)"
+        required: conditional
+        spec: "Where a smokeproof enclosure is provided: continuously enclosed by barriers having a 2-hour fire resistance rating from the highest point to the level of exit discharge (item 1.i); access through a vestibule or an exterior balcony unless the enclosure is pressurized (item 2.i); vestibule door to the outside area 90 minutes fire rated, vestibule door to the enclosure 30 minutes, air leak proof, self closing or automatic closing by a smoke detector within 3 m of the vestibule door opening (item 3); discharge into a public way or a yard or court with direct access to a public way (item 4.i). Natural ventilation: vestibule opening not less than 1.5 m2 facing a court, yard or public space not less than 6 m wide; vestibule not less than 1830 mm in the direction of travel (item 5). Mechanical ventilation: vestibule not less than 1200 mm wide and 1830 mm in the direction of travel, not less than one air change per minute, exhaust 150% of supply (item 6). Pressurization: not less than 12.5 N/m2 in sprinklered buildings or 25 N/m2 in non sprinklered buildings; door opening force not more than 133 N (item 7)."
+        code_ref: "Ch 3, #3.5 / Table 3.7"
+        page_ref: "p.274-275"
+        detail: "Audit CH123-25. Conditional: no input says a smokeproof enclosure is provided. Ch 2 #2.9.6.a (p.221): the Fire Exit Stair of a fire lift building is a fully enclosed smoke proof space. #3.5.2: occupancy sections that allow and modify smokeproof enclosures override Table 3.7."
+  - id: moe_g_exit_passageways_lowrise
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+      height_m_lte: 15
+      is_high_depth_is: false
+    systems:
+      - name: "Exit Passageways (Table 3.8)"
+        required: conditional
+        spec: "Where an exit passageway is provided: every exit passageway in Low depth and Low rise buildings (having height up to 15 m) separated from rest of the building areas by a construction to ensure 1 hour fire resistance rating, from the finished floor level to the ceiling (items 1.i, 1.iii); width sized for the aggregate required capacity of all exits discharging through it and minimum of 1200 mm, not less than 2/3 of the stair width, not reducing along the egress path (item 2); fire rated windows only if the building is sprinklered (item 3); access not through kitchens, storerooms or other rooms or spaces subject to locking (item 4)."
+        code_ref: "Ch 3, #3.6 / Table 3.8"
+        page_ref: "p.276"
+        detail: "Audit CH123-25. Conditional: no input says an exit passageway is provided."
+  - id: moe_g_exit_passageways_high
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+      any_of:
+        - {height_m_gt: 15}
+        - {is_high_depth_is: true}
+    systems:
+      - name: "Exit Passageways (Table 3.8)"
+        required: conditional
+        spec: "Where an exit passageway is provided: every exit passageway in High depth, Mid rise and High rise buildings (having height more than 15 m) separated from rest of the building areas by a construction to ensure 2 hour fire resistance rating, from the finished floor level to the ceiling (items 1.ii, 1.iii); width sized for the aggregate required capacity of all exits discharging through it and minimum of 1200 mm, not less than 2/3 of the stair width, not reducing along the egress path (item 2); fire rated windows only if the building is sprinklered (item 3); access not through kitchens, storerooms or other rooms or spaces subject to locking (item 4)."
+        code_ref: "Ch 3, #3.6 / Table 3.8"
+        page_ref: "p.276"
+        detail: "Audit CH123-25. Conditional: no input says an exit passageway is provided. Table 3.8 item 1.ii does not name super highrise buildings; read with them (more than 15 m)."
+  - id: moe_g_ramps
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "Ramps as Means of Egress (Table 3.9)"
+        required: conditional
+        spec: "Where a ramp is used as a means of egress: minimum width 1200 mm, not decreasing along the direction of egress travel; maximum slope 1 in 12, maximum cross slope 1 in 48; maximum rise of a single ramp run 760 mm; projections not more than 114 mm at or below handrail height; permanent fixed construction of non combustible or limited combustible material; landings at top, bottom and at door leaves, same width as the ramp, slope not steeper than 1 in 48, not less than 1525 mm in the direction of travel (1220 mm for a straight run not part of an accessible route), changes of direction only at landings; curbs or barriers not less than 100 mm at drop-offs; outside ramps more than 11 m above finished ground level with an opaque visual obstruction not less than 1220 mm in height."
+        code_ref: "Ch 3, #3.7 / Table 3.9"
+        page_ref: "p.278"
+        detail: "Audit CH123-25. Conditional: no input says a ramp is part of the means of egress. Guards and handrails per Table 3.4 items 10-11, enclosure per Table 3.4 item 7 (Table 3.9 items 8-9). #3.7.1: occupancy sections that allow and modify ramps override Table 3.9."
+  - id: moe_g_evacuation_elevators
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+      has_evacuation_elevator: true
+    systems:
+      - name: "Elevators as Means of Egress (Table 3.11)"
+        spec: &t311 "Elevators are a component of the means of egress but do not compensate for the required number of exits or exit capacity (#3.9.2). Not used for evacuation unless assisted by facility management and the Civil Defence rescue team, unless alternatives are approved by Civil Defence; strategy, procedure and responsibilities preplanned and documented (item 1). Prerequisites: building fully sprinklered; elevator lobby; pressurized elevator shafts; two-way communication; voice evacuation clearly audible in the lobby; wiring for elevator equipment, car lighting and lobby pressurization 2 hour fire rated (item 2). Water resistant, listed and approved per ASME A17.1/CSA B44 (item 3). Emergency power backup; no shunt breakers (item 4). Override key feature; manual Phase I Emergency Recall from the Emergency Command Center; return to the designated discharge level on power failure; smoke detector or pre-action sprinkler activation at the elevator machine room disables elevator evacuation (item 5)."
+        code_ref: "Ch 3, #3.9 / Table 3.11"
+        page_ref: "p.280"
+        detail: "Audit CH123-25. Ticked: elevator used for evacuation (Ch 5 settings). See also Ch 1 Table 1.9.38 and Ch 2 #2.9.4 (#3.8.3 as printed)."
+  - id: moe_g_evacuation_elevators_check
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+      has_evacuation_elevator: false
+    systems:
+      - name: "Elevators as Means of Egress (Table 3.11)"
+        required: conditional
+        spec: *t311
+        code_ref: "Ch 3, #3.9 / Table 3.11"
+        page_ref: "p.280"
+        detail: "Audit CH123-25. Conditional: applies where elevators are used for evacuation (not ticked in the Ch 5 settings)."
+  - id: moe_g_exit_discharge
+    when:
+      occupancy_not: [villa_private, villa_commercial]
+    systems:
+      - name: "Exit Discharge (Table 3.12)"
+        spec_s: "Sprinkler protected building: minimum of 50 % of the required number of exits and of the required egress capacity discharge directly to the outside (item 1.i); not more than 50% through interior building areas such as lobbies and corridors, leading to a free and unobstructed way to the exterior, readily visible from the point of discharge (item 2); direct discharge towards the public way, not at the back of the building (item 3.i); distance between points of exit discharge not less than 1/3 (One-third) of the largest building diagonal (item 4.i); exit discharges not next to each other with common walls or fire walls (item 4.iii); areas with exit discharge through interior building spaces protected with sprinklers (item 5.ii)."
+        spec_ns: "Non-sprinklered building: 100% of the required number of exits and of the required egress capacity discharge directly to outside the building (item 1.ii); direct discharge towards the public way, not at the back of the building (item 3.i); distance between points of exit discharge not less than 1/2 (One-half) of the largest building diagonal (item 4.ii); exit discharges not next to each other with common walls or fire walls (item 4.iii)."
+        code_ref: "Ch 3, #3.10 / Table 3.12"
+        page_ref: "p.281"
+        detail: "Audit CH123-25. #3.10.2: exits terminate directly at a public way or at an exterior exit discharge, unless otherwise provided in Table 3.12. Item 5.i, 5.iii (p.281): an exit passageway serving as a discharge from a stair enclosure has the fire resistance rating of the stair enclosure; the level of discharge is separated from areas below by construction not less than that required for the exit enclosure."
+
 # ---------- BRANCHES: by occupancy - Tables 3.13 (OLF) + 3.16 (T/D/C) ------
 branches:
   # ------ Assembly ------
@@ -152,8 +337,8 @@ branches:
         spec_ns: "Regular office areas (2.i): commonpath 23 m, dead end 6.1 m, travel 61 m. Air traffic control observation levels (2.iii): no values printed."
       - name: "Single Exit Permission (Business - Table 3.19)"
         required: conditional
-        spec: "Single exit door OR single exit stair permitted under specific low-OL conditions (Table 3.19 #1-2, p.304)."
-        detail: "Per Table 3.19 #2 item i (p.304): a single exit stair (separate to each storey) is permitted in a Lowrise Business building with OL < 30 persons per floor, provided exit discharges directly to outside and total travel to outside <= 30 m. #1 item i additionally permits a single exit door for a room/area with OL < 100 persons if discharge is direct to outside <= 30 m. #2 item v also permits a single OPEN stair in a 2-storey, single-tenant, fully sprinklered building under the same 30 m travel cap. Use these allowances to avoid over-provisioning small office fit-outs."
+        spec: "Single exit door: permitted for a room or area with a total occupant load of less than 100 persons, discharging directly to outside at the level of exit discharge with travel to outside not more than 30 m (item 1.i); with a stair, an enclosed interior stair or outside stair, total travel including the stair not more than 30 m (item 1.ii); a single outside stair may serve multiple stories only if not more than 4570 mm in height from the fire access level (item 1.iii); rooms exceeding 280 m2 in area require 2 exit doors, remotely located as per Section 4.4 (item 1.iv). Single exit stair: permitted for a Lowrise building with a total occupant load of less than 30 persons per floor, discharging directly to outside with travel to outside not more than 30 m (item 2.i); if interior, fully enclosed and shall not serve any other stories (item 2.ii); if an outside stair, it may serve all stories (item 2.iii); a single means of egress from a mezzanine where the common path of travel does not exceed (S 30 m, NS 23 m) (item 2.iv); a single open stair for a 2 storey, single tenant, fully sprinklered building with full travel to outside including the stair not more than 30 m (item 2.v)."
+        detail: "Audit CH123-17: the permissions are stated with their printed limits (Table 3.19, p.304). Every condition of the item used must be met; otherwise the Table 3.14 number of exits applies."
         code_ref: "Ch 3, #5.2 / Table 3.19 #1-2"
         page_ref: "p.304"
 
@@ -194,6 +379,18 @@ branches:
         spec: "Corridors not less than 1830 mm wide; enclosed corridor walls are smoke partitions; corridor 1 hour fire rated if the building is not sprinklered."
         code_ref: "Ch 3, #5.3.1 / Table 3.20 item 2"
         page_ref: "p.305"
+      - name: "Two Exit Access Doors - Room over 93 m2 (Table 3.20 item 5)"
+        required: conditional
+        spec: "Every room or space larger than 93 m2 shall have 2 separate exit access doors, remote from each other as per Section 4.4, leading to corridor, which has two exit stairs in opposite directions."
+        code_ref: "Ch 3, #5.3.1 / Table 3.20 item 5"
+        page_ref: "p.305"
+        detail: "Audit CH123-07. Conditional: the inputs give no room areas."
+      - name: "Rescue Window in Non-sprinklered Building (Table 3.20 item 6)"
+        sprinkler_column: NS
+        spec: "Every room or space greater than 23 m2 used for classroom or other educational purposes or normally subject to student occupancy in a non-sprinklered building shall have at least one window with a fixed breakable glass, not less than 510 mm in width and 610 mm in height, located not more than 1120 mm above the floor for emergency rescue, on the exterior wall of the room, accessible from public way to the Civil Defence rescue team."
+        code_ref: "Ch 3, #5.3.1 / Table 3.20 item 6"
+        page_ref: "p.305"
+        detail: "Audit CH123-07. Printed because Ch 9 does not require sprinklers in this building."
 
   - id: moe_education_bc
     match: {occupancy_in: [education_b, education_c]}
@@ -209,6 +406,18 @@ branches:
         spec: "Corridors not less than 1830 mm wide where classrooms are on one side only; not less than 3000 mm wide where classrooms are on both sides; looped unless exit stairs are at both extreme ends of the exit corridor; enclosed corridor walls are smoke partitions if the building is sprinkler protected throughout, otherwise the corridor has a 1-hour fire resistance rating."
         code_ref: "Ch 3, #5.3.2 / Table 3.21 item 2"
         page_ref: "p.307"
+      - name: "Two Exit Access Doors - Room over 93 m2 (Table 3.21 item 4)"
+        required: conditional
+        spec: "Every room or space larger than 93 m2 shall have 2 separate exit access doors, remote from each other as per Section 4.4, leading to corridor, which has two exit stairs in opposite directions."
+        code_ref: "Ch 3, #5.3.2 / Table 3.21 item 4"
+        page_ref: "p.307"
+        detail: "Audit CH123-07. Conditional: the inputs give no room areas."
+      - name: "Rescue Window in Non-sprinklered Building (Table 3.21 item 7)"
+        sprinkler_column: NS
+        spec: "Every room or space greater than 23 m2 used for classroom or other educational purposes or normally subject to student occupancy in a non-sprinklered building shall have at least one window with a fixed breakable glass, not less than 510 mm in width and 610 mm in height, located not more than 1120 mm above the floor for emergency rescue, on the exterior wall of the room, accessible from public way to the Civil Defence rescue team."
+        code_ref: "Ch 3, #5.3.2 / Table 3.21 item 7"
+        page_ref: "p.307"
+        detail: "Audit CH123-07. Printed because Ch 9 does not require sprinklers in this building."
 
   # ------ Healthcare ------
   # Code split (per Ch 3 #5.4):
@@ -225,8 +434,16 @@ branches:
       - name: "Travel / Dead-end / Commonpath (Hospitals - Table 3.16 row 4)"
         spec: "Hospitals/Sleeping areas: commonpath S 30 m, dead-end S 9.1 m, travel S 61 m (sprinklered only - non-sprinklered hospitals not permitted). Inside suite to suite exit door 30 m. Inside suite to exit stair 61 m. Sleeping room to room main door 15 m."
         spec_s: "Hospitals, sleeping areas (4.i): commonpath 30 m, dead end 9.1 m, travel 61 m. Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
-        spec_ns: "Hospitals, sleeping areas (4.i): Table 3.16 prints the S column only (no non-sprinklered values). Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
+        spec_ns: "Hospitals, sleeping areas (4.i): no non-sprinklered values are printed (Table 3.16 row 4.i prints the S column only), so the commonpath, dead end and travel distance of the sleeping areas are NOT EVALUATED for this non-sprinklered building (see the line below). Inside suite to suite exit door (4.iii): travel 30 m. Inside suite to exit / exit stair (4.iv): travel 61 m. Any sleeping room to its main door (4.v): travel 15 m."
         detail: "Per Table 3.16 row 4 (p.293): hospitals are tabulated as sprinklered-only. Two-exit requirement is absolute (Table 3.22 #4, p.313): single exit is NOT permitted, and every corridor must access two approved exits without passing through intervening rooms."
+      # Audit CH123-05: a hospital Ch 9 does not sprinkler has no printed Table 3.16
+      # row 4.i limit; named, never left blank (standing rule: a blank never passes).
+      - name: "Travel / Dead-end / Commonpath (Hospital Sleeping Areas, Non-sprinklered) - NOT EVALUATED"
+        sprinkler_column: NS
+        spec: "Not evaluated: Table 3.16 row 4.i (p.293) prints 'Hospitals, Sleeping areas | S 30 m | S 9.1 m | S 61 m' with no non-sprinklered (NS) values, and Ch 9 does not require sprinklers in this building. No commonpath, dead end or travel limit is stated for the sleeping areas; confirm the limits with Civil Defence (or sprinkler the building, which gives the S values)."
+        code_ref: "Ch 3, #4.5 / Table 3.16 row 4.i"
+        page_ref: "p.293"
+        detail: "Audit CH123-05. Open question for an owner ruling: apply the printed S values, or require sprinklers for hospital sleeping areas, when Ch 9 gives no sprinkler system."
       - name: "Smoke Compartments (Table 3.22 item 7)"
         spec: "Every floor having healthcare activity divided into a minimum of 2 smoke compartments, each not exceeding 2100 m2 in area; smoke barrier 1 hour fire resistance rated"
         code_ref: "Ch 3, #5.4.1 / Table 3.22 item 7"
@@ -307,6 +524,46 @@ branches:
         spec_s: "Apartment main door to exit (6.i): commonpath 15 m, dead end 15 m, travel 61 m. Within apartment to main door (6.ii): commonpath 38 m, dead end NA, travel 38 m. Apartment main door to outside stair (6.iii): commonpath 15 m, dead end 15 m, travel 61 m. Other than dwelling units to exit stair (6.iv): commonpath 15 m, dead end 15 m, travel 76 m."
         spec_ns: "Apartment main door to exit (6.i): commonpath 10.7 m, dead end 10.7 m, travel 30 m. Within apartment to main door (6.ii): commonpath 23 m, dead end NA, travel 23 m. Apartment main door to outside stair (6.iii): commonpath 10.7 m, dead end 10.7 m, travel 30 m. Other than dwelling units to exit stair (6.iv): commonpath 10.7 m, dead end 10.7 m, travel 61 m."
         detail: "Per Table 3.16 row 6.ii (p.293) the 'Within Apartment to Main Door' row tabulates the SAME 38 m / 23 m number under BOTH the Commonpath column AND the Travel Distance column (dead-end is NA). The tool cannot distinguish these two semantic uses with a single value; designers should apply the limit to both metrics independently when sizing internal apartment corridors."
+      # ---- fix round 28.10.2026 (ch123): Table 3.24 rows (CH123-06) ----
+      - name: "Residential A: Corridor (Table 3.24 item 3)"
+        spec: "Corridor shall be minimum of 1200 mm in width; separated from other areas of the building by 1 hour fire resistance rated construction; grilles and louvers prohibited in walls or doors of exit access corridors."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 3"
+        page_ref: "p.317"
+        detail: "Audit CH123-06."
+      - name: "Residential A: Dwelling Unit Separation (Table 3.24 item 4)"
+        spec: "Dwelling units shall be separated from each other by walls and floors constructed as fire barriers having a minimum of 1 hour fire resistance rating."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 4"
+        page_ref: "p.319"
+        detail: "Audit CH123-06."
+      - name: "Residential A: Hazardous Area Separation (Table 3.24 item 5)"
+        required: conditional
+        spec: "For each of these rooms where provided: boiler and heater rooms, bulk and central laundry, plant maintenance and paint shops, garbage rooms: fire barriers having 1 hour fire resistance rating and sprinklers shall be provided; soiled linen rooms: 1 hour fire resistance rating and sprinklered; garbage chutes: 2 hour fire resistance rating; storage rooms outside dwelling units: fire barriers having 1 hour fire resistance rating or sprinklers; on roof LPG tanks: fixed deluge water spray system."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 5"
+        page_ref: "p.319"
+        detail: "Audit CH123-06. Conditional: applies to each room the building has (the inputs do not list every room)."
+      - name: "Residential A: Doors (Table 3.24 item 6)"
+        spec: "Doors in bedrooms or internal rooms not less than 810 mm in width; main exit door of the unit or apartment not less than 915 mm clear width; bathroom doors not less than 710 mm (810 mm where serving persons with severe mobility impairments); balcony door not less than 810 mm; balcony and terrace access restricted with a door having child lock or latch; window opening restricted to 100 mm with windows safety latch; closet door latches openable by children from inside; bathroom doors openable from the outside in an emergency when locked; while the flat is occupied, no locking device that impedes or prohibits egress or cannot be easily disengaged."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 6 (DOORS)"
+        page_ref: "p.319"
+        detail: "Audit CH123-06. Table 3.24 prints two items numbered 6 (DOORS and REMOTENESS OF EXITS)."
+      - name: "Residential A: Sole Means of Egress Through a Nonresidential Occupancy (Table 3.24 item 1)"
+        required: conditional
+        spec: "Where the apartment building shares the building with a nonresidential occupancy: no dwelling unit shall have its sole means of egress pass through that occupancy, unless the building is sprinklered and egress is not through hazardous content locations (item 1.i), or the egress is separated from the non-residential occupancies by a 1 hour fire resistance rated corridor and is not through hazardous content locations (item 1.ii), or the non residential occupancy is fully sprinklered as per Ch 9 (item 1.iii)."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 1"
+        page_ref: "p.317"
+        detail: "Audit CH123-06. Conditional: no input says the building shares a nonresidential occupancy."
+      - name: "Residential A: Remoteness of Exits Not Applied (Table 3.24 item 6, REMOTENESS)"
+        required: conditional
+        spec: "The remoteness of exit stairs of Section 4.4 does not apply to residential apartments provided all of: exit corridor not looped; every apartment door arranged so that the commonpath and dead ends are zero; exit stairs available on opposite sides of every apartment door; travel distance from the door to the exit stair less than 30 m."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 6 (REMOTENESS OF EXITS)"
+        page_ref: "p.319"
+        detail: "Audit CH123-06. A permission: Table 3.15.a applies unless every condition is met."
+      - name: "Residential A: Exits from Podium (Table 3.24 item 7)"
+        required: conditional
+        spec: "Residential occupancies having open podiums for assembly purposes shall ensure 2 exits remotely located as per Section 4.4 where the required commonpath and travel distances are non compliant: exits back into the building to the building exit stairs, enclosed exit stairs to exterior discharge from the podium, open or outside exterior stairs per Table 3.4 item 14 discharging directly to the public way, or a combination."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 7"
+        page_ref: "p.319"
+        detail: "Audit CH123-06. Conditional: no input says the building has an open podium used for assembly."
 
   # Table 3.16 row 7 (p.293): Residential Group B, C - staff accommodation, hostels (7.i)
   # and labour accommodation (7.ii) - not the apartment row 6.
@@ -323,6 +580,128 @@ branches:
         spec_ns: "Commonpath 10.7 m  |  Dead end 10.7 m  |  Travel 61 m"
         detail: "Table 3.16 row 7.i (staff accommodation, hostels) and row 7.ii (labour accommodation), p.293, print the same values."
 
+  # ---- fix round 28.10.2026 (ch123): Table 3.24 item 2 single exit stair (CH123-06) ----
+  # Input: has_single_exit_stair (Ch 9 Tables 9.20.c / 9.21.c). Ticked -> the printed
+  # conditions are required; not ticked -> stated as a conditional permission.
+  - id: moe_residential_single_exit
+    match: {occupancy: residential, has_single_exit_stair: true}
+    section: "Ch 3, #5.5.1 / Table 3.24 item 2"
+    page: "p.317"
+    systems:
+      - name: "Residential A: Single Exit Stair Permission (Table 3.24 item 2)"
+        spec: &t242 "New lowrise residential buildings only. A single exit stair OR scissor stair is permitted only if all of: (a) maximum height of 15 m (Lowrise building); (b) typical floor area does not exceed 500 m2; (c) not more than 6 dwelling units in a floor; (d) travel distance from dwelling unit door to exit stair does not exceed 10.7 m; (e) exit stair is a 2 hour fire rated enclosure, minimum width of 1200 mm, discharging directly to outside at the discharge level; (f) the exit corridor accessing the single exit stair is 1 hour fire rated (item 2.i). Or: an outside stair, enclosed or open, maximum height 15 m, not more than 2 dwelling units in a floor, travel from dwelling unit door to exit stair not more than 10.7 m (item 2.ii). Or: maximum height 15 m, the dwelling unit has direct access to an interior exit stair serving only that dwelling unit, 2 hour fire rated enclosure, minimum width of 1200 mm (item 2.iii). Otherwise two exits per Table 3.14."
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 2"
+        page_ref: "p.317"
+        detail: "Audit CH123-06. Ticked: the building has a single exit stair (Ch 9 settings); every condition of one of items 2.i-iii shall be met."
+  - id: moe_residential_single_exit_check
+    match: {occupancy: residential, has_single_exit_stair: false}
+    section: "Ch 3, #5.5.1 / Table 3.24 item 2"
+    page: "p.317"
+    systems:
+      - name: "Residential A: Single Exit Stair Permission (Table 3.24 item 2)"
+        required: conditional
+        spec: *t242
+        code_ref: "Ch 3, #5.5.1 / Table 3.24 item 2"
+        page_ref: "p.317"
+        detail: "Audit CH123-06. Conditional: applies only where a single exit stair is used (not ticked in the Ch 9 settings)."
+
+  # ---- fix round 28.10.2026 (ch123): Table 3.25 Residential Group B (CH123-06) ----
+  - id: moe_residential_b_table_3_25
+    match: {occupancy_in: [staff_accommodation, hostel]}
+    section: "Ch 3, #5.5.2 / Table 3.25"
+    page: "p.321"
+    systems:
+      - name: "Residential B: Corridor (Table 3.25 item 3)"
+        spec: "Every sleeping room, living space and dining area shall have access to an exit corridor; corridor minimum of 1200 mm in width; separated from other areas of the building by 1 hour fire resistance rated construction; grilles and louvers prohibited in corridors."
+        code_ref: "Ch 3, #5.5.2 / Table 3.25 item 3"
+        page_ref: "p.321"
+        detail: "Audit CH123-06."
+      - name: "Residential B: Separation (Table 3.25 item 4)"
+        spec: "Sleeping rooms separated from each other, and from the corridor, by walls and floors constructed as fire barriers having a minimum of 1 hour fire resistance rating; cross-corridor openings in smoke barriers protected by a pair of swinging doors."
+        code_ref: "Ch 3, #5.5.2 / Table 3.25 item 4"
+        page_ref: "p.321"
+        detail: "Audit CH123-06."
+      - name: "Residential B: Single Exit Not Permitted (Table 3.25 item 5)"
+        spec: "Single exit shall not be permitted. 2 exits shall be available from every part of every floor."
+        code_ref: "Ch 3, #5.5.2 / Table 3.25 item 5"
+        page_ref: "p.321"
+        detail: "Audit CH123-06."
+      - name: "Residential B: Hazardous Area Separation (Table 3.25 item 7)"
+        required: conditional
+        spec: "For each of these rooms where provided: boiler and heater rooms, bulk and central laundry, plant maintenance and paint shops, garbage rooms, storage rooms outside dwelling units: fire barriers having 1 hour fire resistance rating and sprinklers shall be provided; soiled linen rooms: 1-hour fire resistance rating and sprinklered; garbage chutes: 2 hour fire resistance rating; on roof LPG tanks: fixed deluge water spray system."
+        code_ref: "Ch 3, #5.5.2 / Table 3.25 item 7"
+        page_ref: "p.321"
+        detail: "Audit CH123-06. Conditional: applies to each room the building has. Table 3.25 item 7.vii prints 'and sprinklers' for storage rooms (Table 3.24 and 3.26 print 'or sprinklers')."
+      - name: "Residential B: Multiple Occupancy (Table 3.25 item 1)"
+        required: conditional
+        spec: "Where the building has a nonresidential or non healthcare occupancy: no dwelling unit shall have its sole means of egress pass through it (item 1.i); no Residential Group B occupancy located above it unless the Residential Group B occupancy and its exits are separated from it by construction having a minimum 2-hour fire resistance rating (item 1.ii)."
+        code_ref: "Ch 3, #5.5.2 / Table 3.25 item 1"
+        page_ref: "p.321"
+        detail: "Audit CH123-06. Conditional: no input says the building has another occupancy."
+
+  # Table 3.25 item 6 (p.321): floors exceeding 2000 m2, 2 smoke compartments. Same pair as
+  # Table 3.23 item 6: required when the largest storey is known to exceed 2000 m2,
+  # conditional when no storey area is entered and the GFA / ground floor could hide one.
+  - id: moe_residential_b_smoke_compartments
+    match: {occupancy_in: [staff_accommodation, hostel], largest_storey_area_min_m2_gt: 2000}
+    section: "Ch 3, #5.5.2 / Table 3.25 item 6"
+    page: "p.321"
+    systems:
+      - name: "Residential B: Smoke Compartments - Floor over 2000 m2 (Table 3.25 item 6)"
+        spec: "A floor exceeds 2000 m2: subdivided into minimum of 2 smoke compartments, not exceeding 61 m travel distance from any point to reach a door in the smoke barrier."
+        code_ref: "Ch 3, #5.5.2 / Table 3.25 item 6"
+        page_ref: "p.321"
+        detail: "Audit CH123-06."
+  - id: moe_residential_b_smoke_compartments_check
+    match:
+      occupancy_in: [staff_accommodation, hostel]
+      largest_storey_area_min_m2_lte: 2000
+      largest_storey_area_m2_lte: 0
+      not: {gross_floor_area_m2_lte: 2000, ground_floor_bua_m2_lte: 2000}
+    section: "Ch 3, #5.5.2 / Table 3.25 item 6"
+    page: "p.321"
+    systems:
+      - name: "Residential B: Smoke Compartments - Floor over 2000 m2 (Table 3.25 item 6)"
+        required: conditional
+        spec: "If any floor exceeds 2000 m2: subdivided into minimum of 2 smoke compartments, not exceeding 61 m travel distance from any point to reach a door in the smoke barrier (the inputs give no per-floor area)"
+        code_ref: "Ch 3, #5.5.2 / Table 3.25 item 6"
+        page_ref: "p.321"
+        detail: "Audit CH123-06."
+
+  # ---- fix round 28.10.2026 (ch123): Table 3.26 Residential Group C (CH123-06) ----
+  - id: moe_residential_c_table_3_26
+    match: {occupancy: labour_accommodation}
+    section: "Ch 3, #5.5.3 / Table 3.26"
+    page: "p.322"
+    systems:
+      - name: "Residential C: Corridor (Table 3.26 item 2)"
+        spec: "Every labor room, living space and dining area shall have access to an exit corridor, either enclosed internal or external open corridor; corridor minimum of 1200 mm in width; separated from other areas of the building by 1 hour fire resistance rated construction, unless it is an open corridor; grilles and louvers prohibited in corridors."
+        code_ref: "Ch 3, #5.5.3 / Table 3.26 item 2"
+        page_ref: "p.322"
+        detail: "Audit CH123-06."
+      - name: "Residential C: Separation (Table 3.26 item 3)"
+        spec: "Labor rooms separated from each other, and sleeping rooms from an enclosed internal corridor, by walls and floors constructed as fire barriers having a minimum of 1 hour fire resistance rating; a kitchen is allowed on any floor provided it is separated from rest of the area by 1 hour fire resistance rated construction."
+        code_ref: "Ch 3, #5.5.3 / Table 3.26 item 3"
+        page_ref: "p.322"
+        detail: "Audit CH123-06."
+      - name: "Residential C: Single Exit Not Permitted (Table 3.26 item 4)"
+        spec: "Single exit shall not be permitted. 2 enclosed exits shall be available from every part of every floor."
+        code_ref: "Ch 3, #5.5.3 / Table 3.26 item 4"
+        page_ref: "p.322"
+        detail: "Audit CH123-06."
+      - name: "Residential C: Hazardous Area Separation (Table 3.26 item 5)"
+        required: conditional
+        spec: "For each of these rooms where provided: boiler and heater rooms, bulk and central laundry, plant maintenance and paint shops, garbage rooms: fire barriers having 1 hour fire resistance rating and sprinklers shall be provided; garbage chutes: 2 hour fire resistance rating; storage rooms outside dwelling units: fire barriers having 1 hour fire resistance rating or sprinklers; on roof LPG tanks: fixed deluge water spray system."
+        code_ref: "Ch 3, #5.5.3 / Table 3.26 item 5"
+        page_ref: "p.322"
+        detail: "Audit CH123-06. Conditional: applies to each room the building has."
+      - name: "Residential C: Multiple Occupancy (Table 3.26 item 1)"
+        required: conditional
+        spec: "Where the building has a nonresidential occupancy: no labor room shall have its sole means of egress pass through it (item 1.i); no labor rooms located above it unless the labor accommodation and its exits are separated from it by construction having a minimum 1-hour fire resistance rating (item 1.ii)."
+        code_ref: "Ch 3, #5.5.3 / Table 3.26 item 1"
+        page_ref: "p.322"
+        detail: "Audit CH123-06. Conditional: no input says the building has another occupancy."
+
   # ------ Hotel ------
   - id: moe_hotel
     match: {occupancy_in: [hotel_a, hotel_b, hotel_c]}
@@ -336,6 +715,75 @@ branches:
         spec_s: "Hotel guest room main door to exit: commonpath 15 m, dead end 15 m, travel 61 m. Within guest room to main door: travel 38 m (commonpath / dead end NA)."
         spec_ns: "Hotel guest room main door to exit: commonpath 10.7 m, dead end 10.7 m, travel 53 m. Within guest room to main door: travel 23 m (commonpath / dead end NA)."
         detail: "Per Table 3.16 row 11 (p.294). Note that hotel travel distances (S 61 / NS 53) are TIGHTER than the residential 'Other than dwelling to exit stair' numbers (S 76 / NS 61) - earlier versions of this rule mistakenly used the residential figures."
+      # ---- fix round 28.10.2026 (ch123): Table 3.30 rows (CH123-07) ----
+      # #5.9.1 (p.327) applies Table 3.30 to Hotel Groups A, B, C; the table title prints
+      # "Hotel, Group A, C".
+      - name: "Hotel: Corridors (Table 3.30 item 2)"
+        spec: "Minimum common exit corridor width 1200 mm; corridor of 1 hour fire resistance rated construction; every sleeping room or suite has a door leading directly to an exit access corridor, unless the intervening room is a day room, group activity room or other common space; transoms, louvers or transfer grilles prohibited in walls or doors of exit access corridors."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 2"
+        page_ref: "p.327"
+        detail: "Audit CH123-07."
+      - name: "Hotel: Single Exit Not Permitted (Table 3.30 item 3)"
+        spec: "Single exit shall not be permitted. 2 enclosed exits shall be available from every part of every floor."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 3"
+        page_ref: "p.327"
+        detail: "Audit CH123-07."
+      - name: "Hotel: Separation (Table 3.30 item 5)"
+        spec: "Each hotel guest room, including guest suites, and dormitory room separated from other guest rooms or dormitory rooms by walls and floors constructed as fire barriers having a minimum 1-hour fire resistance rating; kitchen separated from rest of the hotel area by 1 hour fire resistance rated construction."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 5"
+        page_ref: "p.327"
+        detail: "Audit CH123-07."
+      - name: "Hotel: Doors (Table 3.30 item 7)"
+        spec: "Balcony and terrace access restricted with a door having child lock or latch; window opening restricted to 100 mm with windows safety latch; doors in resident or guest sleeping rooms or internal rooms not less than 810 mm in width; main exit door of the unit not less than 915 mm clear width; bathroom doors not less than 710 mm (810 mm as printed for the mobility-impairment case); balcony door not less than 810 mm."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 7"
+        page_ref: "p.328"
+        detail: "Audit CH123-07. Item 7.v prints 'unless they are not serving persons with severe mobility impairments, where the required width shall not be less than 810 mm'."
+      - name: "Hotel: Exit Discharge Distance (Table 3.30 item 8)"
+        spec: "The distance of travel from the termination of the exit enclosure to an exterior door leading to a public way through enclosed corridor shall not exceed 30 m."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 8"
+        page_ref: "p.328"
+        detail: "Audit CH123-07."
+      - name: "Hotel: Furnishings (Table 3.30 item 10)"
+        spec: "Draperies, curtains and other similar loosely hanging furnishings and decorations meet the flame propagation performance criteria and are listed and approved by Civil Defence; upholstered furniture, mattresses and carpets listed and approved by Civil Defence (Section 7 Material Approval)."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 10"
+        page_ref: "p.328"
+        detail: "Audit CH123-07."
+      - name: "Hotel: Two Exit Access Doors - Room over 185 m2 (Table 3.30 item 4)"
+        required: conditional
+        spec: "Any guest room or any guest suite or dormitory sleeping room larger than 185 m2 shall have 2 exit access doors remotely located from each other as per Section 4.4."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 4"
+        page_ref: "p.327"
+        detail: "Audit CH123-07. Conditional: the inputs give no room areas."
+      - name: "Hotel: Hazardous Area Separation (Table 3.30 item 9)"
+        required: conditional
+        spec: "For each of these rooms where provided: boiler and fuel fired heater rooms, gift shops, bulk and central laundry, plant maintenance and paint shops, garbage rooms, storage rooms: fire barriers having 1 hour fire resistance rating and sprinklers; employee locker rooms: fire barriers having 1 hour fire resistance rated construction; soiled linen rooms: 1-hour fire resistance rating and sprinklered; garbage chutes: 2 hour fire resistance rating; LPG tanks: deluge water spray system."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 9"
+        page_ref: "p.328"
+        detail: "Audit CH123-07. Conditional: applies to each room the building has."
+      - name: "Hotel: Multiple Occupancy (Table 3.30 item 1)"
+        required: conditional
+        spec: "Where the building has a nonresidential occupancy: no guest room, guest suite or dormitory sleeping room shall have its sole means of egress pass through it (item 1.i), unless such egress is separated from the non-residential occupancies by a 1 hour fire resistance rated corridor and is not through hazardous content locations (item 1.ii), or the non residential occupancy is fully sprinklered as per Ch 9 (item 1.iii)."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 1"
+        page_ref: "p.327"
+        detail: "Audit CH123-07. Conditional: no input says the building has another occupancy."
+      - name: "Hotel: Exit Discharge into Court Yard or Fire Compartment (Table 3.30 item 6)"
+        required: conditional
+        spec: "A permission: exit discharge into a fenced or walled court yard where not more than 2 court yard walls are common to the building walls, the yard sized for all occupants at not less than 15 m from the building with a net area of 1.4 m2 per person; or into a fire compartment separated from other compartments or building by 1 hour fire resistance rated construction."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 6"
+        page_ref: "p.327"
+        detail: "Audit CH123-07."
+      - name: "Hotel: Remoteness of Exits Not Applied (Table 3.30 item 11)"
+        required: conditional
+        spec: "The remoteness of exit stairs of Section 4.4 does not apply to hotels and hotel apartments provided all of: exit corridor not looped; every guest room door arranged so that the commonpath and dead ends are zero; exit stairs available on opposite sides of every guest room door; travel distance from guest room door to exit stair less than 30 m."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 11"
+        page_ref: "p.329"
+        detail: "Audit CH123-07. A permission: Table 3.15.a applies unless every condition is met."
+      - name: "Hotel: Exits from Podium (Table 3.30 item 12)"
+        required: conditional
+        spec: "Hotel occupancies having open podiums for assembly purposes shall ensure 2 exits remotely located as per Section 4.4: exits back into the building to the building exit stairs, enclosed exit stairs to exterior discharge from the podium, open or outside exterior stairs per Table 3.4 item 14 discharging directly to the public way, or a combination."
+        code_ref: "Ch 3, #5.9 / Table 3.30 item 12"
+        page_ref: "p.329"
+        detail: "Audit CH123-07. Conditional: no input says the building has an open podium used for assembly."
 
   # ------ Mercantile / Mall ------
   - id: moe_mercantile
@@ -366,9 +814,73 @@ branches:
         spec: "Commonpath: S 0 m, NS 0 m  |  Dead-end: S 15 m, NS 6.1 m  |  Travel: S 23 m, NS 23 m"
         spec_s: "Commonpath 0 m  |  Dead end 15 m  |  Travel 23 m"
         spec_ns: "Commonpath 0 m  |  Dead end 6.1 m  |  Travel 23 m"
-        detail: "Applies to High-Hazard Mercantile (e.g. fireworks retail, aerosol-can retail, flammable-liquid retail). Per Table 3.16 row 13.iii (p.294) there is ZERO commonpath both sprinklered AND non-sprinklered (every sales position must have direct exit access) and travel is capped at 23 m WITH NO sprinkler benefit (S 23 m = NS 23 m). Compare to standard mercantile S 76 / NS 46. Outswing + panic hardware (Table 3.2 #4 item i + moe_g_hazardous_area_doors) also apply."
+        detail: "Applies to High-Hazard Mercantile (e.g. fireworks retail, aerosol-can retail, flammable-liquid retail). Per Table 3.16 row 13.iii (p.294) there is ZERO commonpath both sprinklered AND non-sprinklered (every sales position must have direct exit access) and travel is capped at 23 m WITH NO sprinkler benefit (S 23 m = NS 23 m). Compare to standard mercantile S 76 / NS 46. Doors serving a high hazard content room swing in the direction of egress (Table 3.2 item 4.i, p.248; the Hazardous Area Doors line). Table 3.2 sets no panic-hardware trigger for high hazard rooms: item 12 (p.250) only specifies the hardware where it is fitted (audit CH123-16)."
         code_ref: "Ch 3, #5.11 / Table 3.16 row 13.iii"
         page_ref: "p.294"
+
+  # ---- fix round 28.10.2026 (ch123): Table 3.32 rows (CH123-07) ----
+  # #5.11.1 (p.331): Mercantile Groups A, B, C. Aisle widths are keyed on the Ch 1 #1.7.9
+  # classes (p.41), which the inputs do not compute: all three are printed with the class
+  # definitions.
+  - id: moe_mercantile_table_3_32
+    match: {occupancy_in: [mercantile_a, mercantile_b, mercantile_c]}
+    section: "Ch 3, #5.11 / Table 3.32"
+    page: "p.331-332"
+    systems:
+      - name: "Mercantile: Aisles (Table 3.32 item 3)"
+        spec: "Class C mercantile, supermarkets (area < 280 m2, single storey): aisles not less than 915 mm clear width. Class B mercantile, supermarkets, hypermarkets (area < 2800 m2, < 3 storey): not less than 1200 mm. Class A mercantile, hypermarkets (area > 2800 m2, > 3 storey): not less than 1525 mm. Aisles leading to each exit required, their aggregate width not less than the required width of the exit."
+        code_ref: "Ch 3, #5.11 / Table 3.32 item 3; Ch 1 #1.7.9"
+        page_ref: "p.331, 41"
+        detail: "Audit CH123-07. Classes per Ch 1 #1.7.9 (p.41): Class A aggregate gross sales area more than 2800 m2 or more than three storeys; Class B 280 m2 to not more than 2800 m2 and not more than three storeys; Class C not more than 280 m2, ground floor only."
+      - name: "Mercantile: Exits (Table 3.32 item 4)"
+        spec: "Not less than 50 % of the exits reached without passing through check-out or cash counters; where wheeled carts or buggies are used, provision for their transit and parking so they do not obstruct the means of egress; not more than 50% of the exits access through store rooms, packing, loading and unloading areas, with aisles not less than 1200 mm, only if the building is fully sprinklered, the store room is not subject to locking and the path is defined, direct and unobstructed; exits through kitchen not permitted."
+        code_ref: "Ch 3, #5.11 / Table 3.32 item 4"
+        page_ref: "p.331"
+        detail: "Audit CH123-07."
+      - name: "Mercantile: Single Exit Not Permitted (Table 3.32 item 5)"
+        spec_s: "Single exit shall not be permitted; inside open stairs or open ramps do not serve as a component of the required means of egress for more than one floor; 2 enclosed exits from every part of every floor, independent of any open stair. Permitted single means of egress: Class C mercantile (area < 280 m2) where the travel distance does not exceed 30 m to the nearest exit directly to outside or to the mall (item 5.iv); a mezzanine of any mercantile occupancy where the common path does not exceed 30 m to outside or to the mall (item 5.v)."
+        spec_ns: "Single exit shall not be permitted; inside open stairs or open ramps do not serve as a component of the required means of egress for more than one floor; 2 enclosed exits from every part of every floor, independent of any open stair. Permitted single means of egress: Class C mercantile (area < 280 m2) where the travel distance does not exceed 23 m to the nearest exit directly to outside or to the mall (item 5.iv); a mezzanine of any mercantile occupancy where the common path does not exceed 23 m to outside or to the mall (item 5.v)."
+        code_ref: "Ch 3, #5.11 / Table 3.32 item 5 (SINGLE EXIT PERMISSION)"
+        page_ref: "p.331"
+        detail: "Audit CH123-07. Items 5.iv-5.v print (S 30 m, NS 23 m)."
+      - name: "Mercantile: Class A Corridor (Table 3.32 item 2)"
+        required: conditional
+        spec: "Where exit access in class A Mercantile is through a corridor, such corridor shall be 1525 mm in width and separated from other parts of building by 1 hour fire resistance rated construction, if building is not sprinklered."
+        code_ref: "Ch 3, #5.11 / Table 3.32 item 2"
+        page_ref: "p.331"
+        detail: "Audit CH123-07. Conditional: the mercantile class and corridor layout are not inputs. Quoted as printed: the closing 'if building is not sprinklered' may govern the 1 hour separation only or the whole sentence."
+      - name: "Mercantile: Separation (Table 3.32 item 5, SEPARATION)"
+        required: conditional
+        spec: "High hazard content areas separated from other parts of the building by 1 hour fire resistance rated construction; kitchens separated from other parts of the building by 1 hour fire resistance rated construction; parking structures separated from the mercantile occupancy with a fire barrier having a minimum 2-hour fire resistance rating (openings per items 5.ii-5.iii)."
+        code_ref: "Ch 3, #5.11 / Table 3.32 item 5 (SEPARATION)"
+        page_ref: "p.332"
+        detail: "Audit CH123-07. Conditional: applies to each such area the building has. Table 3.32 prints two items numbered 5 (SINGLE EXIT PERMISSION and SEPARATION) and two numbered 6."
+      - name: "Mercantile: Open Spaces and Atrium Walls (Table 3.32 items 1, 6)"
+        required: conditional
+        spec: "Permissions: in other than bulk merchandising mercantile, atrium walls may serve as part of the separation for separated occupancies storey by storey (item 1.i); in sprinklered class A and B mercantile without high hazard contents, unprotected vertical openings between any two floors or among the street floor, the first adjacent floor below and the adjacent floor (or mezzanine) above; in sprinklered class C mercantile without high hazard contents, between the street floor and the mezzanine (item 6, OPEN SPACES)."
+        code_ref: "Ch 3, #5.11 / Table 3.32 items 1, 6 (OPEN SPACES)"
+        page_ref: "p.331-332"
+        detail: "Audit CH123-07."
+      - name: "Mercantile: Exits from Podium (Table 3.32 item 6, EXITS FROM PODIUM)"
+        required: conditional
+        spec: "Mercantile occupancies having open podiums for assembly purposes shall ensure 2 exits remotely located as per Section 4.4: exits back into the building to the building exit stairs, enclosed exit stairs to exterior discharge from the podium, open or outside exterior stairs per Table 3.4 item 14 discharging directly to the public way, or a combination."
+        code_ref: "Ch 3, #5.11 / Table 3.32 item 6 (EXITS FROM PODIUM)"
+        page_ref: "p.332"
+        detail: "Audit CH123-07. Conditional: no input says the building has an open podium used for assembly."
+
+  # Table 3.32 item 5.i (SEPARATION, p.332): parking structures separated from the
+  # mercantile occupancy by a 2-hour fire barrier; required when the building has a parking
+  # area (input has_parking_area).
+  - id: moe_mercantile_parking_separation
+    match: {occupancy_in: [mercantile_a, mercantile_b, mercantile_c], has_parking_area: true}
+    section: "Ch 3, #5.11 / Table 3.32 item 5 (SEPARATION)"
+    page: "p.332"
+    systems:
+      - name: "Mercantile: Parking Separation (Table 3.32 item 5.i, SEPARATION)"
+        spec: "Parking structures shall be separated from mercantile occupancy with fire barrier having a minimum 2-hour fire resistance rating. Openings need no protection only where the parking is enclosed, the parking and building are sprinklered, the openings do not exceed 25 percent of the area of the fire barrier, are used as a public entrance and associated sidelights, spilled fuel is prevented from entering the building, and the openings are protected as a smoke partition (item 5.ii); otherwise vehicles are physically prevented from being parked or driven within 3 m of the openings (item 5.iii)."
+        code_ref: "Ch 3, #5.11 / Table 3.32 item 5.i-iii (SEPARATION)"
+        page_ref: "p.332"
+        detail: "Audit CH123-07. Ticked: the building has a parking area."
 
   - id: moe_mall
     match: {occupancy_in: [mall_covered, mall_open, mall_mixed]}
@@ -384,10 +896,13 @@ branches:
         detail: "Per Table 3.16 row 14.i (p.294): covered-mall sprinklered travel is 120 m (not 122 m). Tenant spaces inside the mall envelope follow the standard mercantile travel distances when a designated pedestrian way is provided per Table 3.33. (The 122 m figure that appears elsewhere in this codebase is the Ch 10 SC mall-circulation smoke-curtain interval, which is a separate parameter from MOE travel distance.)"
 
   # ------ Daycare ------
-  # Code coverage note (per Ch 3 #5.10 + Table 3.13 row 12):
-  #   UAE FLSC Ch 3 #5.10 defines ONLY Daycare Group A (>12 clients) and Group B (7-12 clients).
-  #   `daycare_c` is a UI/schema convenience for "family daycare" (4-6 clients) and is NOT a
-  #   code-defined group; this branch falls it back to Group B treatment.
+  # Code coverage note (audit CH123-04): the daycare groups are set by USE, not by the
+  # number of clients. Table 1.1 row 10 (p.50) and #1.1.13.1.k-l (p.527): Group A = child
+  # day care centers and old age care centers; Group B = adult day care centers. #1.7.7
+  # (p.40): daycare = four or more clients. #5.10 / Table 3.31 (p.330) cover Groups A and B.
+  # `daycare_c` is not a code group (kept so saved projects load); it takes the shared
+  # Table 3.13 row 12 / Table 3.16 row 12 lines and the Group A-only Table 3.31 item 7 line
+  # is printed conditional for it.
   - id: moe_daycare
     match: {occupancy_in: [daycare_a, daycare_b, daycare_c]}
     section: "Ch 3, #4 + #5.10 / Tables 3.13.12 + 3.16"
@@ -395,11 +910,72 @@ branches:
     systems:
       - name: "Occupant Load Factor (Daycare)"
         spec: "3.3 m² net. Stair capacity 10 mm/person (wider than 7.6 mm standard); ramp 5 mm/person"
-        detail: "10 mm/person stair-capacity factor reflects slower self-preservation of young children. NOTE: daycare_c is a UI category (family daycare, 4-6 clients) and is not a code-defined group - UAE FLSC Ch 3 #5.10 only defines Groups A and B. This rule treats daycare_c the same as Group B."
+        detail: "10 mm/person stair-capacity factor reflects slower self-preservation of young children. Daycare groups are set by use (Table 1.1 row 10, p.50): Group A child day care centers and old age care centers, Group B adult day care centers; Table 3.13 row 12 and Table 3.16 row 12 print the same values for Groups A and B. The 'Daycare (group not printed)' option has no code group and takes these shared rows (audit CH123-04)."
       - name: "Travel / Commonpath / Dead-end (Daycare - Table 3.16 row 12)"
         spec: "Any room door to exit: Travel S 46 m, NS 30 m  |  Commonpath S 30 m, NS 23 m  |  Dead-end S 15 m, NS 6.1 m. Any point in room to exit: S 61 m, NS 46 m. Any point to room door: S 30 m, NS 15 m (NA commonpath/dead-end)"
         spec_s: "From any room door to exit door (12.i): travel 46 m, commonpath 30 m, dead end 15 m. From any point in room to exit door (12.ii): travel 61 m, commonpath 30 m, dead end 15 m. From any point in room to room door (12.iii): travel 30 m (commonpath / dead end NA)."
         spec_ns: "From any room door to exit door (12.i): travel 30 m, commonpath 23 m, dead end 6.1 m. From any point in room to exit door (12.ii): travel 46 m, commonpath 23 m, dead end 6.1 m. From any point in room to room door (12.iii): travel 15 m (commonpath / dead end NA)."
+      # ---- fix round 28.10.2026 (ch123): Table 3.31 rows (CH123-07) ----
+      - name: "Daycare: Corridors (Table 3.31 item 2)"
+        spec_s: "Minimum common exit corridor width 1200 mm; every day care room has a door leading directly to an exit access corridor; transoms, louvers or transfer grilles prohibited in walls or doors of exit access corridors (the 1 hour corridor rating of item 2.ii applies if the building is not sprinklered)."
+        spec_ns: "Minimum common exit corridor width 1200 mm; corridor of 1 hour fire resistance rated construction (building not sprinklered, item 2.ii); every day care room has a door leading directly to an exit access corridor; transoms, louvers or transfer grilles prohibited in walls or doors of exit access corridors."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 2"
+        page_ref: "p.330"
+        detail: "Audit CH123-07."
+      - name: "Daycare: Single Exit Not Permitted (Table 3.31 item 3)"
+        spec: "Single exit shall not be permitted. 2 enclosed exits shall be available from every part of every floor."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 3"
+        page_ref: "p.330"
+        detail: "Audit CH123-07."
+      - name: "Daycare: Rescue Window in Non-sprinklered Building (Table 3.31 item 5)"
+        sprinkler_column: NS
+        spec: "Every day care room or space normally subject to client occupancy shall have at least one window with a fixed breakable glass, clear opening not less than 510 mm in width and 610 mm in height, and 0.5 m2 in area, located not more than 1120 mm above the floor for an emergency rescue, on the exterior wall of the room, accessible from public way to the Civil Defence rescue team."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 5"
+        page_ref: "p.330"
+        detail: "Audit CH123-07. Printed because Ch 9 does not require sprinklers in this building."
+      - name: "Daycare: Doors (Table 3.31 item 6)"
+        spec: "Balcony and terrace access restricted with a door having child lock or latch; window opening restricted to 100 mm with windows safety latch; closet door latches openable by children from inside; bathroom doors openable from the outside in an emergency when locked; while the day care occupancy is occupied, no locking device that impedes or prohibits egress or cannot be easily disengaged."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 6"
+        page_ref: "p.330"
+        detail: "Audit CH123-07."
+      - name: "Daycare: Two Exit Access Doors - Room over 185 m2 (Table 3.31 item 4)"
+        required: conditional
+        spec: "Any Day care room larger than 185 m2, shall have 2 exit corridor access doors remotely located from each other as per Section 4.4."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 4"
+        page_ref: "p.330"
+        detail: "Audit CH123-07. Conditional: the inputs give no room areas."
+      - name: "Daycare: Multiple Occupancy (Table 3.31 item 1)"
+        required: conditional
+        spec: "Where the day care is situated in another occupancy: if the two exit accesses from the day-care occupancy enter the same corridor as the other occupancy (such as an apartment, residential or hotel occupancy), the exit accesses are separated in the corridor by a 1 hour smoke partition located so that it has an exit on each side (item 1.i); no day care room has its sole means of egress through any nonresidential occupancy of the same building, unless the non residential occupancy is fully sprinklered as per Ch 9 (item 1.ii)."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 1"
+        page_ref: "p.330"
+        detail: "Audit CH123-07. Conditional: no input says the day care is inside another occupancy."
+
+  # Table 3.31 item 7 (p.330): Group A (child day care, old age day care) located within one
+  # storey above the level of exit discharge; two or more levels above -> 2 smoke
+  # compartments per floor. A building of 3 or more floors above grade has floors two or more
+  # levels above the ground-floor discharge.
+  - id: moe_daycare_a_smoke_compartments
+    match: {occupancy: daycare_a, floors_above_grade_gte: 3}
+    section: "Ch 3, #5.10 / Table 3.31 item 7"
+    page: "p.330"
+    systems:
+      - name: "Daycare Group A: Location / Smoke Compartments (Table 3.31 item 7)"
+        spec: "Child day care and old age day care (Day care, Group A) occupancies shall be located within one storey above level of exit discharge. If located two or more levels above the level of exit discharge, each floor shall be subdivided into minimum of 2 smoke compartments with smoke barrier having 1 hour fire resistance rated construction."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 7"
+        page_ref: "p.330"
+        detail: "Audit CH123-07. Required: the building has 3 or more floors above grade, so day care floors two or more levels above a ground-level exit discharge exist."
+  - id: moe_daycare_c_smoke_compartments_check
+    match: {occupancy: daycare_c, floors_above_grade_gte: 3}
+    section: "Ch 3, #5.10 / Table 3.31 item 7"
+    page: "p.330"
+    systems:
+      - name: "Daycare Group A: Location / Smoke Compartments (Table 3.31 item 7)"
+        required: conditional
+        spec: "If the day care is Group A (child day care or old age day care, Table 1.1 row 10, p.50): located within one storey above level of exit discharge; if located two or more levels above the level of exit discharge, each floor subdivided into minimum of 2 smoke compartments with smoke barrier having 1 hour fire resistance rated construction."
+        code_ref: "Ch 3, #5.10 / Table 3.31 item 7"
+        page_ref: "p.330"
+        detail: "Audit CH123-04 / CH123-07. Conditional: the 'Daycare (group not printed)' option names no group; choose Group A or B by the use."
 
   # ------ Detention ------
   - id: moe_detention
@@ -429,19 +1005,40 @@ branches:
         spec_ns: "Low / ordinary hazard storage (17.i-ii): commonpath 15 m, dead end 15 m, travel 61 m. Aircraft storage ground floor: commonpath 15 m, dead end 15 m, travel 23 m; mezzanine floor: commonpath 15 m, dead end 15 m, travel 23 m. Industrial general, low hazard (19.i): commonpath 15 m, dead end 15 m, travel 61 m. Special purpose (19.ii): commonpath 15 m, dead end 15 m, travel 91 m. Aircraft servicing ground floor (19.iii): commonpath 15 m, dead end 15 m, travel 23 m; mezzanine floor (19.iv): commonpath 15 m, dead end 15 m, travel 23 m. Mechanical equipment room (19.v), boiler / furnace room (19.vi): commonpath 15 m, dead end 15 m, travel 61 m."
         detail: "Commonpath AND dead-end use the same value (30 m / 15 m) for storage - unusual. For aircraft hangers, travel distances are tightened irrespective of sprinkler protection."
 
+  # Audit CH123-03: Table 3.13 rows 15 / 17 and Table 3.16 rows 16 / 18 are Storage /
+  # Industrial GROUP A = Extra Hazard Group 2 (#1.1.13.5.a, p.530; Table 1.1 row 12 Group
+  # A-1 / A-2, p.51). Extra Hazard Group 1 is Storage / Industrial GROUP B (#1.1.13.4.a,
+  # p.529: aircraft hangar, furniture, lumber, ...) and takes the Group B,C rows (Table
+  # 3.13 rows 16 / 18, Table 3.16 rows 17 / 19): branch moe_storage_industrial_eh1 below.
   - id: moe_storage_industrial_high_hazard
-    match: {occupancy: storage_industrial, hazard_class_is: HH}
+    match: {occupancy: storage_industrial, hazard_class_is: HH, is_extra_hazard_2: true}
     section: "Ch 3, #4 + #5.14-15 / Tables 3.13.15, 3.13.17 + 3.16"
     page: "p.287, 294"
     systems:
       - name: "Occupant Load Factor (High-hazard Storage / Industrial)"
         spec: "Storage Group A (high-hazard): 27.9 m². Industrial Group A (high-hazard): 9.3 m². Stair capacity 18 mm/person; ramp 10 mm/person"
-        detail: "High-hazard occupancies use ENLARGED stair / ramp capacity factors (18 mm vs 7.6 mm; 10 mm vs 5 mm) to permit faster egress under accelerated fire-development conditions."
+        detail: "High-hazard occupancies use ENLARGED stair / ramp capacity factors (18 mm vs 7.6 mm; 10 mm vs 5 mm) to permit faster egress under accelerated fire-development conditions. Extra Hazard Group 2 = Storage / Industrial Group A (#1.1.13.5.a, p.530): Table 3.13 rows 15 / 17 (p.287)."
       - name: "Travel / Commonpath / Dead-end (HH Storage + Industrial - Table 3.16 rows 16, 18)"
         spec: "HH Storage: Commonpath 0 m  |  Dead-end 0 m  |  Travel S 30 m, NS 23 m. HH Industrial: Commonpath 0 m  |  Dead-end 0 m  |  Travel S 23 m, NS 0 m (NS = HH industrial NOT permitted without sprinklers)."
         spec_s: "High hazard storage (16.i): commonpath 0 m, dead end 0 m, travel 30 m. High hazard industrial (18.i): commonpath 0 m, dead end 0 m, travel 23 m."
         spec_ns: "High hazard storage (16.i): commonpath 0 m, dead end 0 m, travel 23 m. High hazard industrial (18.i): commonpath 0 m, dead end 0 m, travel 0 m (read as: high hazard industrial not permitted without sprinklers)."
-        detail: "ZERO commonpath and ZERO dead-end for HH (no sprinkler discount) - every workstation must have direct exit access. INTERPRETATION OF 'NS = 0 m' FOR HH INDUSTRIAL: Table 3.16 row 18.i (p.294) tabulates the non-sprinklered HH-industrial travel as 0 m, which is engineering-equivalent to 'no compliant non-sprinklered HH industrial layout exists.' This tool treats it as 'HH Industrial NOT permitted without sprinklers' - i.e. sprinklers are a precondition for HH industrial occupancy, not optional. Travel distances drastically shorter than ordinary storage (23-30 m vs 61-122 m)."
+        detail: "ZERO commonpath and ZERO dead-end for HH (no sprinkler discount) - every workstation must have direct exit access. INTERPRETATION OF 'NS = 0 m' FOR HH INDUSTRIAL: Table 3.16 row 18.i (p.294) tabulates the non-sprinklered HH-industrial travel as 0 m, which is engineering-equivalent to 'no compliant non-sprinklered HH industrial layout exists.' This tool treats it as 'HH Industrial NOT permitted without sprinklers' - i.e. sprinklers are a precondition for HH industrial occupancy, not optional. Travel distances drastically shorter than ordinary storage (23-30 m vs 61-122 m). Rows 16 / 18 are Storage / Industrial Group A = Extra Hazard Group 2 (#1.1.13.5.a, p.530)."
+
+  - id: moe_storage_industrial_eh1
+    match: {occupancy: storage_industrial, hazard_class_is: HH, is_extra_hazard_2: false}
+    section: "Ch 3, #4 + #5.14-15 / Tables 3.13.16, 3.13.18 + 3.16 rows 17, 19 (Extra Hazard Group 1 = Group B)"
+    page: "p.287, 294-295, 529"
+    systems:
+      - name: "Occupant Load Factor (Extra Hazard Group 1 Storage / Industrial = Group B)"
+        spec: "Storage Group B,C (Table 3.13 row 16): 27.9 m². Industrial Group B,C, general (Table 3.13 row 18): 9.3 m². Stair capacity 7.6 mm/person; ramp 5 mm/person"
+        detail: "Audit CH123-03. Extra Hazard Group 1 is 'Storage/Industrial, Group B' (#1.1.13.4.a, p.529: aircraft hangar, bags, books and paper, cardboard, furniture, lumber, motor vehicle repair garages, upholstery and mattresses, ...; Table 1.1 row 12 Group B, p.51). Table 3.13 lists Storage and Industrial Groups B,C in rows 16 / 18 (p.287); the high hazard rows 15 / 17 (18 mm / 10 mm) are Group A = Extra Hazard Group 2 (#1.1.13.5.a, p.530). Tick Extra Hazard Group 2 for Group A materials."
+      - name: "Travel / Commonpath / Dead-end (Extra Hazard Group 1 Storage / Industrial = Group B - Table 3.16 rows 17, 19)"
+        spec: "Storage Group B,C: Travel S 122 m, NS 61 m  |  Commonpath S 30 m, NS 15 m  |  Dead-end S 30 m, NS 15 m. Aircraft storage and servicing, industrial and plant room rows as printed in rows 17.iii and 19."
+        spec_s: "Storage Group B,C (17.i-ii): commonpath 30 m, dead end 30 m, travel 122 m. Aircraft storage ground floor (17.iii): commonpath 30 m, dead end 15 m, travel 30 m; mezzanine floor: commonpath 30 m, dead end 15 m, travel 23 m. Industrial Group B,C general (19.i): commonpath 30 m, dead end 15 m, travel 75 m. Special purpose (19.ii): commonpath 30 m, dead end 15 m, travel 122 m. Aircraft servicing ground floor (19.iii): commonpath 30 m, dead end 15 m, travel 30 m; mezzanine floor (19.iv): commonpath 23 m, dead end 15 m, travel 23 m. Mechanical equipment room (19.v), boiler / furnace room (19.vi): commonpath 30 m, dead end 15 m, travel 75 m."
+        spec_ns: "Storage Group B,C (17.i-ii): commonpath 15 m, dead end 15 m, travel 61 m. Aircraft storage ground floor (17.iii): commonpath 15 m, dead end 15 m, travel 23 m; mezzanine floor: commonpath 15 m, dead end 15 m, travel 23 m. Industrial Group B,C general (19.i): commonpath 15 m, dead end 15 m, travel 61 m. Special purpose (19.ii): commonpath 15 m, dead end 15 m, travel 91 m. Aircraft servicing ground floor (19.iii): commonpath 15 m, dead end 15 m, travel 23 m; mezzanine floor (19.iv): commonpath 15 m, dead end 15 m, travel 23 m. Mechanical equipment room (19.v), boiler / furnace room (19.vi): commonpath 15 m, dead end 15 m, travel 61 m."
+        code_ref: "Ch 3, #4.5 / Table 3.16 rows 17, 19"
+        page_ref: "p.294-295"
+        detail: "Audit CH123-03. Table 3.16 row 17 prints 'STORAGE, GROUP B,C' (i. Low Hazard Storage, ii. Ordinary Hazard Storage) and row 19 'INDUSTRIAL, GROUP B,C'; Group B is where Extra Hazard Group 1 materials are listed (#1.1.13.4.a, p.529). The high hazard rows 16 / 18 (commonpath 0 m, dead end 0 m) are Storage / Industrial Group A (Extra Hazard Group 2)."
 
   # ------ Parking ------
   - id: moe_parking_enclosed
@@ -451,6 +1048,7 @@ branches:
     systems:
       - name: "Occupant Load Factor (Enclosed Parking - Table 3.13 row 19)"
         spec: "27.9 m² gross. Stair capacity 7.6 mm/person; ramp 5 mm/person"
+        detail: "Driver-parked levels. Where robotic / mechanical parking is ticked, the robotic / mechanical levels take Table 3.13 row 20 (46.5 m2, its own line) and the occupant load summary uses row 20.i (verifier 28.10.2026)."
       - name: "Travel Distance (Enclosed Parking - sprinklered)"
         sprinkler_column: S
         spec: "Max 61 m travel from most remote parking lot to exit door (along natural path)"
@@ -459,16 +1057,41 @@ branches:
         sprinkler_column: NS
         spec: "Max 46 m travel from most remote parking lot to exit door"
         detail: "Per Table 3.15.b item ii. Dead-end and commonpath shall not exceed 15 m. Applies when enclosed basement/podium parking is NOT sprinklered. Buildings without sprinklers tighten the egress envelope by 15 m."
-      - name: "Mechanical / Robotic Parking OLF (Table 3.13 row 20)"
-        spec: "46.5 m² (Table 3.13 row 20 - Parking Group C) - higher OLF reflects fewer occupants"
-        detail: "Mechanical/Robotic parking is Table 3.13 ROW 20 (Parking Group C), not row 19. Row 19 covers Enclosed + Open parking under Parking Group A,B. Tabulated travel for Mechanical/Robotic is Table 3.16 row 21 (S 60 m / NS 46 m)."
-        code_ref: "Ch 3, Table 3.13 row 20 + Table 3.16 row 21"
-        page_ref: "p.287, 295"
+      # Audit CH123-10: the Table 3.13 row 20 (mechanical / robotic) line moved to the
+      # moe_parking_robotic branch; it printed for every enclosed parking.
       - name: "Single Exit Not Permitted - Parking (Table 3.37 item 4)"
         spec: "Single exit is not permitted; 2 exits shall be provided from every storey or level or section as per Section 4.4, Table 3.15.b. In 1 level below or 1 level above discharge level of parking, vehicle ramp shall be considered as one of the means of egress, provided no shutters or doors are installed in such ramps."
         code_ref: "Ch 3, #5.16.1 / Table 3.37 item 4"
         page_ref: "p.338"
         detail: "Owner card 13.10.2026 05:45Z 'Add item 4.iii': the ramp allowance (item 4.iii) is stated with its condition. #5.16.1 (p.338): parking in above ground, enclosed or underground structures complies with Table 3.37 along with all other sections of this chapter; where conflicts arise, #5.16 prevails."
+      # ---- fix round 28.10.2026 (ch123): Table 3.37 items 1, 5-8 (H1 / CH123-01, CH123-08) ----
+      - name: "Carbon Monoxide Detection - Enclosed Parking (Table 3.37 item 7.i)"
+        spec: "Carbon monoxide detection shall be provided in all enclosed parking structures. Such CO detection system shall be electrically operated, complete with control panel and interfacing with ventilation system."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 7.i"
+        page_ref: "p.338"
+        detail: "Audit H1 / CH123-01. Printed for every enclosed parking, stand-alone or attached (parking sub-occupancy)."
+      - name: "Parking Flooring (Table 3.37 item 6)"
+        spec: &t376 "Floor surfaces shall be of noncombustible material. Floors shall be graded and equipped with drains."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 6"
+        page_ref: "p.338"
+        detail: "Audit CH123-08."
+      - name: "Parking Exit Signs (Table 3.37 item 8)"
+        spec: &t378 "Exit signs shall be distinguishable from Vehicle Exit route and emergency Exit directions for people."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 8"
+        page_ref: "p.338"
+        detail: "Audit CH123-08."
+      - name: "Parking Multiple Occupancy (Table 3.37 item 1)"
+        required: conditional
+        spec: &t371 "Parking structures within 3 m of a building shall be separated by fire barrier having a minimum 2-hour fire resistance rating; not required where the parking structure is separated by 3 m or more from the adjacent building and is attached only via open vehicle bridge, open pedestrian walkway or balconies (item 1.ii). Repair activities inside the parking structure are permitted provided the occupancy does not include motor fuel-dispensing facilities (item 1.iii). Any occupancy other than parking situated in the parking area shall be separated by smoke resistant walls and partitions (item 1.iv)."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 1"
+        page_ref: "p.338"
+        detail: "Audit CH123-08. Conditional: no input gives the distance to another building or other uses inside the parking. Ch 1 Table 1.2 separations between occupancies also apply to parking inside a building."
+      - name: "Parking Fuel Dispensing Exits (Table 3.37 item 5)"
+        required: conditional
+        spec: &t375 "Where fuel dispensing is located within parking areas: exits lead to the outside of the building on the same level or to stairs, with no upward travel permitted, unless direct outside exits are available from that floor; any storey below the storey at which fuel is being dispensed has exits leading directly to the outside via outside stairs or doors at the finished ground level."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 5"
+        page_ref: "p.338"
+        detail: "Audit CH123-08. Conditional: no input says fuel is dispensed in the parking."
 
   - id: moe_parking_open
     match: {occupancy: parking_open}
@@ -483,14 +1106,65 @@ branches:
         spec_ns: "Open parking (20.ii): travel 91 m from most remote parking lot to exit door; commonpath 15 m, dead end 15 m"
         code_ref: "Ch 3, Table 3.16 row 20.ii + Table 3.15.b items iii-iv"
         page_ref: "p.295, 291"
-        detail: "Table 3.16 row 20.ii (p.295) gives open parking S 122 m, NS 91 m travel. CODE CONFLICT: Table 3.15.b item iv (p.291) prints 122 m for a non-sprinklered open podium. The tool uses the stricter 91 m (ruling R9, 12.10.2026); confirm with Civil Defence. Dead-end and commonpath shall not exceed 15 m. Open podium parking benefits from natural ventilation - the longer travel distance acknowledges the much lower smoke / heat hazard. Note: Mechanical/Robotic parking is a SEPARATE row (Table 3.13 row 20, Parking Group C) with OLF 46.5 m² - see moe_parking_enclosed for the row 20 reference."
-      - name: "Open-parking definition (Ch 1, Table 1.9.34)"
-        detail: "To qualify as 'open parking' the structure must have permanent wall openings ≥ 0.4 m² per linear metre of exterior perimeter, distributed over 40% of perimeter or uniformly on at least two opposing sides; interior wall lines / column lines ≥ 20% open. Any part of parking within 30 m of permanent natural ventilation opening."
+        detail: "Table 3.16 row 20.ii (p.295) gives open parking S 122 m, NS 91 m travel. CODE CONFLICT: Table 3.15.b item iv (p.291) prints 122 m for a non-sprinklered open podium. The tool uses the stricter 91 m (ruling R9, 12.10.2026); confirm with Civil Defence. Dead-end and commonpath shall not exceed 15 m. Open podium parking benefits from natural ventilation - the longer travel distance acknowledges the much lower smoke / heat hazard. Note: Mechanical/Robotic parking is a SEPARATE row (Table 3.13 row 20, Table 3.16 row 21): with robotic / mechanical parking ticked those rows are printed on their own lines."
+      # Audit CH123-15: the line printed "required :: None" (no spec).
+      - name: "Open-parking definition (Table 3.37 item 2; Ch 1, Table 1.9.34)"
+        spec: "To qualify as open parking: each parking level has permanent wall openings open to the atmosphere, for an area of not less than 0.4 m2 for each linear meter of its exterior perimeter; such openings distributed over 40 percent of the building perimeter surface or uniformly over each of at least two opposing sides; interior wall lines and column lines at least 20% open, with openings distributed to provide ventilation; any part of the carpark within 30 m of the permanent natural ventilation opening on the perimeter surface. Otherwise the parking is enclosed parking."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 2; Ch 1, Table 1.9 item 34; Table 1.1 row 15.1-15.2"
+        page_ref: "p.338, 85, 53"
+        detail: "Ch 1 Table 1.9 item 34 (p.85) prints 'for each linear meter of its two opposite exterior perimeter' and 'uniformly over each of at least two opposing side surfaces'; Table 1.1 row 15.2 (p.53): enclosed parking is a parking occupancy which does not qualify as open parking."
+      - name: "Parking Flooring (Table 3.37 item 6)"
+        spec: *t376
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 6"
+        page_ref: "p.338"
+        detail: "Audit CH123-08."
+      - name: "Parking Exit Signs (Table 3.37 item 8)"
+        spec: *t378
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 8"
+        page_ref: "p.338"
+        detail: "Audit CH123-08."
+      - name: "Parking Multiple Occupancy (Table 3.37 item 1)"
+        required: conditional
+        spec: *t371
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 1"
+        page_ref: "p.338"
+        detail: "Audit CH123-08. Conditional: no input gives the distance to another building or other uses inside the parking."
+      - name: "Parking Fuel Dispensing Exits (Table 3.37 item 5)"
+        required: conditional
+        spec: *t375
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 5"
+        page_ref: "p.338"
+        detail: "Audit CH123-08. Conditional: no input says fuel is dispensed in the parking."
       - name: "Single Exit Not Permitted - Parking (Table 3.37 item 4)"
         spec: "Single exit is not permitted; 2 exits shall be provided from every storey or level or section as per Section 4.4, Table 3.15.b. In 1 level below or 1 level above discharge level of parking, vehicle ramp shall be considered as one of the means of egress, provided no shutters or doors are installed in such ramps."
         code_ref: "Ch 3, #5.16.1 / Table 3.37 item 4"
         page_ref: "p.338"
         detail: "Owner card 13.10.2026 05:45Z 'Add item 4.iii': the ramp allowance (item 4.iii) is stated with its condition. #5.16.1 (p.338): parking in above ground, enclosed or underground structures complies with Table 3.37 along with all other sections of this chapter; where conflicts arise, #5.16 prevails."
+
+  # Audit CH123-10 / CH123-23 / CH123-08: robotic / mechanical parking (input
+  # has_robotic_parking) takes Table 3.13 row 20, Table 3.16 row 21 and Table 3.37 item 3.
+  - id: moe_parking_robotic
+    match: {occupancy_in: [parking_enclosed, parking_open], has_robotic_parking: true}
+    section: "Ch 3, #5.16 / Table 3.13 row 20 + Table 3.16 row 21 + Table 3.37 item 3"
+    page: "p.287, 295, 338"
+    systems:
+      - name: "Occupant Load Factor (Mechanical / Robotic Parking - Table 3.13 row 20)"
+        spec: "Mechanical/Robotic parkings: 46.5 m2. Stair capacity 7.6 mm/person; ramp 5 mm/person"
+        code_ref: "Ch 3, Table 3.13 row 20.i"
+        page_ref: "p.287"
+        detail: "Governs the robotic / mechanical parking levels and the occupant load summary. Ticked: robotic / mechanical parking. Table 3.13 row 20 prints 'PARKING, GROUP C'; Table 1.1 row 15 (p.53) calls mechanical and robotic parking Group B (#1.1.13.5.b, p.530). Driver-parked levels in the same parking take row 19 (27.9 m2): enter per-use areas."
+      - name: "Travel / Commonpath / Dead-end (Mechanical / Robotic Parking - Table 3.16 row 21)"
+        spec: "Commonpath S 15 m, NS 15 m  |  Dead end S 15 m, NS 15 m  |  Travel S 60 m, NS 46 m"
+        spec_s: "Mechanical/Robotic parking (21.i): commonpath 15 m, dead end 15 m, travel 60 m"
+        spec_ns: "Mechanical/Robotic parking (21.i): commonpath 15 m, dead end 15 m, travel 46 m"
+        code_ref: "Ch 3, #4.5 / Table 3.16 row 21"
+        page_ref: "p.295"
+        detail: "Ticked: robotic / mechanical parking. The sprinklered travel (60 m) is 1 m shorter than the Table 3.15.b enclosed parking value (61 m)."
+      - name: "Robotic or Automatic Parking (Table 3.37 item 3)"
+        spec: "The operator shall remain in the area and shall have full control of the automated facilities, including means of egress. At least two means of egress remote from each other shall be provided which can be Fire Personnel access. Horizontal walkways for access shall be provided at intervals of 6 m vertically and 30 m horizontally."
+        code_ref: "Ch 3, #5.16.1 / Table 3.37 item 3"
+        page_ref: "p.338"
+        detail: "Audit CH123-08. Ticked: robotic / mechanical parking."
 
   # ------ Animal housing ------
   - id: moe_animal_housing
@@ -529,6 +1203,12 @@ branches:
         spec: "Hallway minimum 915 mm wide with a clear headroom of 2030 mm, without obstructions"
         code_ref: "Ch 3, #5.6 / Table 3.27 item 4.i"
         page_ref: "p.323"
+      - name: "Egress Through a Nonresidential Occupancy (Table 3.27 item 1)"
+        required: conditional
+        spec: "Where the private villa shares a building with a nonresidential occupancy: no private villa shall have its sole means of egress pass through that occupancy, unless the building is sprinklered and egress is not through hazardous content locations (item 1.i), or the egress is separated from the nonresidential occupancies by a 1 hour fire resistance rated corridor and is not through hazardous content locations (item 1.ii), or the non residential occupancy is fully sprinklered as per Ch 9 (item 1.iii)."
+        code_ref: "Ch 3, #5.6 / Table 3.27 item 1"
+        page_ref: "p.323"
+        detail: "Audit CH123-18. Conditional: no input says whether the villa shares a building with a nonresidential occupancy."
 
   # Table 3.27 item 2.iii: "Where any floor within villa exceeds 400 m2, two primary
   # means of escape remote from each other shall be provided." The largest floor is at

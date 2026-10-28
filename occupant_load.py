@@ -92,13 +92,18 @@ TABLE_3_13_ROWS: Dict[str, Tuple[str, float]] = {
     "13.v": ("Mercantile: floors used only for offices", 9.3),
     "13.vi": ("Mercantile: floors used for goods and not public", 27.9),
     MALL_ROW: ("Mall A,B: factor from the mall gross leasable area", 0.0),
-    "15.i": ("Storage A: high hazard storage", 27.9),
-    "16.i": ("Storage B,C: low and ordinary hazard storage", 27.9),
-    "17.i": ("Industrial A: high hazard content", 9.3),
-    "18.i": ("Industrial B,C: general, low hazard", 9.3),
-    "19.i": ("Parking A,B: enclosed parkings", 27.9),
-    "19.ii": ("Parking A,B: open parkings", 27.9),
-    "20.i": ("Parking C: mechanical / robotic parkings", 46.5),
+    # Storage / Industrial Group A = Extra Hazard Group 2 (#1.1.13.5.a, p.530); Group B =
+    # Extra Hazard Group 1 (#1.1.13.4.a, p.529) - audit CH123-03.
+    "15.i": ("Storage A (Extra Hazard Group 2): high hazard storage", 27.9),
+    "16.i": ("Storage B,C (Group B incl. Extra Hazard Group 1): low and ordinary hazard storage", 27.9),
+    "17.i": ("Industrial A (Extra Hazard Group 2): high hazard content", 9.3),
+    "18.i": ("Industrial B,C (Group B incl. Extra Hazard Group 1): general, low hazard", 9.3),
+    # Table 3.13 prints parking rows 19 "Group A,B" and 20 "Group C"; Table 1.1 row 15
+    # (p.53) uses A = enclosed, B = mechanical / robotic, C = open / covered (audit
+    # CH123-24). The tool routes by use, not by these letters.
+    "19.i": ("Parking (Table 3.13 row 19, printed Group A,B; Table 1.1 Group A): enclosed parkings", 27.9),
+    "19.ii": ("Parking (Table 3.13 row 19, printed Group A,B; Table 1.1 Group C): open parkings", 27.9),
+    "20.i": ("Parking (Table 3.13 row 20, printed Group C; Table 1.1 Group B): mechanical / robotic parkings", 46.5),
     "21": ("Animal housing A,B,C", 11.1),
 }
 
@@ -121,7 +126,9 @@ _ROWS_BY_OCCUPANCY: Dict[str, List[str]] = {
     "parking_enclosed": ["19.i"], "parking_open": ["19.ii"],
     "animal_housing": ["21"],
 }
-# Storage / industrial: Groups A (rows 15, 17) are high hazard; B,C (rows 16, 18) are not.
+# Storage / industrial: Groups A (rows 15, 17) are high hazard = Extra Hazard Group 2
+# (#1.1.13.5.a, p.530); Groups B,C (rows 16, 18) include Extra Hazard Group 1 = Group B
+# (#1.1.13.4.a, p.529). Audit CH123-03: HH without the EH2 tick takes rows 16 / 18.
 _STORAGE_ROWS = {True: ["15.i", "17.i"], False: ["16.i", "18.i"]}
 
 # Table 3.13 has rows 1 to 21 only (p.285-287): none for these (CH3-03).
@@ -268,8 +275,13 @@ def _occupancy_factor(b: Building) -> Tuple[float, str]:
         gla, basis = _gla(b)
         f, ref = mall_factor(gla)
         return f, f"{ref} ({basis}; {_Q3})"
-    rows = (_STORAGE_ROWS[b.hazard_class == "HH"] if occ == "storage_industrial"
-            else _ROWS_BY_OCCUPANCY.get(occ, []))
+    if occ == "storage_industrial":
+        rows = _STORAGE_ROWS[b.hazard_class == "HH" and b.is_extra_hazard_2]
+    elif occ in ("parking_enclosed", "parking_open") and b.has_robotic_parking:
+        # Audit CH123-23: robotic / mechanical parking ticked -> Table 3.13 row 20.i.
+        rows = ["20.i"]
+    else:
+        rows = _ROWS_BY_OCCUPANCY.get(occ, [])
     if not rows:
         return 0.0, "Not in Table 3.13"
     row = min(rows, key=lambda r: TABLE_3_13_ROWS[r][1])
@@ -277,6 +289,12 @@ def _occupancy_factor(b: Building) -> Tuple[float, str]:
     if len(rows) > 1:
         ref += (f" (densest Table 3.13 row of this occupancy, {_Q2}: per-use areas give the "
                 "exact load)")
+    if occ == "storage_industrial" and b.hazard_class == "HH" and not b.is_extra_hazard_2:
+        ref += (" (HH without Extra Hazard Group 2 = Extra Hazard Group 1 = Storage / "
+                "Industrial Group B, #1.1.13.4.a p.529: Group B,C rows; audit CH123-03)")
+    if rows == ["20.i"]:
+        ref += (" (robotic / mechanical parking ticked; driver-parked levels take row 19: "
+                "enter per-use areas; audit CH123-23)")
     return f, ref
 
 

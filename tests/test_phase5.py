@@ -129,12 +129,12 @@ def test_p5_ch9_item4_groups_b_c_not_required_lines():
     for hz in ("OH1", "OH2"):
         small = report(occupancy="storage_industrial", height_m=8, plot_area_m2=20000,
                        ground_floor_bua_m2=500, sum_gf_bua_m2=500, max_unit_area_m2=100,
-                       hazard_class=hz)
+                       hazard_class=hz, storage_tenancy="multi")  # Q-4, 28.10.2026
         dlv = [it for it in named(small, "FP", "Dry Landing Valves")
                if it.status == "not_required"]
         assert dlv, hz
         big = report(occupancy="storage_industrial", height_m=8, plot_area_m2=20000,
-                     ground_floor_bua_m2=4000, hazard_class=hz)
+                     ground_floor_bua_m2=4000, hazard_class=hz, storage_tenancy="multi")
         wr = [it for it in named(big, "FP", "Wet Risers and Internal Landing Valves")
               if it.status == "not_required"]
         assert wr, hz
@@ -157,7 +157,7 @@ def test_p5_ch10_g1_rail_rows_under_90_not_entered_and_cable_row_3():
     assert "check it there" not in u.detail
     assert "efficiency and fulfillment" in u.detail
     (n,) = named(report(**kw), "SC", "Tunnel Smoke Management")
-    assert n.status == "conditional" and "road and rail tunnels" in n.detail
+    assert n.status == "not_evaluated" and "road and rail tunnels" in n.detail  # UX-03
     assert "mechanical smoke purging system using dedicated ducting per Section 2.13" in n.detail
     (c,) = named(report(tunnel_kind="cable", tunnel_length_m=50, **kw), "SC",
                  "Tunnel Smoke Management")

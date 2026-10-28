@@ -27,6 +27,15 @@ def store(**kw):
     kw.setdefault("occupancy", "storage_industrial")
     kw.setdefault("height_m", 8)
     kw.setdefault("plot_area_m2", 20000)
+    # Owner ruling Q-4 (28.10.2026): tenancy is a required choice; these tests model the
+    # multi-tenant groups unless they tick single tenant. A specialty-group test (K, P-V)
+    # leaves it blank, so only the specialty row prints here (owner ruling R-G evaluates
+    # the hazard-class rows beside it: pinned in tests/test_audit28_ch9.py).
+    specialty = ("is_aircraft_hanger", "is_cold_storage", "is_flammable_liquid_warehouse",
+                 "is_flammable_liquid_industrial", "is_open_yard_storage", "is_plant_nursery",
+                 "is_idle_pallet_storage", "is_aboveground_tank_storage")
+    if not kw.get("is_single_tenant_storage") and not any(kw.get(f) for f in specialty):
+        kw.setdefault("storage_tenancy", "multi")
     return report(**kw)
 
 
@@ -99,7 +108,7 @@ def test_group_I_blank_sum_takes_row_2_and_is_named_not_evaluated():
     r = group_i(2000)            # plot GF BUA sum not entered
     assert branch(r) == "storage_single_tenant_eh1_tier2"
     ne = any_line(r, NE)
-    assert ne and ne[0].status == "required"
+    assert ne and ne[0].status == "not_evaluated"
     assert pump(r).spec.startswith("1250 gpm @ 6.9 bar")
     assert lines(r, "FP", "Yard Fire Hydrants (loop covering entire facility)")
     # Same handling as Group J (owner ruling 12.10.2026, Ch9 Q1).

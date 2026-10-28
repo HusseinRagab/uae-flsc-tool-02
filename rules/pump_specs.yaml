@@ -7,6 +7,12 @@
 # field. The engine reads this file via load_rules("pump_specs.yaml") at
 # evaluation time and falls back to the previous hard-coded behaviour if
 # the file is missing — so existing deployments keep working.
+#
+# Fix round 28.10.2026 (audit CH9B2-01 / 06 / 08 / 09): the pump set composition
+# (1 electric + 1 diesel + 1 jockey pump with controllers, Table 9.3 item 1.xii, p.567)
+# and its Civil Defence listing are added by the engine to every governing fire pump
+# line (engine._PUMP_SET_NOTE); the descriptions below carry only what is particular
+# to each duty.
 
 # ── Wet-riser dependent pumps ──────────────────────────────────────────────
 # The 750 / 1000 gpm brackets are printed in the Section 4 occupancy tables
@@ -14,17 +20,22 @@
 # 9.20.d ix, 9.21.a.3, 9.21.b.2, 9.24.A.3 v). Table 9.6 item 3.iii (p.582):
 # at least 6.9 bar at the most remote landing valve.
 standpipe_dependent:
-  source: "UAE FLSC 2018 Ch 9 Section 4 occupancy tables (750 gpm for 2 standpipes, 1000 gpm for more); Table 9.6 item 3.iii and item 6.i (p.582-583)"
+  source: "UAE FLSC 2018 Ch 9 Section 4 occupancy tables (750 gpm for 2 standpipes, 1000 gpm for more); Table 9.6 item 3.iii and item 6 (p.582)"
   count_field: wet_riser_standpipes
   count_label: standpipe
   pressure_bar: 6.9
   pressure_note: "at most remote landing valve"
   pump_description: >-
-    UL/FM listed electric or diesel-driven pump set with jockey pump
-    and controller. Hydraulic calculation basis (Table 9.6 item 6.i):
-    2 landing valves at the top of the hydraulically most unfavourable
-    riser plus 1 at the top of the adjacent riser, each 250 gpm at 7 bar;
-    6.9 bar is the minimum at the most remote landing valve (item 3.iii).
+    Hydraulic calculation basis (Table 9.6 item 6.i.a, p.582): two landing
+    valves on the topmost point of the hydraulically most unfavourable wet
+    riser and one landing valve outlet on the topmost point of the adjacent
+    wet risers, each providing 250 gpm at 7 bar. Item 6.ii: where a
+    horizontal wet riser supplies 3 or more landing valve outlets on a floor,
+    the calculation is based on 3 landing valves at the remotest point of the
+    hydraulically most unfavourable wet riser pipe and one landing valve
+    outlet at the topmost point of each adjacent wet riser pipe, each 250 gpm
+    at 7 bar. 6.9 bar is the minimum at the most remote landing valve
+    (item 3.iii).
   # Brackets are evaluated top-to-bottom; the first whose
   # max_count >= n applies. Use a sentinel like 999 for "or more".
   brackets:
@@ -44,8 +55,8 @@ stairs_dependent:
   pressure_bar: 6.9
   pressure_note: "at most remote landing valve"
   pump_description: >-
-    UL/FM listed electric or diesel-driven pump set with jockey pump
-    and controller.
+    Table 9.24.C.2 iii (p.720): 750 gpm if there are 2 stairs, 1000 gpm if
+    there are 3 stairs or more, at 6.9 bar at the most remote landing valve.
   brackets:
     - max_count: 2
       gpm: 750
@@ -54,12 +65,14 @@ stairs_dependent:
 
 # ── Fixed-capacity pumps (yard hydrant networks etc.) ──────────────────────
 fixed_1000:
-  source: "UAE FLSC 2018 Ch. 9 (yard hydrant network)"
+  source: "UAE FLSC 2018 Table 9.26 A.vi (p.723); Table 9.23.B.2 ii (p.717)"
   pressure_bar: 6.9
   pressure_note: "at most remote hydrant outlet valve"
   gpm: 1000
   pump_description: >-
-    Electric or diesel driven UL/FM listed pump set for yard hydrant network.
+    Yard hydrant duty: 1000 gpm at a pressure as required to satisfy 6.9 bar
+    at the most remote hydrant outlet valve (Table 9.26 A.vi, p.723; Table
+    9.23.B.2 ii, p.717).
 
 # ── Villa-scale combined sprinkler + hose-reel pump (Table 9.23) ───────────
 # Used by villa_private_*_1500 and villa_commercial_*_1500 branches when the
@@ -69,5 +82,5 @@ fixed_250:
   pressure_bar: 4.5
   pressure_note: "at most remote hose-reel outlet valve"
   gpm: 250
-  pump_description: >-
-    Electric-driven UL/FM listed fire pump set with jockey pump and controller.
+  # Each villa row states its own item v (p.716-717) in the line detail.
+  pump_description: ""

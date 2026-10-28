@@ -131,7 +131,7 @@ def test_ENG_11_attached_parking_only_when_ticked_with_its_area_and_user_flags()
                    has_parking_area=True)
     assert [c.chapter_code for c in blank.attached_parking_chapters] == ["PARK"]
     ne = blank.attached_parking_chapters[0].blocks[0].items[0]
-    assert ne.system == "Attached Parking Area - NOT EVALUATED" and ne.status == "required"
+    assert ne.system == "Attached Parking Area - NOT EVALUATED" and ne.status == "not_evaluated"
 
     # Every user flag carries over: an unticked room is not brought back.
     def park(**kw):
@@ -285,7 +285,7 @@ def test_CH9A_17_storage_total_bua_not_entered_is_named():
               plot_area_m2=5000, hazard_class="OH1", sum_gf_bua_m2=2000)
     blank = report(**kw, floors_above_grade=2)
     ne = fp_line(blank, "Yard Fire Hydrant System (#4.1.6 total built-up area) - NOT EVALUATED")
-    assert ne and ne[0].status == "required" and ne[0].page_ref == "p.694, p.695"
+    assert ne and ne[0].status == "not_evaluated" and ne[0].page_ref == "p.694, p.695"
     stated = report(**kw, floors_above_grade=2, gross_floor_area_m2=4000)
     assert not fp_line(stated, "Yard Fire Hydrant System (#4.1.6 total built-up area) - NOT")
     single = report(**kw, floors_above_grade=1)
@@ -335,8 +335,12 @@ def test_CH9B_14_outlet_keyed_on_outlet_area_and_tents_replace_generic_tiers():
     small = report(occupancy="business", commercial_outlet_gf_bua_m2=900, **kw)
     assert "lowrise_commercial_outlet_attached_small" in branches(small)
     assert "lowrise_public_" not in branches(small)
+    # Owner ruling R-C (28.10.2026): the host Table 9.21.b.1 row and Table 9.21.e.1 both
+    # apply; one governing pump (both 50 gpm at 4.5 bar here), the other named.
+    assert "lowrise_residential_upto_3600" in branches(small)
     pumps = [it for it in items(small, "FP", True) if it.system.startswith("Fire Pump")]
-    assert len(pumps) == 1 and pumps[0].spec.startswith("50 gpm @ 4.5 bar")
+    assert len(pumps) == 1 and pumps[0].spec.startswith("50 gpm")
+    assert "Table 9.21.e.1" in pumps[0].detail
     large = report(occupancy="business", commercial_outlet_gf_bua_m2=901, **kw)
     assert "lowrise_commercial_outlet_attached_large" in branches(large)
     missing = report(occupancy="business", **kw)

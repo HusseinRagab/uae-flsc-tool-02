@@ -97,7 +97,7 @@ def test_CH10_16_assembly_purge_on_hall_area_and_cinema_theatre_split():
     assert line.status == "required" and "Section 2.13" in line.spec and "6 air changes" in line.spec
     # Hall area not entered in a building over 2000 m2: named, not defaulted to GFA.
     r = report(occupancy="assembly_b", height_m=12, gross_floor_area_m2=2500, **BASE)
-    assert one(r, "Assembly Hall Smoke Purge (> 2000 m2) - NOT EVALUATED").status == "conditional"
+    assert one(r, "Assembly Hall Smoke Purge (> 2000 m2) - NOT EVALUATED").status == "not_evaluated"  # UX-03
     assert not [n for n in names(r) if n.startswith(purge)]
     # Cinema vs theatre.
     kw = dict(occupancy="assembly_b", height_m=12, gross_floor_area_m2=1500,
@@ -109,12 +109,12 @@ def test_CH10_16_assembly_purge_on_hall_area_and_cinema_theatre_split():
     assert "Section 2.9" in one(r, "Theatre Smoke Management").spec
     assert not [n for n in names(r) if n.startswith("Cinema")]
     r = report(**kw)
-    assert one(r, "Cinema / Theatre Smoke Control - NOT EVALUATED").status == "conditional"
+    assert one(r, "Cinema / Theatre Smoke Control - NOT EVALUATED").status == "not_evaluated"  # UX-03
     # School: stage OR area more than 2000 m2 (item 2.3).
     r = report(occupancy="education_b", height_m=12, has_permanent_stages=True, **BASE)
     assert "Section 2.13" in one(r, "School Sports Hall / Auditorium Smoke Purge").spec
     r = report(occupancy="education_b", height_m=12, has_auditorium_within=True, **BASE)
-    assert one(r, "School Sports Hall / Auditorium Smoke Purge - NOT EVALUATED").status == "conditional"
+    assert one(r, "School Sports Hall / Auditorium Smoke Purge - NOT EVALUATED").status == "not_evaluated"  # UX-03
 
 
 def test_CH10_16_app_saves_and_validates_theatre_kind():
@@ -176,7 +176,7 @@ def test_CH10_27_basement_count_trigger_cites_faq_29_and_2_9_4_a():
     assert one(r, "Firefighting Lift").system == "Firefighting Lift (depth more than 7 m)"
     # depth not entered with basements: named, not assumed.
     r = report(occupancy="residential", height_m=14, floors_below_grade=2, **BASE)
-    assert one(r, "Basement Stair / Firefighting Lift by Depth - NOT EVALUATED").status == "conditional"
+    assert one(r, "Basement Stair / Firefighting Lift by Depth - NOT EVALUATED").status == "not_evaluated"  # UX-03
 
 
 # ------------------------------------------------------------ CH10-28

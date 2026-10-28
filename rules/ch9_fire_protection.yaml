@@ -97,9 +97,38 @@ general:
       - name: "Automatic Sprinkler System (full coverage)"
         code_ref: "Ch 9, #4.1.7"
         page_ref: "p.694"
-        detail: "Full sprinkler coverage throughout the storage/industrial building - trigger is > 3 floors above fire access level, irrespective of BUA. Design density per commodity class per NFPA 13."
+        detail: "#4.1.7 (p.694): 'Storage and Industrial occupancies having more than 3 floors above the fire access Level shall be fully protected with Automatic Sprinkler System, irrespective of their built-up areas.' Reading used: the floors are counted including the ground floor, so the trigger is G+3 (4 floors above grade including the GF) and above (owner ruling Q-1, 28.10.2026; read strictly as floors above the GF at the fire access level, the trigger would be G+4). Sprinkler design per Section 3.5 and the Table 9.27 group rows; #4.1.7 prints no density."
+  # Owner ruling 28.10.2026 (CH9B2-18): #4.1.8 (p.694) House of Expertise route for high
+  # hazard industrial / storage / special purpose occupancies not addressed in the code.
+  - id: g_storage_high_hazard_risk_analysis
+    when:
+      building_category_is: storage_industrial
+      hazard_class_in: [HH]
+    systems:
+      - name: "Fire Risk Analysis Report (#4.1.8) - where the occupancy is not addressed in the code"
+        required: conditional
+        code_ref: "Ch 9, #4.1.8"
+        page_ref: "p.694"
+        detail: "#4.1.8 (p.694): 'All High Hazard Industrial, Storage and special purpose occupancies not addressed in this code, a Fire risk analysis report of the facility and the required fire suppression systems, prepared by the Civil Defence approved House of Expertise shall be furnished for Civil Defence review and approval.' Applies where this high hazard facility is not one of the Table 9.27 groups (audit CH9B2-18)."
+  # Audit F9A-12: #4.1.17 / #4.1.18 (p.695) for developments and large plots.
+  - id: g_common_pump_master_tank
+    when:
+      any_of:
+        - {occupancy: infrastructure}
+        - {plot_area_m2_gt: 20000}
+    systems:
+      - name: "Common Fire Pump Set / Master Water Tank (#4.1.17 / #4.1.18)"
+        required: recommended
+        spec: "#4.1.18: master water tank of a minimum of 500,000 gallons common to the development encouraged; #4.1.17: a common fire pump set and fire water tank permitted for a single owner"
+        code_ref: "Ch 9, #4.1.17 / #4.1.18"
+        page_ref: "p.695"
+        detail: "#4.1.17 (p.695): where multiple buildings at single plot or multiple plots are owned by a single owner, the fire pump set and fire water tank shall be permitted to be common, provided the arrangement satisfies the required hydraulic calculations and the involved plots and property are managed and maintained by such single owner. #4.1.18 (p.695): developers are encouraged to consider master water tanks having a size of a minimum of 500,000 gallons, common to the entire development, from which individual buildings can tap to individual pump rooms and Civil Defence can refill their fire trucks during emergencies (audit F9A-12)."
 
 branches:
+  # Table 9.23 (p.716-717). Audit F9A-08 / F9A-09 (28.10.2026): the lines keep what the
+  # rows print (no added head types, tank compartments or breeching items) and print the
+  # items the rows give: dry landing valves and risers not required (iii), the developer's
+  # pump room and tank for commercial developments (iv), roof installation (A.1.b).
   - id: villa_private_base
     match: {occupancy: villa_private}
     section: "Ch 9, #4.7.1 / Table 9.23.A"
@@ -107,25 +136,31 @@ branches:
     systems:
       - name: "Automatic Sprinkler System (domestic/residential type)"
         required: recommended
-        detail: "Domestic-type sprinklers with domestic water tank are acceptable. Not mandatory but highly recommended throughout private villas irrespective of BUA."
+        detail: "Table 9.23.A.1 (p.716): though it is not mandatory, it is highly recommended to consider providing automatic sprinklers throughout private villas irrespective of built-up area. 1.a: domestic type and residential type sprinkler systems, with domestic water tank, are acceptable. Table 9.23.A.1.b: fire pump and/or fire water tank shall be permitted to be installed on the roof, if the structure is capable of accommodating such additional load."
 
   - id: villa_private_ground_1500
     match: {occupancy: villa_private, ground_floor_bua_m2_gt: 1500}
     section: "Ch 9, #4.7.1 / Table 9.23.A.2"
     page: "p.716"
     systems:
-      - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Full sprinkler coverage throughout villa including open and closed basements, podiums and all habitable spaces per Section 3.5. Triggered because ground-floor BUA > 1,500 m2."
+      - name: "Automatic Sprinkler System (full coverage incl. basements)"
+        detail: "Table 9.23.A.2 i (p.716): sprinklers shall be provided throughout the building including basements (open as well as closed) as per Section 3.5. Triggered because the ground floor built-up area is more than 1500 m2."
       - name: "Hose Reel System (basement + ground floor)"
-        detail: "Hose reels throughout basement and ground floor per Section 3.3. 30 m coverage radius; 4.5 bar residual pressure at outlet."
+        detail: "Table 9.23.A.2 ii: hose reel system throughout the basement and ground floor as per Section 3.3."
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required (Table 9.23.A.2 iii, p.716)."
+      - name: "Fire Pump Room and Fire Water Tank (commercial developments)"
+        required: conditional
+        detail: "Table 9.23.A.2 iv (p.716): for commercial developments, the fire pump room and fire water tank are the developer's responsibility and shall be provided at the developer's facility management service block or areas."
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_250
-        detail: "Electric-driven fire pump set with jockey pump and controller. UL/FM listed."
+        detail: "Table 9.23.A.2 v (p.716): the capacity of the fire pump set shall be 250 gpm at pressure as required to satisfy 4.5 bar at the most remote hose reel outlet valve."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
-        detail: "Dedicated fire-water tank with low-level detection and instantaneous refill from utility supply. Two-compartment sectional tank preferred for maintenance continuity."
+        detail: "Table 9.23.A.2 vi (p.716): capacity of 30 minutes of operation, complete with low water level detection and instantaneous refilling arrangement."
 
   - id: villa_private_basement_1500
     match: {occupancy: villa_private, basement_bua_m2_gt: 1500}
@@ -133,17 +168,23 @@ branches:
     page: "p.716"
     systems:
       - name: "Automatic Sprinkler System (basements)"
-        detail: "Sprinkler coverage throughout basements (open and closed) per Section 3.5. Triggered because basement BUA > 1,500 m2."
+        detail: "Table 9.23.A.3 i (p.716): sprinklers shall be provided throughout the basements (open as well as closed) as per Section 3.5. Triggered because the basement floor built-up area is more than 1500 m2."
       - name: "Hose Reel System (basement + ground floor)"
-        detail: "Hose reels throughout basement and ground floor per Section 3.3."
+        detail: "Table 9.23.A.3 ii: hose reel system throughout the basement and ground floor as per Section 3.3."
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required (Table 9.23.A.3 iii, p.716)."
+      - name: "Fire Pump Room and Fire Water Tank (commercial developments)"
+        required: conditional
+        detail: "Table 9.23.A.3 iv (p.716): for commercial developments, the fire pump room and fire water tank are the developer's responsibility and shall be provided at the developer's facility management service block or areas."
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_250
-        detail: "Electric-driven pump set UL/FM listed."
+        detail: "Table 9.23.A.3 v (p.716): the capacity of the fire pump set shall be 250 gpm at pressure as required to satisfy 4.5 bar at the most remote hose reel outlet valve."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
-        detail: "Low water-level detection + instantaneous utility refill."
+        detail: "Table 9.23.A.3 vi (p.716): capacity of 30 minutes of operation, complete with low water level detection and instantaneous refilling arrangement."
 
   - id: villa_commercial_base
     match: {occupancy: villa_commercial}
@@ -152,7 +193,7 @@ branches:
     systems:
       - name: "Automatic Sprinkler System (domestic/residential type)"
         required: recommended
-        detail: "Domestic or residential-type sprinklers are acceptable. Not mandatory but highly recommended throughout commercial villas irrespective of BUA."
+        detail: "Table 9.23.B.1 (p.717): though it is not mandatory, it is highly recommended to consider providing automatic sprinklers throughout the villas irrespective of built-up area. 1.a: domestic type and residential type sprinkler systems shall be permitted."
 
   - id: villa_commercial_plot_20000
     match: {occupancy: villa_commercial, plot_area_m2_gte: 20000}
@@ -160,15 +201,24 @@ branches:
     page: "p.717"
     systems:
       - name: "Yard Fire Hydrant System"
-        detail: "Yard hydrant loop per Section 3.11 around the commercial-villa development (plot >= 20,000 m2). Multiple breeching inlets along fire access road."
+        detail: "Table 9.23.B.2 i (p.717): yard fire hydrants shall be provided as per Section 3.11, for all commercial villa developments having a plot area of 20,000 m2 or more."
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_1000
-        detail: "Electric or diesel driven UL/FM listed pump set for yard hydrant network. Table 9.23.B.3 vii (p.717): where infrastructure yard hydrants are provided, the required villa sprinkler system is permitted to be fed by the yard hydrant pumpset and water."
+        detail: "Table 9.23.B.2 ii (p.717). Table 9.23.B.3 vii (p.717): where infrastructure yard hydrants are provided, the required villa sprinkler system is permitted to be fed by the yard hydrant pumpset and water."
       - name: "Fire Water Tank"
         duty: tank
         spec: "60 minutes duration"
-        detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous utility refill."
+        detail: "Table 9.23.B.2 iii (p.717): capacity of 60 minutes of operation, complete with low water level detection, dedicated direct breeching inlet and instantaneous refilling arrangement."
+
+  - id: villa_commercial_plot_missing
+    match: {occupancy: villa_commercial, villa_converted_use_is: false, plot_area_m2_lte: 0}
+    section: "Ch 9, #4.7.1 / Table 9.23.B.2"
+    page: "p.717"
+    systems:
+      - name: "Plot Area 20,000 m2 or more (Table 9.23.B row 2) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.23.B row 2 (p.717) adds yard fire hydrants, a 1000 gpm fire pump set at 6.9 bar and a 60 minute tank where the plot area is 20,000 m2 or more. The plot area was not entered, so row 2 is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
 
   - id: villa_commercial_ground_1500
     match: {occupancy: villa_commercial, ground_floor_bua_m2_gt: 1500}
@@ -176,16 +226,23 @@ branches:
     page: "p.717"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements)"
-        detail: "Full sprinkler coverage per Section 3.5. Triggered because commercial-villa ground-floor BUA > 1,500 m2."
+        detail: "Table 9.23.B.3 i (p.717): sprinklers shall be provided throughout the building including basements (open as well as closed) as per Section 3.5. Triggered because the commercial villa ground floor built-up area is more than 1500 m2."
       - name: "Hose Reel System (basement + ground floor)"
-        detail: "Per Section 3.3 throughout basement and ground floor."
+        detail: "Table 9.23.B.3 ii: hose reel system throughout the basement and ground floor as per Section 3.3."
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required (Table 9.23.B.3 iii, p.717)."
+      - name: "Fire Pump Room and Fire Water Tank (commercial developments)"
+        required: conditional
+        detail: "Table 9.23.B.3 iv (p.717): for commercial developments, the fire pump room and fire water tank are the developer's responsibility and shall be provided at the developer's facility management service block or areas."
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_250
-        detail: "Table 9.23.B.3 v. Table 9.23.B.3 vii (p.717): where infrastructure yard hydrants are provided, the required villa sprinkler system is permitted to be fed by the yard hydrant pumpset and water."
+        detail: "Table 9.23.B.3 v (p.717): the capacity of the fire pump set shall be 250 gpm at pressure as required to satisfy 4.5 bar at the most remote hose reel outlet valve. Table 9.23.B.3 vii (p.717): where infrastructure yard hydrants are provided, the required villa sprinkler system is permitted to be fed by the yard hydrant pumpset and water."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
+        detail: "Table 9.23.B.3 vi (p.717): capacity of 30 minutes of operation, complete with low water level detection and instantaneous refilling arrangement."
 
   - id: villa_commercial_basement_1500
     match: {occupancy: villa_commercial, basement_bua_m2_gt: 1500}
@@ -193,15 +250,23 @@ branches:
     page: "p.717"
     systems:
       - name: "Automatic Sprinkler System (basements)"
-        detail: "Sprinklers throughout basements (open + closed) per Section 3.5. Triggered because basement BUA > 1,500 m2."
+        detail: "Table 9.23.B.4 i (p.717): sprinklers shall be provided throughout the basements (open as well as closed) as per Section 3.5. Triggered because the basement floor built-up area is more than 1500 m2."
       - name: "Hose Reel System (basement + ground floor)"
+        detail: "Table 9.23.B.4 ii: hose reel system throughout the basement and ground floor as per Section 3.3."
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required (Table 9.23.B.4 iii, p.717)."
+      - name: "Fire Pump Room and Fire Water Tank (commercial developments)"
+        required: conditional
+        detail: "Table 9.23.B.4 iv (p.717): for commercial developments, the fire pump room and fire water tank are the developer's responsibility and shall be provided at the developer's facility management service block or areas."
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: fixed_250
-        detail: "Table 9.23.B.4 v."
+        detail: "Table 9.23.B.4 v (p.717): the capacity of the fire pump set shall be 250 gpm at pressure as required to satisfy 4.5 bar at the most remote hose reel outlet valve."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
+        detail: "Table 9.23.B.4 vi (p.717): capacity of 30 minutes of operation, complete with low water level detection and instantaneous refilling arrangement."
 
   - id: mall_covered
     match: {occupancy: mall_covered}
@@ -212,7 +277,7 @@ branches:
         detail: "Full sprinkler coverage throughout the mall including basements, podiums (open + closed) and all tenant spaces per Section 3.5."
       - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
-        detail: "Wet risers throughout the mall with Class III landing valves per Section 3.4; all risers interconnected at the highest level."
+        detail: "Table 9.22.A iii-iv (p.713): a wet riser system shall be provided throughout the building as per Section 3.4; wet risers shall be interconnected at the highest level."
       - name: "Yard Fire Hydrants"
         detail: "Yard hydrant network around mall perimeter per Section 3.11. Not required if infrastructure hydrants are available within 120 m of every exterior part."
       - name: "Tenant Isolation Valves"
@@ -224,14 +289,14 @@ branches:
       - name: "Fire Pump"
         duty: pump
         spec: "Combined (hydrants + internal): 2000 gpm @ 6.9 bar | Internal only: 1500 gpm @ 6.9 bar"
-        detail: "Electric or diesel driven UL/FM listed pump set. Fixed mall requirement - not dependent on standpipe count."
+        detail: "Table 9.22.A x and xii (p.713): 2000 gpm where the pump set is combined and serves yard hydrants and internal building systems, 1500 gpm where it serves only internal building systems, irrespective of the number of standpipes, at 6.9 bar at the most remote landing valve."
       - name: "Fire Water Tank"
         duty: tank
         spec: "60 minutes duration"
         detail: "Dedicated direct breeching inlet, low water-level detection, instantaneous utility refill."
 
   - id: mall_open_small
-    match: {occupancy: mall_open, plot_area_m2_lte: 900}
+    match: {occupancy: mall_open, plot_area_m2_gt: 0, plot_area_m2_lte: 900}
     section: "Ch 9, #4.6.1 / Table 9.22.B.1 (total plot area up to 900 m2)"
     page: "p.714"
     systems:
@@ -250,6 +315,15 @@ branches:
         duty: tank
         spec: "30 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.22.B.1 iv)."
+
+  - id: mall_open_plot_missing
+    match: {occupancy: mall_open, plot_area_m2_lte: 0}
+    section: "Ch 9, #4.6.1 / Table 9.22.B"
+    page: "p.714"
+    systems:
+      - name: "Plot Area (Table 9.22.B) - NOT EVALUATED"
+        spec: "Not evaluated: enter the total plot area"
+        detail: "Table 9.22.B rows (p.714) are keyed on the total plot area (up to 900 m2, more than 900 m2 up to 2000 m2, more than 2000 m2). The plot area was not entered, so the row is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
 
   - id: mall_open_mid
     match: {occupancy: mall_open, plot_area_m2_gt: 900, plot_area_m2_lte: 2000}
@@ -322,7 +396,7 @@ branches:
       - name: "Fire Pump"
         duty: pump
         spec: "Combined: 2000 gpm @ 6.9 bar | Internal only: 1500 gpm @ 6.9 bar"
-        detail: "UL/FM listed."
+        detail: "Table 9.22.C (p.715): combined 2000 gpm, internal only 1500 gpm, at 6.9 bar."
       - name: "Fire Water Tank"
         duty: tank
         spec: "60 minutes duration"
@@ -353,7 +427,7 @@ branches:
         detail: "Where a fire pump set is combined and serves both yard hydrants and internal building systems, the first pump set at the lowest level is 1000 gpm irrespective of the number of stairs and standpipes, at 17 bar (Table 9.18.A ix)."
       - name: "Upper-level Pump Sets (every 90 m)"
         pump_spec_type: standpipe_dependent
-        detail: "Where a pump set only serves internal building systems, the pump sets located vertically at every 90 m intermediate interval from the lowest level fire pump (Table 9.18.A xi)."
+        detail: "Where a pump set only serves internal building systems, the pump sets located vertically at every 90 m intermediate interval from the lowest level fire pump (Table 9.18.A xi). Table 9.3 item 1.xiii (p.567): the fire pump provided at higher levels, other than the lowest level, in super highrise buildings is permitted to be a set of 2 electric driven fire pumps, a main and a standby, with 1 jockey pump, complete with controllers; the power supply for the 2 electric pumps shall be from different sources (item 2.ii, p.568: the standby pump from a separate source such as building UPS, diesel generator or alternative power source)."
       - name: "Fire Water Tank"
         merge_system: tank
         duty: tank
@@ -387,7 +461,7 @@ branches:
         detail: "First fire pump set at the lowest level of the building (Table 9.18.B vii)."
       - name: "Upper-level Pump Sets (every 90 m)"
         pump_spec_type: standpipe_dependent
-        detail: "Upper-level pump sets located at every 90 m interval from the lowest level fire pump (Table 9.18.B ix)."
+        detail: "Upper-level pump sets located at every 90 m interval from the lowest level fire pump (Table 9.18.B ix). Table 9.3 item 1.xiii (p.567): the fire pump provided at higher levels, other than the lowest level, in super highrise buildings is permitted to be a set of 2 electric driven fire pumps, a main and a standby, with 1 jockey pump, complete with controllers; the power supply for the 2 electric pumps shall be from different sources (item 2.ii, p.568: the standby pump from a separate source such as building UPS, diesel generator or alternative power source)."
       - name: "Fire Water Tank"
         merge_system: tank
         duty: tank
@@ -505,6 +579,35 @@ branches:
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.19.D vii)."
 
+  - id: tall_plot_missing
+    match: {height_m_gte: 23, plot_area_m2_lte: 0, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    section: "Ch 9, #4.2.1 / #4.3.1 / Tables 9.18, 9.19"
+    page: "p.696-699"
+    systems:
+      - name: "Plot Area more than 20,000 m2 (Table 9.18 A / Table 9.19 A, C) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Tables 9.18 and 9.19 (p.696-699) split on the plot area: more than 20,000 m2 adds yard fire hydrants and the combined pump duty at the most remote landing valve and the yard hydrant (Table 9.18.A, Table 9.19.A and C); up to 20,000 m2 takes rows B / D. The plot area was not entered, so the small-plot row is printed and the large-plot row is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
+  - id: highrise_detention_note
+    match: {height_m_gte: 23, occupancy_in: [detention_a, detention_b, detention_c]}
+    section: "Ch 9, #4.3.1 / Table 9.19 (detention 23 m or more)"
+    page: "p.698-699, p.704"
+    systems:
+      - name: "Detention 23 m or more - Table 9.20.d items (no highrise row printed)"
+        required: conditional
+        spec: "Table 9.20.d pre-action sprinklers in cells and 1000 gpm combined pump: no highrise row printed; engineering judgement advised (owner ruling R-H)"
+        detail: "#4.3.1 (p.698) / #4.2.1 (p.696): Tables 9.19 / 9.18 apply to buildings of any occupancy of 23 m or more, and govern this detention building. Table 9.20.d (p.704) is printed for midrise detention only (more than 15 m to less than 23 m): 1 i pre-action type sprinklers throughout cells and inmates areas as per Section 3.7, and vii a combined fire pump set of 1000 gpm irrespective of the number of standpipes at 6.9 bar at the most remote landing valve and the hydrant. The code prints no highrise detention row with these items; engineering judgement is advised (owner ruling R-H, 28.10.2026)."
+
+  - id: height_exactly_90m_note
+    match: {height_m_gte: 90, height_m_lte: 90, occupancy_not: [villa_private, villa_commercial, mall_covered, mall_open, mall_mixed]}
+    section: "Ch 9, #4.3.1 / Table 9.19 (height exactly 90.0 m)"
+    page: "p.696, p.698"
+    systems:
+      - name: "Height exactly 90.0 m - Table 9.19 used (edge note)"
+        required: conditional
+        spec: "Table 9.19 used for a height of exactly 90.0 m (owner ruling R-J)"
+        detail: "#4.2.1 (p.696) gives Table 9.18 to super highrise buildings having a building height greater than 90 m; #4.3.1 (p.698) gives Table 9.19 to highrise buildings of more than 23 m but less than 90 m. A height of exactly 90.0 m is printed in neither; it stays under Table 9.19 (owner ruling R-J, 28.10.2026). The Table 9.6 item 13.iv second pump set line (pump head 90 m or more) still applies where shown."
+
   - id: midrise_public_small_plot
     # Table 9.20.a covers the #4.4.1 occupancies AND row H: high depth
     # underground buildings or buildings with 3 or more basements. Per #1.7.45
@@ -588,6 +691,22 @@ branches:
         duty: tank
         spec: "60 minutes duration (combined)"
         detail: "Combined tank: low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.a.2 vii)."
+  - id: midrise_public_plot_missing
+    match:
+      any_of:
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_not: [detention_a, detention_b, detention_c, low_depth_underground], occupancy_group_is: midrise_public}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy: low_depth_underground, is_high_depth_is: true}
+        - {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: true}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: lowrise_public}
+        - {height_m_lte: 15, is_high_depth_is: true, occupancy_group_is: midrise_residential}
+      plot_area_m2_lte: 0
+    section: "Ch 9, #4.4.1 / Table 9.20.a.2"
+    page: "p.700"
+    systems:
+      - name: "Plot Area more than 20,000 m2 (Table 9.20.a row 2) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.20.a (p.700) adds yard fire hydrants, a 1000 gpm fire pump set at 6.9 bar and a 60 minute tank where the plot area is more than 20,000 m2. The plot area was not entered, so the up-to-20,000 m2 row is printed and the large-plot row is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
 
   # Audit CH9A-19: #4.4.1 / #4.4.2 and Tables 9.20.a-d (p.700-704) do not list low
   # depth underground buildings, so a midrise one is not evaluated: the report names it.
@@ -610,6 +729,7 @@ branches:
       height_m_lt: 23
       occupancy_group_is: midrise_residential
       is_high_depth_is: false
+      ground_floor_bua_m2_gt: 0
       ground_floor_bua_m2_lte: 900
     section: "Ch 9, #4.4.2 / Table 9.20.b.1 (GF BUA up to 900 m2)"
     page: "p.701"
@@ -701,6 +821,24 @@ branches:
         spec: "60 minutes duration"
         detail: "Low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.20.b.4 viii)."
 
+  - id: midrise_residential_gf_missing
+    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: false, ground_floor_bua_m2_lte: 0}
+    section: "Ch 9, #4.4.2 / Table 9.20.b"
+    page: "p.701"
+    systems:
+      - name: "Built-up Ground Floor Area (Table 9.20.b) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area"
+        detail: "Table 9.20.b rows 1-3 (p.701) are keyed on the built-up ground floor area (up to 900 m2, 901 m2 to 3600 m2, more than 3600 m2), and Table 9.20.c (p.703) on a ground floor of up to 500 m2. The area was not entered, so the row is not evaluated. A blank area never counts as a pass (audit F9A-03, 28.10.2026): the lowest row is not taken for a building whose ground floor area was not entered."
+
+  - id: midrise_residential_plot_missing
+    match: {height_m_gt: 15, height_m_lt: 23, occupancy_group_is: midrise_residential, is_high_depth_is: false, plot_area_m2_lte: 0}
+    section: "Ch 9, #4.4.2 / Table 9.20.b.4"
+    page: "p.702"
+    systems:
+      - name: "Plot Area more than 20,000 m2 (Table 9.20.b row 4) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.20.b row 4 (p.702) adds yard fire hydrants, a 1000 gpm fire pump set and a 60 minute tank where the plot area is more than 20,000 m2 (plot area per #4.1.10, p.695). The plot area was not entered, so row 4 is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
   # ---- Midrise single-exit small footprint (Table 9.20.c, #4.4.3) ----
   # Residential/Business/Animal Housing midrise (15-23 m) with single exit stair
   # AND ground-floor BUA <= 500 m2. Fixed 500 gpm @ 6.9 bar / 45 min tank.
@@ -709,6 +847,7 @@ branches:
       height_m_gt: 15
       height_m_lt: 23
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing]
+      ground_floor_bua_m2_gt: 0
       ground_floor_bua_m2_lte: 500
       has_single_exit_stair_is: true
       is_high_depth_is: false
@@ -743,14 +882,14 @@ branches:
     systems:
       - name: "Pre-action Sprinkler System (CELLS + INMATE AREAS)"
         spec: "Pre-action sprinklers per Section 3.7 throughout all cells and inmate-accessible areas"
-        detail: "DETENTION-SPECIFIC: cells and inmate areas use pre-action sprinklers (not wet-pipe) to prevent accidental discharge and tampering, and to allow staff verification before water release. Heads in inmate areas shall be institutional/tamper-resistant per NFPA 13."
+        detail: "Table 9.20.d.1 i (p.704), for cells and inmates areas: pre-action type sprinklers shall be provided throughout as per Section 3.7."
       - name: "Automatic Sprinkler System (NON-CELL AREAS incl. basements & podiums)"
-        detail: "All areas other than cells/inmate areas (admin, kitchen, laundry, plant rooms, basements, podiums - open and closed) protected with standard wet-pipe sprinklers per Section 3.5."
+        detail: "Table 9.20.d.2 i (p.704), for areas other than cells and inmates areas: sprinklers shall be provided throughout the building including basements and podiums (open as well as closed) as per Section 3.5."
       - name: "Wet Riser System (interconnected at highest level)"
         requires_wet_riser: true
-        detail: "Wet risers throughout per Section 3.4; interconnected at the highest level."
+        detail: "Table 9.20.d.2 iii-iv (p.704): a wet riser system throughout the building as per Section 3.4, interconnected at the highest level."
       - name: "Yard Fire Hydrants"
-        detail: "Yard hydrant loop per Section 3.11. NOT required where infrastructure yard hydrants are available within 60 m of the towers; tapping into the existing infrastructure network is permitted to achieve coverage."
+        detail: "Table 9.20.d.2 v-vi (p.704): yard fire hydrants as per Section 3.11; not required where infrastructure yard hydrants are available within 60 m of such towers; tapping from the existing yard hydrant network is permitted to extend the yard hydrants to comply with coverage requirements."
       - name: "Fire Pump (Detention Midrise - combined yard + internal)"
         duty: pump
         spec: "Combined (yard + internal): 1000 gpm @ 6.9 bar at most remote landing valve and hydrant (irrespective of number of standpipes); OR internal-only: 750 gpm (2 standpipes) / 1000 gpm (more than 2 standpipes) @ 6.9 bar"
@@ -761,7 +900,7 @@ branches:
         detail: "Combined yard + internal: dedicated direct breeching inlet, low-level detection, instantaneous utility refill. Internal-only configuration also 60 min."
 
   - id: lowrise_public_upto_500
-    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_lte: 500}
+    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, ground_floor_bua_m2_gt: 0, ground_floor_bua_m2_lte: 500}
     section: "Ch 9, #4.5.1 / Table 9.21.a.1"
     page: "p.705"
     systems:
@@ -805,7 +944,7 @@ branches:
     page: "p.705"
     systems:
       - name: "Automatic Sprinkler System (full coverage)"
-        detail: "Full sprinkler coverage per Section 3.5 (triggered by GF BUA > 3,600 m2)."
+        detail: "Table 9.21.a.3 i (p.705): sprinklers shall be provided throughout the building including basements and podiums (open as well as closed) as per Section 3.5. Triggered because the built-up ground floor area is more than 3600 m2."
       - name: "Wet Riser System"
         requires_wet_riser: true
         detail: "Wet risers per Section 3.4, interconnected at highest level."
@@ -836,12 +975,32 @@ branches:
         spec: "60 minutes duration (combined)"
         detail: "Combined tank: low water level detection, dedicated direct breeching inlet, instantaneous refilling (Table 9.21.a.4 vi)."
 
+  - id: lowrise_public_gf_missing
+    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, is_high_depth_is: false, ground_floor_bua_m2_lte: 0}
+    section: "Ch 9, #4.5.1 / Table 9.21.a"
+    page: "p.705"
+    systems:
+      - name: "Built-up Ground Floor Area (Table 9.21.a) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area"
+        detail: "Table 9.21.a rows 1-3 (p.705) are keyed on the built-up ground floor area (up to 500 m2, 501 m2 to 3600 m2, more than 3600 m2). The area was not entered, so the row is not evaluated. A blank area never counts as a pass (audit F9A-03, 28.10.2026): the lowest row is not taken for a building whose ground floor area was not entered."
+
+  - id: lowrise_public_plot_missing
+    match: {height_m_lte: 15, occupancy_group_is: lowrise_public, is_high_depth_is: false, plot_area_m2_lte: 0}
+    section: "Ch 9, #4.5.1 / Table 9.21.a.4"
+    page: "p.706"
+    systems:
+      - name: "Plot Area more than 20,000 m2 (Table 9.21.a row 4) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.21.a row 4 (p.706) adds yard fire hydrants, a combined 1000 gpm fire pump set and a 60 minute tank where the plot area is more than 20,000 m2 (plot area per #4.1.10, p.695). The plot area was not entered, so row 4 is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
   # ---------------- LOWRISE RESIDENTIAL (Ch 9, #4.5.2 / Table 9.21.b) ------
   - id: lowrise_residential_upto_3600
     match:
       height_m_lte: 15
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c]
+      ground_floor_bua_m2_gt: 0
       ground_floor_bua_m2_lte: 3600
+      plot_area_m2_gt: 0
       plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.1"
     page: "p.707"
@@ -865,6 +1024,7 @@ branches:
       height_m_lte: 15
       occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c]
       ground_floor_bua_m2_gt: 3600
+      plot_area_m2_gt: 0
       plot_area_m2_lte: 20000
     section: "Ch 9, #4.5.2 / Table 9.21.b.2"
     page: "p.707"
@@ -877,7 +1037,7 @@ branches:
       - name: "Fire Pump"
         duty: pump
         pump_spec_type: standpipe_dependent
-        detail: "750 gpm for 2 standpipes, 1000 gpm for more than 2; 6.9 bar at most remote landing valve. UL/FM listed."
+        detail: "Table 9.21.b.2 v (p.707): 750 gpm if there are 2 standpipes and 1000 gpm if there are more than 2 standpipes, at 6.9 bar at the most remote landing valve."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
@@ -892,7 +1052,7 @@ branches:
     page: "p.708"
     systems:
       - name: "Yard Fire Hydrants"
-        detail: "Yard hydrant network around plot per Section 3.11. Not required if infrastructure hydrants available within 60 m of building."
+        detail: "Table 9.21.b.3 iii (p.708): yard fire hydrants as per Section 3.11. Item iv: yard hydrants shall not be required where infrastructure yard hydrants are available within 60 m of such building; tapping from the existing yard hydrant network shall be permitted to extend the yard hydrants to comply with coverage requirements. In this scenario, requirements of Table 9.21.b.3.i shall apply."
       - name: "Fire Pump"
         duty: pump
         spec: "Combined (yard + internal): 1000 gpm @ 6.9 bar at most remote landing valve and hydrant valve"
@@ -906,7 +1066,7 @@ branches:
   # "in accordance with Table 9.21.a. 1., 2., or 3., as applicable". The pump and
   # tank stay with lowrise_residential_large_plot (combined 1000 gpm, 60 min).
   - id: lowrise_residential_large_plot_tier1
-    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_lte: 500}
+    match: {height_m_lte: 15, occupancy_in: [residential, labour_accommodation, staff_accommodation, hostel, business, animal_housing, healthcare_b, healthcare_c, mercantile_c], plot_area_m2_gt: 20000, ground_floor_bua_m2_gt: 0, ground_floor_bua_m2_lte: 500}
     section: "Ch 9, #4.5.2 / Table 9.21.b.3.i with Table 9.21.a.1 (GF BUA up to 500 m2)"
     page: "p.708, p.705"
     systems:
@@ -940,6 +1100,24 @@ branches:
         requires_wet_riser: true
         detail: "Wet risers throughout per Section 3.4, interconnected at the highest level (Table 9.21.a.3 iii-iv)."
 
+  - id: lowrise_residential_gf_missing
+    match: {height_m_lte: 15, occupancy_group_is: midrise_residential, is_high_depth_is: false, ground_floor_bua_m2_lte: 0}
+    section: "Ch 9, #4.5.2 / Table 9.21.b"
+    page: "p.707"
+    systems:
+      - name: "Built-up Ground Floor Area (Table 9.21.b) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area"
+        detail: "Table 9.21.b rows 1-2 (p.707) are keyed on the built-up ground floor area (up to 3600 m2, more than 3600 m2) and row 3 (p.708) on the Table 9.21.a tiers; Table 9.21.c (p.709) on a ground floor of up to 500 m2. The area was not entered, so the row is not evaluated. A blank area never counts as a pass (audit F9A-03, 28.10.2026): the lowest row is not taken for a building whose ground floor area was not entered."
+
+  - id: lowrise_residential_plot_missing
+    match: {height_m_lte: 15, occupancy_group_is: midrise_residential, is_high_depth_is: false, plot_area_m2_lte: 0}
+    section: "Ch 9, #4.5.2 / Table 9.21.b"
+    page: "p.707-708"
+    systems:
+      - name: "Plot Area (Table 9.21.b) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.21.b rows 1-2 (p.707) apply up to a plot area of 20,000 m2; row 3 (p.708), for a plot area of more than 20,000 m2, takes the Table 9.21.a ground floor tiers with yard fire hydrants, a combined 1000 gpm fire pump set and a 60 minute tank (plot area per #4.1.10, p.695). The plot area was not entered, so neither is chosen and the Table 9.21.b row is not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
   # ---------------- LOWRISE SINGLE-EXIT (Ch 9, #4.5.3 / Table 9.21.c) ----
   # Residential / Business / Mercantile / Hotel lowrise (<=15 m) with single exit stair.
   # 2 tiers: <=500 m2 = hose-reel only (50 gpm @ 4.5 bar / 30 min); >500 m2 = sprinklers + hose reel (300 gpm @ 4.5 bar / 30 min).
@@ -947,6 +1125,7 @@ branches:
     match:
       height_m_lte: 15
       occupancy_in: [residential, business, mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]
+      ground_floor_bua_m2_gt: 0
       ground_floor_bua_m2_lte: 500
       has_single_exit_stair_is: true
     suppresses: [lowrise_public_upto_500, lowrise_residential_upto_3600]
@@ -973,12 +1152,14 @@ branches:
       occupancy_in: [residential, business, mercantile_a, mercantile_b, hotel_a, hotel_b, hotel_c]
       ground_floor_bua_m2_gt: 500
       has_single_exit_stair_is: true
-    suppresses: [lowrise_public_501_3600, lowrise_residential_upto_3600]
+    # Audit F9A-04 / Cursor PR #18 residual (28.10.2026): Table 9.21.c.2 (p.709) is 'MORE
+    # THAN 500 m2' with no upper bound, so it also replaces Table 9.21.a.3 / 9.21.b.2.
+    suppresses: [lowrise_public_501_3600, lowrise_residential_upto_3600, lowrise_public_over_3600, lowrise_residential_over_3600]
     section: "Ch 9, #4.5.3 / Table 9.21.c.2"
     page: "p.709"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements & podiums)"
-        detail: "Full sprinkler coverage throughout the building including basements and podiums (open and closed) per Section 3.5. Triggered because lowrise single-exit-stair building has GF BUA > 500 m2."
+        detail: "Table 9.21.c.2 i (p.709): sprinklers throughout the building including basements and podiums (open as well as closed) as per Section 3.5, because the lowrise single-exit-stair building has a built-up ground floor area of more than 500 m2. Row 2 has no upper limit, so it replaces Table 9.21.a.3 / 9.21.b.2 above 3600 m2 as well (#4.5.3; audit F9A-04). Ch 3 check: Table 3.24 item 2.1 (p.317, residential, cases ii and iii) and Table 3.19 item 2 (p.304, business, less than 30 persons per floor) permit a single exit stair with no floor area limit; Table 3.30 item 3.i (p.327, hotel) and Table 3.32 item 5.i (p.331, mercantile) do not permit a single exit, so for a hotel or mercantile building this row arises only where Ch 3 is not met."
       - name: "Hose Reel System (throughout)"
         detail: "Hose reels throughout per Section 3.3."
       - name: "Dry Landing Valves"
@@ -1005,10 +1186,11 @@ branches:
       height_m_lte: 15
       floors_above_grade_lte: 2
       villa_converted_use_is: true
+      ground_floor_bua_m2_gt: 0
       ground_floor_bua_m2_lte: 900
     # Owner ruling 12.10.2026, P3 App Q1: a converted villa takes Table 9.21.d alone; the
     # Table 9.23 villa rows (#4.7.1, p.716) are suppressed (#4.5.4, p.710).
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
     section: "Ch 9, #4.5.4 / Table 9.21.d.1 (GF BUA less than 900 m2, irrespective of stairs)"
     page: "p.710"
     systems:
@@ -1034,7 +1216,7 @@ branches:
       exit_stairs_gte: 2
     # Owner ruling 12.10.2026, P3 App Q1: a converted villa takes Table 9.21.d alone; the
     # Table 9.23 villa rows (#4.7.1, p.716) are suppressed (#4.5.4, p.710).
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
     section: "Ch 9, #4.5.4 / Table 9.21.d.2 (GF BUA more than 900 m2, two exit stairs)"
     page: "p.710"
     systems:
@@ -1061,7 +1243,7 @@ branches:
         - {exit_stairs_lt: 2}
     # Owner ruling 12.10.2026, P3 App Q1: a converted villa takes Table 9.21.d alone; the
     # Table 9.23 villa rows (#4.7.1, p.716) are suppressed (#4.5.4, p.710).
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
     section: "Ch 9, #4.5.4 / Table 9.21.d.3 (GF BUA more than 900 m2, second exit stair not available)"
     page: "p.710"
     systems:
@@ -1082,19 +1264,35 @@ branches:
         spec: "30 minutes duration"
         detail: "Low water level detection and instantaneous refilling (Table 9.21.d.3 iv)."
 
+  - id: lowrise_villa_converted_gf_missing
+    match: {height_m_lte: 15, floors_above_grade_lte: 2, villa_converted_use_is: true, ground_floor_bua_m2_lte: 0}
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, villa_private_base, villa_private_ground_1500, villa_private_basement_1500, villa_commercial_base, villa_commercial_plot_20000, villa_commercial_ground_1500, villa_commercial_basement_1500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
+    section: "Ch 9, #4.5.4 / Table 9.21.d"
+    page: "p.710"
+    systems:
+      - name: "Built-up Ground Floor Area (Table 9.21.d) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area"
+        detail: "Table 9.21.d rows (p.710) are keyed on the built-up ground floor area (less than 900 m2, more than 900 m2). The area was not entered, so the row is not evaluated. A blank area never counts as a pass (audit F9A-03, 28.10.2026): the lowest row is not taken for a building whose ground floor area was not entered."
+
   # ---------------- LOWRISE COMMERCIAL OUTLET ATTACHED (Ch 9, #4.5.5 / Table 9.21.e) ----
-  # Villas / business / mosques with commercial / mercantile outlets attached or in the
-  # same plot. Tiers keyed off the commercial-outlet BUA, not the host building.
-  # Audit CH9B-14: #4.5.5 (p.711) covers lowrise villas (G+1), business (Groups A, B, C)
-  # and mosques (Assembly Group C in this tool) with commercial / mercantile outlets
-  # attached or in the same plot; the rows are keyed on the built-up ground floor area OF
-  # THE COMMERCIAL OUTLET (`commercial_outlet_gf_bua_m2`), and Table 9.21.e replaces the
-  # generic Table 9.21.a / 9.21.b / 9.21.c tiers of the host building. The table prints
-  # "upto 900 m2" and "more than 900 m2", so 900 m2 is row 1.
+  # #4.5.5 (p.711) covers lowrise villas (G+1), business (Groups A, B, C) and mosques
+  # (Assembly Group C in this tool) with commercial / mercantile outlets attached or in the
+  # same plot; the rows are keyed on the built-up ground floor area OF THE COMMERCIAL
+  # OUTLET (`commercial_outlet_gf_bua_m2`, audit CH9B-14). The table prints "upto 900 m2"
+  # and "more than 900 m2", so 900 m2 is row 1.
+  # Owner ruling R-C (28.10.2026, audit F9A-01): the host building's own Table 9.21.a /
+  # 9.21.b row AND Table 9.21.e both apply (no `suppresses:`); the most onerous pump and
+  # tank govern (engine._merge_duties) and the other is named. Cursor PR #26 (suppress the
+  # host tiers while the outlet area is blank) is therefore not ported: the host row stays
+  # and the Table 9.21.e row is named NOT EVALUATED.
+  # Audit F9A-13: Table 9.21.e row A is "VILLAS (G+1)", so a villa takes it only up to 2
+  # floors above grade; row C is "MOSQUES" (Assembly Group C is the tool's mosque).
   - id: lowrise_commercial_outlet_area_missing
     match:
       height_m_lte: 15
-      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
+      any_of:
+        - {occupancy_in: [villa_private, villa_commercial], floors_above_grade_lte: 2}
+        - {occupancy_in: [business, assembly_c]}
       has_attached_commercial_outlet_is: true
       commercial_outlet_gf_bua_m2_lte: 0
     section: "Ch 9, #4.5.5 / Table 9.21.e"
@@ -1102,85 +1300,101 @@ branches:
     systems:
       - name: "Commercial Outlet GF BUA (Table 9.21.e) - NOT EVALUATED"
         spec: "Not evaluated: enter the built-up ground floor area of the commercial outlet"
-        detail: "Table 9.21.e rows 1 (up to 900 m2) and 2 (more than 900 m2) are keyed on the built-up ground floor area of the commercial outlet, not of the host building. The outlet area was not entered, so the Table 9.21.e row is not evaluated (audit CH9B-14)."
+        detail: "Table 9.21.e rows 1 (up to 900 m2) and 2 (more than 900 m2) are keyed on the built-up ground floor area of the commercial outlet, not of the host building. The outlet area was not entered, so the Table 9.21.e row is not evaluated (audit CH9B-14). The host building's own Table 9.21.a / 9.21.b row still applies (owner ruling R-C, 28.10.2026)."
+
+  - id: lowrise_commercial_outlet_villa_above_g1
+    match:
+      height_m_lte: 15
+      occupancy_in: [villa_private, villa_commercial]
+      floors_above_grade_gt: 2
+      has_attached_commercial_outlet_is: true
+    section: "Ch 9, #4.5.5 / Table 9.21.e row A"
+    page: "p.711"
+    systems:
+      - name: "Commercial Outlet (Table 9.21.e) - villa above G+1, no printed row"
+        required: conditional
+        detail: "Table 9.21.e row A (p.711) is printed for VILLAS (G+1) having commercial outlets attached to it or in the same plot. This villa has more than 2 floors above grade (more than G+1), so the code prints no Table 9.21.e row for it and the outlet is not evaluated by this table: confirm the outlet's protection with the Authority (audit F9A-13). The Table 9.23 villa rows above still apply."
 
   - id: lowrise_commercial_outlet_attached_small
     match:
       height_m_lte: 15
-      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
+      any_of:
+        - {occupancy_in: [villa_private, villa_commercial], floors_above_grade_lte: 2}
+        - {occupancy_in: [business, assembly_c]}
       has_attached_commercial_outlet_is: true
       commercial_outlet_gf_bua_m2_gt: 0
       commercial_outlet_gf_bua_m2_lte: 900
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.5 / Table 9.21.e.1"
     page: "p.711"
     systems:
       - name: "Hose Reel System (throughout)"
-        detail: "Hose reels throughout the building per Section 3.3. Triggered because the built-up ground floor area of the attached / same-plot commercial outlet is up to 900 m2 (Table 9.21.e.1). Table 9.21.e replaces the generic Table 9.21.a / 9.21.b tiers of the host building (#4.5.5)."
+        detail: "Table 9.21.e.1 i (p.711): hose reel system throughout the building as per Section 3.3, because the built-up ground floor area of the attached / same-plot commercial outlet is up to 900 m2. Table 9.21.e rows: A. VILLAS (G+1), B. BUSINESS (GROUP A, B, C), C. MOSQUES, having commercial outlets attached to it or in the same plot (#4.5.5); for Assembly Group C the row is the MOSQUES row. It applies together with the host building's own Table 9.21.a / 9.21.b row (owner ruling R-C, 28.10.2026)."
       - name: "Dry Landing Valves"
         required: not_required
-        detail: "Not required at this tier."
+        detail: "Not required (Table 9.21.e.1 ii, p.711)."
       - name: "Hose Reel / Dry Landing Valve (exemption)"
         required: conditional
-        detail: "Hose reels OR dry landing valves are NOT required if infrastructure yard hydrants are available and cover the commercial outlet."
+        detail: "Table 9.21.e.1 iii (p.711): hose reels or dry landing valves shall not be required if the infrastructure yard hydrants are available and cover the commercial outlet. Table 9.21.e rows: A. VILLAS (G+1), B. BUSINESS (GROUP A, B, C), C. MOSQUES, having commercial outlets attached to it or in the same plot (#4.5.5); for Assembly Group C the row is the MOSQUES row."
       - name: "Fire Pump (Commercial Outlet Attached <=900 m2)"
         duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
-        detail: "Pump sized for hose-reel duty only. Fire pump and/or fire water tank permitted on roof if structure can bear additional load."
+        detail: "Table 9.21.e.1 iv (p.711). Item vi: fire pump and/or fire water tank permitted on the roof if the structure is capable of accommodating such additional load."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
-        detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
+        detail: "Table 9.21.e.1 v (p.711): low water level detection, dedicated direct breeching inlet for refilling and instantaneous refilling arrangement."
 
   - id: lowrise_commercial_outlet_attached_large
     match:
       height_m_lte: 15
-      occupancy_in: [villa_private, villa_commercial, business, assembly_c]
+      any_of:
+        - {occupancy_in: [villa_private, villa_commercial], floors_above_grade_lte: 2}
+        - {occupancy_in: [business, assembly_c]}
       has_attached_commercial_outlet_is: true
       commercial_outlet_gf_bua_m2_gt: 900
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
     section: "Ch 9, #4.5.5 / Table 9.21.e.2"
     page: "p.711"
     systems:
       - name: "Automatic Sprinkler System (full coverage incl. basements)"
-        detail: "Sprinklers throughout the building including basements per Section 3.5. Triggered because the built-up ground floor area of the attached / same-plot commercial outlet is more than 900 m2 (Table 9.21.e.2). Table 9.21.e replaces the generic Table 9.21.a / 9.21.b tiers of the host building (#4.5.5)."
+        detail: "Table 9.21.e.2 i (p.711): sprinklers throughout the building including basements as per Section 3.5, because the built-up ground floor area of the attached / same-plot commercial outlet is more than 900 m2. Table 9.21.e rows: A. VILLAS (G+1), B. BUSINESS (GROUP A, B, C), C. MOSQUES (#4.5.5); for Assembly Group C the row is the MOSQUES row. It applies together with the host building's own Table 9.21.a / 9.21.b row (owner ruling R-C, 28.10.2026)."
       - name: "Hose Reel System (throughout)"
-        detail: "Hose reels throughout per Section 3.3."
+        detail: "Table 9.21.e.2 iii (p.711): hose reel system throughout the building as per Section 3.3. Table 9.21.e rows: A. VILLAS (G+1), B. BUSINESS (GROUP A, B, C), C. MOSQUES (#4.5.5)."
       - name: "Dry Landing Valves"
         required: not_required
-        detail: "Not required at this tier."
+        detail: "Not required (Table 9.21.e.2 iv, p.711)."
       - name: "Hose Reel / Dry Landing Valve (exemption)"
         required: conditional
-        detail: "Hose reels OR dry landing valves are NOT required if infrastructure yard hydrants are available and cover the commercial outlet."
+        detail: "Table 9.21.e.2 v (p.711): hose reels or dry landing valves shall not be required if the infrastructure yard hydrants are available and cover the commercial outlet. Table 9.21.e rows: A. VILLAS (G+1), B. BUSINESS (GROUP A, B, C), C. MOSQUES, having commercial outlets attached to it or in the same plot (#4.5.5); for Assembly Group C the row is the MOSQUES row."
       - name: "Fire Pump (Commercial Outlet Attached >900 m2)"
         duty: pump
         spec: "300 gpm @ 4.5 bar at most remote hose-reel outlet"
-        detail: "Combined sprinkler + hose-reel pump duty. Fire pump and/or fire water tank permitted on roof if structure can bear additional load."
+        detail: "Table 9.21.e.2 vi (p.711). Item vii: fire pump and/or fire water tank permitted on the roof if the structure is capable of accommodating such additional load."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
-        detail: "Low-level detection, dedicated direct breeching inlet, instantaneous utility refill."
+        detail: "Table 9.21.e.2 (p.711): low water level detection, dedicated direct breeching inlet for refilling and instantaneous refilling arrangement."
 
   # ---------------- LOWRISE TENTS / MARQUEES / SITE OFFICES (Ch 9, #4.5.6 / Table 9.21.f) ----
-  # Six sub-tiers depending on tent_marquee_kind:
-  #   temporary           -> extinguishers only
-  #   permanent           -> hose reel + 50 gpm @ 4.5 bar / 30 min tank
-  #   commercial_desert   -> hose reel + 50 gpm @ 4.5 bar / 30 min tank
-  #   site_office_short   -> extinguishers only (used <6 months)
-  #   site_office_long    -> hose reel + 50 gpm @ 4.5 bar / 30 min tank (used >6 months)
-  #   small_detached      -> extinguishers only (detached G+1 <=150 m2 any occupancy)
-  # Audit CH9B-14: #4.5.6 (p.712) gives tents, marquees, site offices and site dwellings
-  # their own Table 9.21.f; it replaces the generic Table 9.21.a / 9.21.b / 9.21.c tiers.
+  # p.712: A temporary tents and marquees; B permanent tents and marquees; C permanent
+  # commercial tents and desert camps; D site offices required for less than 6 months;
+  # E site offices required for more than 6 months; F detached G+1 buildings having
+  # ground floor built up area of up to 150 m2, of any occupancy.
+  # Audit CH9B-14: Table 9.21.f replaces the generic Table 9.21.a / 9.21.b / 9.21.c tiers.
+  # Audit F9A-07 / Cursor PR #27 (ported 28.10.2026): #4.5.6 sits under 4.5 Lowrise, so
+  # every row is gated to a height of 15 m or less; row F is gated to its printed limits
+  # (GF BUA more than 0 and up to 150 m2, G+1 = 2 floors above grade). A building outside
+  # row F with that choice is named NOT EVALUATED (the host tiers are not applied).
   - id: lowrise_tent_marquee_extinguishers_only
     match:
-      tent_marquee_kind_in: [temporary, site_office_short, small_detached]
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
-    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows A / D / F)"
+      height_m_lte: 15
+      tent_marquee_kind_in: [temporary, site_office_short]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows A / D)"
     page: "p.712"
     systems:
       - name: "Portable Fire Extinguishers (only)"
         spec: "Per Chapter 4"
-        detail: "Temporary tents/marquees, short-duration site offices (<6 months), and detached G+1 buildings with GF BUA <= 150 m2 (any occupancy) require extinguishers per Chapter 4 only - no fixed water-based system."
+        detail: "Table 9.21.f rows A (temporary tents and marquees) and D (site offices required for less than 6 months), p.712: i. fire extinguishers as per Chapter 4 (row A prints NA for the fire pump set and tank)."
       - name: "Automatic Sprinkler System"
         required: not_required
       - name: "Hose Reel System"
@@ -1190,26 +1404,77 @@ branches:
       - name: "Fire Water Tank"
         required: not_required
 
+  - id: lowrise_small_detached
+    match:
+      height_m_lte: 15
+      tent_marquee_kind: small_detached
+      ground_floor_bua_m2_gt: 0
+      ground_floor_bua_m2_lte: 150
+      floors_above_grade_lte: 2
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-row F)"
+    page: "p.712"
+    systems:
+      - name: "Portable Fire Extinguishers (only)"
+        spec: "Per Chapter 4"
+        detail: "Table 9.21.f row F (p.712): detached G+1 buildings having ground floor built up area of up to 150 m2, of any occupancy: i. fire extinguishers as per Chapter 4; no fixed water-based system."
+      - name: "Automatic Sprinkler System"
+        required: not_required
+      - name: "Hose Reel System"
+        required: not_required
+      - name: "Fire Pump"
+        required: not_required
+      - name: "Fire Water Tank"
+        required: not_required
+
+  - id: lowrise_small_detached_limits_missing
+    match:
+      height_m_lte: 15
+      tent_marquee_kind: small_detached
+      any_of:
+        - {ground_floor_bua_m2_lte: 0}
+        - {ground_floor_bua_m2_gt: 150}
+        - {floors_above_grade_gt: 2}
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
+    section: "Ch 9, #4.5.6 / Table 9.21.f (sub-row F)"
+    page: "p.712"
+    systems:
+      - name: "Detached G+1 / 150 m2 (Table 9.21.f.F) - NOT EVALUATED"
+        spec: "Not evaluated: Table 9.21.f.F is a detached G+1 building with GF BUA up to 150 m2"
+        detail: "Table 9.21.f.F (p.712) is only the printed detached G+1, ground floor built up area up to 150 m2 case (any occupancy). The building is larger or has more than two storeys above grade, or the ground-floor area was not entered, so this row is not evaluated and the generic Table 9.21.a / 9.21.b host tiers are not applied: correct the choice or the inputs (audit F9A-07, Cursor PR #27)."
+
   - id: lowrise_tent_marquee_hose_reel
     match:
+      height_m_lte: 15
       tent_marquee_kind_in: [permanent, commercial_desert, site_office_long]
-    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500]
+    suppresses: [lowrise_public_upto_500, lowrise_public_501_3600, lowrise_public_over_3600, lowrise_residential_upto_3600, lowrise_residential_over_3600, lowrise_residential_large_plot_tier1, lowrise_residential_large_plot_tier2, lowrise_residential_large_plot_tier3, lowrise_single_exit_small, lowrise_single_exit_over_500, lowrise_public_gf_missing, lowrise_residential_gf_missing, lowrise_residential_plot_missing]
     section: "Ch 9, #4.5.6 / Table 9.21.f (sub-rows B / C / E)"
     page: "p.712"
     systems:
       - name: "Hose Reel System (throughout)"
-        detail: "Hose reels throughout per Section 3.3. Permanent tents/marquees, permanent commercial tents and desert camps, and long-duration site offices (>6 months) require a hose-reel system."
+        detail: "Table 9.21.f rows B (permanent tents and marquees), C (permanent commercial tents and desert camps) and E (site offices required for more than 6 months), p.712: i. hose reel system throughout the building as per Section 3.3."
       - name: "Dry Landing Valves"
         required: not_required
-        detail: "Not required."
+        detail: "Not required (Table 9.21.f rows B / C / E ii, p.712)."
       - name: "Fire Pump (Tents / Marquees / Long-Duration Site Office)"
         duty: pump
         spec: "50 gpm @ 4.5 bar at most remote hose-reel outlet"
-        detail: "Pump sized for hose-reel duty only."
+        detail: "Table 9.21.f rows B / C / E ii (p.712): 50 gpm with pressure of 4.5 bar available at the most remote hose reel outlet."
       - name: "Fire Water Tank"
         duty: tank
         spec: "30 minutes duration"
-        detail: "Low-level detection, instantaneous refill."
+        detail: "Table 9.21.f rows B / C / E iii (p.712): low water level detection and instantaneous refilling arrangement."
+
+  - id: lowrise_tent_marquee_not_lowrise
+    match:
+      height_m_gt: 15
+      tent_marquee_kind_in: [temporary, permanent, commercial_desert, site_office_short, site_office_long, small_detached]
+    section: "Ch 9, #4.5.6 / Table 9.21.f"
+    page: "p.712"
+    systems:
+      - name: "Table 9.21.f (tents / site offices) - not applied above 15 m"
+        required: conditional
+        detail: "#4.5.6 and Table 9.21.f (p.712) sit under Section 4.5 Lowrise Building Fire Protection Systems (height up to 15 m). This building is higher than 15 m, so the tent / marquee / site office / detached building choice is not applied and the table for its height governs (audit F9A-07). Check the choice."
 
   # ---------------- MOTOR FUEL DISPENSING (#4.9 / Table 9.25) --------------
   # ---------- Table 9.25 - Motor Fuel Dispensing - 3 sub-groups (A / B / C) ----------
@@ -1315,7 +1580,7 @@ branches:
         duty: pump
         pump_spec_type: fixed_1000
         spec: "1000 gpm @ 6.9 bar at most remote hydrant outlet valve"
-        detail: "Stand-alone dedicated fire pump set serving ONLY the yard-hydrant network."
+        detail: "Table 9.26 A.vi (p.723): the stand-alone dedicated fire pump set serving only the yard hydrant system."
       - name: "Fire Water Tank (Infrastructure)"
         duty: tank
         spec: "90 minutes capacity at full pump duty"
@@ -1344,13 +1609,28 @@ branches:
   # owner ruling 12.10.2026, Ch9 Q2; a Group U yard of 1000 m2 or less, non-LH, Ch9 Q3;
   # exactly 3600 m2 in Groups D, E, I and J, owner ruling 13.10.2026), the higher row is
   # used and the detail says so.
-  # Base groups A-J apply only when no specialty group (K, P-V) and no commodity
-  # (L-O) is selected. #4.11.1 (p.724): designers shall first consult the MSDS.
+  # Base groups A-J apply when no commodity (L-O) is selected. Owner ruling R-G
+  # (28.10.2026): a specialty tick (Groups K, P-V) and the hazard-class rows A-J or the
+  # commodity rows L-O are BOTH evaluated; the most onerous pump / tank governs and the
+  # other is named (engine._merge_duties), and a not_required line of one row beside a
+  # required line of the other is dropped and named (engine._reconcile_not_required).
+  # Owner ruling Q-4 (28.10.2026): the tenancy (multi-tenant A-E, single tenant F-J) is a
+  # required choice; blank = the A-J tier lines are NOT EVALUATED.
+  # #4.11.1 (p.724): designers shall first consult the MSDS (one line, engine).
   # ============================================================================
+
+  - id: storage_tenancy_not_evaluated
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: null}
+    section: "Ch 9, #4.11 / Table 9.27 Groups A-J"
+    page: "p.724-733"
+    systems:
+      - name: "Storage Tenancy (Table 9.27 Groups A-J) - NOT EVALUATED"
+        spec: "Not evaluated: choose single tenant or multi-tenant"
+        detail: "Table 9.27 prints multi-tenant Groups A-E (p.724-728) and single-tenant Groups F-J (p.729-733) with different pumps and tanks: for example row 1 tanks are 30 minutes in Groups A, B, C and 45 minutes in Groups F, G, H, and Group A row 2 has a 45 minute tank where Group F row 2 has 60 minutes with a breeching inlet. The tenancy was not chosen, so the hazard-class tier rows (Groups A-J) are not evaluated (owner ruling Q-4, 28.10.2026: a required choice with no default)."
 
   # ---- Group A - multi-tenant, Light Hazard (p.724) ----
   - id: storage_industrial_tier1_lh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group A row 1 (Multi-Tenant Light Hazard)"
     page: "p.724"
     systems:
@@ -1371,7 +1651,7 @@ branches:
         detail: "Designers shall first consider and consult the relevant Material Safety Data Sheet (MSDS) before designing and proposing the sprinkler system (#4.11.1)."
 
   - id: storage_industrial_tier2_lh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_lte: 900, any_of: [{ground_floor_bua_m2_gte: 900}, {storage_unit_area_m2_gte: 230}]}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_lte: 900, any_of: [{ground_floor_bua_m2_gte: 900}, {storage_unit_area_m2_gte: 230}]}
     section: "Ch 9, #4.11 / Table 9.27 Group A row 2 (Multi-Tenant Light Hazard)"
     page: "p.724"
     systems:
@@ -1392,7 +1672,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier3_lh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_gt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_gt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group A row 3 (Multi-Tenant Light Hazard)"
     page: "p.724"
     systems:
@@ -1411,7 +1691,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier4_lh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [LH], storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [LH], storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group A row 4 (Multi-Tenant Light Hazard)"
     page: "p.724"
     systems:
@@ -1438,7 +1718,7 @@ branches:
   # Group B = OH1 activities per #1.1.13.2.h (p.725)
   # Same row wording as Group A; density 0.15 gpm / 140 m2; pumps 50 / 300 / 300 / 750 gpm.
   - id: storage_industrial_tier1_oh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group B row 1 (Multi-Tenant OH1)"
     page: "p.725"
     systems:
@@ -1457,7 +1737,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier2_oh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_lte: 900, any_of: [{ground_floor_bua_m2_gte: 900}, {storage_unit_area_m2_gte: 230}]}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_lte: 900, any_of: [{ground_floor_bua_m2_gte: 900}, {storage_unit_area_m2_gte: 230}]}
     section: "Ch 9, #4.11 / Table 9.27 Group B row 2 (Multi-Tenant OH1)"
     page: "p.725"
     systems:
@@ -1478,7 +1758,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier3_oh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_gt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_gt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group B row 3 (Multi-Tenant OH1)"
     page: "p.725"
     systems:
@@ -1499,7 +1779,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier4_oh
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH1], storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH1], storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group B row 4 (Multi-Tenant OH1)"
     page: "p.725"
     systems:
@@ -1525,7 +1805,7 @@ branches:
   # Group C = OH2 activities per #1.1.13.3.c (p.726)
   # Same row wording as Group A; density 0.20 gpm / 140 m2; pumps 50 / 350 / 350 / 750 gpm.
   - id: storage_industrial_tier1_oh2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900, storage_unit_area_m2_lt: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group C row 1 (Multi-Tenant OH2)"
     page: "p.726"
     systems:
@@ -1544,7 +1824,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier2_oh2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_lte: 900, any_of: [{ground_floor_bua_m2_gte: 900}, {storage_unit_area_m2_gte: 230}]}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_lte: 900, any_of: [{ground_floor_bua_m2_gte: 900}, {storage_unit_area_m2_gte: 230}]}
     section: "Ch 9, #4.11 / Table 9.27 Group C row 2 (Multi-Tenant OH2)"
     page: "p.726"
     systems:
@@ -1565,7 +1845,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier3_oh2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_gt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, storage_unit_area_m2_gt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group C row 3 (Multi-Tenant OH2)"
     page: "p.726"
     systems:
@@ -1586,7 +1866,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_tier4_oh2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [OH2], storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [OH2], storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group C row 4 (Multi-Tenant OH2)"
     page: "p.726"
     systems:
@@ -1610,7 +1890,7 @@ branches:
 
   # ---- Group D - multi-tenant, Extra Hazard Group 1 (#1.1.13.4) (p.727) ----
   - id: storage_industrial_eh1_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_lt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_lt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group D row 1 (Multi-Tenant EH1)"
     page: "p.727"
     systems:
@@ -1632,7 +1912,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_eh1_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_gte: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_gte: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group D row 2 (Multi-Tenant EH1)"
     page: "p.727"
     systems:
@@ -1656,7 +1936,7 @@ branches:
 
   # ---- Group E - multi-tenant, Extra Hazard Group 2 (#1.1.13.5) (p.728) ----
   - id: storage_industrial_eh2_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group E row 1 (Multi-Tenant EH2)"
     page: "p.728"
     systems:
@@ -1678,7 +1958,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_industrial_eh2_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: false, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gte: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: multi, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gte: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group E row 2 (Multi-Tenant EH2)"
     page: "p.728"
     systems:
@@ -1702,10 +1982,13 @@ branches:
 
   # ---- Groups F, G, H - single tenant LH / OH1 / OH2 (p.729-731) ----
   - id: storage_single_tenant_lh_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group F row 1 (Single-Tenant Light Hazard)"
     page: "p.729"
     systems:
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required: Table 9.27 Group F row 1 ii (p.729) 'Dry landing valves and risers shall not be required' (audit CH9B2-10)."
       - name: "Hose Reel System (single-tenant LH < 900 m2)"
         spec: "Per Section 3.3 - throughout building, NO dry landing valves"
       - name: "Fire Pump (Single-Tenant LH Tier 1)"
@@ -1716,10 +1999,13 @@ branches:
         spec: "45 minutes duration"
 
   - id: storage_single_tenant_lh_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [LH], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group F row 2 (Single-Tenant Light Hazard)"
     page: "p.729"
     systems:
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required: Table 9.27 Group F row 2 iii 'No dry landing valves required' (p.729) (audit CH9B2-10)."
       - name: "Automatic Sprinkler System (single-tenant LH 900-3600 m2)"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (1500 ft2 area of sprinkler operation) per Table 9.27 Group F"
       - name: "Hose Reel System"
@@ -1732,10 +2018,13 @@ branches:
         spec: "60 minutes duration with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_lh_tier3
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [LH], storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [LH], storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group F row 3 (Single-Tenant Light Hazard)"
     page: "p.729"
     systems:
+      - name: "Wet Risers and Internal Landing Valves"
+        required: not_required
+        detail: "Not required: Table 9.27 Group F row 3 v (p.729) 'Wet risers and internal landing valves shall not be required' (audit CH9B2-10)."
       - name: "Automatic Sprinkler System"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (1500 ft2) per Table 9.27 Group F"
         detail: "Row 3: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13)."
@@ -1751,10 +2040,13 @@ branches:
         spec: "60 minutes with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_oh1_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group G row 1 (Single-Tenant OH1)"
     page: "p.730"
     systems:
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required: Table 9.27 Group G row 1 ii (p.730) 'Dry landing valves and risers shall not be required' (audit CH9B2-10)."
       - name: "Hose Reel System (single-tenant OH1 < 900 m2)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH1 Tier 1)"
@@ -1765,7 +2057,7 @@ branches:
         spec: "45 minutes duration"
 
   - id: storage_single_tenant_oh1_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [OH1], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group G row 2 (Single-Tenant OH1)"
     page: "p.730"
     systems:
@@ -1781,10 +2073,13 @@ branches:
         spec: "60 minutes with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_oh1_tier3
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [OH1], storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [OH1], storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group G row 3 (Single-Tenant OH1)"
     page: "p.730"
     systems:
+      - name: "Wet Risers and Internal Landing Valves"
+        required: not_required
+        detail: "Not required: Table 9.27 Group G row 3 v (p.730) 'Wet risers and internal landing valves shall not be required' (audit CH9B2-10)."
       - name: "Automatic Sprinkler System"
         spec: "Per Section 3.5; design density 0.15 gpm / 140 m2 (1500 ft2) per Table 9.27 Group G"
         detail: "Row 3: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13)."
@@ -1800,10 +2095,13 @@ branches:
         spec: "60 minutes with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_oh2_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group H row 1 (Single-Tenant OH2)"
     page: "p.731"
     systems:
+      - name: "Dry Landing Valves and Risers"
+        required: not_required
+        detail: "Not required: Table 9.27 Group H row 1 ii (p.731) 'Dry landing valves and risers shall not be required' (audit CH9B2-10)."
       - name: "Hose Reel System (single-tenant OH2 < 900 m2)"
         spec: "Per Section 3.3"
       - name: "Fire Pump (Single-Tenant OH2 Tier 1)"
@@ -1814,10 +2112,13 @@ branches:
         spec: "45 minutes duration"
 
   - id: storage_single_tenant_oh2_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [OH2], storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group H row 2 (Single-Tenant OH2)"
     page: "p.731"
     systems:
+      - name: "Dry Landing Valves"
+        required: not_required
+        detail: "Not required: Table 9.27 Group H row 2 iii 'Dry landing valves shall not be required' (p.731) (audit CH9B2-10)."
       - name: "Automatic Sprinkler System (OH2 - higher density)"
         spec: "Per Section 3.5; design density 0.20 gpm / 140 m2 (1500 ft2) per Table 9.27 Group H"
       - name: "Hose Reel System"
@@ -1830,10 +2131,13 @@ branches:
         spec: "60 minutes with dedicated direct breeching inlet"
 
   - id: storage_single_tenant_oh2_tier3
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [OH2], storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [OH2], storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group H row 3 (Single-Tenant OH2)"
     page: "p.731"
     systems:
+      - name: "Wet Risers and Internal Landing Valves"
+        required: not_required
+        detail: "Not required: Table 9.27 Group H row 3 v (p.731) 'Wet risers and internal landing valves shall not be required' (audit CH9B2-10)."
       - name: "Automatic Sprinkler System"
         spec: "Per Section 3.5; design density 0.20 gpm / 140 m2 (1500 ft2) per Table 9.27 Group H"
         detail: "Row 3: sum of all ground floor built-up areas more than 3600 m2 (#4.1.13)."
@@ -1853,7 +2157,7 @@ branches:
   # takes row 2 (owner ruling 13.10.2026, higher row); a blank plot GF BUA sum takes row 2
   # with the 'not evaluated' line (owner ruling 12.10.2026, Ch9 Q1), as in Group J.
   - id: storage_single_tenant_eh1_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_lt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_lt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group I row 1 (Single-Tenant Extra Hazard Group 1)"
     page: "p.732"
     systems:
@@ -1879,7 +2183,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_single_tenant_eh1_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_gte: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [HH], is_extra_hazard_2: false, storage_gf_bua_sum_m2_gte: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group I row 2 (Single-Tenant Extra Hazard Group 1)"
     page: "p.732"
     systems:
@@ -1908,7 +2212,7 @@ branches:
 
   # ---- Group J - single tenant, Extra Hazard Group 2 (p.733) ----
   - id: storage_single_tenant_eh2_tier1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_lt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group J row 1 (Single-Tenant Extra Hazard Group 2)"
     page: "p.733"
     systems:
@@ -1934,7 +2238,7 @@ branches:
         spec: "Per #4.11.1 (p.724)"
 
   - id: storage_single_tenant_eh2_tier2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: none, is_single_tenant_storage: true, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gte: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: none, storage_tenancy_is: single, hazard_class_in: [HH], is_extra_hazard_2: true, storage_gf_bua_sum_m2_gte: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group J row 3 (Single-Tenant Extra Hazard Group 2)"
     page: "p.733"
     systems:
@@ -2017,7 +2321,7 @@ branches:
   # ---- Group L - warehouse with Class I-IV materials (p.735) ----
   # Identification of classes of materials per Section 1.1.25 of Chapter 9.
   - id: storage_commodity_class_i_iv_r1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lt: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group L row 1 (Warehouse with Class I-IV Materials)"
     page: "p.735"
     systems:
@@ -2032,7 +2336,7 @@ branches:
         spec: "45 minutes duration"
 
   - id: storage_commodity_class_i_iv_r2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lte: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gte: 230, ground_floor_bua_m2_lte: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group L row 2 (Warehouse with Class I-IV Materials)"
     page: "p.735"
     systems:
@@ -2050,7 +2354,7 @@ branches:
         detail: "Low water level detection and instantaneous refilling arrangement."
 
   - id: storage_commodity_class_i_iv_r3
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group L row 3 (Warehouse with Class I-IV Materials)"
     page: "p.735"
     systems:
@@ -2067,7 +2371,7 @@ branches:
         spec: "60 minutes duration with direct breeching inlet"
 
   - id: storage_commodity_class_i_iv_r4
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: class_i_iv, storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group L row 4 (Warehouse with Class I-IV Materials)"
     page: "p.735"
     systems:
@@ -2089,7 +2393,7 @@ branches:
 
   # ---- Group M - warehouse, plastic and rubber (p.736) ----
   - id: storage_commodity_plastics_r1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lte: 900, storage_unit_area_m2_lt: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lte: 900, storage_unit_area_m2_lt: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group M row 1 (Warehouse - Plastic, Rubber)"
     page: "p.736"
     systems:
@@ -2105,7 +2409,7 @@ branches:
         detail: "Low water level detection and instantaneous refilling arrangement."
 
   - id: storage_commodity_plastics_r2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lte: 900, storage_unit_area_m2_gte: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_lte: 900, storage_unit_area_m2_gte: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group M row 2 (Warehouse - Plastic, Rubber)"
     page: "p.736"
     systems:
@@ -2122,7 +2426,7 @@ branches:
         spec: "60 minutes duration with direct breeching inlet"
 
   - id: storage_commodity_plastics_r3
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_lte: 3600, ground_floor_bua_m2_gt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group M row 3 (Warehouse - Plastic, Rubber)"
     page: "p.736"
     systems:
@@ -2139,7 +2443,7 @@ branches:
         spec: "90 minutes duration with direct breeching inlet"
 
   - id: storage_commodity_plastics_r4
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: plastics_rubber, storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group M row 4 (Warehouse - Plastic, Rubber)"
     page: "p.736"
     systems:
@@ -2161,7 +2465,7 @@ branches:
 
   # ---- Group N - warehouse, tires (p.737) ----
   - id: storage_commodity_tires_r1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: tires, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_lt: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: tires, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_lt: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group N row 1 (Warehouse - Tires)"
     page: "p.737"
     systems:
@@ -2176,7 +2480,7 @@ branches:
         spec: "45 minutes duration"
 
   - id: storage_commodity_tires_r2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: tires, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_gte: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: tires, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_gte: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group N row 2 (Warehouse - Tires)"
     page: "p.737"
     systems:
@@ -2194,7 +2498,7 @@ branches:
         detail: "Low water level detection and instantaneous refilling arrangement."
 
   - id: storage_commodity_tires_r3
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: tires, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_gt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: tires, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_gt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group N row 3 (Warehouse - Tires)"
     page: "p.737"
     systems:
@@ -2211,7 +2515,7 @@ branches:
         spec: "90 minutes duration with direct breeching inlet"
 
   - id: storage_commodity_tires_r4
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: tires, storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: tires, storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group N row 4 (Warehouse - Tires)"
     page: "p.737"
     systems:
@@ -2233,7 +2537,7 @@ branches:
 
   # ---- Group O - warehouse, rolled paper (p.738) ----
   - id: storage_commodity_paper_r1
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_lt: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_lt: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group O row 1 (Warehouse - Rolled Paper)"
     page: "p.738"
     systems:
@@ -2248,7 +2552,7 @@ branches:
         spec: "45 minutes duration"
 
   - id: storage_commodity_paper_r2
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_gte: 230}
+    match: {occupancy: storage_industrial, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_lte: 900, storage_compartment_floor_area_m2_gte: 230}
     section: "Ch 9, #4.11 / Table 9.27 Group O row 2 (Warehouse - Rolled Paper)"
     page: "p.738"
     systems:
@@ -2266,7 +2570,7 @@ branches:
         detail: "Low water level detection and instantaneous refilling arrangement."
 
   - id: storage_commodity_paper_r3
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_gt: 900}
+    match: {occupancy: storage_industrial, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_lte: 3600, storage_total_bua_m2_gt: 900}
     section: "Ch 9, #4.11 / Table 9.27 Group O row 3 (Warehouse - Rolled Paper)"
     page: "p.738"
     systems:
@@ -2283,7 +2587,7 @@ branches:
         spec: "90 minutes duration with direct breeching inlet"
 
   - id: storage_commodity_paper_r4
-    match: {occupancy: storage_industrial, storage_has_specialty_is: false, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_gt: 3600}
+    match: {occupancy: storage_industrial, storage_commodity_is: rolled_paper, storage_gf_bua_sum_m2_gt: 3600}
     section: "Ch 9, #4.11 / Table 9.27 Group O row 4 (Warehouse - Rolled Paper)"
     page: "p.738"
     systems:
@@ -2756,7 +3060,7 @@ branches:
         spec: "Per Section 3.8 OR Section 3.10"
       - name: "Wet Riser System (throughout)"
         spec: "Per Section 3.4"
-        detail: "For cable tunnels > 60 m, wet riser is required throughout the tunnel (not just dry-riser at entry points)."
+        detail: "Table 9.28 A.2 (p.747): for cable tunnels more than 60 m long, a wet riser throughout the tunnel (not a dry riser at the entry points). The table prints less than 60 m (row 1) and more than 60 m (row 2); a tunnel of 60 m exactly is printed in neither and is taken in row 2, the higher row."
       - name: "Fire Pump (Cable Tunnel >= 60 m)"
         spec: "Sized to satisfy minimum 2 adjacent deluge water spray system zones at 6.9 bar at most remote landing valve. Water mist pump per manufacturer."
       - name: "Fire Water Tank"
@@ -2805,8 +3109,8 @@ branches:
     section: "Ch 9, #4.12 / Table 9.28"
     page: "p.747"
     systems:
-      - name: "Tunnel Length Required (Table 9.28 not evaluated)"
-        required: conditional
+      - name: "Tunnel Length (Table 9.28) - NOT EVALUATED"
+        spec: "Not evaluated: enter the tunnel length"
         detail: "Table 9.28 rows depend on the tunnel length (cable tunnels: less than 60 m / more than 60 m; road/rail tunnels: less than 90 m / 90 m-1000 m / more than 1000 m). Enter the tunnel length to get the tunnel fire protection systems."
 
   - id: storage_plant_nursery
@@ -2814,9 +3118,9 @@ branches:
     section: "Ch 9, #4.11 / Table 9.27 Group V (Plant Nursery)"
     page: "p.746"
     systems:
-      - name: "Portable Fire Extinguishers (only)"
+      - name: "Portable Fire Extinguishers (Table 9.27 Group V)"
         spec: "Per Chapter 4"
-        detail: "Table 9.27 Group V, Nurseries (plants and vegetation): i. fire extinguishers as per Chapter 4. The row prints no other system and no fire pump or tank capacity. Wording per owner ruling 13.10.2026."
+        detail: "Table 9.27 Group V, Nurseries (plants and vegetation): i. fire extinguishers as per Chapter 4. The row prints no other system and no fire pump or tank capacity. Wording per owner ruling 13.10.2026. The hazard-class rows (Groups A-J) are evaluated beside it (owner ruling R-G, 28.10.2026)."
       - name: "Automatic Sprinkler System"
         required: not_required
       - name: "Hose Reel System"
@@ -2829,9 +3133,36 @@ branches:
   # C = open (4 rows), D = covered / shaded one-level (2 rows, replaces C).
   # The plot > 20,000 m2 rows add hydrants and the 1000 gpm / 60 min duty on
   # top of the area/height row. Smoke control is Ch 10, not Table 9.24.
+  - id: parking_enclosed_gf_missing
+    match: {occupancy: parking_enclosed, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 0, height_m_lte: 15}
+    section: "Ch 9, #4.8.1 / Table 9.24.A"
+    page: "p.718"
+    systems:
+      - name: "Built-up Ground Floor Area (Table 9.24) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area"
+        detail: "Table 9.24.A rows 1-3 (p.718) are keyed on the built-up ground floor area (up to 900 m2, 901 m2 to 3600 m2, more than 3600 m2) for an enclosed parking up to 15 m. The area was not entered, so the row is not evaluated. A blank area never counts as a pass (audit F9A-03, 28.10.2026): the lowest row is not taken for a building whose ground floor area was not entered."
+
+  - id: parking_open_gf_missing
+    match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 0, height_m_lt: 23}
+    section: "Ch 9, #4.8.1 / Table 9.24.C / 9.24.D"
+    page: "p.720-721"
+    systems:
+      - name: "Built-up Ground Floor Area (Table 9.24) - NOT EVALUATED"
+        spec: "Not evaluated: enter the built-up ground floor area"
+        detail: "Table 9.24.C rows 1-3 (p.720) are keyed on the built-up ground floor area (up to 2000 m2, more than 2000 m2) below 23 m, and Table 9.24.D (p.721) on the covered / shaded parking area (3600 m2 to less than 20,000 m2, more than 20,000 m2). The area was not entered, so the row is not evaluated. A blank area never counts as a pass (audit F9A-03, 28.10.2026): the lowest row is not taken for a building whose ground floor area was not entered."
+
+  - id: parking_plot_missing
+    match: {occupancy_in: [parking_enclosed, parking_open], plot_area_m2_lte: 0}
+    section: "Ch 9, #4.8.1 / Table 9.24"
+    page: "p.718-721"
+    systems:
+      - name: "Plot Area more than 20,000 m2 (Table 9.24 rows A.4 / B.2 / C.4) - NOT EVALUATED"
+        spec: "Not evaluated: enter the plot area"
+        detail: "Table 9.24 rows A.4 (p.719), B.2 and C.4 (p.720) add yard fire hydrants and the 1000 gpm / 60 minute duty where the plot area is more than 20,000 m2 (plot area per #4.1.10, p.695). The plot area was not entered, so those rows are not evaluated. A blank plot area never counts as a pass (audit F9A-03, 28.10.2026)."
+
   - id: parking_enclosed_a1
     merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
-    match: {occupancy: parking_enclosed, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 900, height_m_lte: 15}
+    match: {occupancy: parking_enclosed, has_robotic_parking_is: false, ground_floor_bua_m2_gt: 0, ground_floor_bua_m2_lte: 900, height_m_lte: 15}
     section: "Ch 9, #4.8.1 / Table 9.24.A.1 (GF BUA up to 900 m2, height up to 15 m)"
     page: "p.718"
     systems:
@@ -2970,7 +3301,7 @@ branches:
 
   - id: parking_open_c1
     merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
-    match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 2000, height_m_lt: 15}
+    match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_gt: 0, ground_floor_bua_m2_lte: 2000, height_m_lt: 15}
     section: "Ch 9, #4.8.1 / Table 9.24.C.1 (GF BUA up to 2,000 m2, height less than 15 m)"
     page: "p.720"
     systems:
@@ -2992,7 +3323,7 @@ branches:
 
   - id: parking_open_c2
     merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
-    match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_lte: 2000, height_m_gte: 15, height_m_lt: 23}
+    match: {occupancy: parking_open, has_robotic_parking_is: false, ground_floor_bua_m2_gt: 0, ground_floor_bua_m2_lte: 2000, height_m_gte: 15, height_m_lt: 23}
     section: "Ch 9, #4.8.1 / Table 9.24.C.2 (GF BUA up to 2,000 m2, height 15 m to less than 23 m)"
     page: "p.720"
     systems:
@@ -3061,7 +3392,7 @@ branches:
 
   - id: parking_covered_below_3600
     merge_family: parking   # owner ruling 12.10.2026, P3 App Q6 (engine._merge_tables)
-    match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_lt: 3600}
+    match: {occupancy: parking_open, has_robotic_parking_is: false, is_covered_shaded_parking_is: true, floors_above_grade_lte: 1, ground_floor_bua_m2_gt: 0, ground_floor_bua_m2_lt: 3600}
     suppresses: [parking_open_c1, parking_open_c2, parking_open_c3, parking_open_c4]
     section: "Ch 9, #4.8.1 / Table 9.24.D (covered / shaded one-level parking below 3,600 m2)"
     page: "p.721"
@@ -3368,11 +3699,15 @@ auxiliary_rooms:
       - name: "Control Room / Fire Command Centre - Clean Agent (Section 3.14) OR Double-Interlocked Pre-action (Section 3.7)"
         code_ref: "Ch 9, #4.14 / Table 9.30.F"
         page_ref: "p.752"
-        detail: "Table 9.30.F: clean agent system per Section 3.14 OR a double interlocked pre-action sprinkler system per Section 3.7. Exemptions: (iii) rooms which are less than 10 m2 in area AND are not with critical life or building monitoring and control systems; (iv) rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected. A fire command centre houses critical life safety control systems, so exemption (iii) does not cover it."
+        detail: "Table 9.30.F: clean agent system per Section 3.14 OR a double interlocked pre-action sprinkler system per Section 3.7. Exemptions: (iii) rooms which are less than 10 m2 in area AND are not with critical life or building monitoring and control systems; (iv) rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected. Tool reading (not printed in Table 9.30.F): a fire command centre houses critical life safety control systems, so exemption (iii) is not applied to it."
 
   - id: aux_G_diesel_generator
     flag: has_diesel_generator_room
     requires_sprinkler_system: true
+    # Owner ruling R-E (28.10.2026): Table 9.31.E governs this room regardless of
+    # sprinklers, so no #4.1.5 not-required note is printed for Table 9.30.G (the
+    # Table 9.31.E line cites both tables).
+    silent_when_unsprinklered: true
     systems:
       - name: "Diesel Generator Room - Foam Sprinkler System (Section 3.9)"
         code_ref: "Ch 9, #4.14 / Table 9.30.G / Table 9.31.E"
@@ -3417,7 +3752,7 @@ auxiliary_rooms:
         required: conditional
         code_ref: "Ch 9, #4.14 / Table 9.30.K"
         page_ref: "p.753"
-        detail: "Utility-owned transformer rooms (DEWA / SEWA / ADDC / FEWA / AADC) enclosed and outside substations. Default: no protection required. If the utility operator's technical spec calls for protection, then provide either Clean Agent (Section 3.14) OR Deluge Water Spray (Section 3.8) OR Water Mist (Section 3.10)."
+        detail: "Table 9.30.K (p.753), transformer rooms owned by power utility companies, enclosed and situated in locations other than substations: i. none, unless the power utility company specifies; ii. where specified and required, a clean agent system per Section 3.14 OR iii. a deluge water spray system per Section 3.8 OR iv. a water mist system per Section 3.10."
 
   - id: aux_L_transformer_private
     flag: has_transformer_room_private
@@ -3525,7 +3860,7 @@ equipment:
       - name: "Commercial Kitchen Hood - Automatic Wet Chemical System (Section 3.12) + Grease Filters"
         code_ref: "Ch 9, #4.15 / Table 9.31.A; #3.12 / Table 9.14 items 3.ii, 6"
         page_ref: "p.756, p.675"
-        spec: "For commercial kitchens having 3 or more burners"
+        spec: "Automatic wet chemical system (Section 3.12) and grease filters, for commercial kitchens having 3 or more burners"
         detail: "Table 9.31.A: an automatic wet chemical system per Section 3.12 for commercial kitchens having 3 or more burners; grease filters shall be installed for the kitchen hood. Table 9.14 item 3.ii: the wet chemical system as an entire system, with its design, installation and maintenance manual from the manufacturer, shall be listed and approved by Civil Defence. Table 9.14 item 6: on activation, all sources of fuel and electric power that produce heat to all equipment protected by the system shall be shut down; gas appliances not requiring protection but located under the same ventilation equipment shall also be shut off; shutoff devices shall require manual resetting before fuel or power is restored."
 
   - id: eq_B_lpg_tanks
@@ -3570,7 +3905,7 @@ equipment:
       - name: "Flammable Liquid Tanks - Automatic Foam System (Section 3.9)"
         code_ref: "Ch 9, #4.15 / Table 9.31.C; Ch 13"
         page_ref: "p.756"
-        detail: "Flammable-liquid tanks: automatic foam system per Section 3.9. Foam type (AFFF / AR-AFFF / protein) selected by liquid flash point and solubility - refer Chapter 13 Flammable Liquids."
+        detail: "Table 9.31.C (p.756): an automatic foam system as appropriate as per Section 3.9 shall be provided. Refer to Chapter 13 Flammable Liquids."
 
   - id: eq_D_cable_spread
     flag: has_cable_spread_areas
@@ -3584,9 +3919,9 @@ equipment:
     flag: has_diesel_generator_room
     systems:
       - name: "Diesel Generator Room - Foam Sprinkler System (Section 3.9)"
-        code_ref: "Ch 9, #4.15 / Table 9.31.E"
-        page_ref: "p.756"
-        detail: "Table 9.31.E: foam sprinkler system shall be provided per Section 3.9. Exemption (ii): diesel generator rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected. Where Table 9.30.G also lists the room, the one foam sprinkler system meets both tables and is listed once."
+        code_ref: "Ch 9, #4.15 / Table 9.31.E; #4.14 / Table 9.30.G"
+        page_ref: "p.756, p.752"
+        detail: "Table 9.31.E (p.756): foam sprinkler system shall be provided per Section 3.9. Exemption (ii): diesel generator rooms which are separated as part of separated service blocks and detached from the predominant occupancy, by a separation distance of 3 m, shall not be required to be protected. Table 9.30.G (p.752) prints the same system; Table 9.31.E governs whether or not the building is sprinklered (owner ruling R-E, 28.10.2026: the #4.1.5 gate of Table 9.30 does not apply to the Table 9.31 equipment table), and the one foam sprinkler system meets both tables."
 
   - id: eq_F_boilers
     flag: has_boilers

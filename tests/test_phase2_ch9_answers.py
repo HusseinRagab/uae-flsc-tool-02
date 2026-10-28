@@ -26,6 +26,15 @@ def store(**kw):
     kw.setdefault("occupancy", "storage_industrial")
     kw.setdefault("height_m", 8)
     kw.setdefault("plot_area_m2", 20000)
+    # Owner ruling Q-4 (28.10.2026): tenancy is a required choice; these tests model the
+    # multi-tenant groups unless they tick single tenant. A specialty-group test (K, P-V)
+    # leaves it blank, so only the specialty row prints here (owner ruling R-G evaluates
+    # the hazard-class rows beside it: pinned in tests/test_audit28_ch9.py).
+    specialty = ("is_aircraft_hanger", "is_cold_storage", "is_flammable_liquid_warehouse",
+                 "is_flammable_liquid_industrial", "is_open_yard_storage", "is_plant_nursery",
+                 "is_idle_pallet_storage", "is_aboveground_tank_storage")
+    if not kw.get("is_single_tenant_storage") and not any(kw.get(f) for f in specialty):
+        kw.setdefault("storage_tenancy", "multi")
     return report(**kw)
 
 
@@ -68,7 +77,7 @@ def test_CH9_Q1_plot_gf_bua_sum_required_blank_never_takes_a_lower_tier():
     blank = store(ground_floor_bua_m2=800, max_unit_area_m2=100, hazard_class="LH")
     assert branch(blank) == "storage_industrial_tier4_lh"
     ne = fp_line(blank, "Sum of GF BUAs on the plot (#4.1.13) - NOT EVALUATED")
-    assert ne and ne[0].status == "required"
+    assert ne and ne[0].status == "not_evaluated"
     assert "enter the plot GF BUA sum (#4.1.13)" in ne[0].spec
     assert "owner ruling 12.10.2026, Ch9 Q1" in ne[0].detail
     assert pump(blank).spec.startswith("750 gpm @ 6.9 bar")
@@ -87,7 +96,8 @@ def test_CH9_Q1_plot_gf_bua_sum_required_blank_never_takes_a_lower_tier():
     at = _app_test({**_GEO, "occupancy_chosen": ("Storage / Industrial", "storage_industrial"),
                     "occupancy_category_select": "Storage / Industrial",
                     "occupancy_sub_select": "storage_industrial", "storage_hazard_input": "OH1",
-                    "sum_gf_bua_m2_input": 1000.0})
+                    "sum_gf_bua_m2_input": 1000.0,
+                    "storage_tenancy_input": "multi"})   # ruling Q-4 (28.10.2026): required
     assert not at.error
 
 
@@ -172,14 +182,17 @@ def test_CH9_Q9_secondary_storage_hazard_required_never_OH2_by_default():
               secondary_occupancies=["storage_industrial"])
     r = report(**kw)
     ne = fp_line(r, "Storage / Industrial (secondary occupancy) - Table 9.27 NOT EVALUATED")
-    assert ne and ne[0].status == "required" and "owner ruling 12.10.2026, Ch9 Q9" in ne[0].detail
+    assert ne and ne[0].status == "not_evaluated" and "owner ruling 12.10.2026, Ch9 Q9" in ne[0].detail
     assert r.building.hazard_class == "LH"                 # not the old silent OH2
     assert "storage_industrial" not in (r.chapter("FP").selected_branch_section or "")
     assert "Ch9 Q9" in r.mixed_occupancy_note
-    chosen = report(**kw, secondary_storage_hazard="OH2", sum_gf_bua_m2=1000)
+    # Owner ruling Q-4 (28.10.2026): the tenancy is a required choice as well.
+    chosen = report(**kw, secondary_storage_hazard="OH2", sum_gf_bua_m2=1000,
+                    storage_tenancy="multi")
     assert chosen.building.hazard_class == "OH2" and not fp_line(chosen, "Storage / Industrial (secondary")
     assert "storage_industrial_tier3_oh2" in chosen.chapter("FP").selected_branch_section
-    eh2 = report(**kw, secondary_storage_hazard="EH2", sum_gf_bua_m2=1000)
+    eh2 = report(**kw, secondary_storage_hazard="EH2", sum_gf_bua_m2=1000,
+                 storage_tenancy="multi")
     assert eh2.building.hazard_class == "HH" and eh2.building.is_extra_hazard_2
     assert "storage_industrial_eh2_tier1" in eh2.chapter("FP").selected_branch_section
     # Save key and Load check.
@@ -196,5 +209,6 @@ def test_CH9_Q9_secondary_storage_hazard_required_never_OH2_by_default():
             "secondary_occupancies_input": ["storage_industrial"]}
     at = _app_test(base)
     assert any("Ch9 Q9" in e.value for e in at.error)
-    at = _app_test({**base, "secondary_storage_hazard_input": "OH2", "sum_gf_bua_m2_input": 1000.0})
+    at = _app_test({**base, "secondary_storage_hazard_input": "OH2", "sum_gf_bua_m2_input": 1000.0,
+                    "storage_tenancy_input": "multi"})  # ruling Q-4: required for listed storage too
     assert not at.error
