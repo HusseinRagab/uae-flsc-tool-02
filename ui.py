@@ -47,7 +47,7 @@ _GLOBAL_CSS = """
   --flsc-red:     #C8102E;
   --flsc-amber:   #F0A43B;
   --flsc-ink:     #1B2532;
-  --flsc-muted:   #64748B;
+  --flsc-muted:   #475569;   /* audit UX-24: 4.5:1 or better on the page background */
   --flsc-border:  #E2E8F0;
   --flsc-card:    #FFFFFF;
   --flsc-radius:  14px;
@@ -187,7 +187,7 @@ a[name], .flsc-chapter { scroll-margin-top: 4rem; }
   border-radius: var(--flsc-radius); padding: 10px 16px; margin: .3rem 0 .8rem;
   box-shadow: var(--flsc-shadow);
 }
-.flsc-legend__item { display: inline-flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--flsc-muted); }
+.flsc-legend__item { display: inline-flex; align-items: center; gap: 8px; font-size: .84rem; color: var(--flsc-muted); }
 
 /* ---------- classification strip ---------- */
 .flsc-class {
@@ -221,7 +221,7 @@ a[name], .flsc-chapter { scroll-margin-top: 4rem; }
   font-family: 'IBM Plex Mono', monospace; font-size: .68rem;
   color: #475569; background: none; padding: 0;
 }
-.flsc-branch--none code { color: #CBD5E1; }
+.flsc-branch--none code { color: #475569; font-style: italic; }
 
 /* ---------- status distribution bar ---------- */
 .flsc-statusbar { margin: .1rem 0 .4rem; }
@@ -230,7 +230,7 @@ a[name], .flsc-chapter { scroll-margin-top: 4rem; }
   border: 1px solid var(--flsc-border); background: #EEF2F7;
 }
 .flsc-statusbar__seg { height: 100%; }
-.flsc-statusbar__legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 7px; font-size: .74rem; color: var(--flsc-muted); }
+.flsc-statusbar__legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 7px; font-size: .82rem; color: var(--flsc-muted); }
 .flsc-statusbar__legend b { color: var(--flsc-ink); }
 
 /* ---------- chapter headers ---------- */
@@ -280,6 +280,37 @@ a[name], .flsc-chapter { scroll-margin-top: 4rem; }
 .stButton > button, .stDownloadButton > button, .stLinkButton > a { font-weight: 600; }
 .stDownloadButton > button { box-shadow: var(--flsc-shadow); }
 
+/* ---------- captions + sidebar info (audit UX-24 contrast) ---------- */
+[data-testid="stMainBlockContainer"] [data-testid="stCaptionContainer"] { color: #475569; }
+[data-testid="stSidebar"] [data-testid="stAlertContainer"] {
+  background: #F1F5F9 !important; color: #0F172A !important;
+}
+[data-testid="stSidebar"] [data-testid="stAlertContainer"] p { color: #0F172A !important; }
+
+/* ---------- compact requirement table (audit UX-13) ---------- */
+.flsc-rtable { width: 100%; border-collapse: collapse; margin: .2rem 0 .9rem; font-size: .86rem;
+  background: var(--flsc-card); border: 1px solid var(--flsc-border); }
+.flsc-rtable th { text-align: left; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
+  color: #FFFFFF; background: var(--flsc-navy-2); padding: 6px 8px; }
+.flsc-rtable td { vertical-align: top; padding: 6px 8px; border-top: 1px solid var(--flsc-border);
+  color: var(--flsc-ink); overflow-wrap: anywhere; }
+.flsc-rtable td.flsc-rtable__sys { font-weight: 650; width: 28%; }
+.flsc-rtable td.flsc-rtable__st { width: 1%; white-space: nowrap; }
+.flsc-rtable td.flsc-rtable__cite { width: 20%; color: var(--flsc-muted); font-size: .78rem; }
+.flsc-rtable tr:nth-child(even) td { background: #F8FAFC; }
+.flsc-rtable small { color: var(--flsc-muted); }
+
+/* ---------- small screens (audit UX-18) ---------- */
+@media (max-width: 640px) {
+  .flsc-hero { padding: 1rem 1.1rem .8rem; border-radius: 12px; }
+  .flsc-hero .flsc-hero__title { font-size: 1.35rem !important; line-height: 1.2; }
+  .flsc-hero__ar { font-size: .85rem; margin-bottom: .4rem; }
+  .flsc-hero__chips, .flsc-hero__foot { display: none; }
+  .flsc-chapter__title { font-size: 1.08rem; }
+  .flsc-rtable td.flsc-rtable__cite { display: none; }
+}
+.flsc-hero__title, .flsc-chapter__title { overflow-wrap: normal; word-break: normal; hyphens: none; }
+
 /* ---------- footer ---------- */
 .flsc-footer {
   margin-top: 1.6rem; border-radius: var(--flsc-radius);
@@ -304,8 +335,10 @@ _PRINT_CSS = """
   .flsc-hero { padding: 1.2rem 1.5rem 1rem; box-shadow: none; }
   @media print {
     [data-testid="stExpander"] { page-break-inside: avoid; }
-    .stDownloadButton, .stButton { display: none !important; }
-    .flsc-hero, .flsc-footer, .flsc-badge, .flsc-pill, .flsc-chapter__code {
+    .stDownloadButton, .stButton, [data-testid="stCheckbox"], [data-testid="stToggle"],
+    [data-testid="stMultiSelect"], [data-testid="stTextInput"], [data-testid="stRadio"],
+    [data-testid="stHeader"] { display: none !important; }
+    .flsc-hero, .flsc-footer, .flsc-badge, .flsc-pill, .flsc-chapter__code, .flsc-rtable th {
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
   }
@@ -387,8 +420,16 @@ def render_sidebar_brand() -> None:
 # Badges, pills, markers
 # ---------------------------------------------------------------------------
 
+def _meta_for(status: str):
+    """Badge colours of a status; an unknown status (for example a later
+    'not_evaluated') is shown in grey with its own name, never as 'Required'."""
+    if status in STATUS_META:
+        return STATUS_META[status]
+    return (str(status).replace("_", " ").capitalize(), "#334155", "#F1F5F9", "#CBD5E1")
+
+
 def status_badge(status: str) -> str:
-    label, fg, bg, border = STATUS_META.get(status, STATUS_META["required"])
+    label, fg, bg, border = _meta_for(status)
     return (
         f'<span class="flsc-badge" '
         f'style="color:{fg};background:{bg};border-color:{border};">{label}</span>'
@@ -401,7 +442,7 @@ def status_marker(status: str) -> str:
 
 
 def count_pill(status: str, count: int) -> str:
-    _, fg, bg, border = STATUS_META.get(status, STATUS_META["required"])
+    _, fg, bg, border = _meta_for(status)
     return (
         f'<span class="flsc-pill" '
         f'style="color:{fg};background:{bg};border-color:{border};">{count}</span>'
@@ -435,24 +476,50 @@ def legend_html() -> str:
 # ---------------------------------------------------------------------------
 
 def classification_html(height_class: str, category: str,
-                        branches: list[tuple[str, str | None]]) -> str:
+                        branches: list) -> str:
+    """branches: (chapter code, readable table / row label, rule id or None). The
+    printed table / row is shown; the rule id only as a hover title (audit UX-14).
+    A chapter with no matched row reads 'general rules', not an empty chip."""
     chips = []
-    for code, branch in branches:
-        cls = "flsc-branch" + ("" if branch else " flsc-branch--none")
+    for entry in branches:
+        code, label = entry[0], entry[1]
+        rule = entry[2] if len(entry) > 2 else None
+        cls = "flsc-branch" + ("" if label else " flsc-branch--none")
+        title = f' title="rule {esc(rule)}"' if rule else ""
         chips.append(
-            f'<span class="{cls}"><b>{esc(code)}</b>'
-            f'<code>{esc(branch) if branch else "—"}</code></span>'
+            f'<span class="{cls}"{title}><b>{esc(code)}</b>'
+            f'<code>{esc(label) if label else "general rules"}</code></span>'
         )
     return (
         '<div class="flsc-class">'
         '<div class="flsc-class__hero">'
         '<small>Height class</small>'
         f'<strong>{esc(height_class.replace("_", " ").title())}</strong>'
-        f'<em>Category {esc(category)}</em>'
+        f'<em>Category {esc(category.replace("_", " "))}</em>'
         '</div>'
         f'<div class="flsc-class__branches">{"".join(chips)}</div>'
         '</div>'
     )
+
+
+def requirements_table_html(items, show_rule_ids: bool = False) -> str:
+    """Compact table view of one block of requirements (audit UX-13): system,
+    status, spec and citation in one wrapping row each."""
+    head = ("<tr><th>System</th><th>Status</th><th>Specification / detail</th>"
+            "<th>Code ref</th></tr>")
+    rows = []
+    for r in items:
+        spec = esc(r.spec or "")
+        det = esc(r.detail or "")
+        body = spec + (("<br><small>" + det + "</small>") if det else "")
+        cite = " · ".join(esc(x) for x in (r.code_ref, r.page_ref) if x)
+        if show_rule_ids and getattr(r, "source_rule", None):
+            cite += f"<br><small>rule {esc(r.source_rule)}</small>"
+        rows.append(
+            f'<tr><td class="flsc-rtable__sys">{esc(r.system)}</td>'
+            f'<td class="flsc-rtable__st">{status_badge(r.status)}</td>'
+            f'<td>{body or "-"}</td><td class="flsc-rtable__cite">{cite or "-"}</td></tr>')
+    return f'<table class="flsc-rtable">{head}{"".join(rows)}</table>'
 
 
 def status_summary_html(counts: dict[str, int]) -> str:

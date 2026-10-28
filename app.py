@@ -16,6 +16,7 @@ only items truly unique to that chapter.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import inspect
 import json as _json
 import re as _re
@@ -28,7 +29,9 @@ from flsc_schema import (Building, OCCUPANCY_DEFS, default_hazard, DISCLAIMER,
                          HAZARD_NOT_CLASSIFIED, ANIMAL_HOUSING_GROUPS, BUSINESS_GROUPS,
                          MERCANTILE_C_TYPES)
 from engine import evaluate, report_to_markdown, build_rule_lookup, lpg_input_stops
-from export import report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes
+from export import (report_to_docx_bytes, report_to_pdf_bytes, report_to_xlsx_bytes,
+                    field_label, inputs_rows, tool_revision,
+                    export_file_name, branch_label)
 from figures import figure_caption, figures_for
 from submission_checklist import build_submission_checklist
 from occupant_load import TABLE_3_13_ROWS
@@ -58,13 +61,15 @@ def chapter_heading(code: str, title: str, bilingual: bool = True) -> str:
 
 
 
-def _call_export(fn, report, kind: str):
-    """Cloud can hot-reload app.py before export.py. Accept 1-arg fallback."""
+def _call_export(fn, report, kind: str | None, meta: dict | None = None):
+    """Cloud can hot-reload app.py before export.py. Accept 1- and 2-arg fallbacks."""
     try:
-        n = len(inspect.signature(fn).parameters)
+        params = inspect.signature(fn).parameters
     except (TypeError, ValueError):
-        n = 1
-    if n >= 2:
+        params = {}
+    if "meta" in params:
+        return fn(report, kind, meta=meta) if kind is not None else fn(report, meta=meta)
+    if kind is not None and len(params) >= 2:
         return fn(report, kind)
     return fn(report)
 
@@ -74,6 +79,77 @@ def _call_export(fn, report, kind: str):
 @st.cache_data(show_spinner=False)
 def _cached_rule_lookup():
     return build_rule_lookup()
+
+
+# ---------------- Input help texts (audit UX-16, 28.10.2026) -----------------
+# Every input says what it drives and cites the clause. For a yes/no input the cited
+# lines are read off the rule YAMLs themselves (the code_ref / page_ref of every line
+# the input switches on), so a rule fix also fixes the help text.
+_HELP_BANNED = (chr(0x7E), chr(0x2248), chr(0xA7))   # tilde, approximately sign, section sign
+
+
+@st.cache_data(show_spinner=False)
+def _rule_refs_by_field() -> dict:
+    """Building field -> [(code_ref, page_ref, system name)] for every rule line the
+    field switches on directly: the rule's `flag`, or a `match` / `when` condition
+    `field: true` / `field_is: true` on the rule or on the line."""
+    out: dict = {}
+
+    def pos_keys(cond) -> set:
+        keys = set()
+        if isinstance(cond, dict):
+            for k, v in cond.items():
+                if v is True and isinstance(k, str):
+                    keys.add(k[:-3] if k.endswith("_is") else k)
+        return keys
+
+    for yf in sorted((Path(__file__).parent / "rules").glob("ch*.yaml")):
+        try:
+            data = _yaml.safe_load(yf.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        for rules in data.values():
+            if not isinstance(rules, list):
+                continue
+            for rule in rules:
+                if not isinstance(rule, dict):
+                    continue
+                trig = pos_keys(rule.get("match")) | pos_keys(rule.get("when"))
+                if isinstance(rule.get("flag"), str):
+                    trig.add(rule["flag"])
+                for line in rule.get("systems") or []:
+                    if not isinstance(line, dict):
+                        continue
+                    cref = line.get("code_ref") or rule.get("section")
+                    pref = line.get("page_ref") or rule.get("page") or ""
+                    if not cref:
+                        continue
+                    for f in trig | pos_keys(line.get("when")):
+                        lst = out.setdefault(f, [])
+                        if all((cref, pref) != (a, b) for a, b, _ in lst):
+                            lst.append((str(cref), str(pref), str(line.get("name") or "")))
+    return out
+
+
+def _h(lead: str, *fields: str, limit: int = 5) -> str:
+    """Help text: a hand-written lead (what the input is, with its definition clause)
+    plus the rule lines the named Building fields switch on."""
+    refs = []
+    for f in fields:
+        for cref, pref, name in _rule_refs_by_field().get(f, []):
+            item = f"{name} ({cref}{', ' + pref if pref else ''})" if name else \
+                f"{cref}{', ' + pref if pref else ''}"
+            if item not in refs:
+                refs.append(item)
+    text = lead.strip()
+    if refs:
+        shown = refs[:limit]
+        more = len(refs) - len(shown)
+        text += " Ticking it adds: " + "; ".join(shown) + (
+            f"; and {more} more line(s)" if more > 0 else "") + "."
+    for bad in _HELP_BANNED:
+        text = text.replace(bad, "")
+    return text
 
 
 # Glossary used by the sidebar "📖 Glossary" expander (Tier 2 UI #6).
@@ -405,6 +481,15 @@ def _invalid_scenario_values(data: dict) -> list:
 
 
 # ---------------- Master 'Check all' helper ----------------------------------
+def _touch(*keys) -> None:
+    """Audit UX-08: remember that the user set these inputs themselves, so the
+    'Assumptions used' box no longer lists them as defaults."""
+    t = dict(st.session_state.get("_touched") or {})
+    for k in keys:
+        t[k] = True
+    st.session_state["_touched"] = t
+
+
 def _register_master(master_key: str, child_keys: list[str]):
     if master_key not in st.session_state:
         st.session_state[master_key] = False
@@ -415,6 +500,7 @@ def _register_master(master_key: str, child_keys: list[str]):
         v = st.session_state[master_key]
         for k in child_keys:
             st.session_state[k] = v
+        _touch(*child_keys)
     return _cb
 
 
@@ -509,6 +595,9 @@ def _apply_loaded_scenario(state, data: dict, save_keys: list) -> tuple:
     if isinstance(occ, tuple) and len(occ) == 2:
         state["occupancy_category_select"], state["occupancy_sub_select"] = occ
         state["_last_occupancy"] = occ[1]
+    # Audit UX-05: flags cleared for the previous project are not restored into this one.
+    state["_cleared_flags"] = {}
+    state["_flag_change_note"] = None
     defaulted = [k for k in save_keys if k not in data]
     return ignored, defaulted
 
@@ -675,14 +764,268 @@ def _p4_building_kwargs(occupancy: str) -> dict:
             "kiosk_in_sprinklered_area_or_mall": None if loc is None else loc == "sprinklered_or_mall"}
 
 
-def _apply_incompatible_flag_reset(occupancy: str) -> None:
-    """Silently set incompatible flags to False for the given occupancy.
-    Does NOT touch flags that are compatible — user keeps their state."""
-    for flag in INCOMPATIBLE_FLAGS_BY_OCC.get(occupancy, []):
-        st.session_state[flag] = False
-    for flag, occs in OCC_ONLY_FLAGS.items():
-        if occupancy not in occs:
-            st.session_state[flag] = False
+def _incompatible_flags(occupancy: str) -> list:
+    flags = list(INCOMPATIBLE_FLAGS_BY_OCC.get(occupancy, []))
+    flags += [f for f, occs in OCC_ONLY_FLAGS.items() if occupancy not in occs]
+    return flags
+
+
+def _apply_incompatible_flag_reset(occupancy: str, remember: bool = True,
+                                   state=None) -> tuple:
+    """Set the flags that do not apply to the occupancy to False. Does NOT touch flags
+    that are compatible: the user keeps their state.
+
+    Audit UX-05 (28.10.2026): a flag cleared this way is remembered, and it is ticked
+    again as soon as the user returns to an occupancy it applies to (residential ->
+    villa -> residential keeps the stairs, lift, pump room, ...). Both lists are kept
+    in '_flag_change_note' so the sidebar names them. A preset or a Load starts afresh
+    (remember=False: nothing is remembered or restored). Returns (cleared, restored)."""
+    ss = st.session_state if state is None else state
+    stash = dict(ss.get("_cleared_flags") or {}) if remember else {}
+    off = set(_incompatible_flags(occupancy))
+    restored = [f for f in stash if f not in off and not ss.get(f)]
+    for f in restored:
+        ss[f] = True
+    for f in [f for f in stash if f not in off]:
+        stash.pop(f, None)
+    cleared = []
+    for f in _incompatible_flags(occupancy):
+        if ss.get(f) is True:
+            cleared.append(f)
+            if remember and f not in OCC_ONLY_FLAGS:
+                stash[f] = True
+        ss[f] = False
+    ss["_cleared_flags"] = stash
+    ss["_flag_change_note"] = (occupancy, cleared, restored) if remember else None
+    return cleared, restored
+
+
+# ---------------- Storage / industrial inputs (Table 9.27) -------------------
+# Audit UX-01 (28.10.2026): drawn under the storage hazard class, before every stop.
+def _sum_gf_bua_input() -> None:
+    """The plot GF BUA sum (#4.1.13), required for storage (owner ruling 12.10.2026,
+    Ch9 Q1). One widget key, drawn for a primary or a listed (secondary) storage."""
+    st.session_state.setdefault("sum_gf_bua_m2_input", 0.0)
+    st.number_input(
+        "Sum of GF BUAs of all buildings on the plot (m2) (required)", min_value=0.0,
+        step=100.0, key="sum_gf_bua_m2_input",
+        help="#4.1.13 (p.695): the sum of the built-up ground floor areas of all buildings "
+             "and structures on the plot, excluding separated service blocks, security "
+             "guard house and separated washrooms. Selects the Table 9.27 area row (row 4 "
+             "above 3600 m2) and the #4.1.6 yard hydrant (p.694). Enter this building's GF "
+             "BUA when it is the only building on the plot. Required: 0 stops the "
+             "evaluation (owner ruling 12.10.2026, Ch9 Q1).")
+
+
+def _storage_specialty_inputs() -> None:
+    """Table 9.27 specialty groups (K-V), commodity groups (L-O), unit compartment
+    and tank inputs, in one expander under the storage hazard class."""
+    with st.expander("Storage / industrial specialty (Table 9.27)", expanded=False):
+        st.caption("Tick only what applies. Unticked: the multi-tenant hazard-class groups "
+                   "A-E of Table 9.27 (p.724-728) apply.")
+        st.checkbox(
+            "Single-tenant variant (Groups F-J - distinct pump/tank from multi-tenant)",
+            key="is_single_tenant_storage",
+            help="Single tenant: Table 9.27 Groups F (LH) / G (OH1) / H (OH2) / I (EH1) / J "
+                 "(EH2) (p.729-733) instead of the multi-tenant Groups A-E (p.724-728).")
+        st.checkbox(
+            "Idle wood / plastic pallet warehouse (Group K - high-challenge fire load)",
+            key="is_idle_pallet_storage",
+            help="Table 9.27 Group K (p.734): warehouse storing idle wood or plastic pallets.")
+        st.checkbox(
+            "Cold storage facility (below 4 deg C - Group P)", key="is_cold_storage",
+            help=_h("Table 9.27 Group P (p.739-740): storage facilities with below 4 deg C "
+                    "(dry type sprinklers).", "is_cold_storage"))
+        st.checkbox(
+            "Aircraft hangar (Group Q)", key="is_aircraft_hanger",
+            help="Table 9.27 Group Q (p.741-742): aircraft hangars, by hangar group I / II "
+                 "and III / IV below.")
+        if st.session_state.get("is_aircraft_hanger"):
+            st.radio("Aircraft hangar group (Table 9.27 Q.1-Q.3)", ["I", "II_III", "IV"],
+                     format_func=lambda x: {"I": "Group I", "II_III": "Group II or III",
+                                            "IV": "Group IV"}[x],
+                     key="hangar_group_input", on_change=_touch, args=("hangar_group_input",),
+                     help="Table 9.27 Q.1-Q.3 (p.741-742): the hangar group per the code's "
+                          "hangar classification. Group I carries the highest pump duty "
+                          "(Q.1).")
+        st.checkbox(
+            "Flammable / combustible liquid WAREHOUSE (Group R - foam, 120-min tank)",
+            key="is_flammable_liquid_warehouse",
+            help="Table 9.27 Group R (p.743): warehouse storing flammable or combustible "
+                 "liquids.")
+        st.checkbox(
+            "Flammable / combustible liquid INDUSTRIAL process (Group S - foam per Table 9.11.C)",
+            key="is_flammable_liquid_industrial",
+            help="Table 9.27 Group S (p.744): industrial occupancy processing flammable or "
+                 "combustible liquids.")
+        st.checkbox(
+            "Open yard storage / no building envelope (Group U)", key="is_open_yard_storage",
+            help=_h("Table 9.27 Group U (p.746): open yard storage of materials. The "
+                    "warehouse packages of the other chapters stay conditional for any "
+                    "enclosed building on the site (owner ruling R-B, 28.10.2026).",
+                    "is_open_yard_storage"))
+        st.checkbox(
+            "Plant nursery (Group V - extinguishers only)", key="is_plant_nursery",
+            help="Table 9.27 Group V (p.746): nurseries (plants and vegetation), fire "
+                 "extinguishers as per Chapter 4.")
+        st.checkbox(
+            "Aboveground flammable / combustible liquid storage tanks (Group T)",
+            key="is_aboveground_tank_storage",
+            help="Table 9.27 Group T (p.745): storage of flammable and combustible liquids "
+                 "in aboveground tanks; the row follows the tank storage area and capacity "
+                 "below.")
+        if st.session_state.get("is_aboveground_tank_storage"):
+            st.session_state.setdefault("ast_storage_area_m2_input", 0.0)
+            st.session_state.setdefault("ast_tank_capacity_m3_input", 0.0)
+            st.number_input("Tank storage area (m2)", min_value=0.0, step=10.0,
+                            key="ast_storage_area_m2_input",
+                            help="Table 9.27 Group T row 1 (p.745) needs a storage area less "
+                                 "than 230 m2 AND a tank capacity less than 190 m3. 0 = not "
+                                 "stated: row 2 applies.")
+            st.number_input("Tank capacity (m3)", min_value=0.0, step=10.0,
+                            key="ast_tank_capacity_m3_input",
+                            help="Table 9.27 Group T row 1 (p.745): capacity less than 190 m3. "
+                                 "0 = not stated: Group T row 2 applies.")
+        st.selectbox(
+            "Stored commodity (Table 9.27 Groups L-O)",
+            ["none", "class_i_iv", "plastics_rubber", "tires", "rolled_paper"],
+            format_func=lambda x: {
+                "none": "General storage (Groups A-J by hazard class)",
+                "class_i_iv": "Class I-IV commodities (Group L)",
+                "plastics_rubber": "Plastics / rubber (Group M)",
+                "tires": "Tires (Group N)",
+                "rolled_paper": "Rolled paper (Group O)"}[x],
+            key="storage_commodity_input", on_change=_touch, args=("storage_commodity_input",),
+            help="Table 9.27 commodity groups L (p.735), M (p.736), N (p.737) and O (p.738). "
+                 "General storage keeps the hazard-class groups A-J.")
+        st.session_state.setdefault("max_unit_area_m2_input", 0.0)
+        st.number_input(
+            "Largest unit compartment area (m2)", min_value=0.0, step=10.0,
+            key="max_unit_area_m2_input",
+            help="#4.1.14 (p.695): built-up GF area of the largest unit separated from the "
+                 "adjacent units by fire resistance rated construction. 0 = the whole ground "
+                 "floor is one unit.")
+
+
+# ---------------- Room / location / equipment checkboxes (audit UX-16 / UX-17) -----
+# (key, label, lead of the help text). The help text adds the rule lines each box
+# switches on, read off the rule YAMLs (_h). Letters are the Ch 9 Table 9.30 / 9.31 rows.
+_SPECIAL_ROOM_WIDGETS = [
+    ("has_anesthetizing_room", "Anesthetizing room (A)", "Ch 9 Table 9.30.A (p.752)."),
+    ("has_battery_charger_room", "Battery charger room (B)", "Ch 9 Table 9.30.B (p.752)."),
+    ("has_bms_room", "BMS room (C)", "Ch 9 Table 9.30.C (p.752)."),
+    ("has_battery_room", "Battery room (D)", "Ch 9 Table 9.30.D (p.752)."),
+    ("has_computer_room", "Computer room (E)", "Ch 9 Table 9.30.E (p.752)."),
+    ("has_control_room", "Control room / fire command centre (F)", "Ch 9 Table 9.30.F (p.752)."),
+    ("has_diesel_generator_room", "Diesel generator room, foam (G)",
+     "Ch 9 Table 9.30.G (p.752) and Table 9.31.E (p.756): foam sprinkler system."),
+    ("has_main_electrical_room", "Main electrical room (H)", "Ch 9 Table 9.30.H (p.753)."),
+    ("has_ahu_room", "AHU room (I)", "Ch 9 Table 9.30.I (p.753)."),
+    ("has_lv_mv_room", "LV room (J)", "Ch 9 Table 9.30.J LV rooms and MV rooms (p.753)."),
+    ("has_mv_room", "MV room (J, treated as HV, ruling R12)",
+     "Table 4.3 lists LV and HV rooms only: an MV room takes the HV extinguisher (wheeled CO2 "
+     "12 kg), an engineering decision (ruling R12). Table 9.30.J covers LV and MV rooms as "
+     "printed (p.753)."),
+    ("has_transformer_room_utility", "Transformer room, utility (K)",
+     "Ch 9 Table 9.30.K transformer rooms (p.753): none, unless the power utility company "
+     "specifies."),
+    ("has_transformer_room_private", "Transformer room, private (L)",
+     "Ch 9 Table 9.30.L transformer rooms not owned by the utility (p.753)."),
+    ("has_lift_machine_room", "Lift machine room (M)", "Ch 9 Table 9.30.M (p.754)."),
+    ("has_main_telephone_room", "Main telephone room (N)", "Ch 9 Table 9.30.N (p.754)."),
+    ("has_main_server_room", "Main server room (O)", "Ch 9 Table 9.30.O (p.754)."),
+    ("has_rmu_idf_mdf_room", "RMU / IDF / MDF / CDF / MMR room (P)", "Ch 9 Table 9.30.P (p.754)."),
+    ("has_gsm_room", "GSM room (Q)", "Ch 9 Table 9.30.Q (p.754)."),
+    ("has_operation_theater", "Operation theatre (R)", "Ch 9 Table 9.30.R (p.755)."),
+    ("has_mri_scanning_room", "MRI / scanning room (S)", "Ch 9 Table 9.30.S (p.755)."),
+    ("has_records_room", "Records room (T)", "Ch 9 Table 9.30.T (p.755)."),
+    ("has_ups_room", "UPS room (U)", "Ch 9 Table 9.30.U (p.755)."),
+    ("has_cold_freezer_room", "Cold / freezer room (V)", "Ch 9 Table 9.30.V (p.755)."),
+    # Audit CH8-10: Ch 8 Table 8.14 item 24 PUMP ROOM (p.511) prints no pump type.
+    ("has_fire_pump_room", "Pump room (fire pump or other)",
+     "Any pump room: Ch 8 Table 8.14 item 24 PUMP ROOM (p.511) prints no pump type; Ch 10 "
+     "Table 10.27 item 5 (p.866) covers the fire pump room ventilation."),
+]
+
+_VARIOUS_LOCATION_WIDGETS = [
+    ("has_atrium", "Atrium", "Ch 9 Table 9.29 row A (p.749), Ch 8 Table 8.14 item 1 (p.509), "
+     "Ch 10 Table 10.27 item 15 (p.866)."),
+    ("has_rain_screen_glazing", "Rain-screen / glazed envelope", "Ch 9 Table 9.29 row C (p.749)."),
+    ("has_stairs", "Stairs (shaft sprinklers + smoke detector at top)",
+     "Ch 9 Table 9.29 row D (p.749) and Ch 8 Table 8.14 item 14 (p.510)."),
+    ("has_elevator", "Elevator (pit sprinklers + smoke detector at top of shaft)",
+     "Ch 9 Table 9.29 row E (p.749) and Ch 8 Table 8.14 item 15 (p.510)."),
+    ("has_bathrooms_with_heaters", "Bathrooms with heaters above false ceiling",
+     "Ch 9 Table 9.29 rows F.ii and G.i (p.749)."),
+    # Audit CH8-10: Table 8.14 items 21 LAUNDRY / 22 STORAGE ROOM (p.510) print no
+    # occupancy; Table 9.29 row H names residential / hotel-apartment rooms.
+    ("has_laundry_storage_rooms", "Laundry / storage rooms",
+     "Any laundry or storage room: Ch 8 Table 8.14 items 21-22 (p.510) print no occupancy. "
+     "Ch 9 Table 9.29 row H (p.749) covers residential and hotel-apartment laundry and "
+     "storage rooms in a sprinklered building."),
+    # Audit CH8-10: Table 8.14 item 23 PANTRY (p.510) prints no occupancy.
+    ("has_pantries", "Pantries",
+     "Any pantry: Ch 8 Table 8.14 item 23 (p.510) prints no occupancy. Ch 9 Table 9.29 row "
+     "I (p.749) covers pantries in offices and commercial buildings that are sprinklered."),
+    ("has_permanent_stages", "Permanent stages (assembly)", "Ch 9 Table 9.29 row J (p.749)."),
+    ("has_roof_lpg_or_restaurant", "Roof with LPG tanks, restaurant, assembly or sheesha (wet riser to roof)",
+     "Ch 9 Table 9.29 row K (p.750): the building wet riser is extended to a roof with LPG "
+     "tanks, restaurant seating, assembly or sheesha bars."),
+    ("has_roof_restaurant_assembly", "Roof used for restaurant, assembly or sheesha (manual alarm)",
+     "Ch 8 Table 8.14 item 36 BUILDING ROOFS (p.511): roofs used for restaurant seating, "
+     "assembly and as sheesha bars take a manual fire detection and alarm system. Tick this "
+     "and the box above for such a roof."),
+    ("has_food_trucks", "Food trucks, any fuel (FA Table 8.14 item 34)",
+     "Heat detector per Section 4.7 in each food truck, Ch 8 Table 8.14 item 34 (p.511)."),
+    # Audit CH8-10: Table 8.14 item 25 GARBAGE ROOM (p.511) prints no chute condition.
+    ("has_garbage_chute", "Garbage room / chute",
+     "Any garbage room: Ch 8 Table 8.14 item 25 GARBAGE ROOM (p.511) prints no chute "
+     "condition. Ch 9 Table 9.29 row L (p.750) covers the garbage chute sprinklers."),
+    ("has_exterior_balconies", "Exterior balconies (Table 9.29 row B)",
+     "Sprinklered buildings: sidewall or pendent heads on exterior balconies, not more than "
+     "12 m2 per head, 79 deg C rating (Ch 9 Table 9.29 row B, p.749)."),
+    ("has_high_ceiling", "High ceiling (more than 10 m)",
+     "A space more than 10 m high: Ch 9 Table 9.29 row M and Table 9.29.A high-ceiling sprinkler design (p.750-751) "
+     "and Ch 8 Table 8.14 items 18-19 (p.510). Enter the ceiling height below."),
+    ("has_tunnel", "Tunnel inside building (Table 6.6 #9 / Ch 10 #3.7)",
+     "Ch 6 Table 6.6 item 9 (p.420), Ch 9 Table 9.28 (tunnel kind and length under FP - "
+     "Settings) and Ch 10 #3.7."),
+]
+
+_EQUIPMENT_WIDGETS = [
+    # Audit CH8-06: Table 8.15 item 1 KITCHEN HOOD (p.512) prints no burner count.
+    ("has_commercial_kitchen", "Commercial kitchen with cooking hood (A)",
+     "Any kitchen hood: Ch 8 Table 8.15 item 1 fusible link heat detection (p.512) prints no "
+     "burner count. Ch 9 Table 9.31.A wet chemical system (p.756) is for commercial kitchens "
+     "having 3 or more burners."),
+    ("has_flammable_liquid_tanks", "Flammable liquid tanks (C)", "Ch 9 Table 9.31.C (p.756)."),
+    ("has_cable_spread_areas", "Cable spread areas (D)", "Ch 9 Table 9.31.D (p.756)."),
+    ("has_boilers", "Boilers / boiler rooms (F)", "Ch 9 Table 9.31.F (p.756)."),
+    # Audit CH8-05: Table 8.15 item 7 COOLING TOWERS (p.512) prints no combustibility.
+    ("has_cooling_towers", "Cooling towers (G)",
+     "Every cooling tower: Ch 8 Table 8.15 item 7 linear heat detection on the cable trays "
+     "(p.512). Ch 9 Table 9.31.G deluge spray (p.756) applies where the cooling tower "
+     "material is not tested and certified for non-combustibility."),
+    ("has_oil_filled_transformers", "Oil-filled transformers (H)", "Ch 9 Table 9.31.H (p.756)."),
+    ("has_bulk_oil_storage", "Bulk oil storage (I)", "Ch 9 Table 9.31.I (p.756)."),
+    ("has_bulk_flammable_liquid_storage", "Bulk flammable liquid storage (J)",
+     "Ch 9 Table 9.31.J (p.756)."),
+    ("has_bulk_flammable_gas_storage", "Bulk flammable gas storage (K)",
+     "Ch 9 Table 9.31.K (p.757)."),
+    ("has_bulk_flammable_solid_storage", "Bulk flammable solid storage (L)",
+     "Ch 9 Table 9.31.L (p.757)."),
+    ("has_high_hazard_logistics", "High-hazard logistics (M)", "Ch 9 Table 9.31.M (p.757)."),
+    ("has_chemical_warehouse", "Chemical warehouse (N)", "Ch 9 Table 9.31.N (p.757)."),
+    ("has_explosives", "Arms / ammunition / explosives (O)", "Ch 9 Table 9.31.O (p.757)."),
+    ("has_processing_plant", "Processing / generating plant (P)", "Ch 9 Table 9.31.P (p.757)."),
+]
+
+
+def _basement_parking(basement_bua: float, levels: int) -> dict:
+    """Preset values for an enclosed parking wholly in the basements."""
+    return {"parking_area_m2_input": float(basement_bua) * levels,
+            "parking_height_m_input": 0.0, "parking_basement_levels_input": int(levels),
+            "parking_depth_m_input": None}
 
 
 # ---------------- Archetype presets ----------------
@@ -711,44 +1054,51 @@ ARCHETYPE_PRESETS = {
         "occ": "residential",
         "height_m_input": 14.0, "floors_above_input": 4, "floors_below_input": 1,
         "ground_bua_input": 800.0, "basement_bua_input": 800.0,
-        "gfa_input": 3200.0, "plot_area_input": 2000.0,
+        "gfa_input": 3200.0, "plot_area_input": 2000.0, "depth_below_grade_input": 3.5,
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
+        **_basement_parking(800.0, 1),
     },
     "Midrise residential (G+6, 18 m)": {
         "occ": "residential",
         "height_m_input": 21.0, "floors_above_input": 7, "floors_below_input": 1,
         "ground_bua_input": 1000.0, "basement_bua_input": 1000.0,
-        "gfa_input": 7000.0, "plot_area_input": 3000.0,
+        "gfa_input": 7000.0, "plot_area_input": 3000.0, "depth_below_grade_input": 3.5,
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
+        **_basement_parking(1000.0, 1),
     },
     "Highrise residential (55 m, G+18, 2 basements)": {
         "occ": "residential",
         "height_m_input": 55.0, "floors_above_input": 18, "floors_below_input": 2,
         "ground_bua_input": 1200.0, "basement_bua_input": 1200.0,
-        "gfa_input": 22000.0, "plot_area_input": 5000.0,
+        "gfa_input": 22000.0, "plot_area_input": 5000.0, "depth_below_grade_input": 7.0,
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
+        **_basement_parking(1200.0, 2),
     },
     "Super-highrise residential (120 m, 35 storeys)": {
         "occ": "residential",
         "height_m_input": 120.0, "floors_above_input": 35, "floors_below_input": 3,
         "ground_bua_input": 1800.0, "basement_bua_input": 1800.0,
-        "gfa_input": 60000.0, "plot_area_input": 25000.0,
+        "gfa_input": 60000.0, "plot_area_input": 25000.0, "depth_below_grade_input": 10.5,
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
+        **_basement_parking(1800.0, 3),
     },
     "Hotel (highrise, 18 storeys, 60 m)": {
         "occ": "hotel_a",
         "height_m_input": 60.0, "floors_above_input": 18, "floors_below_input": 2,
         "ground_bua_input": 1500.0, "basement_bua_input": 1500.0,
-        "gfa_input": 25000.0, "plot_area_input": 5000.0,
+        "gfa_input": 25000.0, "plot_area_input": 5000.0, "depth_below_grade_input": 7.0,
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
+        **_basement_parking(1500.0, 2),
         "has_commercial_kitchen": True,
     },
     "Hospital (lowrise, 3000 m² GF)": {
         "occ": "healthcare_a",
         "height_m_input": 12.0, "floors_above_input": 3, "floors_below_input": 1,
         "ground_bua_input": 3000.0, "basement_bua_input": 2000.0,
-        "gfa_input": 9000.0, "plot_area_input": 8000.0,
+        "gfa_input": 9000.0, "plot_area_input": 8000.0, "depth_below_grade_input": 3.5,
         "has_parking_area": True, "attached_parking_kind_radio": "Open parking",
+        "parking_area_m2_input": 3000.0, "parking_height_m_input": 0.0,
+        "parking_basement_levels_input": 0, "parking_depth_m_input": None,
         "has_anesthetizing_room": True, "has_operation_theater": True,
         "has_mri_scanning_room": True,
     },
@@ -756,23 +1106,27 @@ ARCHETYPE_PRESETS = {
         "occ": "mall_covered",
         "height_m_input": 18.0, "floors_above_input": 3, "floors_below_input": 2,
         "ground_bua_input": 25000.0, "basement_bua_input": 25000.0,
-        "gfa_input": 75000.0, "plot_area_input": 50000.0,
+        "gfa_input": 75000.0, "plot_area_input": 50000.0, "depth_below_grade_input": 7.0,
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
+        **_basement_parking(25000.0, 2),
         "has_atrium": True, "has_commercial_kitchen": True, "has_theater_cinema": True,
     },
-    "Office (highrise, 30 m, 8 storeys)": {
-        "occ": "business",
+    "Office, Business Group B (highrise, 30 m, 8 storeys)": {
+        "occ": "business", "business_group_input": "B",
         "height_m_input": 30.0, "floors_above_input": 8, "floors_below_input": 2,
         "ground_bua_input": 800.0, "basement_bua_input": 800.0,
-        "gfa_input": 6400.0, "plot_area_input": 2500.0,
+        "gfa_input": 6400.0, "plot_area_input": 2500.0, "depth_below_grade_input": 7.0,
         "has_parking_area": True, "attached_parking_kind_radio": "Enclosed parking",
+        **_basement_parking(800.0, 2),
     },
-    "Warehouse (multi-tenant OH, 4000 m²)": {
+    "Warehouse (multi-tenant OH2, 4000 m², only building on the plot)": {
         "occ": "storage_industrial",
         "height_m_input": 10.0, "floors_above_input": 1, "floors_below_input": 0,
         "ground_bua_input": 4000.0, "basement_bua_input": 0.0,
         "gfa_input": 4000.0, "plot_area_input": 8000.0,
         "has_parking_area": False,
+        "storage_hazard_input": "OH2", "is_extra_hazard_2": False,
+        "is_single_tenant_storage": False, "sum_gf_bua_m2_input": 4000.0,
     },
     "Petrol station (Group A)": {
         "occ": "motor_fuel_dispensing",
@@ -811,14 +1165,18 @@ def _apply_preset():
                 st.session_state["occupancy_category_select"] = cat_label
                 st.session_state["occupancy_sub_select"] = occ_target
                 break
-        # Silent baseline reset for villa / petrol station / animal housing /
-        # daycare_b/c / infrastructure / hostel / parking / small mercantile.
-        _apply_incompatible_flag_reset(occ_target)
+        # Baseline reset for villa / petrol station / animal housing / daycare_b/c /
+        # infrastructure / hostel / parking / small mercantile. A preset starts afresh:
+        # nothing is remembered for a later restore (audit UX-05).
+        _apply_incompatible_flag_reset(occ_target, remember=False)
         # The occupancy-change reset (audit ENG-13) must not undo the preset values.
         st.session_state["_last_occupancy"] = occ_target
         st.session_state["hazard_override_input"] = "auto"
     for k, v in cfg.items():
         st.session_state[k] = v
+    # Audit UX-08: the report names the preset whose values it uses.
+    st.session_state["_profile_source"] = f"preset '{name}'"
+    _touch(*cfg.keys())
 
 
 def _clear_all_flags():
@@ -832,6 +1190,9 @@ def _clear_all_flags():
     for master in ("rooms_all", "var_all", "eq_all", "fe_all",
                    "es_feat_all", "es_zone_all"):
         st.session_state[master] = False
+    st.session_state["_cleared_flags"] = {}
+    _touch(*(SPECIAL_ROOMS_KEYS + VARIOUS_LOCATIONS_KEYS + EQUIPMENT_KEYS
+             + FE_KEYS + ES_FEATURE_KEYS + ES_ZONE_KEYS))
 
 
 rooms_cb = _register_master("rooms_all", SPECIAL_ROOMS_KEYS)
@@ -839,26 +1200,41 @@ var_cb   = _register_master("var_all",   VARIOUS_LOCATIONS_KEYS)
 eq_cb    = _register_master("eq_all",    EQUIPMENT_KEYS)
 fe_cb    = _register_master("fe_all",    FE_KEYS)
 es_feat_cb = _register_master("es_feat_all", ES_FEATURE_KEYS)
-es_zone_cb = _register_master("es_zone_all", ES_ZONE_KEYS)
+es_zone_cb = _register_master("es_zone_all",
+                              [k for k in ES_ZONE_KEYS if k != "has_robotic_parking"])
 
 
 # -----------------------------------------------------------------------------
-# Print-friendly mode (Tier 3 UI #15): ?print=1 hides sidebar + right TOC col
-# so the main report prints cleanly to A4 from the browser.
-PRINT_MODE = str(st.query_params.get("print", "0")) == "1"
+# Print layout (Tier 3 UI #15; audit UX-02, 28.10.2026): a toggle in THIS session
+# hides the sidebar and the contents / export column so the report of the building
+# on screen prints cleanly to A4. The old "?print=1" link opened a new session, which
+# printed the first-load sample instead of the user's building; it is gone.
+PRINT_MODE = bool(st.session_state.get("print_layout", False))
 
 st.set_page_config(
     page_title="UAE FLSC 2018 - Fire & Life Safety",
     page_icon="🧯",
     layout="wide",
-    initial_sidebar_state="collapsed" if PRINT_MODE else "expanded",
+    # Audit UX-18: "auto" keeps the sidebar closed on a phone, open on a desktop.
+    initial_sidebar_state="auto",
 )
 ui.inject_css(PRINT_MODE)
 ui.render_hero(PRINT_MODE)
-bilingual_headings = st.checkbox(
-    "Bilingual chapter headings (EN + AR)", value=True, key="bilingual_headings",
-    help="Show the Arabic chapter title under each English chapter heading in the report.",
-)
+_top_c1, _top_c2, _top_c3 = st.columns([3, 2, 2])
+with _top_c1:
+    bilingual_headings = st.checkbox(
+        "Bilingual chapter headings (EN + AR)", value=True, key="bilingual_headings",
+        help="Show the Arabic chapter title under each English chapter heading in the report.",
+    )
+with _top_c2:
+    st.toggle("Print layout", key="print_layout",
+              help="Hides the sidebar and the contents / export column so this building's "
+                   "report prints from the browser (Ctrl+P / Print to PDF). Turn it off to "
+                   "edit again. For a formal record use the Detailed PDF.")
+with _top_c3:
+    # Audit UX-18: on a phone the contents and exports column stacks below the report.
+    if not PRINT_MODE:
+        st.markdown("[⬇ Contents and exports](#exports)", unsafe_allow_html=True)
 
 # ----- First-run orientation: how to use + 'this is a sample' note -----
 with st.expander("ℹ️ New here? How to use this tool (3 steps)", expanded=False):
@@ -871,10 +1247,12 @@ with st.expander("ℹ️ New here? How to use this tool (3 steps)", expanded=Fal
         "requirements.\n"
         "3. **Read the colour-coded report** below "
         "(🔴 required · 🔵 recommended · 🟡 conditional · ⚪ not required), filter or "
-        "search it, expand **🔍 Why triggered** on any line, then **download Word or "
-        "PDF**.\n\n"
+        "search it, switch the view to **Cards** to open **🔍 Why triggered** on any "
+        "line, then **download Word or PDF**. Check the **Assumptions used in this "
+        "report** box: it lists every input you did not set yourself.\n\n"
         "_The report updates live as you edit. The building shown on first load is "
-        "just a sample — change the profile or load an archetype to begin._"
+        "just a sample — change the profile or load an archetype to begin. Inputs live "
+        "only in this browser tab: save the project to keep them._"
     )
 
 
@@ -885,16 +1263,18 @@ with st.sidebar:
         st.selectbox(
             "Archetype preset",
             options=list(ARCHETYPE_PRESETS.keys()),
-            index=0,
             key="archetype_preset_select",
             help="Pick a typical UAE building archetype, then click Apply to fill geometry + occupancy + common flags. "
                  "Then customize as needed.",
         )
-        st.button("Apply preset", on_click=_apply_preset, use_container_width=True)
+        st.button("Apply preset", on_click=_apply_preset, width="stretch",
+                  help="Writes the archetype's occupancy, geometry, parking and flags into the "
+                       "sidebar inputs. The report names the preset under 'Assumptions used "
+                       "in this report'; check every value against your drawings.")
         st.caption("'Custom' leaves your current inputs untouched.")
         st.markdown("---")
         st.button("🔄 Clear all rooms / equipment flags",
-                  on_click=_clear_all_flags, use_container_width=True,
+                  on_click=_clear_all_flags, width="stretch",
                   help="Unticks every Special Room / Various Location / Equipment / "
                        "FE / ES flag so you can start a clean set. Geometry, "
                        "occupancy and gas selections are left as-is.")
@@ -965,22 +1345,30 @@ with st.sidebar:
         _scenario = {k: _serializable(st.session_state.get(k)) for k in _save_keys
                      if k in st.session_state}
         _scenario_json = _json.dumps(_scenario, indent=2, default=str)
-        # Mimic a Save-As dialogue: pre-fill the filename with the project name
-        # (or "default project" if none yet), let the user edit, then download.
-        _default_stem = (st.session_state.get("project_name_input") or "").strip() or "default project"
+        # Mimic a Save-As dialogue. Audit UX-10 (28.10.2026): the name follows the project
+        # name (<project>_<YYYY-MM-DD>) until the user types their own; it no longer
+        # freezes at the first run's "default project".
+        _default_stem = ((st.session_state.get("project_name_input") or "").strip()
+                         or "project") + f"_{_dt.date.today().isoformat()}"
+        if st.session_state.get("save_as_filename") in (None, "", st.session_state.get("_save_as_default")):
+            st.session_state["save_as_filename"] = _default_stem
+        st.session_state["_save_as_default"] = _default_stem
         _save_name = st.text_input(
             "Save as",
-            value=_default_stem,
             key="save_as_filename",
-            help="Edit the filename if you want; the file saves with the .flsc extension.",
+            help="File name of the saved project; it follows the project name and today's "
+                 "date until you type your own. The file saves with the .flsc extension.",
         )
-        _safe_stem = (_save_name or "default project").strip().replace(" ", "_") or "default_project"
+        _safe_stem = _re.sub(r"[^A-Za-z0-9._-]+", "_", (_save_name or "").strip()).strip("_") \
+            or _re.sub(r"[^A-Za-z0-9._-]+", "_", _default_stem)
         st.download_button(
             "💾 Save project (.flsc)",
             data=_scenario_json,
             file_name=f"{_safe_stem}.flsc",
             mime="application/octet-stream",
-            use_container_width=True,
+            width="stretch", on_click="ignore", key="save_project_sidebar",
+            help="Downloads every input of this session as a .flsc file. Inputs live only in "
+                 "this browser tab: save before closing or refreshing it.",
         )
         # ----- Load -----
         # Accepts the new .flsc extension AND .json for backward compatibility
@@ -989,6 +1377,8 @@ with st.sidebar:
             "Load project (.flsc)",
             type=["flsc", "json"],
             key="scenario_uploader",
+            help="Replaces every input with the saved project (nothing is merged). A file "
+                 "with an impossible value is refused and the value is named.",
         )
         if _uploaded is not None and not st.session_state.get("_scenario_loaded_marker"):
             try:
@@ -1013,6 +1403,8 @@ with st.sidebar:
                 # (stand-alone)' tick is not carried into the group; it is only named in
                 # the stop that asks for the group.
                 st.session_state["_legacy_business_group_c"] = _data.get("is_business_group_c") is True
+                st.session_state["_profile_source"] = f"file '{_uploaded.name}'"
+                st.session_state["_touched"] = {k: True for k in _data if k in _save_keys}
                 st.session_state["_scenario_loaded_marker"] = True
                 st.session_state["_scenario_load_note"] = (
                     (f"Not inputs, ignored: {', '.join(_ignored)}. " if _ignored else "")
@@ -1068,12 +1460,17 @@ with st.sidebar:
         )
 
     st.header("🏢 Building profile")
-    project_name = st.text_input("Project name", key="project_name_input")
+    project_name = st.text_input(
+        "Project name", key="project_name_input",
+        help="Printed as the title of every export and used in the export and save file "
+             "names. It drives no code requirement.")
     project_notes = st.text_area(
         "Project notes (included in exports)",
         height=70,
         placeholder="Client / consultant / reviewer / design version.",
         key="project_notes_input",
+        help="Printed under 'Project notes' in the Word, PDF and Excel exports and the "
+             "Markdown copy. It drives no code requirement.",
     )
 
     # Set initial selectbox value if not already in session_state
@@ -1087,7 +1484,15 @@ with st.sidebar:
         st.session_state["occupancy_chosen"] = next(kv for kv in OCC_FLAT if kv[1] == "residential")
     _cur_cat, _cur_occ = st.session_state["occupancy_chosen"]
     _categories = list(OCCUPANCY_OPTIONS.keys())
-    _cat_idx = _categories.index(_cur_cat) if _cur_cat in _categories else 0
+    # Audit UX-20: the pickers take their value from session state only (no index= as
+    # well), so Streamlit no longer warns that a default and a state value compete.
+    if st.session_state.get("occupancy_category_select") not in _categories:
+        st.session_state["occupancy_category_select"] = (
+            _cur_cat if _cur_cat in _categories else _categories[0])
+    if st.session_state.get("occupancy_sub_select") not in OCCUPANCY_OPTIONS[
+            st.session_state["occupancy_category_select"]]:
+        _opts0 = OCCUPANCY_OPTIONS[st.session_state["occupancy_category_select"]]
+        st.session_state["occupancy_sub_select"] = _cur_occ if _cur_occ in _opts0 else _opts0[0]
 
     def _on_occupancy_category_change():
         # Audit ENG-13: a category change picks the sub-occupancy here, so the
@@ -1100,21 +1505,22 @@ with st.sidebar:
     _chosen_cat = st.selectbox(
         "1. Category",
         _categories,
-        index=_cat_idx,
         key="occupancy_category_select",
         on_change=_on_occupancy_category_change,
-        help="Pick the broad occupancy family. The sub-occupancy list updates below.",
+        help="Pick the broad occupancy family (Ch 1 Table 1.1, p.48-50). The specific "
+             "occupancy list below updates.",
     )
     _options_in_cat = OCCUPANCY_OPTIONS[_chosen_cat]
-    # If the user changed category, default to the first occupancy in the new
-    # category. Otherwise keep their current sub-occupancy if still valid.
-    _sub_idx = _options_in_cat.index(_cur_occ) if _cur_occ in _options_in_cat else 0
     _chosen_sub = st.selectbox(
         "2. Specific occupancy (UAE FLSC classification)",
         _options_in_cat,
-        index=_sub_idx,
         format_func=_occ_label,
         key="occupancy_sub_select",
+        help="The occupancy of Ch 1 Table 1.1 (p.48-50). It selects the occupancy row of "
+             "every chapter table (Ch 3 Table 3.13 / 3.16, Ch 5 Table 5.3, Ch 6 Table 6.5, "
+             "Ch 7 Table 7.3, Ch 8 Table 8.13, Ch 9 Tables 9.18-9.28, Ch 10 Tables "
+             "10.19-10.27) and the hazard class (Ch 9 #1.1.13). Its definition is shown "
+             "below.",
     )
     # Persist back to the canonical tuple consumed by the rest of the app.
     st.session_state["occupancy_chosen"] = (_chosen_cat, _chosen_sub)
@@ -1128,84 +1534,103 @@ with st.sidebar:
         st.session_state["hazard_override_input"] = "auto"
     st.session_state["_last_occupancy"] = occupancy
     st.info(OCCUPANCY_DEFS.get(occupancy, ""))
-    if occupancy == "animal_housing":
-        # Owner answer 12.10.2026, Ch9 Q6: the three groups take their printed hazard
-        # class (#1.1.13.1.q / r, p.528; #1.1.13.3.a, p.529). No default group.
-        st.selectbox(
-            "Animal housing group (required)", list(ANIMAL_HOUSING_GROUPS), index=None,
-            format_func=lambda g: (f"Group {g} - {ANIMAL_HOUSING_GROUPS[g][3]} "
-                                   f"({ANIMAL_HOUSING_GROUPS[g][0]}, {ANIMAL_HOUSING_GROUPS[g][1]})"),
-            placeholder="Select the group (#1.1.13)",
-            key="animal_housing_group_input",
-            help="Ch 9 #1.1.13: Group A (animal market, pet shops, bird market, veterinary "
-                 "clinic) and Group C (zoo) are Light Hazard (#1.1.13.1.q, r, p.528); Group B "
-                 "(stable, animal sheds, livestock shelter, slaughter houses) is Ordinary "
-                 "Hazard Group 2 (#1.1.13.3.a, p.529).")
-    if occupancy in ("mercantile_a", "mercantile_b"):
-        # Audit ENG-02: Ch 1 Table 1.1 row 11 (p.50).
-        st.checkbox("Group of mercantile occupancies under a single roof or not separated",
-                    key="mercantile_multi_tenant",
-                    help="Ch 1 Table 1.1 row 11 (p.50): a group of mercantile occupancies under "
-                         "a single roof or not separated and having a ground floor built up "
-                         "area of more than 3600 m2, irrespective of the number of storeys, "
-                         "shall be considered as Malls.")
-        # Owner ruling 13.10.2026, P4 Q6: an older file's Group C tick stays visible (and
-        # the report stops) until it is cleared here or the occupancy is set to
-        # Mercantile Group C.
-        if st.session_state.get("is_mercantile_group_c"):
-            st.checkbox("Mercantile Group C tick from an older file (untick to confirm this "
-                        "building is not Mercantile Group C)", key="is_mercantile_group_c",
-                        help="Mercantile Group C (kiosks, food trucks, mercantile trucks, "
-                             "Table 1.1 row 11, p.50) is now its own occupancy. Untick this, "
-                             "or choose 'mercantile_c' as the occupancy (owner ruling "
-                             "13.10.2026, P4 Q6).")
-    if occupancy == "mercantile_c":
-        # Owner ruling 13.10.2026, P4 Q5: the type is required, no default.
-        st.selectbox(
-            "Mercantile Group C type (required)", list(MERCANTILE_C_TYPES), index=None,
-            format_func=lambda t: MERCANTILE_C_TYPES[t], placeholder="Select the type",
-            key="mercantile_c_type_input",
-            help="Table 1.1 row 11 (p.50): kiosks, food trucks, mercantile trucks. A kiosk "
-                 "takes Table 9.20.b row C (midrise, p.701) or Table 9.21.b (lowrise, by "
-                 "inference) and Ch 1 Table 1.9 item 48 (p.98); a temporary kiosk also takes "
-                 "Ch 8 Table 8.14 item 31. A truck takes only its own items: Ch 4 "
-                 "extinguishers, Ch 8 Table 8.14 item 34 / 35, Ch 6 Table 6.5 item 12 and, "
-                 "with LPG cylinders, Ch 11 Table 11.3 (owner rulings 13.10.2026, P4 Q4-Q5).")
-        if st.session_state.get("mercantile_c_type_input") in ("kiosk_permanent",
-                                                                "kiosk_temporary"):
+    # Audit UX-06: every input that appears or disappears with the occupancy lives in
+    # this one container, so the expanders below keep their place (and stay open).
+    with st.container():   # audit UX-06: fixed slot for occupancy-specific inputs
+        if occupancy == "animal_housing":
+            # Owner answer 12.10.2026, Ch9 Q6: the three groups take their printed hazard
+            # class (#1.1.13.1.q / r, p.528; #1.1.13.3.a, p.529). No default group.
             st.selectbox(
-                "Kiosk location (Table 1.9 item 48 iii) (required)",
-                ["sprinklered_or_mall", "other"], index=None,
-                format_func=lambda x: {
-                    "sprinklered_or_mall": "In a sprinkler protected area or a mall building",
-                    "other": "Elsewhere"}[x],
-                placeholder="Select where the kiosk is", key="kiosk_location_input",
-                help="Ch 1 Table 1.9 item 48 iii (p.98): kiosks located at sprinkler "
-                     "protected areas and mall buildings shall be provided with automatic "
-                     "sprinkler system. Blank: that line is NOT EVALUATED. The kiosk area is "
-                     "the ground floor built-up area (item 48 v: 18 m2 at most).")
-    if occupancy == "business":
-        # Owner rulings 13.10.2026, P4 Q1-Q2: the group is required, no default.
-        st.selectbox(
-            "Business group (required)", list(BUSINESS_GROUPS), index=None,
-            format_func=lambda g: f"Group {g} - {BUSINESS_GROUPS[g]}",
-            placeholder="Select the group (Table 1.1 row 2)", key="business_group_input",
-            help="Ch 1 Table 1.1 row 2 (p.48). The Ch 3, 8 and 9 tables print Business "
-                 "Groups A, B, C together; Group C takes Ch 6 Table 6.5 item 11 (p.419, "
-                 "stand-alone self-contained emergency lighting) below 23 m. #1.1.13 does "
-                 "not list Business: Light Hazard, except a post office (owner rulings "
-                 "13.10.2026, P4 Q1-Q2).")
-        if st.session_state.get("business_group_input") == "B":
-            st.checkbox("Post office", key="is_post_office",
-                        help="#1.1.13.3.c (p.529) lists post offices under Ordinary Hazard "
-                             "Group 2: the hazard class becomes OH2 (owner ruling 13.10.2026, "
-                             "P4 Q2).")
-    if occupancy in INCOMPATIBLE_FLAGS_BY_OCC:
-        st.caption(
-            "💡 Special Rooms / Equipment that typically don't apply to this "
-            "occupancy were auto-cleared. Tick anything below if your "
-            "specific project needs it."
-        )
+                "Animal housing group (required)", list(ANIMAL_HOUSING_GROUPS), index=None,
+                format_func=lambda g: (f"Group {g} - {ANIMAL_HOUSING_GROUPS[g][3]} "
+                                       f"({ANIMAL_HOUSING_GROUPS[g][0]}, {ANIMAL_HOUSING_GROUPS[g][1]})"),
+                placeholder="Select the group (#1.1.13)",
+                key="animal_housing_group_input",
+                help="Ch 9 #1.1.13: Group A (animal market, pet shops, bird market, veterinary "
+                     "clinic) and Group C (zoo) are Light Hazard (#1.1.13.1.q, r, p.528); Group B "
+                     "(stable, animal sheds, livestock shelter, slaughter houses) is Ordinary "
+                     "Hazard Group 2 (#1.1.13.3.a, p.529).")
+        if occupancy in ("mercantile_a", "mercantile_b"):
+            # Audit ENG-02: Ch 1 Table 1.1 row 11 (p.50).
+            st.checkbox("Group of mercantile occupancies under a single roof or not separated",
+                        key="mercantile_multi_tenant",
+                        help="Ch 1 Table 1.1 row 11 (p.50): a group of mercantile occupancies under "
+                             "a single roof or not separated and having a ground floor built up "
+                             "area of more than 3600 m2, irrespective of the number of storeys, "
+                             "shall be considered as Malls.")
+            # Owner ruling 13.10.2026, P4 Q6: an older file's Group C tick stays visible (and
+            # the report stops) until it is cleared here or the occupancy is set to
+            # Mercantile Group C.
+            if st.session_state.get("is_mercantile_group_c"):
+                st.checkbox("Mercantile Group C tick from an older file (untick to confirm this "
+                            "building is not Mercantile Group C)", key="is_mercantile_group_c",
+                            help="Mercantile Group C (kiosks, food trucks, mercantile trucks, "
+                                 "Table 1.1 row 11, p.50) is now its own occupancy. Untick this, "
+                                 "or choose 'mercantile_c' as the occupancy (owner ruling "
+                                 "13.10.2026, P4 Q6).")
+        if occupancy == "mercantile_c":
+            # Owner ruling 13.10.2026, P4 Q5: the type is required, no default.
+            st.selectbox(
+                "Mercantile Group C type (required)", list(MERCANTILE_C_TYPES), index=None,
+                format_func=lambda t: MERCANTILE_C_TYPES[t], placeholder="Select the type",
+                key="mercantile_c_type_input",
+                help="Table 1.1 row 11 (p.50): kiosks, food trucks, mercantile trucks. A kiosk "
+                     "takes Table 9.20.b row C (midrise, p.701) or Table 9.21.b (lowrise, by "
+                     "inference) and Ch 1 Table 1.9 item 48 (p.98); a temporary kiosk also takes "
+                     "Ch 8 Table 8.14 item 31. A truck takes only its own items: Ch 4 "
+                     "extinguishers, Ch 8 Table 8.14 item 34 / 35, Ch 6 Table 6.5 item 12 and, "
+                     "with LPG cylinders, Ch 11 Table 11.3 (owner rulings 13.10.2026, P4 Q4-Q5).")
+            if st.session_state.get("mercantile_c_type_input") in ("kiosk_permanent",
+                                                                    "kiosk_temporary"):
+                st.selectbox(
+                    "Kiosk location (Table 1.9 item 48 iii) (required)",
+                    ["sprinklered_or_mall", "other"], index=None,
+                    format_func=lambda x: {
+                        "sprinklered_or_mall": "In a sprinkler protected area or a mall building",
+                        "other": "Elsewhere"}[x],
+                    placeholder="Select where the kiosk is", key="kiosk_location_input",
+                    help="Ch 1 Table 1.9 item 48 iii (p.98): kiosks located at sprinkler "
+                         "protected areas and mall buildings shall be provided with automatic "
+                         "sprinkler system. Blank: that line is NOT EVALUATED. The kiosk area is "
+                         "the ground floor built-up area (item 48 v: 18 m2 at most).")
+        if occupancy == "business":
+            # Owner rulings 13.10.2026, P4 Q1-Q2: the group is required, no default.
+            st.selectbox(
+                "Business group (required)", list(BUSINESS_GROUPS), index=None,
+                format_func=lambda g: f"Group {g} - {BUSINESS_GROUPS[g]}",
+                placeholder="Select the group (Table 1.1 row 2)", key="business_group_input",
+                help="Ch 1 Table 1.1 row 2 (p.48). The Ch 3, 8 and 9 tables print Business "
+                     "Groups A, B, C together; Group C takes Ch 6 Table 6.5 item 11 (p.419, "
+                     "stand-alone self-contained emergency lighting) below 23 m. #1.1.13 does "
+                     "not list Business: Light Hazard, except a post office (owner rulings "
+                     "13.10.2026, P4 Q1-Q2).")
+            if st.session_state.get("business_group_input") == "B":
+                st.checkbox("Post office", key="is_post_office",
+                            help="#1.1.13.3.c (p.529) lists post offices under Ordinary Hazard "
+                                 "Group 2: the hazard class becomes OH2 (owner ruling 13.10.2026, "
+                                 "P4 Q2).")
+        # Audit UX-05: name what the occupancy change cleared or restored (it stays until the
+        # next occupancy change, so it is not lost when the user scrolls).
+        _note = st.session_state.get("_flag_change_note")
+        if _note and _note[0] == occupancy and (_note[1] or _note[2]):
+            _msg = []
+            if _note[1]:
+                _msg.append(f"Cleared {len(_note[1])} input(s) that do not apply to "
+                            f"{_occ_label(occupancy)}: "
+                            + ", ".join(field_label(f) for f in _note[1])
+                            + ". They are ticked again if you return to an occupancy they "
+                              "apply to.")
+            if _note[2]:
+                _msg.append(f"Restored {len(_note[2])} input(s) cleared by an earlier "
+                            "occupancy change: " + ", ".join(field_label(f) for f in _note[2])
+                            + ".")
+            st.caption("💡 " + " ".join(_msg))
+        elif occupancy in INCOMPATIBLE_FLAGS_BY_OCC:
+            st.caption(
+                "💡 Special Rooms / Equipment that typically don't apply to this "
+                "occupancy are cleared when it is chosen. Tick anything below if your "
+                "specific project needs it."
+            )
 
     st.subheader("📐 Geometry")
     st.caption("Above-grade left, below-grade + plot right.")
@@ -1214,7 +1639,11 @@ with st.sidebar:
         options=["grade", "occupiable_ceiling"],
         format_func=lambda x: "Lowest grade / Fire Service access" if x == "grade" else "Ceiling of highest occupiable space",
         horizontal=True, key="height_datum_input",
-        help="Use the same datum the Civil Defence reviewer will use at the 23 m / 90 m boundaries.",
+        help="Where the building height below is measured from. Ch 1 #1.7.39-#1.7.42 "
+             "(p.44-45): total height, excluding roof parapets, from the lowest grade or "
+             "lowest level of Fire Service access; FAQ Annexure 1 Q2-Q5 (p.1273): to the "
+             "ceiling of the occupiable space. Use the datum the Civil Defence reviewer "
+             "will use at the 15 m / 23 m / 90 m boundaries.",
     )
     # Audit ENG-21: the class is taken from the height as entered; say which printed
     # definition that height follows and that the other one can give another class.
@@ -1233,21 +1662,64 @@ with st.sidebar:
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("**Above-grade**")
-        height_m = st.number_input("Building height (m)", min_value=0.0, step=1.0, key="height_m_input")
-        floors_above = st.number_input("Floors above grade (including GF)", min_value=1, step=1, key="floors_above_input")
-        ground_bua = st.number_input("Ground-floor BUA (m²)", min_value=0.0, step=50.0, key="ground_bua_input")
-        gfa = st.number_input("Total GFA (m²)", min_value=0.0, step=100.0, key="gfa_input")
+        height_m = st.number_input(
+            "Building height (m)", min_value=0.0, step=1.0, key="height_m_input",
+            help="Total height of the building, excluding roof parapets, from the datum "
+                 "above (Ch 1 #1.7.39-#1.7.42, p.44-45). It sets the height class: lowrise "
+                 "up to 15 m, midrise more than 15 m and less than 23 m, highrise 23 m up "
+                 "to 90 m (ruling R1), super highrise more than 90 m; the class selects "
+                 "the height row of every chapter table. Required: 0 m stops the "
+                 "evaluation.")
+        floors_above = st.number_input(
+            "Floors above grade (including GF)", min_value=1, step=1, key="floors_above_input",
+            help="Storeys above grade, counting the ground floor. Drives the storey-count "
+                 "rows, e.g. Ch 9 #4.1.7 (p.694: storage and industrial occupancies having "
+                 "more than 3 floors above the fire access level are fully sprinklered) and "
+                 "the storey count of the per-storey table (Ch 3 Table 3.14).")
+        ground_bua = st.number_input(
+            "Ground-floor BUA (m²)", min_value=0.0, step=50.0, key="ground_bua_input",
+            help="Built-up ground floor area: the total ground floor area of this building, "
+                 "including carpet areas, wall and column thickness, stair, elevator and "
+                 "service shafts (Ch 9 #4.1.12, p.695). Drives the Ch 2 fire access extent "
+                 "(the building footprint, #2.8.6.a, p.213), the area rows of Ch 9 Tables "
+                 "9.18-9.27 and the storage thresholds (#4.1.6, p.694). Required: 0 stops "
+                 "the evaluation (a blank never counts as a pass).")
+        gfa = st.number_input(
+            "Total GFA (m²)", min_value=0.0, step=100.0, key="gfa_input",
+            help="Gross floor area of all storeys: the area within the inside perimeter of "
+                 "the outside walls, with no deductions for hallways, stairs, closets, "
+                 "interior walls, columns and shafts, excluding atrium floor openings (Ch 3 "
+                 "#1.4.6, p.242). Drives the occupant load (Ch 3 Table 3.13) when no "
+                 "per-storey or per-use areas are entered, and the GFA-keyed rows. "
+                 "Required: 0 stops the evaluation.")
     with c2:
         st.markdown("**Below-grade + plot**")
-        plot_area = st.number_input("Plot area (m²)", min_value=0.0, step=100.0, key="plot_area_input")
-        floors_below = st.number_input("Basements (below grade)", min_value=0, step=1, key="floors_below_input")
+        plot_area = st.number_input(
+            "Plot area (m²)", min_value=0.0, step=100.0, key="plot_area_input",
+            help="The total area under the plot number, including the ground floor area of "
+                 "the buildings, set back, landscaping, parking areas and open spaces (Ch 9 "
+                 "#4.1.10, p.695). Drives the plot-area rows: #4.1.4 (p.694, yard fire "
+                 "hydrants above 20,000 m2 plot area) and the plot rows of Tables 9.19 / "
+                 "9.20. Required: 0 stops the evaluation.")
+        floors_below = st.number_input(
+            "Basements (below grade)", min_value=0, step=1, key="floors_below_input",
+            help="Storeys below the level of exit discharge. More than two basements, or "
+                 "more than 7 m below, is a high depth underground building (Ch 1 #1.7.45, "
+                 "p.45); up to two is low depth (#1.7.44). Sets the basement rows of Ch 6, "
+                 "Ch 9 and Ch 10.")
         if int(floors_below) > 0:
-            basement_bua = st.number_input("Basement BUA (m²)", min_value=0.0, step=50.0, key="basement_bua_input")
+            basement_bua = st.number_input(
+                "Basement BUA (m²)", min_value=0.0, step=50.0, key="basement_bua_input",
+                help="Built-up area of all the basement floors (Ch 9 #4.1.11, p.695). Drives "
+                     "the villa basement rows (Ch 9 Table 9.23.A.3, p.716, more than 1500 m2; "
+                     "Ch 6 Table 6.5 item 14, p.419) and, for an underground building, the "
+                     "Ch 2 fire access footprint.")
             depth_below_grade = st.number_input(
                 "Depth below grade (m)", min_value=0.0, step=0.5,
-                help="Distance from level of exit discharge to lowest basement floor. "
-                     "If > 7 m, triggers Ch 10 Table 10.22 (deep-underground smoke control) "
-                     "even when basement count <= 2.",
+                help="Distance from the level of exit discharge to the lowest basement "
+                     "floor. More than 7 m is a high depth underground building (Ch 1 "
+                     "#1.7.45, p.45): it triggers Ch 10 Table 10.22 (deep-underground smoke "
+                     "control) even with 2 basements or fewer.",
                 key="depth_below_grade_input",
             )
         else:
@@ -1268,8 +1740,9 @@ with st.sidebar:
         _warnings.append(f"⚠ Implied storey height {height_m/floors_above:.1f} m looks low - verify height vs floor count")
     if float(depth_below_grade) > 7 and int(floors_below) <= 2:
         _warnings.append("ℹ Depth > 7 m with <=2 basements still triggers Ch 10 Table 10.22 (deep-underground SC) - intended.")
-    for w in _warnings:
-        st.caption(w)
+    with st.container():   # audit UX-06: a fixed slot, so the expanders below stay open
+        for w in _warnings:
+            st.caption(w)
 
     derived_hazard = default_hazard(
         occupancy, st.session_state.get("animal_housing_group_input"),
@@ -1279,30 +1752,31 @@ with st.sidebar:
     # Group 2 (#1.1.13.5.b, p.530); the hazard is forced to HH + EH2 when ticked.
     _robotic_eh2 = (bool(st.session_state.get("has_robotic_parking"))
                     and occupancy in ("parking_enclosed", "parking_open"))
-    if _robotic_eh2:
-        derived_hazard = "HH"
-        st.caption("Hazard class: **HH, Extra Hazard Group 2** (robotic / mechanical parking "
-                   "is ticked: #1.1.13.5.b, p.530 lists 'Parking, Group B (Robotic, Mechanical "
-                   "parking)' under Extra Hazard, Group 2; owner ruling 12.10.2026, Ch9 Q7).")
-    elif occupancy == "animal_housing":
-        _ahg = st.session_state.get("animal_housing_group_input")
-        if _ahg in ANIMAL_HOUSING_GROUPS:
-            _hz, _cl, _pg, _ = ANIMAL_HOUSING_GROUPS[_ahg]
-            st.caption(f"Hazard class (Animal Housing Group {_ahg}, {_cl}, {_pg}): **{_hz}** "
-                       "(owner answer 12.10.2026, Ch9 Q6)")
-    elif occupancy != "storage_industrial":
-        st.caption(f"Hazard class (auto-derived from occupancy, #1.1.13): **{derived_hazard}**")
-    if occupancy in ("assembly_b", "assembly_c"):
-        # Owner ruling 12.10.2026, Ch9 Q5: Assembly B/C stay LH (#1.1.13.1 a-b).
-        st.caption("Assembly Groups B and C are Light Hazard (#1.1.13.1 a-b, p.526-527). "
-                   "Where the space has a kitchen, a stage or similar, choose **OH1** under "
-                   "'Override hazard class': #1.1.13.2 a (p.528) lists Assembly Group A "
-                   "(banquet halls, restaurants with more than 50 people, theaters, concert "
-                   "halls, cinemas) as Ordinary Hazard Group 1 (owner ruling 12.10.2026, Ch9 Q5).")
-    if occupancy in HAZARD_NOT_CLASSIFIED:
-        st.caption("#1.1.13 does not name this occupancy: the hazard class above is the "
-                   "tool's working value. Select the class for the actual contents under "
-                   "'Override hazard class'.")
+    with st.container():   # audit UX-06: fixed slot for the hazard notes
+        if _robotic_eh2:
+            derived_hazard = "HH"
+            st.caption("Hazard class: **HH, Extra Hazard Group 2** (robotic / mechanical parking "
+                       "is ticked: #1.1.13.5.b, p.530 lists 'Parking, Group B (Robotic, Mechanical "
+                       "parking)' under Extra Hazard, Group 2; owner ruling 12.10.2026, Ch9 Q7).")
+        elif occupancy == "animal_housing":
+            _ahg = st.session_state.get("animal_housing_group_input")
+            if _ahg in ANIMAL_HOUSING_GROUPS:
+                _hz, _cl, _pg, _ = ANIMAL_HOUSING_GROUPS[_ahg]
+                st.caption(f"Hazard class (Animal Housing Group {_ahg}, {_cl}, {_pg}): **{_hz}** "
+                           "(owner answer 12.10.2026, Ch9 Q6)")
+        elif occupancy != "storage_industrial":
+            st.caption(f"Hazard class (auto-derived from occupancy, #1.1.13): **{derived_hazard}**")
+        if occupancy in ("assembly_b", "assembly_c"):
+            # Owner ruling 12.10.2026, Ch9 Q5: Assembly B/C stay LH (#1.1.13.1 a-b).
+            st.caption("Assembly Groups B and C are Light Hazard (#1.1.13.1 a-b, p.526-527). "
+                       "Where the space has a kitchen, a stage or similar, choose **OH1** under "
+                       "'Override hazard class': #1.1.13.2 a (p.528) lists Assembly Group A "
+                       "(banquet halls, restaurants with more than 50 people, theaters, concert "
+                       "halls, cinemas) as Ordinary Hazard Group 1 (owner ruling 12.10.2026, Ch9 Q5).")
+        if occupancy in HAZARD_NOT_CLASSIFIED:
+            st.caption("#1.1.13 does not name this occupancy: the hazard class above is the "
+                       "tool's working value. Select the class for the actual contents under "
+                       "'Override hazard class'.")
     with st.expander("Mixed occupancy + construction type (Ch 1)", expanded=False):
         st.selectbox(
             "Mixed occupancy mode (Ch 1 #2.4–2.5)",
@@ -1313,6 +1787,11 @@ with st.sidebar:
                 "separated": "Separated by fire barriers (Table 1.2)",
             }[x],
             key="mixed_occupancy_mode_input",
+            help="Ch 1 #2.4-#2.5: an intermingled (mixed) occupancy takes the most "
+                 "restrictive package of every listed occupancy (#2.4.4; one line per "
+                 "system, ruling R13); a separated one keeps each occupancy behind fire "
+                 "barriers per Table 1.2. 'Single occupancy' evaluates the occupancy above "
+                 "only.",
         )
         # Ruling R13 (12.10.2026): in most-restrictive mode every listed occupancy
         # is evaluated and the most onerous line per system is kept (Ch 1 #2.4.4).
@@ -1346,12 +1825,7 @@ with st.sidebar:
                 help="Table 9.27 groups A-J are chosen by hazard class per #1.1.13, Table 9.1 "
                      "(materials) and Table 9.2 (activities). Owner ruling 12.10.2026, Ch9 Q9.")
             # Owner ruling 12.10.2026, Ch9 Q1: the plot GF BUA sum is required for storage.
-            st.number_input(
-                "Sum of GF BUAs of all buildings on the plot (m2) (required)", min_value=0.0,
-                value=0.0, step=100.0, key="sum_gf_bua_m2_input",
-                help="#4.1.13: excludes separated service blocks, guard house and separated "
-                     "washrooms. Enter this building's GF BUA when it is the only building "
-                     "on the plot. Required (owner ruling 12.10.2026, Ch9 Q1).")
+            _sum_gf_bua_input()
         if (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
                 and "animal_housing" in (st.session_state.get("secondary_occupancies_input") or [])):
             # Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9 for storage): the group of
@@ -1372,47 +1846,63 @@ with st.sidebar:
             options=["unspecified", "type_i", "type_ii", "type_iii", "type_iv", "type_v"],
             format_func=lambda x: x.replace("_", " ").title() if x != "unspecified" else "Not specified",
             key="construction_type_input",
+            help="Ch 1 #2.6 construction type. A reporting aid only: it is printed in the "
+                 "detailed export profile and drives no requirement line.",
         )
-    if occupancy == "storage_industrial":
-        # Table 9.27 groups depend on the stored materials and activities (#1.1.13,
-        # #1.1.23 / Table 9.1, #1.1.24 / Table 9.2): no silent default (CH9C-28).
-        hazard = st.selectbox(
-            "Storage hazard class (required)", ["LH", "OH1", "OH2", "HH"], index=None,
-            placeholder="Select from the stored materials and activities",
-            key="storage_hazard_input",
-            help="Table 9.27 groups A-J are chosen by hazard class per #1.1.13, Table 9.1 "
-                 "(materials) and Table 9.2 (activities). HH = Extra Hazard.")
-        if hazard == "HH":
-            st.checkbox("Extra Hazard Group 2 (#1.1.13.5)", key="is_extra_hazard_2",
-                        help="Unticked = Extra Hazard Group 1 (#1.1.13.4): Table 9.27 "
-                             "Group D / I. Ticked = Group E / J.")
+    with st.container():   # audit UX-06: fixed slot for the hazard inputs
+        if occupancy == "storage_industrial":
+            # Table 9.27 groups depend on the stored materials and activities (#1.1.13,
+            # #1.1.23 / Table 9.1, #1.1.24 / Table 9.2): no silent default (CH9C-28).
+            hazard = st.selectbox(
+                "Storage hazard class (required)", ["LH", "OH1", "OH2", "HH"], index=None,
+                placeholder="Select from the stored materials and activities",
+                key="storage_hazard_input",
+                help="Table 9.27 groups A-J are chosen by hazard class per #1.1.13, Table 9.1 "
+                     "(materials) and Table 9.2 (activities). HH = Extra Hazard.")
+            with st.container():   # audit UX-06: fixed slot
+                if hazard == "HH":
+                    st.checkbox("Extra Hazard Group 2 (#1.1.13.5)", key="is_extra_hazard_2",
+                                help="Unticked = Extra Hazard Group 1 (#1.1.13.4): Table 9.27 "
+                                     "Group D / I. Ticked = Group E / J.")
+                else:
+                    st.session_state["is_extra_hazard_2"] = False
+                if st.session_state.get("has_robotic_parking"):
+                    st.caption("Robotic / mechanical parking is ticked: the attached parking is "
+                               "evaluated at HH, Extra Hazard Group 2 (#1.1.13.5.b, p.530; owner "
+                               "ruling 12.10.2026, Ch9 Q7). The warehouse keeps the class chosen here.")
+            # Audit UX-01 (28.10.2026): every Table 9.27 input is drawn here, under the
+            # hazard class and BEFORE any stop, so the stop that asks for one of them
+            # never names a field that is not on screen (a stand-alone warehouse was a
+            # dead end: the field lived in 'FP - Settings', drawn after the stop).
+            _sum_gf_bua_input()
+            _storage_specialty_inputs()
         else:
             st.session_state["is_extra_hazard_2"] = False
-        if st.session_state.get("has_robotic_parking"):
-            st.caption("Robotic / mechanical parking is ticked: the attached parking is "
-                       "evaluated at HH, Extra Hazard Group 2 (#1.1.13.5.b, p.530; owner "
-                       "ruling 12.10.2026, Ch9 Q7). The warehouse keeps the class chosen here.")
-    else:
-        st.session_state["is_extra_hazard_2"] = False
-        with st.expander("Override hazard class (advanced)"):
-            # Audit ENG-23: keyed and saved; "auto" = the derived class, so an override
-            # is never carried silently to another occupancy (reset on change, ENG-13).
-            if st.session_state.get("hazard_override_input") not in ("auto", "LH", "OH1", "OH2", "HH"):
-                st.session_state["hazard_override_input"] = "auto"
+            with st.expander("Override hazard class (advanced)"):
+                # Audit ENG-23: keyed and saved; "auto" = the derived class, so an override
+                # is never carried silently to another occupancy (reset on change, ENG-13).
+                if st.session_state.get("hazard_override_input") not in ("auto", "LH", "OH1", "OH2", "HH"):
+                    st.session_state["hazard_override_input"] = "auto"
+                if _robotic_eh2:
+                    # Unkeyed so the saved override is not changed while robotic is ticked.
+                    st.selectbox("Hazard class", ["HH"], disabled=True,
+                                 help="Fixed at HH (Extra Hazard Group 2) while robotic / "
+                                      "mechanical parking is ticked (#1.1.13.5.b; owner "
+                                      "ruling 12.10.2026, Ch9 Q7).")
+                    _hz_pick = "HH"
+                else:
+                    _hz_pick = st.selectbox(
+                        "Hazard class", ["auto", "LH", "OH1", "OH2", "HH"],
+                        format_func=lambda x: f"Derived ({derived_hazard})" if x == "auto" else x,
+                        key="hazard_override_input",
+                        help="Ch 9 #1.1.13 (p.526-530) hazard classification of the actual "
+                             "contents (see Table 9.1 materials and Table 9.2 activities). "
+                             "It selects the hazard-keyed Ch 9 rows and the high-ceiling "
+                             "design (Table 9.29.A). 'Derived' is the class #1.1.13 gives "
+                             "the occupancy; it returns to Derived on an occupancy change.")
+                hazard = derived_hazard if _hz_pick == "auto" else _hz_pick
             if _robotic_eh2:
-                # Unkeyed so the saved override is not changed while robotic is ticked.
-                st.selectbox("Hazard class", ["HH"], disabled=True,
-                             help="Fixed at HH (Extra Hazard Group 2) while robotic / "
-                                  "mechanical parking is ticked (#1.1.13.5.b; owner "
-                                  "ruling 12.10.2026, Ch9 Q7).")
-                _hz_pick = "HH"
-            else:
-                _hz_pick = st.selectbox("Hazard class", ["auto", "LH", "OH1", "OH2", "HH"],
-                                        format_func=lambda x: f"Derived ({derived_hazard})" if x == "auto" else x,
-                                        key="hazard_override_input")
-            hazard = derived_hazard if _hz_pick == "auto" else _hz_pick
-        if _robotic_eh2:
-            hazard = "HH"
+                hazard = "HH"
 
     # =========================================================================
     # SHARED: Special Rooms & Equipment (drives FE / FA / FP / SC / LPG / EL)
@@ -1426,131 +1916,122 @@ with st.sidebar:
         st.markdown("**Attached parking area**")
         st.checkbox("Building has parking",
                     key="has_parking_area",
-                    help="If checked, the tool runs a parallel evaluation as if the building's parking area is its own occupancy and surfaces all parking-specific requirements from MOE / FE / FP / FA / SC chapters under an 'Attached Parking Area' section.")
-        if st.session_state.get("has_parking_area"):
-            parking_kind = st.radio(
-                "Parking type",
-                options=["Enclosed parking", "Open parking"],
-                index=0, key="attached_parking_kind_radio",
-            )
-            attached_parking_kind_val = "open" if parking_kind == "Open parking" else "enclosed"
-            # Show the verbatim UAE code definition for the selected parking type
-            _key = "parking_open" if attached_parking_kind_val == "open" else "parking_enclosed"
-            st.info(OCCUPANCY_DEFS.get(_key, ""))
-            parking_area_m2_val = st.number_input(
-                "Parking footprint area (m²)",
-                min_value=0.0, value=0.0, step=100.0,
-                key="parking_area_m2_input",
-                help="Total parking footprint - drives Ch 10 SC area thresholds: enclosed parking 3,600 m² make-up-air exception (single-basement); open parking 4,000 m² small-vs-large split (>4,000 m² requires mechanical smoke purging or jet-fan system). Required: 0 = not entered, the attached parking is NOT EVALUATED (no fallback to the basement or ground-floor BUA).",
-            )
-            if float(parking_area_m2_val) <= 0:
-                st.caption("Enter the parking footprint area: until then the attached parking "
-                           "is not evaluated (the report says so).")
-            # Owner ruling 12.10.2026, P3 App Q2: the parking's own height and levels.
-            parking_height_m_val = st.number_input(
-                "Parking height above the fire access level (m)",
-                min_value=0.0, value=None, step=0.5, key="parking_height_m_input",
-                placeholder="Required for the height-keyed parking lines",
-                help="Height of the parking structure itself above the fire access level "
-                     "(0 = wholly below it), not the tower height. It sets the height-keyed "
-                     "parking rows, e.g. Ch 10 Table 10.23 item 1.iv (p.860, stairs of parking "
-                     "more than 23 m) and the Table 9.24 rows. Ch 9 sprinklers still follow the "
-                     "host building's table. Blank: those lines are NOT EVALUATED (owner ruling "
-                     "12.10.2026, P3 App Q2).")
-            parking_basement_levels_val = st.number_input(
-                "Parking basement levels",
-                min_value=0, value=None, step=1, key="parking_basement_levels_input",
-                placeholder="Required for the basement-keyed parking lines",
-                help="Number of basement levels the parking occupies (0 = none), at most the "
-                     "building's basements; the building's depth below grade is used for them. "
-                     "Blank: the lines keyed on the basement levels are NOT EVALUATED (owner "
-                     "ruling 12.10.2026, P3 App Q2).")
-            if parking_height_m_val is None or parking_basement_levels_val is None:
-                st.caption("Enter the parking height and basement levels: until then the "
-                           "parking lines that depend on them are NOT EVALUATED (the tower "
-                           "height is not used).")
-            # Owner ruling 12.10.2026, P3 follow-up F-a3: the parking's own depth.
-            parking_depth_m_val = st.number_input(
-                "Parking depth below the fire access level (m)",
-                min_value=0.0, value=None, step=0.5, key="parking_depth_m_input",
-                placeholder="Blank: the building's depth is used",
-                help="Depth of the parking's lowest level below the fire access level, at "
-                     "most the building's depth below grade. More than 7 m is high depth "
-                     "(Ch 1 #1.7.45, p.45). Used where the parking has basement levels; "
-                     "more than 0 m with 0 levels is refused (F-a4-2). "
-                     "Blank: the building's depth is used and the report says so (owner "
-                     "ruling 12.10.2026, P3 follow-up F-a3).")
-        else:
-            attached_parking_kind_val = "enclosed"
-            parking_area_m2_val = 0.0
-            parking_height_m_val = None
-            parking_basement_levels_val = None
-            parking_depth_m_val = None
+                    help="Runs a parallel evaluation of the parking as its own occupancy "
+                         "(enclosed: Table 1.1 parking definitions; Ch 9 Table 9.24, Ch 10 "
+                         "Table 10.23) and prints it under 'Attached Parking Area'. One "
+                         "governing fire pump and fire water tank covers the whole building "
+                         "(#4.1.17, p.695). Needs the parking area, height and levels below.")
+        with st.container():   # audit UX-06: fixed slot for the parking inputs
+            if st.session_state.get("has_parking_area"):
+                parking_kind = st.radio(
+                    "Parking type",
+                    options=["Enclosed parking", "Open parking"],
+                    key="attached_parking_kind_radio", on_change=_touch, args=("attached_parking_kind_radio",),
+                    help="Enclosed or open parking as defined in Ch 1 Table 1.1 (the "
+                         "definition is shown below). It selects the enclosed or open rows "
+                         "of Ch 9 Table 9.24 and Ch 10 Table 10.23.",
+                )
+                attached_parking_kind_val = "open" if parking_kind == "Open parking" else "enclosed"
+                # Show the verbatim UAE code definition for the selected parking type
+                _key = "parking_open" if attached_parking_kind_val == "open" else "parking_enclosed"
+                st.info(OCCUPANCY_DEFS.get(_key, ""))
+                st.session_state.setdefault("parking_area_m2_input", 0.0)
+                parking_area_m2_val = st.number_input(
+                    "Parking footprint area (m²) (required)",
+                    min_value=0.0, step=100.0,
+                    key="parking_area_m2_input",
+                    help="Total parking footprint - drives Ch 10 SC area thresholds: enclosed parking 3,600 m² make-up-air exception (single-basement); open parking 4,000 m² small-vs-large split (>4,000 m² requires mechanical smoke purging or jet-fan system). Required: 0 = not entered, the attached parking is NOT EVALUATED (no fallback to the basement or ground-floor BUA).",
+                )
+                if float(parking_area_m2_val) <= 0:
+                    st.caption("Enter the parking footprint area: until then the attached parking "
+                               "is not evaluated (the report says so).")
+                # Owner ruling 12.10.2026, P3 App Q2: the parking's own height and levels.
+                # Audit UX-27: "(required)" sits in the label, not in a cut-off placeholder.
+                parking_height_m_val = st.number_input(
+                    "Parking height above the fire access level (m) (required)",
+                    min_value=0.0, value=None, step=0.5, key="parking_height_m_input",
+                    placeholder="Not entered",
+                    help="Height of the parking structure itself above the fire access level "
+                         "(0 = wholly below it), not the tower height. It sets the height-keyed "
+                         "parking rows, e.g. Ch 10 Table 10.23 item 1.iv (p.860, stairs of parking "
+                         "more than 23 m) and the Table 9.24 rows. Ch 9 sprinklers still follow the "
+                         "host building's table. Blank: those lines are NOT EVALUATED (owner ruling "
+                         "12.10.2026, P3 App Q2).")
+                parking_basement_levels_val = st.number_input(
+                    "Parking basement levels (required)",
+                    min_value=0, value=None, step=1, key="parking_basement_levels_input",
+                    placeholder="Not entered",
+                    help="Number of basement levels the parking occupies (0 = none), at most the "
+                         "building's basements; the building's depth below grade is used for them. "
+                         "Blank: the lines keyed on the basement levels are NOT EVALUATED (owner "
+                         "ruling 12.10.2026, P3 App Q2).")
+                if parking_height_m_val is None or parking_basement_levels_val is None:
+                    st.caption("Enter the parking height and basement levels: until then the "
+                               "parking lines that depend on them are NOT EVALUATED (the tower "
+                               "height is not used).")
+                # Owner ruling 12.10.2026, P3 follow-up F-a3: the parking's own depth.
+                parking_depth_m_val = st.number_input(
+                    "Parking depth below the fire access level (m)",
+                    min_value=0.0, value=None, step=0.5, key="parking_depth_m_input",
+                    placeholder="Blank: building depth",
+                    help="Depth of the parking's lowest level below the fire access level, at "
+                         "most the building's depth below grade. More than 7 m is high depth "
+                         "(Ch 1 #1.7.45, p.45). Used where the parking has basement levels; "
+                         "more than 0 m with 0 levels is refused (F-a4-2). "
+                         "Blank: the building's depth is used and the report says so (owner "
+                         "ruling 12.10.2026, P3 follow-up F-a3).")
+            else:
+                attached_parking_kind_val = "enclosed"
+                parking_area_m2_val = 0.0
+                parking_height_m_val = None
+                parking_basement_levels_val = None
+                parking_depth_m_val = None
+        # Audit UX-15: robotic parking sits with the parking (it was under ES zones) and
+        # says which chapters it changes.
+        st.checkbox("Robotic / mechanical parking", key="has_robotic_parking",
+                    help=_h("Parking, Group B (robotic, mechanical parking) is Extra Hazard "
+                            "Group 2 (Ch 9 #1.1.13.5.b, p.530): a parking occupancy or the "
+                            "attached parking is evaluated at HH + EH2 (owner ruling "
+                            "12.10.2026, Ch9 Q7). Ch 8 Table 8.13 item 23 (p.506) governs its detection (owner ruling R-I).",
+                            "has_robotic_parking"))
+        with st.container():   # audit UX-06: fixed slot
+            if st.session_state.get("has_robotic_parking"):
+                st.caption("Robotic / mechanical parking is Extra Hazard Group 2 (#1.1.13.5.b, "
+                           "p.530): the parking is evaluated at HH + EH2 (owner ruling "
+                           "12.10.2026, Ch9 Q7).")
         st.markdown("---")
         st.markdown("**Special rooms checklist**")
-        st.checkbox("Check all", key="rooms_all", on_change=rooms_cb)
-        ca, cb = st.columns(2)
-        with ca:
-            st.checkbox("Anesthetizing room (A)", key="has_anesthetizing_room")
-            st.checkbox("Battery charger room (B)", key="has_battery_charger_room")
-            st.checkbox("BMS room (C)", key="has_bms_room")
-            st.checkbox("Battery room (D)", key="has_battery_room")
-            st.checkbox("Computer room (E)", key="has_computer_room")
-            st.checkbox("Control / Fire command centre (F)", key="has_control_room")
-            st.checkbox("Diesel generator [FOAM] (G)", key="has_diesel_generator_room")
-            st.checkbox("Main electrical room (H)", key="has_main_electrical_room")
-            st.checkbox("AHU room (I)", key="has_ahu_room")
-            st.checkbox("LV room (J)", key="has_lv_mv_room")
-            st.checkbox("MV room (treated as HV, ruling R12)", key="has_mv_room",
-                        help="Table 4.3 lists LV and HV rooms only: an MV room takes the HV "
-                             "extinguisher (wheeled CO2 12 kg), an engineering decision. "
-                             "Table 9.30.J covers LV and MV rooms as printed.")
-            st.checkbox("Transformer - utility (K)", key="has_transformer_room_utility")
-            st.checkbox("Fire pump room", key="has_fire_pump_room")
-        with cb:
-            st.checkbox("Transformer - private (L)", key="has_transformer_room_private")
-            st.checkbox("Lift machine room (M)", key="has_lift_machine_room")
-            st.checkbox("Main telephone room (N)", key="has_main_telephone_room")
-            st.checkbox("Main server room (O)", key="has_main_server_room")
-            st.checkbox("RMU / IDF / MDF / CDF / MMR (P)", key="has_rmu_idf_mdf_room")
-            st.checkbox("GSM room (Q)", key="has_gsm_room")
-            st.checkbox("Operation theatre (R)", key="has_operation_theater")
-            st.checkbox("MRI / Scanning room (S)", key="has_mri_scanning_room")
-            st.checkbox("Records room (T)", key="has_records_room")
-            st.checkbox("UPS room (U)", key="has_ups_room")
-            st.checkbox("Cold / Freezer room (V)", key="has_cold_freezer_room")
+        # Audit UX-16: name the table the letters belong to.
+        st.caption("Letters (A)-(V) are the rows of Ch 9 Table 9.30 Auxiliary Rooms Fire "
+                   "Protection Systems (p.752-755); each room also brings its Ch 8 Table 8.14 "
+                   "and Ch 4 Table 4.3 lines.")
+        st.checkbox("Check all", key="rooms_all", on_change=rooms_cb,
+                    help="Ticks (or unticks) every special room below.")
+        # Audit UX-17: one column, so no room name is cut off in the narrow sidebar.
+        for _key, _label, _lead in _SPECIAL_ROOM_WIDGETS:
+            st.checkbox(_label, key=_key, help=_h(_lead, _key), on_change=_touch, args=(_key,))
 
     with st.expander("🛗 Various locations & spaces", expanded=False):
-        st.checkbox("Check all", key="var_all", on_change=var_cb)
-        st.checkbox("Atrium", key="has_atrium")
-        st.checkbox("Rain-screen / glazed envelope", key="has_rain_screen_glazing")
-        st.checkbox("Stairs (shaft sprinklers + smoke detector at top)", key="has_stairs")
-        st.checkbox("Elevator (pit sprinklers + smoke detector at top of shaft)", key="has_elevator")
-        st.checkbox("Bathrooms with heaters above false ceiling", key="has_bathrooms_with_heaters")
-        st.checkbox("Residential laundry / storage rooms", key="has_laundry_storage_rooms")
-        st.checkbox("Pantries (business/commercial)", key="has_pantries")
-        st.checkbox("Permanent stages (assembly)", key="has_permanent_stages")
-        st.checkbox("Roof LPG / restaurant / assembly / sheesha", key="has_roof_lpg_or_restaurant")
-        st.checkbox("Roof restaurant / assembly / sheesha (FA Table 8.14 item 36)",
-                    key="has_roof_restaurant_assembly",
-                    help="Building roof used for restaurant seating, assembly or as Sheesha bars: "
-                         "Manual Fire Detection and Alarm System per Ch 8 Table 8.14 item 36 (p.511).")
-        st.checkbox("Food trucks, any fuel (FA Table 8.14 item 34)", key="has_food_trucks",
-                    help="Heat detector per Section 4.7 in each food truck, Ch 8 Table 8.14 item 34 (p.511).")
-        st.checkbox("Garbage chute", key="has_garbage_chute")
-        st.checkbox("Exterior balconies (Table 9.29 row B)", key="has_exterior_balconies",
-                    help="Sprinklered buildings: sidewall or pendent heads on exterior balconies, "
-                         "not more than 12 m2 per head, 79 deg C rating.")
-        st.checkbox("High ceiling (> 10 m)", key="has_high_ceiling")
-        if st.session_state.get("has_high_ceiling"):
-            ceiling_height_m = st.number_input(
-                "Ceiling height (m)", min_value=10.0, max_value=30.0, value=12.0, step=0.5,
-                help="Triggers Table 9.29.A high-ceiling sprinkler design + FA beam smoke detection.",
-                key="ceiling_height_m_input",
-            )
-        else:
-            ceiling_height_m = 0.0
-        st.checkbox("Tunnel inside building (Table 6.6 #9 / Ch 10 #3.7)", key="has_tunnel")
+        st.caption("Rows of Ch 9 Table 9.29 Various Locations (p.749-750) and Ch 8 Table 8.14 "
+                   "(p.509-511).")
+        st.checkbox("Check all", key="var_all", on_change=var_cb,
+                    help="Ticks (or unticks) every location below.")
+        for _key, _label, _lead in _VARIOUS_LOCATION_WIDGETS:
+            st.checkbox(_label, key=_key, help=_h(_lead, _key), on_change=_touch, args=(_key,))
+            if _key == "has_high_ceiling":
+                with st.container():   # audit UX-06: fixed slot
+                    if st.session_state.get("has_high_ceiling"):
+                        st.session_state.setdefault("ceiling_height_m_input", 12.0)
+                        ceiling_height_m = st.number_input(
+                            "Ceiling height (m)", min_value=10.0, max_value=30.0, step=0.5,
+                            help="Height of the high-ceiling space. Selects the Ch 9 Table "
+                                 "9.29.A height band (p.750-751) for the sprinkler design and the "
+                                 "Ch 8 Table 8.14 items 18 / 19 detection (p.510: more than 10 m "
+                                 "to less than 20 m beam detection; more than 20 m aspiration).",
+                            key="ceiling_height_m_input",
+                        )
+                    else:
+                        ceiling_height_m = 0.0
 
     with st.expander("🔥 Gas systems (Ch 11 LPG)", expanded=False):
         st.markdown("**Gas system type - one type only**")
@@ -1562,7 +2043,6 @@ with st.sidebar:
                 "Gas infrastructure connection (central piped supply)",
                 "Gas cylinders (villa / domestic / small commercial)",
             ],
-            index=0,
             key="gas_system_radio",
             help="Single mutually-exclusive choice. Triggers Ch 11 LPG requirements per type, or 'No Gas System' note.",
         )
@@ -1636,21 +2116,12 @@ with st.sidebar:
             )
 
     with st.expander("⚙️ Equipment (FP Table 9.31 + FA Table 8.15)", expanded=False):
-        st.checkbox("Check all", key="eq_all", on_change=eq_cb)
-        st.checkbox("Commercial kitchen 3+ burners (A)", key="has_commercial_kitchen")
-        st.checkbox("Flammable liquid tanks (C)", key="has_flammable_liquid_tanks")
-        st.checkbox("Cable spread areas (D)", key="has_cable_spread_areas")
-        st.checkbox("Boilers / boiler rooms (F)", key="has_boilers")
-        st.checkbox("Cooling towers - combustible (G)", key="has_cooling_towers")
-        st.checkbox("Oil-filled transformers (H)", key="has_oil_filled_transformers")
-        st.checkbox("Bulk oil storage (I)", key="has_bulk_oil_storage")
-        st.checkbox("Bulk flammable liquid storage (J)", key="has_bulk_flammable_liquid_storage")
-        st.checkbox("Bulk flammable gas storage (K)", key="has_bulk_flammable_gas_storage")
-        st.checkbox("Bulk flammable solid storage (L)", key="has_bulk_flammable_solid_storage")
-        st.checkbox("High-hazard logistics (M)", key="has_high_hazard_logistics")
-        st.checkbox("Chemical warehouse (N)", key="has_chemical_warehouse")
-        st.checkbox("Arms / ammunition / explosives (O)", key="has_explosives")
-        st.checkbox("Processing / generating plant (P)", key="has_processing_plant")
+        st.caption("Letters (A)-(P) are the rows of Ch 9 Table 9.31 Equipment Fire Protection "
+                   "Systems (p.756-757); each also brings its Ch 8 Table 8.15 item (p.512-513).")
+        st.checkbox("Check all", key="eq_all", on_change=eq_cb,
+                    help="Ticks (or unticks) every equipment item below.")
+        for _key, _label, _lead in _EQUIPMENT_WIDGETS:
+            st.checkbox(_label, key=_key, help=_h(_lead, _key), on_change=_touch, args=(_key,))
 
     # =========================================================================
     # PER-CHAPTER expanders (only chapter-unique inputs)
@@ -1660,8 +2131,9 @@ with st.sidebar:
 
     # ----- FSA (Ch 2) -----  owner rulings 12.10.2026, Ch3 Q5 / Q6
     with st.expander("🚒 FSA - Settings (Ch 2 Fire Service Access)", expanded=False):
+        st.session_state.setdefault("building_volume_m3_input", 0.0)
         st.number_input(
-            "Building volume (m3)", min_value=0.0, value=0.0, step=1000.0,
+            "Building volume (m3)", min_value=0.0, step=1000.0,
             key="building_volume_m3_input",
             help="Gross cubical extent for storage / industrial fire access (#2.8.8.a, "
                  "#2.8.9.a, Tables 2.6 / 2.7). 0 = not entered: footprint x height is used "
@@ -1678,35 +2150,45 @@ with st.sidebar:
 
     # ----- MOE (Ch 3) -----  owner rulings 12.10.2026, Ch3 Q1-Q3
     with st.expander("🚶 MOE - Settings (Ch 3 Means of Egress)", expanded=False):
+        st.session_state.setdefault("largest_storey_area_m2_input", 0.0)
         st.number_input(
-            "Largest storey area (m2)", min_value=0.0, value=0.0, step=100.0,
+            "Largest storey area (m2)", min_value=0.0, step=100.0,
             key="largest_storey_area_m2_input",
             help="Table 3.14 runs on the occupant load of the largest storey (#4.3.1, "
                  "#4.1.3). 0 = not entered: the whole GFA is used and the report says so. "
                  "Not used when the per-storey table below has lines.")
         if occupancy in ("mall_covered", "mall_open", "mall_mixed"):
+            st.session_state.setdefault("mall_gla_m2_input", 0.0)
             st.number_input(
-                "Mall gross leasable area, GLA (m2)", min_value=0.0, value=0.0, step=1000.0,
+                "Mall gross leasable area, GLA (m2)", min_value=0.0, step=1000.0,
                 key="mall_gla_m2_input",
-                help="Table 3.13 row 14: GLA less than 14,000 m2 -> 2.8 m2; from 14,000 m2, "
-                     "3.3 m2 + 0.1 m2 per full 1,290 m2, maximum 5.1 m2. 0 = GFA, labelled.")
+                help="Ch 3 Table 3.13 row 14 (p.283-287): GLA less than 14,000 m2 -> 2.8 m2; "
+                     "from 14,000 m2, 3.3 m2 + 0.1 m2 per full 1,290 m2, maximum 5.1 m2. "
+                     "Sets the mall occupant load factor. 0 = GFA, labelled.")
         st.markdown("*Per-use areas (#1.4.5): Table 3.13 row and floor area*")
+        st.session_state.setdefault("use_area_count_input", 0)
         _n_use = st.number_input(
-            "Number of per-use areas", min_value=0, max_value=USE_AREA_MAX, value=0, step=1,
+            "Number of per-use areas", min_value=0, max_value=USE_AREA_MAX, step=1,
             key="use_area_count_input",
-            help="0 = none: the densest Table 3.13 row of the occupancy is used; fuel "
-                 "station, infrastructure, mixed and underground are not evaluated until "
-                 "per-use areas are entered.")
+            help="Ch 3 #1.4.5 (p.242): the occupant load is figured on the actual use of each "
+                 "floor area (Table 3.13, p.283-287). 0 = none: the densest Table 3.13 row "
+                 "of the occupancy is used; fuel station, infrastructure, mixed and "
+                 "underground are not evaluated until per-use areas are entered.")
         _row_ids = list(TABLE_3_13_ROWS)
         for _i in range(int(_n_use or 0)):
             _c1, _c2 = st.columns([3, 2])
             with _c1:
                 st.selectbox(f"Use {_i + 1}: Table 3.13 row", options=_row_ids,
                              format_func=lambda r: f"{r} - {TABLE_3_13_ROWS[r][0]}",
-                             key=f"use_area_row_{_i}")
+                             key=f"use_area_row_{_i}",
+                             help="The Ch 3 Table 3.13 row (p.283-287) whose occupant load "
+                                  "factor applies to this use (#1.4.5, p.242).")
             with _c2:
-                st.number_input(f"Use {_i + 1}: area (m2)", min_value=0.0, value=0.0,
-                                step=50.0, key=f"use_area_m2_{_i}")
+                st.session_state.setdefault(f"use_area_m2_{_i}", 0.0)
+                st.number_input(f"Use {_i + 1}: area (m2)", min_value=0.0,
+                                step=50.0, key=f"use_area_m2_{_i}",
+                                help="Floor area of this use. Area divided by the Table 3.13 "
+                                     "factor gives its occupant load (#1.4.5, p.242).")
         # Owner answer 12.10.2026, F6: per-storey per-use table. When it has lines it
         # governs the OL and the Table 3.14 count (per storey, #4.3.1 / #4.1.3).
         st.markdown("*Per-storey table (optional): storey, Table 3.13 row, area, identical "
@@ -1746,50 +2228,90 @@ with st.sidebar:
 
     # ----- FE (Ch 4) -----
     with st.expander("🧯 FE - Settings (Ch 4)", expanded=False):
-        st.checkbox("Check all", key="fe_all", on_change=fe_cb)
+        st.caption("Hazard add-ons of Ch 4 Table 4.3 Application of Fire Extinguishers "
+                   "(p.373-377).")
+        st.checkbox("Check all", key="fe_all", on_change=fe_cb,
+                    help="Ticks (or unticks) every extinguisher add-on below.")
         st.checkbox(
             "Class B storage zones (chemical / linen / waste / flammable / solvent / lab stores)",
-            key="has_class_b_storage_zones")
+            key="has_class_b_storage_zones",
+            help=_h("Ch 4 Table 4.3 row 2 Class B (p.375).", "has_class_b_storage_zones"))
         st.checkbox(
             "Combustible metals storage / activity (Class D)",
-            key="has_combustible_metals")
+            key="has_combustible_metals",
+            help=_h("Ch 4 Table 4.3 row 8 Class D fires (p.377).", "has_combustible_metals"))
         st.checkbox(
             "Group A plastic storage / activity (wheeled foam, Table 4.3 row 3)",
-            key="has_group_a_plastic_storage")
+            key="has_group_a_plastic_storage",
+            help=_h("Ch 4 Table 4.3 row 3 wheeled foam (p.376).", "has_group_a_plastic_storage"))
         st.checkbox(
             "HV room or heavy electrical machinery",
-            key="has_hv_or_heavy_electrical")
+            key="has_hv_or_heavy_electrical",
+            help=_h("Ch 4 Table 4.3 row 5 Class C, HV room (p.376). An MV room ticked under "
+                    "Special rooms is already treated as HV (ruling R12).",
+                    "has_hv_or_heavy_electrical"))
         # has_parking_area moved to "Special rooms and usage" - removed from here
 
     # ----- ES (Ch 5) - merged single expander -----
     with st.expander("🚪 ES - Settings (Ch 5 Exit Signs)", expanded=False):
         st.markdown("**Egress features**")
-        st.checkbox("Check all - features", key="es_feat_all", on_change=es_feat_cb)
-        st.checkbox("Evacuation elevator (designated egress lift)", key="has_evacuation_elevator")
-        st.checkbox("Horizontal exits", key="has_horizontal_exits")
-        st.checkbox("Dead-end / mistakable paths present", key="has_dead_end_paths")
+        st.checkbox("Check all - features", key="es_feat_all", on_change=es_feat_cb,
+                    help="Ticks (or unticks) every egress feature below.")
+        st.checkbox("Evacuation elevator (designated egress lift)", key="has_evacuation_elevator",
+                    help=_h("A lift designated for evacuation.", "has_evacuation_elevator"))
+        st.checkbox("Horizontal exits", key="has_horizontal_exits",
+                    help=_h("Exits through a fire-rated wall into another compartment on the "
+                            "same level.", "has_horizontal_exits"))
+        st.checkbox("Dead-end / mistakable paths present", key="has_dead_end_paths", on_change=_touch, args=("has_dead_end_paths",),
+                    help=_h("Doors, stairs or passages that could be mistaken for an exit.",
+                            "has_dead_end_paths"))
         st.markdown("---")
         st.markdown("**Special zones / add-ons (Table 5.3)**")
-        st.checkbox("Check all - zones", key="es_zone_all", on_change=es_zone_cb)
-        st.checkbox("Amusement / mazes / mirrors / play areas (assembly)", key="has_amusement_confounding")
-        st.checkbox("Night club / disco", key="has_nightclub_disco")
-        st.checkbox("Theatre / cinema", key="has_theater_cinema")
-        st.checkbox("Nursery (inside education)", key="has_nursery_within")
-        st.checkbox("Auditorium (inside education)", key="has_auditorium_within")
-        st.checkbox("HH storage / robotic / cold / cable spread / industrial basement", key="has_hh_storage_zones")
-        st.checkbox("Mall play / food court / cinema zones", key="has_mall_play_food_cinema")
-        st.checkbox("Robotic / mechanical parking", key="has_robotic_parking")
-        if st.session_state.get("has_robotic_parking"):
-            st.caption("Robotic / mechanical parking is Extra Hazard Group 2 (#1.1.13.5.b, "
-                       "p.530): the parking is evaluated at HH + EH2 (owner ruling "
-                       "12.10.2026, Ch9 Q7).")
-        st.checkbox("Villa converted to other use", key="villa_converted_use")
-        st.checkbox("Fuel dispensing multi-storey", key="fuel_dispensing_multistorey")
+        st.checkbox("Check all - zones", key="es_zone_all", on_change=es_zone_cb,
+                    help="Ticks (or unticks) every special zone below (not the robotic "
+                         "parking, which sits with the parking).")
+        st.checkbox("Amusement / mazes / mirrors / play areas (assembly)", key="has_amusement_confounding",
+                    help=_h("Ch 5 Table 5.3 item 6 (p.397).", "has_amusement_confounding"))
+        st.checkbox("Night club / disco", key="has_nightclub_disco",
+                    help=_h("Ch 5 Table 5.3 item 6.vii (p.397).", "has_nightclub_disco"))
+        st.checkbox("Theatre / cinema", key="has_theater_cinema",
+                    help=_h("Ch 5 Table 5.3 item 6.viii (p.397) and Ch 10 Table 10.27 items 8 / "
+                            "14 (p.866); choose cinema or theatre below.", "has_theater_cinema"))
+        # Audit UX-15: the kind sits next to the box that asks for it (it was in SC).
+        with st.container():   # audit UX-06: fixed slot
+            if st.session_state.get("has_theater_cinema"):
+                st.selectbox(
+                    "Theatre / cinema kind (Ch 10 Table 10.27 items 8 / 14)",
+                    options=[None, "cinema", "theatre", "both"],
+                    format_func=lambda v: {None: "Not stated", "cinema": "Cinema",
+                                           "theatre": "Theatre", "both": "Cinema and theatre"}[v],
+                    key="theater_cinema_kind_input",
+                    help="Ch 10 Table 10.27 (p.866): cinema, item 8, dedicated smoke purge per "
+                         "Section 2.13 (6 ACH permitted); theatre, item 14, smoke management "
+                         "per Section 2.9. Not stated: the report prints the row as NOT "
+                         "EVALUATED.",
+                )
+        st.checkbox("Nursery (inside education)", key="has_nursery_within",
+                    help=_h("Ch 5 Table 5.3 item 8.ii (p.398).", "has_nursery_within"))
+        st.checkbox("Auditorium (inside education)", key="has_auditorium_within",
+                    help=_h("Ch 5 Table 5.3 item 8.iii (p.398).", "has_auditorium_within"))
+        st.checkbox("HH storage / robotic / cold / cable spread / industrial basement", key="has_hh_storage_zones",
+                    help=_h("Ch 5 Table 5.3 item 15.ii (p.399).", "has_hh_storage_zones"))
+        st.checkbox("Mall play / food court / cinema zones", key="has_mall_play_food_cinema",
+                    help=_h("Ch 5 Table 5.3 item 16.iii (p.399).", "has_mall_play_food_cinema"))
+        st.checkbox("Villa converted to other use", key="villa_converted_use",
+                    help=_h("A villa used for another occupancy: Ch 9 Table 9.21.d (number of "
+                            "exit stairs under FP - Settings) and the converted-villa rows of "
+                            "Ch 5 and Ch 8.", "villa_converted_use"))
+        st.checkbox("Fuel dispensing multi-storey", key="fuel_dispensing_multistorey",
+                    help=_h("A fuel dispensing building with more than the ground floor: the Ch 5 "
+                            "exit sign rows apply.", "fuel_dispensing_multistorey"))
 
     # ----- EL (Ch 6) -----
     with st.expander("💡 EL - Settings (Ch 6 Emergency Lighting)", expanded=False):
-        st.info("EL auto-derives from height tier + occupancy + special-room flags above. "
-                "No EL-specific inputs needed (the only EL-tied flag is `has_tunnel`, set in Various locations).")
+        st.info("EL follows the height class, the occupancy and the special-room boxes above "
+                "(Ch 6 Table 6.5, p.419; Table 6.6, p.420). No EL-specific inputs: the only "
+                "EL-tied box is 'Tunnel inside building' under Various locations.")
 
     # ----- EVC (Ch 7) -----
     with st.expander("📢 EVC - Settings (Ch 7 Voice Evacuation)", expanded=False):
@@ -1808,72 +2330,93 @@ def gs_early(k):
     return bool(st.session_state.get(k, False))
 
 
+# Audit UX-09 / UX-01 (28.10.2026): the input stops are collected first and shown
+# together after the WHOLE sidebar is drawn (FP, SC and LPG settings included), so a
+# stop never hides the inputs it asks for and no expander disappears while it shows.
+_STOPS: list = []
+
+
+def _stop(msg: str) -> None:
+    _STOPS.append(msg)
+
+
 # ---------- Height must be stated ------------------------------------------
 # Every table routes on height (Ch 1 #1.7.39-#1.7.42); 0 m would silently be
 # taken as lowrise. Only infrastructure (no building height) may stay at 0.
 if float(height_m) <= 0 and occupancy != "infrastructure":
-    st.error("Building height must be more than 0 m. Enter the height in the sidebar "
+    _stop("Building height must be more than 0 m. Enter the height in the sidebar "
              "(Geometry) to evaluate the building.")
-    st.stop()
+
+# ---------- Blank geometry (standing rule: a blank never counts as a pass) ------
+# Fix round 28.10.2026: for any building with a height (not the infrastructure yard
+# network), a ground-floor BUA, GFA or plot area of 0 stops by name. An underground
+# building with a basement BUA may have no ground floor; a food or mercantile truck
+# has no plot.
+_is_truck = (occupancy == "mercantile_c" and st.session_state.get("mercantile_c_type_input")
+             in ("food_truck", "mercantile_truck"))
+_underground_occ = occupancy in ("high_depth_underground", "low_depth_underground")
+if float(height_m) > 0 and occupancy != "infrastructure":
+    for _blank_label, _blank_val, _blank_ref, _blank_skip in (
+            ("Ground-floor BUA (m²)", ground_bua, "Ch 9 #4.1.12, p.695",
+             _underground_occ and float(basement_bua) > 0),
+            ("Total GFA (m²)", gfa, "Ch 3 #1.4.6, p.242", False),
+            ("Plot area (m²)", plot_area, "Ch 9 #4.1.10, p.695", _is_truck)):
+        if float(_blank_val or 0.0) <= 0 and not _blank_skip:
+            _stop(f"'{_blank_label}' is 0 (sidebar: Building profile > Geometry). A blank "
+                  f"input never counts as a pass: enter it ({_blank_ref}) to evaluate the "
+                  f"building.")
 
 # ---------- Mercantile group that is a Mall (audit ENG-02) -------------------
 if (occupancy in ("mercantile_a", "mercantile_b") and gs_early("mercantile_multi_tenant")
         and float(ground_bua) > 3600):
-    st.error("A group of mercantile occupancies under a single roof or not separated and "
+    _stop("A group of mercantile occupancies under a single roof or not separated and "
              "having a ground floor built up area of more than 3600 m2, irrespective of the "
              "number of storeys, shall be considered as Malls (Ch 1 Table 1.1 row 11, p.50). "
              "Choose a Mall occupancy (covered, open or mixed) in the sidebar.")
-    st.stop()
 
 # ---------- Storage hazard class must be chosen (CH9C-28) -------------------
 if occupancy == "storage_industrial" and hazard is None:
-    st.error("Select the storage hazard class in the sidebar. Table 9.27 "
+    _stop("Select the storage hazard class in the sidebar. Table 9.27 "
              "groups depend on the stored materials and activities (#1.1.13, Tables 9.1 "
              "and 9.2), so the tool does not assume one.")
-    st.stop()
 
 # ---------- Owner rulings 12.10.2026, Ch9 Q1 and Q9 -------------------------
 _storage_secondary = (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
                       and "storage_industrial" in (st.session_state.get("secondary_occupancies_input") or [])
                       and occupancy != "storage_industrial")
 if _storage_secondary and not st.session_state.get("secondary_storage_hazard_input"):
-    st.error("Select the hazard class of the storage / industrial occupancy listed under "
+    _stop("Select the hazard class of the storage / industrial occupancy listed under "
              "'Other occupancies' (sidebar, Mixed occupancy). Table 9.27 groups depend on the "
              "stored materials and activities (#1.1.13, Tables 9.1 and 9.2), so the tool does "
              "not assume one (owner ruling 12.10.2026, Ch9 Q9).")
-    st.stop()
 if (occupancy == "storage_industrial" or _storage_secondary) \
         and float(st.session_state.get("sum_gf_bua_m2_input") or 0.0) <= 0:
-    st.error("Enter the sum of GF BUAs of all buildings on the plot (sidebar: FP - Settings, "
-             "or Mixed occupancy when storage is another occupancy). Table 9.27 row 4 applies "
-             "above 3600 m2 (#4.1.13); enter this building's GF BUA when it is the only "
-             "building on the plot (owner ruling 12.10.2026, Ch9 Q1).")
-    st.stop()
+    _stop("Enter the sum of GF BUAs of all buildings on the plot (sidebar: under 'Storage "
+          "hazard class', or under Mixed occupancy when storage is another occupancy). Table "
+          "9.27 row 4 applies above 3600 m2 (#4.1.13); enter this building's GF BUA when it "
+          "is the only building on the plot (owner ruling 12.10.2026, Ch9 Q1).")
 
 # ---------- Owner ruling 12.10.2026, P3 App Q2 -----------------------------------
 if (st.session_state.get("has_parking_area") and parking_basement_levels_val is not None
         and int(parking_basement_levels_val) > int(floors_below)):
-    st.error(f"Attached parking basement levels ({int(parking_basement_levels_val)}) cannot "
+    _stop(f"Attached parking basement levels ({int(parking_basement_levels_val)}) cannot "
              f"exceed the building's basements ({int(floors_below)}): the parking is in the "
              "building (owner ruling 12.10.2026, P3 App Q2). Correct either input.")
-    st.stop()
 # Owner ruling 12.10.2026, P3 follow-up F-a3: nor its depth the building's depth.
 if (st.session_state.get("has_parking_area") and parking_depth_m_val is not None
         and float(parking_depth_m_val) > float(depth_below_grade)):
-    st.error(f"Attached parking depth below the fire access level ({float(parking_depth_m_val):g} m) "
+    _stop(f"Attached parking depth below the fire access level ({float(parking_depth_m_val):g} m) "
              f"cannot exceed the building's depth below grade ({float(depth_below_grade):g} m): "
              "the parking is in the building (owner ruling 12.10.2026, P3 follow-up F-a3). "
              "Correct either input.")
-    st.stop()
 # Owner ruling 13.10.2026, P3 follow-up F-a4-2: no depth without basement levels.
 if (st.session_state.get("has_parking_area") and parking_basement_levels_val is not None
         and int(parking_basement_levels_val) == 0 and parking_depth_m_val is not None
         and float(parking_depth_m_val) > 0):
-    st.error(f"Attached parking depth below the fire access level ({float(parking_depth_m_val):g} m) "
+    _stop(f"Attached parking depth below the fire access level ({float(parking_depth_m_val):g} m) "
              "is entered with 0 parking basement levels: a parking with no basement levels has "
              "no depth below the fire access level (owner ruling 13.10.2026, P3 follow-up "
              "F-a4-2). Enter the parking basement levels, or clear the depth.")
-    st.stop()
 
 # ---------- Owner ruling 12.10.2026, P3 Storey Q4 (as Ch9 Q9) ------------------
 _animal_secondary = (st.session_state.get("mixed_occupancy_mode_input") == "most_restrictive"
@@ -1881,13 +2424,12 @@ _animal_secondary = (st.session_state.get("mixed_occupancy_mode_input") == "most
                      and occupancy != "animal_housing")
 if _animal_secondary \
         and st.session_state.get("secondary_animal_housing_group_input") not in ANIMAL_HOUSING_GROUPS:
-    st.error("Select the group of the animal housing occupancy listed under 'Other "
+    _stop("Select the group of the animal housing occupancy listed under 'Other "
              "occupancies' (sidebar, Mixed occupancy): Group A (animal market, pet shops, bird "
              "market, veterinary clinic) and Group C (zoo) are Light Hazard (#1.1.13.1.q, r, "
              "p.528); Group B (stable, animal sheds, livestock shelter, slaughter houses) is "
              "Ordinary Hazard Group 2 (#1.1.13.3.a, p.529). The tool does not assume one (owner "
              "ruling 12.10.2026, P3 Storey Q4).")
-    st.stop()
 
 # ---------- Owner ruling 12.10.2026, P3 Storey Q1 ------------------------------
 _bad_counts = [f"line {i} ({ln.get('storey') or 'no storey name'}): {ln.get('count')!r}"
@@ -1896,31 +2438,28 @@ _bad_counts = [f"line {i} ({ln.get('storey') or 'no storey name'}): {ln.get('cou
                        and not isinstance(ln.get("count"), bool)
                        and _storey_count(ln.get("count")) >= 1)]
 if _bad_counts:
-    st.error("Per-storey table: the identical storeys count must be a whole number of at "
+    _stop("Per-storey table: the identical storeys count must be a whole number of at "
              "least 1 (owner ruling 12.10.2026, P3 Storey Q1). Correct " +
              "; ".join(_bad_counts) + ".")
-    st.stop()
 
 if occupancy == "animal_housing" \
         and st.session_state.get("animal_housing_group_input") not in ANIMAL_HOUSING_GROUPS:
-    st.error("Select the animal housing group (sidebar, under the occupancy): Group A (animal "
+    _stop("Select the animal housing group (sidebar, under the occupancy): Group A (animal "
              "market, pet shops, bird market, veterinary clinic) and Group C (zoo) are Light "
              "Hazard (#1.1.13.1.q, r, p.528); Group B (stable, animal sheds, livestock shelter, "
              "slaughter houses) is Ordinary Hazard Group 2 (#1.1.13.3.a, p.529). A project "
              "saved before the split has no group, and the tool does not assume one (owner "
              "answer 12.10.2026, Ch9 Q6).")
-    st.stop()
 
 # ---------- Owner rulings 13.10.2026, P4 Q1, Q5, Q6 ---------------------------
 if occupancy in ("mercantile_a", "mercantile_b") and gs_early("is_mercantile_group_c"):
-    st.error("This project was saved with 'Mercantile Group C (stand-alone)' ticked. Mercantile "
+    _stop("This project was saved with 'Mercantile Group C (stand-alone)' ticked. Mercantile "
              "Group C (kiosks, food trucks, mercantile trucks, Ch 1 Table 1.1 row 11, p.50) is "
              "now its own occupancy: choose 'mercantile_c' as the occupancy, or untick 'Mercantile "
              "Group C tick from an older file' in the sidebar to confirm this building is "
              "Mercantile Group A or B (owner ruling 13.10.2026, P4 Q6).")
-    st.stop()
 if occupancy == "business" and st.session_state.get("business_group_input") not in BUSINESS_GROUPS:
-    st.error("Select the Business group (sidebar, under the occupancy): Group A electronic data "
+    _stop("Select the Business group (sidebar, under the occupancy): Group A electronic data "
              "processing, telephone exchanges, radio and television stations, laboratories; Group "
              "B offices, banks, government offices, post offices; Group C barber shops, beauty "
              "shops, massage centers, typing and translation centers, print shops, photo studios "
@@ -1928,29 +2467,25 @@ if occupancy == "business" and st.session_state.get("business_group_input") not 
              "the tool does not assume a group (owner ruling 13.10.2026, P4 Q1)."
              + (" The file had the old 'Business Group C (stand-alone)' box ticked."
                 if st.session_state.get("_legacy_business_group_c") else ""))
-    st.stop()
 if occupancy == "mercantile_c":
     if st.session_state.get("mercantile_c_type_input") not in MERCANTILE_C_TYPES:
-        st.error("Select the Mercantile Group C type (sidebar, under the occupancy): kiosk "
+        _stop("Select the Mercantile Group C type (sidebar, under the occupancy): kiosk "
                  "(permanent or temporary), food truck or mercantile truck (Ch 1 Table 1.1 row "
                  "11, p.50). A kiosk and a truck take different items, so the tool does not "
                  "assume one (owner ruling 13.10.2026, P4 Q5).")
-        st.stop()
     if st.session_state.get("secondary_occupancies_input"):
-        st.error("A Mercantile Group C kiosk or truck is evaluated as its own building: clear "
+        _stop("A Mercantile Group C kiosk or truck is evaluated as its own building: clear "
                  "'Other occupancies' (sidebar, Mixed occupancy), or evaluate the host building "
                  "separately (owner rulings 13.10.2026, P4 Q4-Q5).")
-        st.stop()
     if (st.session_state.get("mercantile_c_type_input") in ("kiosk_permanent", "kiosk_temporary")
             and float(ground_bua) > 18):
-        st.error(f"Kiosks or group of kiosks shall not have an area more than 18 m2 (Ch 1 Table "
+        _stop(f"Kiosks or group of kiosks shall not have an area more than 18 m2 (Ch 1 Table "
                  f"1.9 item 48 v, p.98). The ground floor built-up area (the kiosk area) is "
                  f"{float(ground_bua):g} m2: enter 18 m2 or less, or choose Mercantile Group A "
                  f"or B.")
-        st.stop()
 
 # ---------- Pre-evaluate to detect wet riser requirement ---------------------
-prelim = _cached_evaluate(Building(
+prelim = None if _STOPS else _cached_evaluate(Building(
     project_name=project_name, occupancy=occupancy, height_m=height_m,
     floors_above_grade=int(floors_above), floors_below_grade=int(floors_below),
     depth_below_grade_m=float(depth_below_grade),
@@ -1970,72 +2505,18 @@ with st.sidebar:
                     "Group B - restaurants/bakeries WITHIN single mini-mart, fleet, marine (hose reel only + 50 gpm @ 6.9 bar)",
                     "Group C - mini-mart ONLY without service/repair, OR EV charging (extinguishers only - no water-based system)",
                 ],
-                index=0, key="motor_fuel_group_radio",
+                key="motor_fuel_group_radio", on_change=_touch, args=("motor_fuel_group_radio",),
                 help="Three groups in Table 9.25 with very different system requirements. Pick the one matching the facility.",
             )
             motor_fuel_group_val = mfg_choice[6]  # 'A', 'B', or 'C'
         else:
             motor_fuel_group_val = "A"
 
-        # Storage / Industrial specialty (Table 9.27 specialty groups F-V)
+        # Storage / Industrial specialty inputs (Table 9.27): drawn under the storage
+        # hazard class since audit UX-01 (28.10.2026), before any stop.
         if occupancy == "storage_industrial":
-            st.markdown("**Storage / Industrial specialty (Table 9.27 - tick if applicable, leave blank for default multi-tenant hazard-tier rules):**")
-            st.checkbox("Single-tenant variant (Groups F-J - distinct pump/tank from multi-tenant)",
-                        key="is_single_tenant_storage",
-                        help="Single tenant. Group F (LH) / G (OH1) / H (OH2 - 350 gpm) / I (EH1 - 750/1250 gpm) / J (EH2 - 1000/1500 gpm, 120-min tank).")
-            st.checkbox("Idle wood / plastic pallet warehouse (Group K - high-challenge fire load)",
-                        key="is_idle_pallet_storage",
-                        help="ESFR preferred for stacks > 3.7 m; density per Tables 9.7.X / 9.7.AA.")
-            st.checkbox("Cold storage facility (below 4 deg C - Group P)",
-                        key="is_cold_storage")
-            st.checkbox("Aircraft hangar (Group Q)",
-                        key="is_aircraft_hanger")
-            if st.session_state.get("is_aircraft_hanger"):
-                st.radio("Aircraft hangar group (Table 9.27 Q.1-Q.3)", ["I", "II_III", "IV"],
-                         format_func=lambda x: {"I": "Group I", "II_III": "Group II or III",
-                                                "IV": "Group IV"}[x],
-                         key="hangar_group_input",
-                         help="Hangar group per the code's hangar classification. Group I "
-                              "carries the highest pump duty (Q.1).")
-            st.checkbox("Flammable / combustible liquid WAREHOUSE (Group R - foam, 120-min tank)",
-                        key="is_flammable_liquid_warehouse")
-            st.checkbox("Flammable / combustible liquid INDUSTRIAL process (Group S - foam per Table 9.11.C)",
-                        key="is_flammable_liquid_industrial")
-            st.checkbox("Open yard storage / no building envelope (Group U)",
-                        key="is_open_yard_storage")
-            st.checkbox("Plant nursery (Group V - extinguishers only)",
-                        key="is_plant_nursery")
-            st.checkbox("Aboveground flammable / combustible liquid storage tanks (Group T)",
-                        key="is_aboveground_tank_storage")
-            if st.session_state.get("is_aboveground_tank_storage"):
-                st.number_input("Tank storage area (m2)", min_value=0.0, value=0.0, step=10.0,
-                                key="ast_storage_area_m2_input",
-                                help="Group T row 1 needs area less than 230 m2 AND tank "
-                                     "capacity less than 190 m3. 0 = not stated: row 2 applies.")
-                st.number_input("Tank capacity (m3)", min_value=0.0, value=0.0, step=10.0,
-                                key="ast_tank_capacity_m3_input",
-                                help="0 = not stated: Group T row 2 applies.")
-            st.selectbox(
-                "Stored commodity (Table 9.27 Groups L-O)",
-                ["none", "class_i_iv", "plastics_rubber", "tires", "rolled_paper"],
-                format_func=lambda x: {
-                    "none": "General storage (Groups A-J by hazard class)",
-                    "class_i_iv": "Class I-IV commodities (Group L)",
-                    "plastics_rubber": "Plastics / rubber (Group M)",
-                    "tires": "Tires (Group N)",
-                    "rolled_paper": "Rolled paper (Group O)"}[x],
-                key="storage_commodity_input")
-            st.number_input(
-                "Largest unit compartment area (m2)", min_value=0.0, value=0.0, step=10.0,
-                key="max_unit_area_m2_input",
-                help="#4.1.14: built-up GF area of the largest unit separated by fire "
-                     "resistance rated construction. 0 = the whole ground floor is one unit.")
-            st.number_input(
-                "Sum of GF BUAs of all buildings on the plot (m2) (required)", min_value=0.0,
-                value=0.0, step=100.0, key="sum_gf_bua_m2_input",
-                help="#4.1.13: excludes separated service blocks, guard house and separated "
-                     "washrooms. Enter this building's GF BUA when it is the only building "
-                     "on the plot. Required (owner ruling 12.10.2026, Ch9 Q1).")
+            st.caption("Storage / industrial (Table 9.27) inputs are under 'Storage hazard "
+                       "class' in the Building profile.")
 
         # Tunnel Fire Protection (Table 9.28) - shown when has_tunnel ticked
         if st.session_state.get("has_tunnel"):
@@ -2043,12 +2524,13 @@ with st.sidebar:
             tunnel_kind_choice = st.radio(
                 "Tunnel kind",
                 options=["Road / Rail tunnel", "Cable tunnel"],
-                index=0, key="tunnel_kind_radio",
+                key="tunnel_kind_radio", on_change=_touch, args=("tunnel_kind_radio",),
                 help="Cable: deluge water spray OR water mist. Road/rail: depends on length tier.",
             )
             tunnel_kind_val = "cable" if tunnel_kind_choice.startswith("Cable") else "road_rail"
+            st.session_state.setdefault("tunnel_length_m_input", 0.0)
             tunnel_length_m_val = st.number_input(
-                "Tunnel length (m)", min_value=0.0, value=0.0, step=10.0,
+                "Tunnel length (m)", min_value=0.0, step=10.0,
                 help="Cable: < 60 m vs >= 60 m. Road/rail: < 90 m (no FP), 90-1000 m, > 1000 m.",
                 key="tunnel_length_m_input",
             )
@@ -2058,8 +2540,9 @@ with st.sidebar:
 
         # Routing inputs that change which Table 9.18-9.24 row applies.
         if occupancy == "parking_open" or gs_early("villa_converted_use"):
+            st.session_state.setdefault("exit_stairs_input", 2)
             st.number_input(
-                "Number of exit stairs", min_value=1, value=2, step=1, key="exit_stairs_input",
+                "Number of exit stairs", min_value=1, step=1, key="exit_stairs_input", on_change=_touch, args=("exit_stairs_input",),
                 help="Table 9.24.C.2 (open parking 15 m to less than 23 m): 750 gpm for 2 stairs, "
                      "1000 gpm for 3 or more. Table 9.21.d: converted villa with one stair.",
             )
@@ -2081,7 +2564,12 @@ with st.sidebar:
                              "at the lowest basement (height + depth below grade).")
         if occupancy == "storage_industrial":
             st.checkbox("Ground floor more than 100 m from an existing functional hydrant (#4.1.6)",
-                        key="gf_beyond_100m_from_hydrant")
+                        key="gf_beyond_100m_from_hydrant",
+                        help=_h("#4.1.6 (p.694): storage and industrial occupancies whose "
+                                "built-up ground floor areas are more than 100 m away from "
+                                "existing, functional and available hydrants take a yard fire "
+                                "hydrant system per Section 3.11.",
+                                "gf_beyond_100m_from_hydrant"))
         # Audit CH9A-20: #4.1.2 (p.694)
         st.checkbox("Water reactive materials stored or handled (#4.1.2)",
                     key="has_water_reactive_materials",
@@ -2096,8 +2584,9 @@ with st.sidebar:
                              "mosques (Assembly Group C) having commercial and mercantile outlets "
                              "attached to it or in the same plot.")
             if st.session_state.get("has_attached_commercial_outlet"):
+                st.session_state.setdefault("commercial_outlet_gf_bua_m2_input", 0.0)
                 st.number_input("Commercial outlet built-up ground floor area (m2) (required)",
-                                min_value=0.0, value=0.0, step=50.0,
+                                min_value=0.0, step=50.0,
                                 key="commercial_outlet_gf_bua_m2_input",
                                 help="Table 9.21.e rows: up to 900 m2 / more than 900 m2 of the "
                                      "OUTLET's built-up ground floor area. 0 = not entered: the "
@@ -2120,17 +2609,23 @@ with st.sidebar:
                 help="#4.5.6 (p.712): tents, marquees, site offices and site dwellings take "
                      "Table 9.21.f instead of the generic lowrise rows.")
 
-        if prelim.requires_wet_riser:
+        if prelim is not None and prelim.requires_wet_riser:
             st.markdown("**Wet riser sizing** — required because the matched FP branch emits a wet-riser system.")
             standpipe_choice = st.radio(
                 "Number of standpipes in the wet-riser system",
                 options=["2 standpipes (Fire pump 750 gpm @ 6.9 bar)",
                          "3 or more standpipes (Fire pump 1000 gpm @ 6.9 bar)"],
-                index=0,
-                help="Per Table 9.19 / 9.20 pump-sizing notes. The choice resolves the Fire Pump entry under FP Branch Requirements.",
-                key="wet_riser_radio",
+                help="Ch 9 Tables 9.18-9.20 pump notes (p.696-701): the fire pump is 750 gpm "
+                     "at 6.9 bar for 2 standpipes and 1000 gpm for 3 or more. The choice sizes "
+                     "the Fire Pump line under FP Branch Requirements. Left on 2, it is listed "
+                     "under 'Assumptions used in this report'.",
+                key="wet_riser_radio", on_change=_touch, args=("wet_riser_radio",),
             )
             wet_riser_standpipes = 2 if standpipe_choice.startswith("2 ") else 3
+        elif prelim is None:
+            wet_riser_standpipes = 2
+            st.caption("Wet-riser sizing: shown once the input stop in the main page is "
+                       "resolved.")
         else:
             wet_riser_standpipes = 2
             st.info("Wet-riser sizing N/A - the matched FP branch does not require a wet-riser system.")
@@ -2138,9 +2633,10 @@ with st.sidebar:
 
     # ----- SC (Ch 10) -----
     with st.expander("💨 SC - Settings (Ch 10)", expanded=False):
+        st.session_state.setdefault("corridor_length_m", 0.0)
         corridor_length_m = st.number_input(
             "Longest enclosed corridor length (m)",
-            min_value=0.0, value=0.0, step=5.0,
+            min_value=0.0, step=5.0,
             key="corridor_length_m",   # audit ENG-23: saved and restored
             help="More than 60 m in a lowrise / midrise building: Ch 10 Table 10.27 item 4 "
                  "requires natural ventilation per Section 2.15 where the exterior façade / "
@@ -2152,9 +2648,10 @@ with st.sidebar:
         # hall / auditorium), both "having area more than 2000 m2". Phase 3 CH10-16: no
         # GFA fallback; 0 = not entered.
         if occupancy.startswith(("assembly_", "education_")):
+            st.session_state.setdefault("assembly_area_m2_input", 0.0)
             assembly_area_m2 = st.number_input(
                 "Largest assembly-hall / sports-hall / auditorium area (m²)",
-                min_value=0.0, value=0.0, step=100.0,
+                min_value=0.0, step=100.0,
                 key="assembly_area_m2_input",
                 help="Ch 10 Table 10.27 items 9-13 (exhibition / assembly / sports hall / "
                      "auditorium / indoor stadium) and item 2.3 (school sports hall / "
@@ -2164,29 +2661,24 @@ with st.sidebar:
             )
         else:
             assembly_area_m2 = 0.0
-        # Table 10.27 item 8 (cinema: Section 2.13 purge) vs item 14 (theatre:
-        # Section 2.9 smoke management). Phase 3 CH10-16.
-        if st.session_state.get("has_theater_cinema"):
-            st.selectbox(
-                "Theatre / cinema kind (Ch 10 Table 10.27 items 8 / 14)",
-                options=[None, "cinema", "theatre", "both"],
-                format_func=lambda v: {None: "Not stated", "cinema": "Cinema",
-                                       "theatre": "Theatre", "both": "Cinema and theatre"}[v],
-                key="theater_cinema_kind_input",
-                help="Cinema: dedicated smoke purge per Section 2.13 (6 ACH permitted). "
-                     "Theatre: smoke management per Section 2.9. Not stated: the report "
-                     "prints the row as NOT EVALUATED.",
-            )
+        # Table 10.27 item 8 / item 14 (Phase 3 CH10-16): the theatre / cinema kind is
+        # asked next to the 'Theatre / cinema' box under ES - Settings (audit UX-15).
         st.caption("Other SC outputs (Tables 10.19-10.27) auto-derive from height tier, occupancy, "
                    "depth below grade and Special Rooms / Various Locations / Equipment flags.")
 
     # ----- LPG (Ch 11) -----
     with st.expander("⛽ LPG - Settings (Ch 11)", expanded=False):
-        st.info("LPG output auto-derived from the THREE gas-system flags in the Equipment + Gas Systems group above:\n\n"
+        st.info("LPG output auto-derived from the gas-system choice under 'Gas systems (Ch 11 LPG)' above:\n\n"
                 "- **LPG tanks** (aboveground / roof / podium)\n"
                 "- **Gas infrastructure connection** (municipal / central piped supply)\n"
                 "- **Gas cylinders** (villa / domestic / small commercial)\n\n"
                 "If none are ticked, the LPG section reports 'No Gas System Present'.")
+
+
+if _STOPS:
+    for _msg in _STOPS:
+        st.error(_msg)
+    st.stop()
 
 
 def gs(k):
@@ -2385,39 +2877,98 @@ report = _cached_evaluate(building.model_dump_json())
 
 
 # ---------- Top summary ------------------------------------------------------
-def _branch(ch_code):
-    ch = report.chapter(ch_code)
-    return (ch.selected_branch if ch else None,
-            ch.selected_branch_section if ch else None)
+# Audit UX-14 (28.10.2026): readable labels; rule IDs only behind "Show rule IDs".
+_SHOW_RULE_IDS = bool(st.session_state.get("show_rule_ids", False))
 
-moe_b, moe_s = _branch("MOE")
-fe_b, fe_s   = _branch("FE")
-es_b, es_s   = _branch("ES")
-el_b, el_s   = _branch("EL")
-evc_b, evc_s = _branch("EVC")
-fa_b, fa_s   = _branch("FA")
-fp_b, fp_s   = _branch("FP")
-sc_b, sc_s   = _branch("SC")
-lpg_b, lpg_s = _branch("LPG")
+
+def _humanize_codes(text: str) -> str:
+    """Occupancy codes with an underscore (mercantile_a, hotel_a, parking_enclosed ...)
+    read as their Table 1.1 names in notes written by the engine (audit UX-14)."""
+    if not text:
+        return text
+
+    def _rep(m):
+        code = m.group(0)
+        return _occ_label(code) if code in OCCUPANCY_DEFS else code
+    return _re.sub(r"\b[a-z]+(?:_[a-z0-9]+)+\b", _rep, text)
+
+
+def _branch_chip(ch):
+    if ch is None or not ch.selected_branch:
+        return None
+    lab = branch_label(ch)
+    return f"{lab} [rule {ch.selected_branch}]" if _SHOW_RULE_IDS else lab
+
+
+# Audit UX-08: the first load is a sample, and it says so where the user looks first.
+_GEOMETRY_KEYS = ("height_m_input", "floors_above_input", "floors_below_input",
+                  "ground_bua_input", "gfa_input", "plot_area_input")
+_IS_SAMPLE = (not st.session_state.get("_profile_source") and occupancy == "residential"
+              and not (project_name or "").strip()
+              and all(st.session_state.get(k) == FIRST_LOAD_DEFAULTS[k] for k in _GEOMETRY_KEYS))
+if _IS_SAMPLE:
+    st.info("**Sample building.** This report is for the first-load sample (45 m residential, "
+            "12 floors, 1 basement). Enter your building in the sidebar (Building profile) or "
+            "apply a preset under Quick start.")
 
 st.markdown("### Building classification")
 st.markdown(
     ui.classification_html(
         building.height_class,
         building.building_category,
-        [("MOE", moe_b), ("FE", fe_b), ("ES", es_b), ("EL", el_b),
-         ("EVC", evc_b), ("FA", fa_b), ("FP", fp_b), ("SC", sc_b),
-         ("LPG", lpg_b)],
+        [(c, _branch_chip(report.chapter(c)), None)
+         for c in ("MOE", "FE", "ES", "EL", "EVC", "FA", "FP", "SC", "LPG")
+         if report.chapter(c) is not None],
     ),
     unsafe_allow_html=True,
 )
 # Owner answer 12.10.2026, Ch9 Q6; owner rulings 13.10.2026, P4 Q1 / Q5
 _ahg_txt = f" **({building.occupancy_qualifier})**" if building.occupancy_qualifier else ""
-st.caption(f"**Occupancy:** `{occupancy}`{_ahg_txt} - {OCCUPANCY_DEFS.get(occupancy, '')}  |  **Hazard class:** {building.hazard_class}")
+st.caption(f"**Occupancy:** {OCCUPANCY_DEFS.get(occupancy) or _occ_label(occupancy)}{_ahg_txt}"
+           f"  |  **Hazard class:** {building.hazard_class}"
+           + (f"  |  rule code `{occupancy}`" if _SHOW_RULE_IDS else ""))
 
 _ol = report.occupant_load
 _fa = report.fire_access
 _tot = report.count_status()
+
+
+# Audit UX-23: what changed since the previous input (not since the previous rerun:
+# a search or filter change keeps the comparison).
+def _line_set(rep) -> frozenset:
+    out = set()
+    for prefix, chapters in (("", rep.chapters), ("P-", rep.attached_parking_chapters or [])):
+        for ch in chapters:
+            for blk in ch.blocks:
+                for it in blk.items:
+                    out.add((f"{prefix}{ch.chapter_code}", it.system, it.status))
+    return frozenset(out)
+
+
+_lines_now = _line_set(report)
+_bjson = building.model_dump_json()
+if st.session_state.get("_lines_now_json") != _bjson:
+    st.session_state["_lines_before"] = st.session_state.get("_lines_now")
+    st.session_state["_lines_now"] = _lines_now
+    st.session_state["_lines_now_json"] = _bjson
+_lines_before = st.session_state.get("_lines_before")
+_req_before = (None if _lines_before is None
+               else sum(1 for (c, _s, stt) in _lines_before
+                        if stt == "required" and not c.startswith("P-")))
+
+
+def _short_extent(ext: str) -> str:
+    """Audit UX-25: a metric-sized fire access value; the full text is in the caption."""
+    if not ext:
+        return "-"
+    m = _re.search(r"\b(\d+/\d+)\b", ext)
+    if m:
+        return m.group(1)
+    if ext.lower().startswith("whole"):
+        return "Whole"
+    return " ".join(ext.split()[:2])
+
+
 d1, d2, d3, d4 = st.columns(4)
 with d1:
     st.metric("Height class", building.height_class.replace("_", " "))
@@ -2434,18 +2985,111 @@ with d2:
                 f" OL {_ol.storey_occupant_load:,})") if _ol_ok else
                (_ol.exit_ref if _ol else ""))
 with d3:
-    st.metric("Required systems", _tot.get("required", 0))
+    _n_req = _tot.get("required", 0)
+    st.metric("Required systems", _n_req,
+              delta=(None if _req_before is None or _req_before == _n_req
+                     else _n_req - _req_before),
+              delta_color="off",
+              help="Required lines of the main report; the change is against the previous "
+                   "input.")
     st.caption(f"Conditional {_tot.get('conditional', 0)}")
 with d4:
-    st.metric("Fire access", ((_fa.extent or "—")[:40] if _fa else "—"))
-    st.caption(_fa.extent_ref if _fa else "")
+    st.metric("Fire access (perimeter)", _short_extent(_fa.extent if _fa else ""))
+    st.caption(((_fa.extent + " · ") if _fa and _fa.extent else "") + (_fa.extent_ref if _fa else ""))
 st.markdown(ui.status_summary_html(_tot), unsafe_allow_html=True)
 if _ol and _ol.note:
     st.caption(f"OL: {_ol.note}")
 for _w in (_ol.warnings if _ol else []):   # owner answer 12.10.2026, F6
     st.warning(f"Per-storey table: {_w}")
 if report.mixed_occupancy_note:
-    st.info(report.mixed_occupancy_note)
+    st.info(_humanize_codes(report.mixed_occupancy_note))
+
+if _lines_before is not None and _lines_before != _lines_now:
+    _added = sorted(_lines_now - _lines_before)
+    _removed = sorted(_lines_before - _lines_now)
+    with st.expander(f"What changed since the previous input: {len(_added)} line(s) added, "
+                     f"{len(_removed)} removed", expanded=False):
+        for _c, _sys, _stt in _added[:60]:
+            st.markdown(f"➕ **{_c}** {_sys} ({_stt.replace('_', ' ')})")
+        for _c, _sys, _stt in _removed[:60]:
+            st.markdown(f"➖ **{_c}** {_sys} ({_stt.replace('_', ' ')})")
+        if len(_added) > 60 or len(_removed) > 60:
+            st.caption("First 60 of each shown.")
+
+
+# ---------- Assumptions used in this report (audit UX-08, 28.10.2026) -----------
+def _assumptions(b: Building, rep) -> list:
+    """Every input the report rests on that the user did not set: the sample or preset
+    profile, boxes pre-ticked on first load and never touched, choices left on their
+    default, and the fallbacks the engine uses for a blank optional input. Each names
+    where to change it."""
+    ss = st.session_state
+    touched = ss.get("_touched") or {}
+    src = ss.get("_profile_source")
+    out = []
+    if _IS_SAMPLE:
+        out.append("Sample building: the geometry is the first-load sample (sidebar: "
+                   "Building profile > Geometry).")
+    elif src and str(src).startswith("preset"):
+        out.append(f"Values from the {src}: occupancy, geometry, parking and flags are "
+                   "archetype values; check them against the drawings (sidebar: Quick "
+                   "start).")
+    if not src:
+        pre = [k for k, v in FIRST_LOAD_DEFAULTS.items()
+               if v is True and getattr(b, k, False) and not touched.get(k)]
+        if pre:
+            out.append("Ticked on first load and never changed: "
+                       + ", ".join(field_label(k) for k in pre)
+                       + " (sidebar: Spaces, equipment & gas; ES - Settings).")
+    if rep.requires_wet_riser and not touched.get("wet_riser_radio"):
+        out.append(f"Wet riser: {b.wet_riser_standpipes} standpipes (the first option; sidebar: "
+                   "FP - Settings, Number of standpipes).")
+    if b.occupancy == "motor_fuel_dispensing" and not touched.get("motor_fuel_group_radio"):
+        out.append(f"Motor fuel dispensing Group {b.motor_fuel_group} (the first option; "
+                   "sidebar: FP - Settings, Table 9.25).")
+    if b.has_parking_area and not touched.get("attached_parking_kind_radio"):
+        out.append(f"Parking type {b.attached_parking_kind} (the first option; sidebar: "
+                   "Parking & special rooms).")
+    if b.has_parking_area and b.parking_depth_m is None and (b.parking_basement_levels or 0) > 0:
+        out.append("Parking depth not entered: the building's depth below grade is used "
+                   "(sidebar: Parking & special rooms).")
+    if b.is_aircraft_hanger and not touched.get("hangar_group_input"):
+        out.append(f"Aircraft hangar Group {b.hangar_group} (the first option; sidebar: "
+                   "Storage / industrial specialty).")
+    if b.has_tunnel and not touched.get("tunnel_kind_radio"):
+        out.append("Tunnel kind: road / rail (the first option; sidebar: FP - Settings).")
+    if (b.occupancy == "parking_open" or b.villa_converted_use) and not touched.get("exit_stairs_input"):
+        out.append(f"Number of exit stairs: {b.exit_stairs} (the default; sidebar: FP - Settings).")
+    if b.occupancy == "storage_industrial":
+        if b.storage_commodity == "none" and not touched.get("storage_commodity_input"):
+            out.append("Stored commodity: general storage, Table 9.27 Groups A-J by hazard "
+                       "class (sidebar: Storage / industrial specialty).")
+        if not b.max_unit_area_m2:
+            out.append("Largest unit compartment area not entered: the whole ground floor is "
+                       "one unit (#4.1.14; sidebar: Storage / industrial specialty).")
+        if not b.building_volume_m3:
+            out.append("Building volume not entered: footprint x height is used for the Ch 2 "
+                       "storage / industrial access rows (sidebar: FSA - Settings).")
+    if b.is_aboveground_tank_storage and not (b.ast_storage_area_m2 and b.ast_tank_capacity_m3):
+        out.append("Tank storage area or capacity not stated: Table 9.27 Group T row 2 applies "
+                   "(sidebar: Storage / industrial specialty).")
+    if (not b.storey_uses and not b.use_areas and not b.largest_storey_area_m2
+            and b.floors_above_grade + b.floors_below_grade > 1):
+        out.append("Largest storey area not entered: Table 3.14 runs on the whole GFA "
+                   "(sidebar: MOE - Settings).")
+    if (b.occupancy in HAZARD_NOT_CLASSIFIED
+            and st.session_state.get("hazard_override_input", "auto") == "auto"):
+        out.append(f"Hazard class {b.hazard_class} is the tool's working value: #1.1.13 does "
+                   "not name this occupancy (sidebar: Override hazard class).")
+    return out
+
+
+_ASSUMPTIONS = _assumptions(building, report)
+if _ASSUMPTIONS:
+    with st.container(border=True):
+        st.markdown(f"**Assumptions used in this report ({len(_ASSUMPTIONS)})** - inputs you "
+                    "did not set yourself. Each is printed in the exports.")
+        st.markdown("\n".join(f"- {a}" for a in _ASSUMPTIONS))
 
 # ---------- Scenario A vs B compare ------------------------------------------
 with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False):
@@ -2453,7 +3097,7 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
     sc1, sc2 = st.columns(2)
     with sc1:
         st.markdown("**Scenario A (current)**")
-        st.write(f"Occupancy: `{building.occupancy}`")
+        st.write(f"Occupancy: {_occ_label(building.occupancy)}")
         st.write(f"Height: {building.height_m:g} m → **{building.height_class}**")
         st.write(f"Required systems: **{_tot.get('required', 0)}**")
         if _ol:
@@ -2464,9 +3108,13 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
         b_occ = st.selectbox("B occupancy", options=list(OCCUPANCY_DEFS.keys()),
                              index=list(OCCUPANCY_DEFS.keys()).index(building.occupancy)
                              if building.occupancy in OCCUPANCY_DEFS else 0,
-                             key="scenario_b_occ")
+                             key="scenario_b_occ", format_func=_occ_label,
+                             help="Occupancy of scenario B (Ch 1 Table 1.1); every other input "
+                                  "is copied from the current building (A).")
         b_h = st.number_input("B height (m)", min_value=0.0, value=float(building.height_m),
-                              step=1.0, key="scenario_b_height")
+                              step=1.0, key="scenario_b_height",
+                              help="Height of scenario B, measured as for A (Ch 1 #1.7.39-"
+                                   "#1.7.42, p.44-45); it sets B's height class.")
         # Scenario B follows the main input's rule: a storage hazard class is chosen, never
         # assumed (CH9C-28; owner ruling 12.10.2026, Ch9 Q1 / Q9), and the plot GF BUA sum
         # is required.
@@ -2476,10 +3124,14 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
                 "B storage hazard class (required)", ["LH", "OH1", "OH2", "HH", "EH2"],
                 index=None, key="scenario_b_storage_hazard",
                 format_func=lambda x: "HH + Extra Hazard Group 2 (#1.1.13.5)" if x == "EH2" else x,
-                placeholder="Select from the stored materials and activities")
+                placeholder="Select from the stored materials and activities",
+                help="Table 9.27 groups follow the hazard class (#1.1.13, Tables 9.1 / 9.2); "
+                     "never assumed (CH9C-28).")
             b_sum = st.number_input(
                 "B sum of GF BUAs of all buildings on the plot (m2) (required)",
-                min_value=0.0, value=b_sum, step=100.0, key="scenario_b_sum_gf_bua")
+                min_value=0.0, value=b_sum, step=100.0, key="scenario_b_sum_gf_bua",
+                help="#4.1.13 (p.695) sum of the GF BUAs on the plot, required for storage "
+                     "(owner ruling 12.10.2026, Ch9 Q1).")
         elif b_occ in HAZARD_NOT_CLASSIFIED:
             st.caption(f"#1.1.13 does not name this occupancy: B uses the tool's working "
                        f"hazard class {default_hazard(b_occ)}, as the main input does without "
@@ -2497,7 +3149,9 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
             b_grp = st.selectbox("B business group (required)", list(BUSINESS_GROUPS),
                                  index=None, key="scenario_b_business_group",
                                  format_func=lambda g: f"Group {g}",
-                                 placeholder="Select the group (Table 1.1 row 2)")
+                                 placeholder="Select the group (Table 1.1 row 2)",
+                                 help="Ch 1 Table 1.1 row 2 (p.48); required, no default "
+                                      "(owner ruling 13.10.2026, P4 Q1).")
             b_post = False
             st.caption("B post office is not asked: Group B is evaluated as an office (LH).")
         if b_occ == "mercantile_c" and building.occupancy != "mercantile_c":
@@ -2505,9 +3159,12 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
                                    list(MERCANTILE_C_TYPES), index=None,
                                    key="scenario_b_mercantile_c_type",
                                    format_func=lambda t: MERCANTILE_C_TYPES[t],
-                                   placeholder="Select the type")
+                                   placeholder="Select the type",
+                                   help="Ch 1 Table 1.1 row 11 (p.50); required, no default "
+                                        "(owner ruling 13.10.2026, P4 Q5).")
             b_kiosk = None
-        _b_run = st.button("Run comparison", key="run_scenario_compare")
+        _b_run = st.button("Run comparison", key="run_scenario_compare",
+                           help="Evaluates B and compares its required count with A.")
         if _b_run and float(b_h) <= 0 and b_occ != "infrastructure":
             st.error("Scenario B height must be more than 0 m.")
         elif _b_run and b_occ == "business" and b_grp is None:
@@ -2563,126 +3220,30 @@ with st.expander("Compare scenario A vs B (height / occupancy)", expanded=False)
 
 
 # ---------- Special-rooms / flags summary chip strip (Tier 3 UI #12) ---------
-# Shows at a glance which Special Rooms / Various Locations / Equipment flags
-# the user has ticked. Makes it easy to confirm the input set without scrolling
-# the sidebar.
+# Shows at a glance which yes/no inputs are ticked, with the same labels as the
+# exports' inputs table (audit UX-14).
 def _ticked_chips(building_obj: Building) -> str:
-    _LABELS = {
-        # Special rooms
-        "has_anesthetizing_room": "Anesthetizing",
-        "has_battery_charger_room": "Battery charger",
-        "has_bms_room": "BMS",
-        "has_battery_room": "Battery",
-        "has_computer_room": "Computer",
-        "has_control_room": "Control / FCC",
-        "has_diesel_generator_room": "Diesel gen",
-        "has_main_electrical_room": "Main electrical",
-        "has_ahu_room": "AHU",
-        "has_lv_mv_room": "LV",
-        "has_mv_room": "MV (as HV)",
-        "has_transformer_room_utility": "Transformer (utility)",
-        "has_transformer_room_private": "Transformer (private)",
-        "has_lift_machine_room": "Lift machine",
-        "has_main_telephone_room": "Main telephone",
-        "has_main_server_room": "Main server",
-        "has_rmu_idf_mdf_room": "RMU/IDF/MDF",
-        "has_gsm_room": "GSM",
-        "has_operation_theater": "OT",
-        "has_mri_scanning_room": "MRI",
-        "has_records_room": "Records",
-        "has_ups_room": "UPS",
-        "has_cold_freezer_room": "Cold/Freezer",
-        "has_fire_pump_room": "Fire pump",
-        # Various locations
-        "has_atrium": "Atrium",
-        "has_rain_screen_glazing": "Rain-screen",
-        "has_stairs": "Stairs",
-        "has_elevator": "Elevator",
-        "has_bathrooms_with_heaters": "Bathrooms+heaters",
-        "has_laundry_storage_rooms": "Laundry/storage",
-        "has_pantries": "Pantries",
-        "has_permanent_stages": "Permanent stages",
-        "has_roof_lpg_or_restaurant": "Roof LPG/restaurant",
-        "has_roof_restaurant_assembly": "Roof restaurant (FA)",
-        "has_food_trucks": "Food trucks",
-        "has_garbage_chute": "Garbage chute",
-        "has_exterior_balconies": "Exterior balconies",
-        "has_high_ceiling": "High ceiling",
-        "has_tunnel": "Tunnel",
-        # Equipment
-        "has_commercial_kitchen": "Commercial kitchen",
-        "has_flammable_liquid_tanks": "Flammable liquid tanks",
-        "has_cable_spread_areas": "Cable spread",
-        "has_boilers": "Boilers",
-        "has_cooling_towers": "Cooling towers",
-        "has_oil_filled_transformers": "Oil-filled transformers",
-        "has_bulk_oil_storage": "Bulk oil",
-        "has_bulk_flammable_liquid_storage": "Bulk flammable liquid",
-        "has_bulk_flammable_gas_storage": "Bulk flammable gas",
-        "has_bulk_flammable_solid_storage": "Bulk flammable solid",
-        "has_high_hazard_logistics": "HH logistics",
-        "has_chemical_warehouse": "Chemical warehouse",
-        "has_explosives": "Explosives",
-        "has_processing_plant": "Processing plant",
-        # Gas
-        "has_lpg_tanks": "LPG tanks",
-        "has_gas_infra_connection": "Gas-infra connection",
-        "has_gas_cylinders_villa": "Gas cylinders (villa)",
-        "has_lpg_tank_roof_mounted": "LPG roof tank",
-        "has_lpg_tank_underground_mounded": "LPG UG/mounded",
-        "has_lpg_cylinders_indoor": "LPG indoor cyl",
-        "has_lpg_cylinders_food_truck": "Food-truck LPG",
-        "has_lpg_flame_effect": "Flame-effect LPG",
-        "has_lpg_tank_at_grade": "LPG at-grade tank",
-        # ES feature/zone
-        "has_evacuation_elevator": "Evac. elevator",
-        "has_horizontal_exits": "Horizontal exits",
-        "has_dead_end_paths": "Dead-ends",
-        "has_amusement_confounding": "Amusement",
-        "has_nightclub_disco": "Nightclub",
-        "has_theater_cinema": "Theatre/cinema",
-        "has_nursery_within": "Nursery within",
-        "has_auditorium_within": "Auditorium within",
-        "has_hh_storage_zones": "HH storage zones",
-        "has_mall_play_food_cinema": "Mall play/food/cinema",
-        "has_robotic_parking": "Robotic parking",
-        "villa_converted_use": "Villa converted",
-        "fuel_dispensing_multistorey": "Fuel multi-storey",
-        "is_covered_shaded_parking": "Covered/shaded parking",
-        "has_single_exit_stair": "Single exit stair",
-        "pump_room_at_grade": "Pump room at grade",
-        "gf_beyond_100m_from_hydrant": "GF > 100 m from hydrant",
-        "has_water_reactive_materials": "Water reactive materials",
-        "has_attached_commercial_outlet": "Commercial outlet (9.21.e)",
-        "mercantile_multi_tenant": "Mercantile group",
-        "is_post_office": "Post office (OH2)",
-        # FE-specific
-        "has_class_b_storage_zones": "Class B storage",
-        "has_combustible_metals": "Combustible metals",
-        "has_group_a_plastic_storage": "Group A plastics",
-        "has_hv_or_heavy_electrical": "HV/heavy electrical",
-        "has_parking_area": "Parking area",
-    }
-    ticked = [lab for attr, lab in _LABELS.items()
-              if getattr(building_obj, attr, False)]
+    ticked = [field_label(name) for name, f in type(building_obj).model_fields.items()
+              if f.annotation is bool and getattr(building_obj, name, False) is True]
     if not ticked:
         return ""
     return " ".join(f"`{t}`" for t in ticked)
+
 
 _chip_str = _ticked_chips(building)
 if _chip_str:
     _n = _chip_str.count("`") // 2
     with st.expander(f"🔧 Inputs summary — {_n} flag(s) ticked",
-                      expanded=False):
+                     expanded=False):
         st.markdown(_chip_str)
 
 # ---------- Expanded soft-validation warnings (Tier 2 UI #9) -----------------
 
 def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
     """Look at the full Building model + session_state flags and return three lists:
-    (errors, warnings, info). Errors are hard rule conflicts (e.g. LPG roof tank
-    on super-highrise); warnings flag unusual combinations a designer should
-    confirm; info is FYI traceability. Filtering / display is the caller's job."""
+    (prohibitions, warnings, info). None of them stops the report (the input stops do
+    that); a prohibition is a printed code ban the inputs run into; warnings flag
+    unusual combinations a designer should confirm; info is FYI traceability."""
     errs: list[str] = []
     warns: list[str] = []
     info: list[str] = []
@@ -2690,7 +3251,7 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
     def gs(k):  # session-state shorthand
         return bool(st.session_state.get(k, False))
 
-    # --- Hard errors ---
+    # --- Printed prohibitions (advisory: the report is still printed) ---
     if gs("has_lpg_tank_roof_mounted") and b.height_m > 90:
         errs.append(
             "🚫 **LPG roof tank on super-highrise (>90 m) is PROHIBITED.** "
@@ -2709,7 +3270,7 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
 
     if b.occupancy == "mall_covered" and not b.has_atrium:
         warns.append(
-            "⚠ `mall_covered` selected without `has_atrium`. Most covered malls "
+            "⚠ Covered mall selected without 'Atrium' ticked. Most covered malls "
             "have at least one atrium, which triggers additional Ch 9/10 atrium "
             "requirements. Confirm intentional."
         )
@@ -2718,23 +3279,23 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
                                               or b.has_mri_scanning_room
                                               or b.has_anesthetizing_room):
         warns.append(
-            "⚠ Inpatient hospital (`healthcare_a`) without OT / MRI / "
+            "⚠ Inpatient hospital (Healthcare Group A) without Operation theatre / MRI / "
             "Anesthetizing room ticked. Confirm the project scope — most "
             "inpatient hospitals have at least one of these."
         )
 
     if b.height_m >= 23 and not b.has_evacuation_elevator:
         warns.append(
-            "⚠ Highrise (23 m or more) without a designated `evacuation_elevator`. "
-            "Civil Defence often expects at least one designated firefighter / "
-            "evacuation lift on highrise. Confirm with the AHJ if absent."
+            "⚠ Highrise (23 m or more, ruling R1) without 'Evacuation elevator' ticked "
+            "(ES - Settings). Civil Defence often expects at least one designated "
+            "firefighter / evacuation lift on highrise. Confirm with the AHJ if absent."
         )
 
     if (b.occupancy.startswith("hotel_")
             and not b.has_commercial_kitchen
             and b.height_m > 15):
         info.append(
-            "ℹ Hotel without `has_commercial_kitchen` ticked. Most hotels have "
+            "ℹ Hotel without 'Commercial kitchen with cooking hood' ticked. Most hotels have "
             "a kitchen (triggers Ch 9 wet chemical + Ch 8 fusible-link). "
             "Confirm intentional."
         )
@@ -2743,8 +3304,8 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
             and b.gross_floor_area_m2 > 2000
             and b.assembly_area_m2 == 0):
         info.append(
-            "ℹ Assembly occupancy with GFA > 2,000 m² but no explicit "
-            "`assembly_area_m2` value entered. Ch 10 Table 10.27 items 9-13 "
+            "ℹ Assembly occupancy with GFA > 2,000 m² but no largest assembly-hall area "
+            "entered. Ch 10 Table 10.27 items 9-13 "
             "triggers on the assembly-hall area; set the value in SC settings "
             "to ensure the right smoke-purge rule fires."
         )
@@ -2753,7 +3314,7 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
             and b.floors_above_grade >= 4
             and not b.has_garbage_chute):
         info.append(
-            "ℹ G+4 residential without `has_garbage_chute` ticked. Most UAE "
+            "ℹ G+4 residential without 'Garbage room / chute' ticked. Most UAE "
             "residential buildings of this size have a chute (Ch 9 Table 9.29). "
             "Confirm intentional."
         )
@@ -2768,14 +3329,14 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
 
     if b.has_diesel_generator_room and not b.has_main_electrical_room:
         warns.append(
-            "⚠ Diesel generator room ticked but `main_electrical_room` is not. "
+            "⚠ Diesel generator room ticked but 'Main electrical room' is not. "
             "Diesel gen rooms almost always accompany a main electrical room — "
             "verify the building has neither."
         )
 
     if b.has_high_ceiling and b.ceiling_height_m < 10:
         warns.append(
-            "⚠ `has_high_ceiling` is ticked but ceiling height is < 10 m. "
+            "⚠ 'High ceiling' is ticked but the ceiling height is < 10 m. "
             "Ch 9 Table 9.29.A high-ceiling design starts at 10 m. Untick the "
             "flag or raise the height."
         )
@@ -2788,20 +3349,22 @@ def _sanity_check_inputs(b: Building) -> tuple[list[str], list[str], list[str]]:
 
     # NOTE: villa / petrol-station / animal-housing / daycare_c / etc. used
     # to get a "flags ticked that don't apply" warning here. That's been
-    # replaced by silent auto-clear at occupancy-change time (see
-    # `_on_occupancy_sub_change` + `_apply_incompatible_flag_reset`). The
-    # user can still tick anything manually — no nagging.
+    # replaced by the auto-clear at occupancy-change time (see
+    # `_apply_incompatible_flag_reset`), which names the cleared flags and
+    # restores them on return (audit UX-05).
 
     return errs, warns, info
 
 
 # ---------- Sanity-check banner (Tier 2 UI #9) -------------------------------
+# Audit UX-26: an input STOP is a red error; everything here is advisory and uses
+# the warning / info style, collapsed so a repeated advisory does not push the report
+# down.
 _errs, _warns, _info = _sanity_check_inputs(building)
-if _errs:
-    for e in _errs:
-        st.error(e)
+for e in _errs:
+    st.warning(e + " (Advisory: the report below is still printed.)", icon="🚫")
 if _warns:
-    with st.expander(f"⚠ Sanity checks — {len(_warns)} warning(s)", expanded=True):
+    with st.expander(f"⚠ Sanity checks — {len(_warns)} warning(s)", expanded=False):
         for w in _warns:
             st.warning(w)
 if _info:
@@ -2818,6 +3381,12 @@ _STATUS_BADGE = {
 }
 
 _STATUS_ORDER = ["required", "recommended", "conditional", "not_required"]
+
+
+def _badge(s: str) -> tuple:
+    """Badge of a status; a status added later (for example 'not_evaluated') shows with
+    its own name instead of failing."""
+    return _STATUS_BADGE.get(s, ("⚫", str(s).replace("_", " ").upper()))
 
 
 def _filter_items(items, allowed_statuses: set, text_q: str):
@@ -2842,76 +3411,23 @@ def _chapter_counts(ch):
     for blk in ch.blocks:
         for it in blk.items:
             counts[it.status] = counts.get(it.status, 0) + 1
-    counts["total"] = sum(counts[s] for s in _STATUS_ORDER)
+    counts["total"] = sum(v for k, v in counts.items() if k != "total")
     return counts
 
 
 _RULE_LOOKUP = _cached_rule_lookup()
 
 
-# ---------- Code-excerpt lookup (Tier 3 UI #14) ------------------------------
-# Optional feature: if the user has populated `data/code_excerpts/chXX.txt` or
-# the original `_extracted/chXX.txt` folder is reachable, the citation expander
-# can pull a short excerpt around the cited page so designers can verify the
-# rule against the actual code text without flipping to the PDF.
-#
-# The data files are NOT bundled in the repo (Civil Defence text — leave
-# distribution to the user). The helper degrades silently when files are absent.
-
-
-@st.cache_data(show_spinner=False)
-def _load_chapter_text(chapter_code: str) -> str:
-    """Read the extracted chapter text. Returns '' if unavailable."""
-    chapter_num_map = {
-        "MOE": "03", "FE": "04", "ES": "05", "EL": "06",
-        "EVC": "07", "FA": "08", "FP": "09", "SC": "10", "LPG": "11",
-    }
-    ch_num = chapter_num_map.get(chapter_code)
-    if not ch_num:
-        return ""
-    here = Path(__file__).parent
-    candidates = [
-        here / "data" / "code_excerpts" / f"ch{ch_num}.txt",
-        here / ".." / "_extracted" / f"ch{ch_num}.txt",
-    ]
-    for cand in candidates:
-        try:
-            if cand.is_file():
-                return cand.read_text(encoding="utf-8", errors="replace")
-        except Exception:
-            continue
-    return ""
-
-
-def _excerpt_around_page(chapter_code: str, page_ref: str,
-                         max_chars: int = 800) -> str:
-    """Try to pull a short excerpt around the cited page. page_ref is text
-    like 'p.713' or 'p.713-715' or 'pp.713-715'. Returns '' if not found."""
-    text = _load_chapter_text(chapter_code)
-    if not text or not page_ref:
-        return ""
-    m = _re.search(r"(\d{2,4})", page_ref)
-    if not m:
-        return ""
-    page = int(m.group(1))
-    marker = f"===== PAGE {page} ====="
-    idx = text.find(marker)
-    if idx < 0:
-        return ""
-    start = idx + len(marker)
-    end = text.find("===== PAGE", start)
-    page_body = text[start:end if end > 0 else len(text)].strip()
-    if len(page_body) > max_chars:
-        page_body = page_body[:max_chars].rstrip() + " […]"
-    return page_body
-
-
 def render_block(title, items, allowed_statuses: set, text_q: str,
-                  chapter_code: str = ""):
+                 chapter_code: str = "", view: str = "Table"):
     items = _filter_items(items, allowed_statuses, text_q)
     if not items:
         return
     st.subheader(title)
+    if view == "Table":
+        # Audit UX-13: one wrapping table per block (fast, compact, prints well).
+        st.markdown(ui.requirements_table_html(items, _SHOW_RULE_IDS), unsafe_allow_html=True)
+        return
     for req in items:
         with st.container(border=True):
             st.markdown(ui.requirement_head(req.status, req.system),
@@ -2923,37 +3439,25 @@ def render_block(title, items, allowed_statuses: set, text_q: str,
             cite = [p for p in (req.code_ref, req.page_ref) if p]
             if cite:
                 st.caption("📖 " + " · ".join(cite))
-            # Citation excerpt (Tier 3 UI #14) — pulls a short slice of the
-            # cited PDF page if the user has the extracted text bundled.
-            if chapter_code and req.page_ref:
-                excerpt = _excerpt_around_page(chapter_code, req.page_ref)
-                if excerpt:
-                    with st.expander(
-                        f"📖 Code excerpt — {req.page_ref}", expanded=False
-                    ):
-                        st.text(excerpt)
-                        st.caption(
-                            "Auto-extracted from UAE FLSC 2018 PDF. "
-                            "Always verify against the official current edition."
-                        )
-            # "Why triggered?" — surface the rule ID + the match conditions from
-            # the source YAML so designers can verify why this requirement appeared.
+            # "Why triggered?": the rule's conditions in words; the rule ID and its raw
+            # YAML only with "Show rule IDs" (audit UX-14). The code-excerpt expander was
+            # removed: no excerpt files are bundled, so it never appeared (audit UX-21).
             if req.source_rule:
                 info = _RULE_LOOKUP.get(req.source_rule)
                 with st.expander(
-                    f"🔍 Why triggered — rule `{req.source_rule}`", expanded=False
+                    "🔍 Why triggered" + (f" — rule `{req.source_rule}`" if _SHOW_RULE_IDS else ""),
+                    expanded=False,
                 ):
-                    if info:
-                        st.caption(
-                            f"Source: `rules/{info['file']}` · kind: `{info['kind']}`"
-                        )
-                        if info["match"]:
-                            st.code(_format_match_yaml(info["match"]),
-                                     language="yaml")
-                        else:
-                            st.caption("(Universal rule — fires for every building)")
+                    if info and info["match"]:
+                        _hm = _human_match(info["match"])
+                        st.caption(f"Conditions: {_hm}" if _hm else "Conditions in the rule file.")
+                        if _SHOW_RULE_IDS:
+                            st.caption(f"Source: `rules/{info['file']}` · kind: `{info['kind']}`")
+                            st.code(_format_match_yaml(info["match"]), language="yaml")
+                    elif info:
+                        st.caption("Applies to every building (no condition).")
                     else:
-                        st.caption("(Match conditions not located in YAML index.)")
+                        st.caption("(Match conditions not located in the rule files.)")
 
 
 def _format_match_yaml(match: dict) -> str:
@@ -2962,16 +3466,31 @@ def _format_match_yaml(match: dict) -> str:
 
 
 _OP_SUFFIX_LABEL = {
-    "_gt": ">", "_gte": "≥", "_lt": "<", "_lte": "≤",
+    "_gte": "≥", "_lte": "≤", "_gt": ">", "_lt": "<",
     "_is": "=", "_not": "≠ (not in)", "_in": "∈",
 }
 
 
+def _human_value(v) -> str:
+    if isinstance(v, bool):
+        return "yes" if v else "no"
+    if isinstance(v, (int, float)):
+        return f"{v:,}"
+    if isinstance(v, (list, tuple)):
+        return ", ".join(_human_value(x) for x in v)
+    if isinstance(v, str) and v in OCCUPANCY_DEFS:
+        return _occ_label(v)
+    if isinstance(v, dict):
+        return _human_match(v)
+    return str(v).replace("_", " ")
+
+
 def _human_match(match: dict) -> str:
     """Translate a YAML match/when dict into a plain-English fragment for the
-    branch-rationale caption. Examples:
+    branch-rationale caption (audit UX-14: occupancy names and input labels, not
+    codes). Example:
       {occupancy: hotel_a, height_m_gte: 23, height_m_lte: 90, plot_area_m2_lte: 3000}
-      -> "Hotel Group A, height ≥ 23, height ≤ 90 m (highrise), plot ≤ 3,000 m²"
+      -> "Hotel Group A, 23 ≤ height ≤ 90 m, Plot area (m2) ≤ 3,000"
     """
     if not match:
         return ""
@@ -2979,12 +3498,11 @@ def _human_match(match: dict) -> str:
 
     # Occupancy slot
     if "occupancy" in match:
-        defn = OCCUPANCY_DEFS.get(match["occupancy"], match["occupancy"])
-        parts.append(defn.split(" - ")[0])
+        parts.append(_human_value(match["occupancy"]))
     elif "occupancy_in" in match:
-        parts.append("any of: " + ", ".join(match["occupancy_in"]))
+        parts.append("any of: " + _human_value(match["occupancy_in"]))
     if "occupancy_not" in match:
-        parts.append("not: " + ", ".join(match["occupancy_not"]))
+        parts.append("not: " + _human_value(match["occupancy_not"]))
     if "occupancy_group_is" in match:
         parts.append(f"occupancy group = {match['occupancy_group_is']}")
 
@@ -2996,7 +3514,7 @@ def _human_match(match: dict) -> str:
     h_lo = h_gt if h_gt is not None else h_gte
     h_hi = h_lt if h_lt is not None else h_lte
     if h_lo is not None and h_hi is not None:
-        op_lo = ">" if h_gt is not None else "≥"
+        op_lo = "<" if h_gt is not None else "≤"
         op_hi = "<" if h_lt is not None else "≤"
         parts.append(f"{h_lo} {op_lo} height {op_hi} {h_hi} m")
     elif h_lo is not None:
@@ -3018,7 +3536,7 @@ def _human_match(match: dict) -> str:
     if "building_category_is" in match:
         parts.append(f"category = {match['building_category_is']}")
 
-    # Anything else (areas, floors, flags) — generic fallback rendering
+    # Anything else (areas, floors, flags) — labels from the inputs table
     skip_keys = {
         "occupancy", "occupancy_in", "occupancy_not", "occupancy_group_is",
         "height_m_gt", "height_m_gte", "height_m_lt", "height_m_lte",
@@ -3028,17 +3546,21 @@ def _human_match(match: dict) -> str:
     for k, v in match.items():
         if k in skip_keys:
             continue
-        # Translate suffix → human op
+        if k in ("any_of", "all_of", "any", "all") and isinstance(v, list):
+            subs = [_human_match(x) if isinstance(x, dict) else _human_value(x) for x in v]
+            joiner = " or " if k.startswith("any") else " and "
+            parts.append("(" + joiner.join(x for x in subs if x) + ")")
+            continue
+        if k == "flag":
+            parts.append(f"{field_label(str(v))} ticked")
+            continue
         for suf, label in _OP_SUFFIX_LABEL.items():
             if k.endswith(suf):
                 field = k[: -len(suf)]
-                # Pretty number with thousands separator if numeric
-                v_str = f"{v:,}" if isinstance(v, (int, float)) else str(v)
-                parts.append(f"{field} {label} {v_str}")
+                parts.append(f"{field_label(field)} {label} {_human_value(v)}")
                 break
         else:
-            # No suffix → plain equality
-            parts.append(f"{k} = {v}")
+            parts.append(f"{field_label(k)} = {_human_value(v)}")
 
     return ", ".join(parts)
 
@@ -3046,15 +3568,20 @@ def _human_match(match: dict) -> str:
 # ---------- Status legend (Tier-1 UI #1) -------------------------------------
 st.markdown(ui.legend_html(), unsafe_allow_html=True)
 
-# ---------- Filter bar (Tier-1 UI #2) ----------------------------------------
+# ---------- Filter bar (Tier-1 UI #2; audit UX-13 / UX-14) --------------------
+_present = {it.status for _p, chs in (("", report.chapters), ("P", report.attached_parking_chapters or []))
+            for ch in chs for blk in ch.blocks for it in blk.items}
+_status_opts = _STATUS_ORDER + sorted(_present - set(_STATUS_ORDER))
 _filt_c1, _filt_c2 = st.columns([2, 3])
 with _filt_c1:
     _allowed = st.multiselect(
         "Filter by status",
-        options=_STATUS_ORDER,
-        default=_STATUS_ORDER,
-        format_func=lambda s: f"{_STATUS_BADGE[s][0]} {_STATUS_BADGE[s][1]}",
-        help="Narrow the report by status. Default = show all.",
+        options=_status_opts,
+        # Audit UX-13: the design lines first; 'not required' (traceability) on request.
+        default=[s for s in _status_opts if s != "not_required"],
+        format_func=lambda s: f"{_badge(s)[0]} {_badge(s)[1]}",
+        help="Narrow the report by status. Default = every status except 'not required' "
+             "(exemptions kept for traceability: add them here).",
         key="filter_status",
     )
 with _filt_c2:
@@ -3065,7 +3592,19 @@ with _filt_c2:
         help="Case-insensitive substring match against system name, spec, detail, and code-ref.",
         key="filter_text",
     )
-_allowed_set = set(_allowed)
+_view_c1, _view_c2, _view_c3 = st.columns([2, 2, 2])
+with _view_c1:
+    _view = st.radio("Report view", ["Table", "Cards"], horizontal=True, key="report_view",
+                     help="Table: one compact row per requirement (fast, prints well). Cards: "
+                          "one card per requirement with 'Why triggered'.")
+with _view_c2:
+    _req_only = st.toggle("Required only", key="filter_required_only",
+                          help="Shows only the required lines, whatever the status filter says.")
+with _view_c3:
+    st.toggle("Show rule IDs", key="show_rule_ids",
+              help="Adds the tool's internal rule IDs (and the raw rule conditions in the "
+                   "cards) for checking the rule files. Off: readable table / row labels only.")
+_allowed_set = {"required"} if _req_only else set(_allowed)
 
 if PRINT_MODE:
     # Single full-width column for print; create a dummy right column we just
@@ -3075,13 +3614,28 @@ if PRINT_MODE:
 else:
     col_left, col_right = st.columns([2, 1])
 
+
+def _chapter_caption(ch, parking: bool = False) -> None:
+    if not ch.selected_branch:
+        return
+    _human = _human_match((_RULE_LOOKUP.get(ch.selected_branch) or {}).get("match", {}))
+    st.caption(
+        ("Governing parking table / row: " if parking else "Governing table / row: ")
+        + branch_label(ch)
+        + (f" · rule `{ch.selected_branch}`" if _SHOW_RULE_IDS else "")
+        + (f"\n\n**Why this row:** {_human}" if _human else "")
+    )
+
+
 with col_left:
+    _shown_any = False
     for ch in report.chapters:
         # Skip the entire chapter heading if no items pass the filter — keeps
         # the report tight when the user is searching for a specific term.
         if not any(_filter_items(blk.items, _allowed_set, _text_q)
                    for blk in ch.blocks):
             continue
+        _shown_any = True
         st.markdown(
             ui.chapter_header(
                 ch.chapter_code, ch.chapter_title,
@@ -3090,14 +3644,7 @@ with col_left:
             ),
             unsafe_allow_html=True,
         )
-        if ch.selected_branch:
-            _human = _human_match(
-                (_RULE_LOOKUP.get(ch.selected_branch) or {}).get("match", {})
-            )
-            st.caption(
-                f"Matched branch: `{ch.selected_branch}` · {ch.selected_branch_section}"
-                + (f"\n\n**Why this branch:** {_human}" if _human else "")
-            )
+        _chapter_caption(ch)
         _figs = [fig for fig in figures_for(ch.chapter_code) if fig["path"].exists()]
         if _figs:
             with st.expander(
@@ -3106,50 +3653,54 @@ with col_left:
                 expanded=False,
             ):
                 for fig in _figs:
-                    st.image(str(fig["path"]), caption=figure_caption(fig), use_container_width=True)
+                    st.image(str(fig["path"]), caption=figure_caption(fig), width="stretch")
         for block in ch.blocks:
             render_block(block.title, block.items, _allowed_set, _text_q,
-                         chapter_code=ch.chapter_code)
+                         chapter_code=ch.chapter_code, view=_view)
 
     # ---------- Attached parking sub-occupancy section ----------
     if report.attached_parking_chapters:
-        st.markdown("---")
-        kind = report.building.attached_parking_kind
-        synth_occ = "parking_open" if kind == "open" else "parking_enclosed"
-        st.markdown(
-            ui.chapter_header(
-                "🅿", "Attached Parking Area",
-                arabic="منطقة مواقف السيارات الملحقة" if bilingual_headings else None,
-                anchor="attached-parking", parking=True,
-            ),
-            unsafe_allow_html=True,
-        )
-        st.caption(f"Sub-occupancy evaluation as `{synth_occ}` (driven by **Building has parking** in Special rooms and usage). "
-                   "All parking-specific requirements from MOE / FE / ES / EL / FA / FP / SC are surfaced here.")
-        for ch in report.attached_parking_chapters:
-            if not any(_filter_items(blk.items, _allowed_set, _text_q)
-                       for blk in ch.blocks):
-                continue
+        _park_shown = [ch for ch in report.attached_parking_chapters
+                       if any(_filter_items(blk.items, _allowed_set, _text_q) for blk in ch.blocks)]
+        if _park_shown:
+            _shown_any = True
+            st.markdown("---")
+            kind = report.building.attached_parking_kind
+            synth_occ = "parking_open" if kind == "open" else "parking_enclosed"
             st.markdown(
                 ui.chapter_header(
-                    f"P-{ch.chapter_code}", ch.chapter_title,
-                    arabic=CHAPTER_AR.get(ch.chapter_code) if bilingual_headings else None,
-                    parking=True,
+                    "🅿", "Attached Parking Area",
+                    arabic="منطقة مواقف السيارات الملحقة" if bilingual_headings else None,
+                    anchor="attached-parking", parking=True,
                 ),
                 unsafe_allow_html=True,
             )
-            if ch.selected_branch:
-                _human = _human_match(
-                    (_RULE_LOOKUP.get(ch.selected_branch) or {}).get("match", {})
+            st.caption(f"Sub-occupancy evaluation as {_occ_label(synth_occ)} (driven by "
+                       "**Building has parking** under Parking & special rooms). All "
+                       "parking-specific requirements from MOE / FE / ES / EL / FA / FP / SC "
+                       "are surfaced here.")
+            for ch in _park_shown:
+                st.markdown(
+                    ui.chapter_header(
+                        f"P-{ch.chapter_code}", ch.chapter_title,
+                        arabic=CHAPTER_AR.get(ch.chapter_code) if bilingual_headings else None,
+                        parking=True,
+                    ),
+                    unsafe_allow_html=True,
                 )
-                st.caption(
-                    f"Matched parking branch: `{ch.selected_branch}` - {ch.selected_branch_section}"
-                    + (f"\n\n**Why this branch:** {_human}" if _human else "")
-                )
-            for block in ch.blocks:
-                render_block(block.title, block.items, _allowed_set, _text_q,
-                             chapter_code=ch.chapter_code)
-        st.markdown("---")
+                _chapter_caption(ch, parking=True)
+                for block in ch.blocks:
+                    render_block(block.title, block.items, _allowed_set, _text_q,
+                                 chapter_code=ch.chapter_code, view=_view)
+            st.markdown("---")
+
+    # Audit UX-22: a search or filter with no match says so.
+    if not _shown_any:
+        st.info(f"No requirements match"
+                + (f" '{_text_q.strip()}'" if (_text_q or "").strip() else "")
+                + " with the status filter "
+                + (", ".join(_badge(s)[1].lower() for s in sorted(_allowed_set)) or "(none)")
+                + ". Clear the search box or add statuses to the filter.")
 
     if report.high_ceiling and report.high_ceiling.applies:
         hc = report.high_ceiling
@@ -3163,7 +3714,7 @@ with col_left:
                     "Height band": hc.height_range,
                     "K-factor": hc.k_factor or "-",
                     "Min pressure": hc.min_pressure or "-",
-                    "Min sprinklers": hc.min_sprinklers,
+                    "Min sprinklers": str(hc.min_sprinklers or "-"),
                     "Density": hc.density or "-",
                     "Design area": hc.design_area or "-",
                     "Pump (no hydrant)": f"{hc.pump_without_hydrant_gpm} gpm" if hc.pump_without_hydrant_gpm else "-",
@@ -3172,8 +3723,51 @@ with col_left:
             if hc.note:
                 st.caption(hc.note)
 
+
+# ---------- Exports (audit UX-07 / UX-11 / UX-12, 28.10.2026) -----------------
+@st.cache_resource(show_spinner=False)
+def _export_store() -> dict:
+    """Built export files, kept across reruns and sessions (bytes keyed on the inputs,
+    the kind and the notes), so a second click does not rebuild them."""
+    return {}
+
+
+_EXPORT_META = {
+    "notes": (st.session_state.get("project_notes_input") or "").strip(),
+    "revision": tool_revision(),
+    "inputs": inputs_rows(building, report.requires_wet_riser),
+    "assumptions": list(_ASSUMPTIONS),
+}
+_EXPORT_META_KEY = _json.dumps(_EXPORT_META, sort_keys=True, default=str)
+
+
+def _export_data(fmt: str, kind: str | None):
+    """A callable for st.download_button: the file is built only when the button is
+    clicked (no export cost on every rerun), then kept in the store."""
+    store = _export_store()
+    key = (_bjson, fmt, kind, _EXPORT_META_KEY)
+    rep, meta = report, dict(_EXPORT_META)
+
+    def _build() -> bytes:
+        if key not in store:
+            meta["generated"] = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+            if fmt == "pdf":
+                data = _call_export(report_to_pdf_bytes, rep, kind, meta)
+            elif fmt == "docx":
+                data = _call_export(report_to_docx_bytes, rep, kind, meta)
+            else:
+                data = _call_export(report_to_xlsx_bytes, rep, None, meta)
+            while len(store) >= 8:
+                store.pop(next(iter(store)))
+            store[key] = data
+        return store[key]
+    return _build
+
+
 with col_right:
   if not PRINT_MODE:
+    # Audit UX-18: the target of the "Contents and exports" link at the top.
+    st.markdown("<a name='exports' id='exports'></a>", unsafe_allow_html=True)
     # ----- Table of contents with per-chapter status counts (Tier-1 UI #3) -----
     _toc_rows = []
     for ch in report.chapters:
@@ -3181,97 +3775,95 @@ with col_right:
         _toc_rows.append((f"ch-{ch.chapter_code.lower()}", ch.chapter_code,
                           _short, _chapter_counts(ch)))
     if report.attached_parking_chapters:
-        ap_counts = {s: 0 for s in _STATUS_ORDER}
+        ap_counts = {}
         for c in report.attached_parking_chapters:
             for s, n in _chapter_counts(c).items():
-                if s in ap_counts:
-                    ap_counts[s] += n
+                if s != "total":
+                    ap_counts[s] = ap_counts.get(s, 0) + n
         _toc_rows.append(("attached-parking", "🅿", "Attached parking", ap_counts))
     if report.high_ceiling and report.high_ceiling.applies:
         _toc_rows.append(("high-ceiling", "FP", "High-ceiling design", None))
     st.markdown(ui.toc_html(_toc_rows), unsafe_allow_html=True)
-    st.caption("Click a chapter to jump. Counts ignore the filter bar.")
-
-    # Print-friendly view link (Tier 3 UI #15)
-    st.markdown(
-        "[📄 Open print-friendly view](?print=1) "
-        "<small>(hides sidebar + this column; use browser Print to PDF)</small>",
-        unsafe_allow_html=True,
-    )
+    st.caption("Click a chapter to jump. Counts ignore the filter bar. To print this "
+               "report, turn on 'Print layout' at the top.")
 
     st.markdown("---")
     with st.expander("📋 Copy report (Markdown)", expanded=False):
         md_base = report_to_markdown(report)
         # Prepend project notes if any
-        _notes = st.session_state.get("project_notes_input", "").strip()
+        _notes = (st.session_state.get("project_notes_input") or "").strip()
         md = (f"## Project notes\n\n{_notes}\n\n---\n\n" + md_base) if _notes else md_base
         st.code(md, language="markdown")
-    fname_stem = (project_name or "building").replace(" ", "_")
+    _proj = project_name or "building"
 
+    st.caption("Files are built when you click (a few seconds for the Detailed PDF).")
     w1, w2 = st.columns(2)
-    try:
-        with w1:
-            st.download_button(
-                "Compact Word",
-                data=_call_export(report_to_docx_bytes, report, "compact"),
-                file_name=f"{fname_stem}_FLSC_compact.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True,
-                help="Required system headers only",
-            )
-        with w2:
-            st.download_button(
-                "Detailed Word",
-                data=_call_export(report_to_docx_bytes, report, "detailed"),
-                file_name=f"{fname_stem}_FLSC_detailed.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True,
-                help="Full evaluation + code figures",
-            )
-    except Exception as e:
-        st.warning(f"Word export needs python-docx: {e}")
+    with w1:
+        st.download_button(
+            "Compact Word",
+            data=_export_data("docx", "compact"),
+            file_name=export_file_name(_proj, "compact", "docx"),
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            width="stretch", on_click="ignore", key="dl_compact_docx",
+            help="Required system headers, the inputs used and the assumptions",
+        )
+    with w2:
+        st.download_button(
+            "Detailed Word",
+            data=_export_data("docx", "detailed"),
+            file_name=export_file_name(_proj, "detailed", "docx"),
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            width="stretch", on_click="ignore", key="dl_detailed_docx",
+            help="Full evaluation with status column, inputs used and code figures",
+        )
     pdf_c1, pdf_c2 = st.columns(2)
-    try:
-        with pdf_c1:
-            st.download_button(
-                "Compact PDF",
-                data=_call_export(report_to_pdf_bytes, report, "compact"),
-                file_name=f"{fname_stem}_FLSC_compact.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-                help="Required system headers only",
-            )
-        with pdf_c2:
-            st.download_button(
-                "Detailed PDF",
-                data=_call_export(report_to_pdf_bytes, report, "detailed"),
-                file_name=f"{fname_stem}_FLSC_detailed.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-                help="Full evaluation + code figures",
-            )
+    with pdf_c1:
         st.download_button(
-            "Executive PDF (1-page)",
-            data=_call_export(report_to_pdf_bytes, report, "executive"),
-            file_name=f"{fname_stem}_FLSC_executive.pdf",
+            "Compact PDF",
+            data=_export_data("pdf", "compact"),
+            file_name=export_file_name(_proj, "compact", "pdf"),
             mime="application/pdf",
-            use_container_width=True,
-            help="Profile, OL, top required systems",
+            width="stretch", on_click="ignore", key="dl_compact_pdf",
+            help="Required system headers, the inputs used and the assumptions",
         )
-    except Exception as e:
-        st.warning(f"PDF export needs reportlab: {e}")
-    try:
+    with pdf_c2:
         st.download_button(
-            "Excel system schedule (.xlsx)",
-            data=report_to_xlsx_bytes(report),
-            file_name=f"{fname_stem}_FLSC_systems.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-            help="Profile + every requirement + CD checklist",
+            "Detailed PDF",
+            data=_export_data("pdf", "detailed"),
+            file_name=export_file_name(_proj, "detailed", "pdf"),
+            mime="application/pdf",
+            width="stretch", on_click="ignore", key="dl_detailed_pdf",
+            help="Full evaluation with status column, inputs used and code figures",
         )
-        st.caption("Downloads go to your browser’s download folder.")
-    except Exception as e:
-        st.warning(f"Excel export needs openpyxl: {e}")
+    st.download_button(
+        "Executive summary PDF",
+        data=_export_data("pdf", "executive"),
+        file_name=export_file_name(_proj, "executive", "pdf"),
+        mime="application/pdf",
+        width="stretch", on_click="ignore", key="dl_executive_pdf",
+        help="Profile, OL and one governing requirement per chapter",
+    )
+    st.download_button(
+        "Excel system schedule (.xlsx)",
+        data=_export_data("xlsx", None),
+        file_name=export_file_name(_proj, "systems", "xlsx"),
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        width="stretch", on_click="ignore", key="dl_xlsx",
+        help="Profile, inputs used, every requirement and the CD checklist",
+    )
+    st.caption("Downloads go to your browser’s download folder. Every export carries the "
+               f"date and the tool revision ({tool_revision()}).")
+    # Audit UX-19: the inputs live only in this browser tab.
+    st.caption("Your inputs live only in this browser tab: a refresh or a new tab starts "
+               "again from the sample. Save the project to keep them.")
+    st.download_button(
+        "💾 Save project (.flsc)",
+        data=_scenario_json,
+        file_name=f"{_safe_stem}.flsc",
+        mime="application/octet-stream",
+        width="stretch", on_click="ignore", key="save_project_main",
+        help="The same file as Save / Load in the sidebar: every input of this session.",
+    )
     with st.expander("CD drawing submission checklist (Annexure 2)", expanded=False):
         for pkg, note, req in build_submission_checklist(report):
             st.markdown(f"{'☑' if req else '☐'} **{pkg}** — {note}")

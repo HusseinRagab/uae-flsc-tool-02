@@ -1,4 +1,7 @@
-streamlit
+# Pinned (audit UX-20, 28.10.2026): the app uses width="stretch", download_button
+# callables and on_click="ignore" of this release; a Cloud rebuild
+# must not pick up a newer Streamlit unreviewed.
+streamlit==1.66.1
 pydantic>=2
 pyyaml
 python-docx
