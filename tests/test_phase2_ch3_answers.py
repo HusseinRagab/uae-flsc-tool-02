@@ -210,7 +210,10 @@ def test_CH3_Q6_site_flags_print_required_lines_only_when_ticked():
     for n in ("Waterfront property fire access", "Theme park fire access",
               "Tower set back more than 30 m"):
         assert not [x for x in names(r, "FSA") if x.startswith(n)], n
-    assert not [it for it in items(r, "FSA") if it.status == "conditional"]
+    # Audit CH123-12 / CH123-20 (28.10.2026): the #2.6.4-#2.6.5 and #2.10 lines are
+    # conditional design-feature lines, not site flags; no site-flag line is conditional.
+    assert not [it for it in items(r, "FSA") if it.status == "conditional" and it.source_rule
+                in ("fsa_waterfront", "fsa_theme_park", "fsa_tower_setback", "fsa_fireboat")]
     r = report(is_waterfront=True, tower_setback_over_30m=True, **base)
     wf = one(r, "FSA", "Waterfront property fire access")
     assert wf.status == "required" and "Table 2.3 and Table 2.4" in wf.spec

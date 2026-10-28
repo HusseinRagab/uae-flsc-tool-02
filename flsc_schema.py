@@ -62,11 +62,13 @@ OCCUPANCY_DEFS = {
     "hotel_a": "Hotel Group A - Table 1.1 row 9 (p.50): hotels, hotel apartments, time share properties.",
     "hotel_b": "Hotel Group B - Table 1.1 row 9 (p.50): dormitory, motels, lodging.",
     "hotel_c": "Hotel Group C - Table 1.1 row 9 (p.50): resorts.",
-    "daycare_a": "Daycare Group A - Daycare for more than 12 clients.",
-    "daycare_b": "Daycare Group B - Daycare for 7 to 12 clients.",
-    # daycare_c: UAE FLSC Ch 3 #5.10 only defines Daycare Groups A and B. Schema keeps _c as a
-    # UI convenience for family daycare (4-6 clients); Ch 3 rules treat it the same as Group B.
-    "daycare_c": "Daycare Group C - Family daycare for 4 to 6 clients (UI category; Ch 3 falls back to Group B rules).",
+    # Audit CH123-04: the daycare groups are set by use, not by the number of clients
+    # (Table 1.1 row 10, p.50; #1.1.13.1.k-l, p.527). #1.7.7 (p.40): four or more clients.
+    "daycare_a": "Daycare Group A - Table 1.1 row 10 (p.50): child day care centers, old age care centers (four or more clients, #1.7.7 p.40; Table 3.31).",
+    "daycare_b": "Daycare Group B - Table 1.1 row 10 (p.50): adult day care centers (four or more clients, #1.7.7 p.40; Table 3.31).",
+    # daycare_c: Table 1.1 row 10 prints Groups A and B only. The key is kept so saved
+    # projects load; the Ch 3 rules give it the rows shared by Groups A and B.
+    "daycare_c": "Daycare (group not printed) - Table 1.1 row 10 (p.50) has no Group C; choose Group A (child or old age day care) or Group B (adult day care) by the use. Kept for saved projects: Ch 3 applies the rows shared by Groups A and B.",
     "residential": "Residential Group A - Table 1.1 row 5 (p.49): residential buildings, residential apartments, assisted living homes.",
     "labour_accommodation": "Labour Accommodation - Residential Group C, Table 1.1 row 5 (p.49): labor accommodation.",
     "staff_accommodation": "Staff Accommodation - Residential Group B, Table 1.1 row 5 (p.49): staff accommodation.",

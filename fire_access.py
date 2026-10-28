@@ -187,25 +187,118 @@ def _req(system, spec, code_ref, page_ref, rule, status="required", detail=None)
                        code_ref=code_ref, page_ref=page_ref, source_rule=rule)
 
 
+def _section_2_10(b: Building, wet_riser: bool, spr: bool) -> List[Requirement]:
+    """Ch 2 #2.10.1-#2.10.4 (p.222-224), audit CH123-12: access to fire fighting equipment.
+    Ch 9 sets where yard hydrants, risers, hose cabinets and pumps are needed (Section 3.11 /
+    Table 9.13 and the occupancy tables); these lines give only the Ch 2 location, access and
+    configuration items and do not repeat the Ch 9 duty lines."""
+    water = wet_riser or spr
+    out = [
+        _req("Yard fire hydrants for fire fighters",
+             "Where yard fire hydrants are provided: located along the Fire Accessway, for fire "
+             "fighters to refill the fire vehicle water tank or fight fire from the hydrant hose "
+             "connection; capable of delivering 500 gpm through a single hydrant with two "
+             "outlets, i.e., 250 gpm per outlet; minimum pressure 6.9 bars; two such hydrants "
+             "considered for the hydraulic calculations; design, calculations, pipe sizes, pump "
+             "and tank capacities, tests, distance between hydrants and materials per Ch 9",
+             "Ch 2, #2.10.1", "p.222", "fsa_yard_hydrants", status="conditional",
+             detail=("Where yard hydrants are needed is set in Ch 9 (Section 3.11, Table 9.13 item 2, "
+                     "p.673, and the Ch 9 occupancy table rows: see the Ch 9 section). OPEN "
+                     "QUESTION (needs owner ruling): #2.10.1.a (p.222) prints 'Civil Defence makes "
+                     "it mandatory to provide Yard Fire Hydrants in all developments', wider than "
+                     "the Ch 9 triggers; the tool keeps the Ch 9 triggers (audit CH123-12).")),
+        _req("Breeching inlets (Civil Defence connections)",
+             "On the street side of the building, near the building entrance and on the Fire "
+             "Accessway, within 18 m from the fire vehicle parking slot; arranged so hose lines "
+             "can be readily attached without interference from nearby objects; four 65 mm "
+             "(4-Way) direct coupling fittings for the wet riser, two 65 mm (2-Way) for the "
+             "sprinkler riser, two 65 mm (2-Way) for the dry riser; caps against debris; not less "
+             "than 457 mm nor more than 1219 mm above the finished ground level; each connection "
+             "designated by a sign with raised or engraved letters at least 25.4 mm in height, in "
+             "English and Arabic, naming the service (e.g. WATER TANK / SPRINKLER / WETRISER / "
+             "DRYRISER); design per Ch 9",
+             "Ch 2, #2.10.2", "p.223", "fsa_breeching_inlets",
+             status="required" if water else "conditional",
+             detail=(("Required: Ch 9 gives this building a sprinkler system or wet riser. "
+                      if water else
+                      "Conditional: Ch 9 gives this building no sprinkler system or wet riser; "
+                      "applies to any riser or tank connection provided. ")
+                     + "Points to Ponder (p.223): two sets of breeching inlets at two separate "
+                       "and remote locations should be considered (audit CH123-12).")),
+        _req("Fire hose cabinets for fire fighters",
+             "Next to the exit stairs and distributed in the corridors and circulation areas on "
+             "every floor, clearly visible; within 6 m from the stair door and not inside the "
+             "stair core (a landing valve alone in the stair is not an alternative); on both "
+             "sides of horizontal exits next to the door; on the roof where LPG tanks, air "
+             "conditioning equipment, heaters or gymnasium are located; each cabinet: 65 mm "
+             "landing valve outlet, 40/25 mm outlet with hose reel / hose rack, CO2 fire "
+             "extinguisher, dry chemical powder fire extinguisher, 65 mm 30 m fire hose with "
+             "nozzle; design and installation per Ch 9",
+             "Ch 2, #2.10.3", "p.223-224", "fsa_hose_cabinets",
+             status="required" if wet_riser else "conditional",
+             detail=(("Required: Ch 9 gives this building a wet riser. " if wet_riser else
+                      "Conditional: Ch 9 gives this building no wet riser; applies to the hose "
+                      "cabinets provided. ")
+                     + "OPEN QUESTION (needs owner ruling): #2.10.3.a (p.223) prints 'Fire Hose "
+                       "Cabinets (Hose Stations) complying to Chapter 9, shall be available in all "
+                       "buildings for Fire Fighters', wider than the Ch 9 rows. Ch 3 Table 3.4 "
+                       "item 8.iv (p.259): hose reel and landing valve cabinets are not located in "
+                       "the stair enclosure (audit CH123-12).")),
+        _req("Fire pump room access for fire fighters",
+             "Fire pump room, irrespective of its location, accessible for fire fighters; a clear "
+             "visual layout showing the location of and the way to the pump room posted in the "
+             "Emergency Command Center and Reception; a dedicated fire pump room housing the "
+             "main electrical fire pump, standby diesel fire pump, jockey pump, controller, "
+             "diesel fuel tank etc. as required by Ch 9; sufficient space around the "
+             "installations to access the valves, controllers and gauges",
+             "Ch 2, #2.10.4", "p.224", "fsa_pump_room_access",
+             status="required" if (water and b.has_fire_pump_room) else "conditional",
+             detail=(("Required: Ch 9 gives this building a sprinkler system or wet riser and a "
+                      "fire pump room is ticked. " if (water and b.has_fire_pump_room) else
+                      "Conditional: applies where a fire pump room is provided. ")
+                     + "Pump room location, size and access stair per Ch 1 Table 1.9 item 2 "
+                       "(p.73) (audit CH123-12).")),
+    ]
+    return out
+
+
 def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
                          sprinklered: Optional[bool] = None) -> ChapterReport:
     s, ext_code, ext_page = _compute(b, sprinklered)
     occ = b.occupancy
     h = b.height_m
     is_mall = occ in _MALLS
+    # Audit CH123-21: #2.8.4.a (p.212) lowrise: "accessway will not be required", only a
+    # 6 m fire engine access ROAD within 45 m; the line says road there.
+    road_only = s.extent.startswith("Access road within 45 m")
+    exempt_2_3_1 = (" #2.3.1 (p.205): fire access roadways are provided to every facility, "
+                    "structure and under construction building, except detached retail units, "
+                    "kiosks, store rooms, snack bars, rest rooms which are less than 100 m2 and "
+                    "are remotely located from predominant occupancy.")
     items = [
-        _req("Fire vehicle accessway width + clearance",
-             f"Minimum unobstructed width {s.accessway_width_m:g} m (road width between kerbs "
-             f"6 m); vertical clearance {s.vertical_clearance_m:g} m for any grade",
-             "Ch 2, Table 2.1 / #2.6.1 / #2.6.3", "p.206-207", "fsa_table_2_1",
-             detail=("#2.8.1 (p.211): minimum width of 6 m throughout; the accessway must "
-                     "accommodate the entry and maneuvering of fire engine, extended ladders, "
-                     "pumping appliances, aerial appliances, turntable and / or hydraulic "
-                     "platforms. #2.6.6 (p.208): accessway and fire engine access road kept clear "
+        _req("Fire access road width + clearance" if road_only
+             else "Fire vehicle accessway width + clearance",
+             (f"Fire engine access road minimum width 6 m (road width between kerbs 6 m); "
+              f"vertical clearance {s.vertical_clearance_m:g} m for any grade; a fire accessway "
+              "is not required for this lowrise building (#2.8.4.a)") if road_only else
+             (f"Minimum unobstructed width {s.accessway_width_m:g} m (road width between kerbs "
+              f"6 m); vertical clearance {s.vertical_clearance_m:g} m for any grade"),
+             ("Ch 2, Table 2.1 / #2.8.4.a" if road_only
+              else "Ch 2, Table 2.1 / #2.6.1 / #2.6.3"),
+             "p.206, 212" if road_only else "p.206-207", "fsa_table_2_1",
+             detail=(("#2.8.4.a (p.212): for lowrise buildings not exceeding the habitable height "
+                      "of 15 m, accessway will not be required; a fire engine access road of "
+                      "minimum 6 m width is required within 45 m of every point on the projected "
+                      "plan area of the building (audit CH123-21)." if road_only else
+                      "#2.8.1 (p.211): minimum width of 6 m throughout; the accessway must "
+                      "accommodate the entry and maneuvering of fire engine, extended ladders, "
+                      "pumping appliances, aerial appliances, turntable and / or hydraulic "
+                      "platforms.") +
+                     " #2.6.6 (p.208): accessway and fire engine access road kept clear "
                      "of obstructions and protruded parts of the building, plants, trees or other "
                      "fixtures between the accessway and the access openings. #2.6.8 (p.208): fire "
                      "hydrants, where required by Ch 9, located along the Fire Access Road and "
-                     "Fire Accessway.")),
+                     "Fire Accessway." + exempt_2_3_1)),
         _req("Parking distance to entrance / breeching inlet",
              f"Not more than {s.max_distance_entrance_m:g} m from building entrance; not more "
              f"than {s.max_distance_breeching_m:g} m from breeching inlet",
@@ -224,8 +317,10 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
              "Ch 2, Table 2.1 / #2.7.1", "p.206, 209", "fsa_dead_end"),
         _req("Access road gateways",
              "Minimum width of gateways 4.5 m (gate width 4500 mm); electric / automatic gates "
-             "with a manual override for Civil Defence",
-             "Ch 2, Table 2.1 / #2.4.1 / #2.4.3", "p.206", "fsa_gateways"),
+             "with a manual override for Civil Defence; locks not installed on fire access road "
+             "gates unless the gate is attended continuously by security guards or the keys are "
+             "located on-site and the gates may be readily unlocked (#2.4.4)",
+             "Ch 2, Table 2.1 / #2.4.1 / #2.4.3 / #2.4.4", "p.206", "fsa_gateways"),
         _req("Access road turning circle",
              "Minimum turning circle (roundabout) radius 12 m; U-turn and roundabout per "
              "Figure 2.5: clearance radius (R3) 12000 mm, outer radius (R2) 11000 mm, inner "
@@ -246,6 +341,18 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
              "by plants, bushes, walls or other features (width and obstruction printed as "
              "'should')",
              "Ch 2, #2.6.7", "p.208", "fsa_inspection_pathway"),
+        # Audit CH123-20: #2.6.4 / #2.6.5 (p.207), design features with no input.
+        _req("Security barriers and turfed accessways",
+             "Where a security barrier or guard house is on the accessway: the security barrier, "
+             "when lifted up, shall not obstruct the fire engine accessway, and eaves of the "
+             "security post or guard house shall not project into the fire engine accessway "
+             "(#2.6.4). Where the accessway is on a turfed area (synthetic grass, composite "
+             "material, sports surfaces): marked with contrasting objects (preferably reflective) "
+             "visible at night, at an interval not more than 3 meters apart, on both sides of "
+             "the accessway (#2.6.5)",
+             "Ch 2, #2.6.4 / #2.6.5", "p.207", "fsa_barrier_turf", status="conditional",
+             detail="Conditional: no input says the accessway has a security barrier, guard house "
+                    "or turfed surface (audit CH123-20)."),
     ]
     if h > 15:
         items.append(_req(
@@ -290,7 +397,8 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
     if b.is_waterfront:
         if occ == "villa_commercial":
             wf = "Commercial villas: maximum distance from fire access road shall not exceed 60 m"
-        elif b.height_class == "lowrise" and not occ.startswith("villa_"):
+        elif b.height_class == "lowrise":
+            # Audit CH123-19: the Table 2.8 lowrise row (p.217) prints no villa exclusion.
             wf = "Lowrise buildings: maximum distance from fire access road shall not exceed 60 m"
         elif b.height_class == "highrise":
             wf = "Highrise buildings: shall comply with Table 2.3 and Table 2.4"
@@ -329,14 +437,28 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
     ecc = [why for why, hit in (("highrise of 23 m or more", h >= 23), ("mall", is_mall),
                                 ("amusement park", b.is_theme_park)) if hit]
     if ecc:
+        # Owner ruling R-A (28.10.2026), audit H2 / CH123-02: 1 h if the building is
+        # sprinklered, 2 h if not (Ch 1 Table 1.9 item 1, p.73; FAQ Q8, p.1273).
+        spr = s.sprinklered_assumed
+        rating = ("separated by a 1-hour fire barrier (building sprinkler protected per Ch 9)"
+                  if spr else
+                  "separated by a 2-hour fire barrier (building not sprinkler protected per Ch 9)")
         items.append(_req(
             "Emergency Command Centre",
             "On the building front side along the Fire Accessway (not below grade or above the "
             "discharge level); minimum 19 m2 with minimum dimension 3 m on any side; entrance "
             "from the exterior along the Fire Accessway (else at the main entrance lobby); "
-            "separated by a 1-hour fire barrier; mechanical ventilation per Ch 10",
-            "Ch 2, #2.9.3.a-e", "p.219", "fsa_ecc",
+            f"{rating}; mechanical ventilation per Ch 10",
+            "Ch 2, #2.9.3.a-e; Ch 1, Table 1.9 item 1; Annexure 1, Table A.1.2 Q8",
+            "p.219, 73, 1273", "fsa_ecc",
             detail=f"#2.9.3.a: required in any building which is {' / '.join(ecc)}. "
+                   "Fire rating: Ch 1 Table 1.9 item 1 EMERGENCY COMMAND CENTER (p.73) prints "
+                   "'1 Hour' with automatic fixed fire protection and '2 Hour' without; Annexure 1 "
+                   "FAQ Table A.1.2 Q8 (p.1273): 'minimum of 1 hour fire resistance rated with "
+                   "sprinkler protection and 2 hour fire resistance rated without sprinkler "
+                   "protection'. CODE CONFLICT: Ch 2 #2.9.3.c (p.219) prints 'not less than a "
+                   "1-hour fire barrier' with no sprinkler condition; owner ruling R-A "
+                   "(28.10.2026): 1 h sprinklered, 2 h not. "
                    "Features per #2.9.3.f (plans, EVC unit, two-way telephone, FA annunciator, "
                    "lift annunciator, HVAC / smoke control panel, door unlocking, fire pump and "
                    "sprinkler status, generator status, PA, work table, lift recall)."))
@@ -349,9 +471,18 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
             "take a 610 mm x 2134 mm stretcher; firefighter override, exclusive sub-main "
             "circuit, 1-hour protected wiring, 2-way communication"
             + ("; in super highrise adjacent to an exit stair and a firefighting lobby at each "
-               "storey" if b.height_class == "super_highrise" else ""),
-            "Ch 2, #2.9.4.a-j", "p.220", "fsa_fire_lift",
-            detail=f"#2.9.4.a: required in any building which is {' / '.join(lift)}."))
+               "storey" if b.height_class == "super_highrise" else "")
+            + "; in a fire emergency, when a fire detection device or the fire alarm system is "
+              "activated and the ground floor is compromised with fire, all the passenger lifts "
+              "brought to the ground floor or egress level or alternative floor, lift doors "
+              "remaining open (#2.9.4.i); water management, protection of electrical equipment "
+              "against water, control and power supplies, and Civil Defence communications "
+              "systems in accordance with sections 5.3 and 5.6-5.12 of BS EN 81-72 current "
+              "edition (#2.9.4.l)",
+            "Ch 2, #2.9.4.a-l", "p.220", "fsa_fire_lift",
+            detail=f"#2.9.4.a: required in any building which is {' / '.join(lift)}. "
+                   "#2.9.4.k: elevators used for evacuation have the features of Ch 3 Section "
+                   "3.9 (Table 3.11). Items i and l added (audit CH123-11)."))
         # #2.9.6 (p.221) only where the Fire Lift is required (owner card 13.10.2026
         # 05:45Z "Fire lift buildings", G6).
         items.append(_req(
@@ -379,6 +510,7 @@ def evaluate_fire_access(b: Building, requires_wet_riser: bool = False,
             detail=("#2.9.5.a: all super highrise buildings (height greater than 90 m from the "
                     "fire access level). #2.9.5.f: no requirement for the fire lift lobby or the "
                     "fire lift shaft to be pressurized when this lobby is provided.")))
+    items += _section_2_10(b, requires_wet_riser, s.sprinklered_assumed)
     return ChapterReport(
         chapter_code="FSA", chapter_title="Fire Service Access (Ch 2)",
         selected_branch="fsa_auto", selected_branch_section=f"{ext_code} ({ext_page})",
