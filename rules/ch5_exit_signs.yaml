@@ -56,11 +56,14 @@ general:
           - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
           - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
     systems:
+      # Fix round 28.10.2026 (CH04-07 L7): photoluminescent signs are one option (#2.2.5);
+      # Table 5.1 item 4 applies where they are used or where Table 5.3 requires strips.
       - name: "Photoluminescent Sign Specifications (UL 1994)"
-        code_ref: "Ch 5, #2 / Table 5.1 item 4"
-        page_ref: "p.390"
-        spec: "Listed per UL 1994; face shall be CONTINUALLY illuminated by minimum 54 lux during normal AND emergency conditions; sign within 3 m of illumination source"
-        detail: "Photoluminescent signs and strips shall be continually illuminated while the building is occupied. Minimum 54 lux (5 ft-candle) artificial light on photoluminescent surface during normal AND emergency conditions. Sign / strip shall be within 3 m of illumination source. Photoluminescent signs SHALL NOT be installed where continuous illumination is not available - photoluminescent material requires charging to function in emergency mode. Listing per UL 1994 (Standard for Luminous Egress Path Marking Systems)."
+        required: conditional
+        code_ref: "Ch 5, #2 / Table 5.1 item 4; #5.1.5 (UL 1994)"
+        page_ref: "p.390, p.401"
+        spec: "Where photoluminescent signs or strips are used or required: face continually illuminated while the building is occupied; minimum 54 lux artificial light on the photoluminescent surface during normal and emergency conditions; within 3 m of the illumination source; listed to UL 1994"
+        detail: "#2.2.5 (p.387): during loss of power the exit signs shall be illuminated using building emergency power or building emergency lighting, 'or Signs shall be Photoluminescent' - one option, not a universal requirement. Where photoluminescent signs or strips are used, or required by Table 5.3 (items 6.vi-viii, 8.ii-iii, 15.ii, 16.iii, 17.iii), Table 5.1 item 4 (p.390) applies: i. the face of photoluminescent signs and strips shall be continually illuminated while the building is occupied; ii. minimum of 54 lux (5 foot-candle) artificial light shall be illuminating the photoluminescent surface during normal and emergency conditions; iii. within 3 m of such illumination source; iv. illumination levels on the face in accordance with its listing; v. the charging illumination shall be a reliable light source as per its listing; vi. photoluminescent signs shall not be installed where continuous illumination is not available during non-emergency situations. Test standard #5.1.5 (p.401): UL 1994, Standard for Luminous Egress Path Marking Systems (fix round 28.10.2026, CH04-07 L7)."
 
   - id: es_g_tactile
     when:
@@ -100,6 +103,20 @@ general:
         page_ref: "p.395"
         spec: "Bottom of sign 150-455 mm above finished floor; door-side signs within 100 mm from door frame"
         detail: "Trigger and sign-format compliance from Table 5.1 item 7 (p.391): floor proximity Exit Signs comply with Table 5.1.1 and floor proximity Directional Signs comply with Table 5.1.2. Mounting dimensions from Table 5.2 #2.v-vi (p.395): bottom of sign shall be NOT LESS than 150 mm AND NOT MORE than 455 mm above the finished floor; where required at exit doors, mounted adjacent to door within 100 mm from door frame. Floor proximity Signs are required in all assembly occupancies (Table 5.3 item 6.ii, p.397) and all hotel occupancies (Table 5.3 item 11.iii, p.398). Elsewhere, floor proximity Exit / Directional signs, if provided, comply with Table 5.1.7 (Table 5.3 items 1.iv, 2.iii, 3.ii)."
+
+  # Fix round 28.10.2026 (CH04-07 L9): Table 5.2 item 3 VISIBILITY.
+  - id: es_g_visibility
+    when:
+      not:
+        any_of:
+          - {occupancy_in: [villa_private, villa_commercial], villa_converted_use_is: false}
+          - {occupancy: motor_fuel_dispensing, fuel_dispensing_multistorey_is: false}
+    systems:
+      - name: "Sign Visibility - No Obstruction or Competing Illuminated Signs"
+        code_ref: "Ch 5, #2.4 / Table 5.2 item 3"
+        page_ref: "p.395"
+        spec: "Every required sign readily visible, of distinctive colour and design, in contrast with decorations, interior finish or other signs; no decorations, furnishings or equipment impairing its visibility; no brightly illuminated non-exit sign, display or object in or near its line of vision"
+        detail: "Table 5.2 item 3 VISIBILITY (p.395): i. Every sign required shall be located and of such size, distinctive color, and design that it is readily visible and shall provide contrast with decorations, interior finish, or other signs. ii. No decorations, furnishings, or equipment that impairs visibility of a sign shall be permitted. No brightly illuminated sign (for other than exit purposes), display, or object in or near the line of vision of the required exit sign that could detract attention from the exit sign shall be permitted (fix round 28.10.2026, CH04-07 L9)."
 
   - id: es_g_exit_sign_mounting_position
     when:
@@ -471,14 +488,38 @@ addons:
         spec: "Per Table 5.1.4"
         detail: "Photoluminescent strips along the egress path in theatres and cinemas."
 
+  # Fix round 28.10.2026 (CH04-07 M4): item 6.vi also fires on the theme / amusement park
+  # tick (the same input Ch 2 reads).
   - id: es_amusement_park_photoluminescent
-    flag: has_amusement_confounding
+    always_on: true
+    when:
+      any_of:
+        - {has_amusement_confounding_is: true}
+        - {is_theme_park_is: true}
     systems:
       - name: "Photoluminescent Exit Marking Strips (Amusement / Indoor Rides / Theme Parks / Play Areas)"
         code_ref: "Ch 5, #3 / Table 5.3 item 6.vi"
         page_ref: "p.397"
         spec: "Per Table 5.1.4"
-        detail: "All amusement parks, indoor rides, theme parks and play areas shall be provided with Photoluminescent Exit Marking strips."
+        detail: "Table 5.3 item 6.vi (p.397): All amusement parks, indoor rides, theme parks, play areas shall be provided with Photoluminescent Exit Marking strips per Table 5.1.4. Fires on 'Amusement / mazes / mirrors / play areas' or on 'Theme / amusement park' (fix round 28.10.2026, CH04-07 M4)."
+
+  # Fix round 28.10.2026 (CH04-07 M4): Table 1.1 row 1 Assembly Group B (p.48) lists
+  # '1. Amusement Park' and '7. Indoor Kid's Play Areas' among other uses (grandstands,
+  # stadiums, pools ...). With neither box ticked the group alone does not say which use:
+  # the line is conditional, never left out.
+  - id: es_assembly_b_amusement_photoluminescent
+    always_on: true
+    when:
+      occupancy: assembly_b
+      has_amusement_confounding_is: false
+      is_theme_park_is: false
+    systems:
+      - name: "Photoluminescent Exit Marking Strips (Amusement / Indoor Rides / Theme Parks / Play Areas)"
+        required: conditional
+        code_ref: "Ch 5, #3 / Table 5.3 item 6.vi"
+        page_ref: "p.397"
+        spec: "Where the building is an amusement park, indoor ride or play area: per Table 5.1.4"
+        detail: "Table 5.3 item 6.vi (p.397): All amusement parks, indoor rides, theme parks, play areas shall be provided with Photoluminescent Exit Marking strips per Table 5.1.4. Assembly Group B (Table 1.1 row 1, p.48) includes '1. Amusement Park' and '7. Indoor Kid's Play Areas' as well as grandstands, outdoor stadiums, bleachers, swimming pools, skating rinks, bowling alleys, pool / billiard parlors, waiting areas in transportation terminals, airport terminal buildings and food courts. Required where this building is an amusement park or play area; tick 'Theme / amusement park' or 'Amusement / mazes / mirrors / play areas' and the line becomes required (fix round 28.10.2026, CH04-07 M4)."
 
   - id: es_nursery_photoluminescent
     flag: has_nursery_within
@@ -498,14 +539,25 @@ addons:
         spec: "Per Table 5.1.4"
         detail: "Auditoriums within educational occupancies shall be provided with Photoluminescent Exit Marking strips."
 
+  # Fix round 28.10.2026 (CH04-07 M3): item 15.ii also fires on the inputs that already
+  # exist for its areas in a storage / industrial building: cold storage (Group P), cable
+  # spread areas, and basements (industrial basements). Robotic storage and HH areas stay
+  # on the 'HH storage / robotic / cold / cable spread / industrial basement' box.
   - id: es_hh_storage_photoluminescent
-    flag: has_hh_storage_zones
+    always_on: true
+    when:
+      any_of:
+        - {has_hh_storage_zones_is: true}
+        - {occupancy: storage_industrial, is_cold_storage_is: true}
+        - {occupancy: storage_industrial, has_cable_spread_areas_is: true}
+        - {occupancy: storage_industrial, floors_below_grade_gt: 0}
+        - {occupancy: storage_industrial, basement_bua_m2_gt: 0}
     systems:
       - name: "Photoluminescent Exit Marking Strips (HH / Robotic / Cold / Cable Spread / Industrial Basements)"
         code_ref: "Ch 5, #3 / Table 5.3 item 15.ii"
         page_ref: "p.399"
         spec: "Per Table 5.1.4"
-        detail: "High-hazard areas (Group A-1, A-2), robotic storage, cold storage, industrial basements and cable spread areas shall be provided with Photoluminescent Exit Marking strips."
+        detail: "Table 5.3 item 15.ii (p.399): High hazard areas (GROUP A-1 and GROUP A-2), Robotic storage and cold storage areas, industrial basements, Cable spread areas, shall be provided with Photoluminescent Exit Marking strips as per Table 5.1.4. Fires on the 'HH storage / robotic / cold / cable spread / industrial basement' box, and in a storage / industrial building on cold storage (Table 9.27 Group P), cable spread areas or a basement (fix round 28.10.2026, CH04-07 M3)."
 
   - id: es_mall_play_food_cinema_photoluminescent
     flag: has_mall_play_food_cinema
