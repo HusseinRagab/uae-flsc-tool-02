@@ -701,10 +701,18 @@ CASES = [
          inputs=dict(occupancy="detention_b", height_m=10, ground_floor_bua_m2=800, plot_area_m2=2000),
          expect_moe_branch="moe_detention"),
 
-    dict(name="AUDIT MOE: Storage HH -> 0m commonpath/dead-end + 23m travel (Table 3.16 row 16/18)",
+    # Audit CH123-03 (28.10.2026): Table 3.16 rows 16/18 are Storage / Industrial Group A =
+    # Extra Hazard Group 2 (#1.1.13.5.a, p.530); HH without EH2 = Extra Hazard Group 1 =
+    # Group B (#1.1.13.4.a, p.529) takes rows 17/19.
+    dict(name="AUDIT MOE: Storage HH EH2 -> 0m commonpath/dead-end + 23m travel (Table 3.16 row 16/18)",
+         inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=4000,
+                     plot_area_m2=10000, hazard_class="HH", is_extra_hazard_2=True),
+         expect_moe_branch="moe_storage_industrial_high_hazard"),
+
+    dict(name="AUDIT MOE: Storage HH EH1 -> Group B rows (Table 3.16 rows 17/19, CH123-03)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=4000,
                      plot_area_m2=10000, hazard_class="HH"),
-         expect_moe_branch="moe_storage_industrial_high_hazard"),
+         expect_moe_branch="moe_storage_industrial_eh1"),
 
     dict(name="AUDIT MOE: Storage LH/OH -> 122/61 m travel (Table 3.16 rows 17, 19)",
          inputs=dict(occupancy="storage_industrial", height_m=8, ground_floor_bua_m2=2000,
@@ -871,9 +879,10 @@ CASES = [
                      ground_floor_bua_m2=3000, plot_area_m2=5000, hazard_class="OH2"),
          expect_moe_branch="moe_parking_enclosed"),
 
-    dict(name="AUDIT MOE: HH storage uses 18mm/person stair capacity",
+    dict(name="AUDIT MOE: HH EH2 storage uses 18mm/person stair capacity",
          inputs=dict(occupancy="storage_industrial", height_m=8, floors_above_grade=1,
-                     ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="HH"),
+                     ground_floor_bua_m2=2000, plot_area_m2=5000, hazard_class="HH",
+                     is_extra_hazard_2=True),
          expect_moe_branch="moe_storage_industrial_high_hazard"),
 
     # ---- ES archetypes (Ch 5) ----
