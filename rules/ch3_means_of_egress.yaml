@@ -845,10 +845,11 @@ branches:
         detail: "Audit CH123-07. Items 5.iv-5.v print (S 30 m, NS 23 m)."
       - name: "Mercantile: Class A Corridor (Table 3.32 item 2)"
         required: conditional
-        spec: "Where exit access in class A Mercantile is through a corridor, such corridor shall be 1525 mm in width and separated from other parts of building by 1 hour fire resistance rated construction, if building is not sprinklered."
+        spec_s: "Where exit access in class A Mercantile is through a corridor, such corridor shall be 1525 mm in width."
+        spec_ns: "Where exit access in class A Mercantile is through a corridor, such corridor shall be 1525 mm in width and separated from other parts of building by 1 hour fire resistance rated construction."
         code_ref: "Ch 3, #5.11 / Table 3.32 item 2"
         page_ref: "p.331"
-        detail: "Audit CH123-07. Conditional: the mercantile class and corridor layout are not inputs. Quoted as printed: the closing 'if building is not sprinklered' may govern the 1 hour separation only or the whole sentence."
+        detail: "Audit CH123-07; owner ruling 28.10.2026 item 6: the closing 'if building is not sprinklered' (p.331) governs the 1 hour separation only, not the 1525 mm width. Conditional: the mercantile class (#1.7.9) and corridor layout are not inputs."
       - name: "Mercantile: Separation (Table 3.32 item 5, SEPARATION)"
         required: conditional
         spec: "High hazard content areas separated from other parts of the building by 1 hour fire resistance rated construction; kitchens separated from other parts of the building by 1 hour fire resistance rated construction; parking structures separated from the mercantile occupancy with a fire barrier having a minimum 2-hour fire resistance rating (openings per items 5.ii-5.iii)."
