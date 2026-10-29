@@ -232,6 +232,27 @@ def test_CH123_07_mercantile_table_3_32_rows():
     assert r.chapter("MOE").selected_branch == "moe_mercantile"
 
 
+def test_table_3_32_item_2_width_always_rating_only_if_unsprinklered():
+    """Table 3.32 item 2 p.331: 'such corridor shall be 1525 mm in width and separated
+    from other parts of building by 1 hour fire resistance rated construction, if
+    building is not sprinklered.' Owner ruling 28.10.2026 item 6: 1525 mm always;
+    1 h rating only if unsprinklered. A sprinklered Class A shop must still see the
+    width (compact/required-only readers otherwise skip a corridor that is too narrow)."""
+    spr_kw = dict(occupancy="mercantile_a", height_m=8, floors_above_grade=2,
+                  gross_floor_area_m2=8000, ground_floor_bua_m2=4000, plot_area_m2=5000)
+    assert spr(**spr_kw) is True
+    (c,) = named(report(**spr_kw), "MOE", "Mercantile: Class A Corridor (Table 3.32 item 2)")
+    assert c.status == "conditional" and "1525 mm" in c.spec
+    assert "1 hour" not in c.spec.lower()
+    assert "if building is not sprinklered" not in c.spec
+    ns_kw = dict(occupancy="mercantile_b", height_m=8, floors_above_grade=2,
+                 gross_floor_area_m2=400, ground_floor_bua_m2=400, plot_area_m2=800)
+    assert spr(**ns_kw) is False
+    (n,) = named(report(**ns_kw), "MOE", "Mercantile: Class A Corridor (Table 3.32 item 2)")
+    assert n.status == "conditional" and "1525 mm" in n.spec
+    assert "1 hour" in n.spec.lower()
+
+
 def test_CH123_07_mercantile_parking_separation_when_parking_ticked():
     r = report(occupancy="mercantile_b", height_m=8, floors_above_grade=2,
                gross_floor_area_m2=2000, ground_floor_bua_m2=1000,

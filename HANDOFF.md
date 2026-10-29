@@ -9,6 +9,15 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-29 — Table 3.32 item 2: 1525 mm corridor always; 1 h rating only if unsprinklered
+
+Owner ruling 28.10.2026 item 6 (queued to code). Table 3.32 item 2 (p.331) printed one
+sentence: Class A corridor 1525 mm wide and 1 h rated, "if building is not sprinklered".
+The closing clause now governs the 1 h separation only. `moe_mercantile_table_3_32`
+prints spec_s (width) for a sprinklered shop and spec_ns (width + 1 h) when Ch 9 does
+not sprinkler. Status stays conditional (Class A / corridor layout are not inputs).
+Test: `test_table_3_32_item_2_width_always_rating_only_if_unsprinklered`.
+
 ### 2026-10-28 — Owner rulings on the 12 open items of the audit fix round ("all as recommended")
 
 Hussein 28.10.2026: all 12 as recommended. Recorded only; no code changed in this entry.
@@ -23,8 +32,9 @@ TO CODE in a fresh session (each with failing-first tests, grid diff, HANDOFF en
 1. Converted villa (villa_converted_use): Class A extinguishers per the new use's Table 4.3
    row 1 item (drop the villa "recommended" line; Ch 4 L11).
 5. Unsprinklered hospital sleeping areas (Table 3.16 row 4.i prints S only): sprinklers
-   required; replace the NOT EVALUATED line with a required line.
-6. Table 3.32 item 2 (p.331): 1525 mm corridor always; 1 h rating only if unsprinklered.
+   required; replace the NOT EVALUATED line with a required line. (PR #40, still open.)
+6. DONE 2026-10-29: Table 3.32 item 2 (p.331) 1525 mm corridor always; 1 h rating only if
+   unsprinklered (`moe_mercantile_table_3_32` spec_s / spec_ns).
 10. R-G for Groups T / U: the hazard-class rows A-J apply only as conditional ("enclosed
    buildings on the site"), as R-B.
 
