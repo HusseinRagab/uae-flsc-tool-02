@@ -9,6 +9,22 @@ A push or merge to `master` redeploys the live app. Nothing merges without Husse
 
 ## Log (newest first)
 
+### 2026-10-30 — Item 10 of the 12 open items: Groups T / U take Table 9.27 A-J as conditional
+
+Owner ruling 28.10.2026 item 10 (R-G for Groups T / U, as R-B), now coded.
+- Bug: with storage tenancy chosen (Q-4, required in the app) the engine unioned Table 9.27
+  Groups A-J onto Group T / U as REQUIRED. `_merge_duties` then kept the warehouse pump
+  (e.g. Group C 350 gpm sprinklers) and dropped the Group T / U pump (100 gpm hose-reel or
+  500 gpm yard hydrants). An open yard or tank farm with no warehouse envelope was told it
+  needed full warehouse sprinklers, and `building_sprinklered` flipped true (Ch 3 S column,
+  Table 9.29 / 9.30, parking FA).
+- Fix: `engine._rg_tu_aj_conditional` demotes A-J lines to conditional *before* the pump /
+  tank merge; Group T / U governs. Roofed specialty groups (K, P-S, V) keep R-G as coded.
+  Tests: `test_RG_groups_T_U_hazard_rows_A_J_conditional_only` (failing first);
+  `test_RG_specialty_and_hazard_rows_both_evaluated` re-pointed onto Group P (cold store).
+- Still TO CODE from the 12: 1 converted villa Class A; 5 hospital sleeping sprinklers
+  (PR #40); 6 Table 3.32 item 2 (PR #41).
+
 ### 2026-10-28 — Owner rulings on the 12 open items of the audit fix round ("all as recommended")
 
 Hussein 28.10.2026: all 12 as recommended. Recorded only; no code changed in this entry.
@@ -26,7 +42,7 @@ TO CODE in a fresh session (each with failing-first tests, grid diff, HANDOFF en
    required; replace the NOT EVALUATED line with a required line.
 6. Table 3.32 item 2 (p.331): 1525 mm corridor always; 1 h rating only if unsprinklered.
 10. R-G for Groups T / U: the hazard-class rows A-J apply only as conditional ("enclosed
-   buildings on the site"), as R-B.
+   buildings on the site"), as R-B. Coded 30.10.2026.
 
 ### 2026-10-28 — Audit 28.10.2026 fix round: all findings, rulings R-A to R-J, Q-1 to Q-4 (PR #38, draft)
 

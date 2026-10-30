@@ -1614,6 +1614,10 @@ branches:
   # commodity rows L-O are BOTH evaluated; the most onerous pump / tank governs and the
   # other is named (engine._merge_duties), and a not_required line of one row beside a
   # required line of the other is dropped and named (engine._reconcile_not_required).
+  # Owner ruling 28.10.2026 item 10 (R-G for Groups T / U, as R-B): Groups A-J are
+  # building rows, so on an open yard (U) or aboveground tank farm (T) they print as
+  # conditional ("enclosed buildings on the site"); the Group T / U row governs.
+  # engine._rg_tu_aj_conditional demotes them before the pump / tank merge.
   # Owner ruling Q-4 (28.10.2026): the tenancy (multi-tenant A-E, single tenant F-J) is a
   # required choice; blank = the A-J tier lines are NOT EVALUATED.
   # #4.11.1 (p.724): designers shall first consult the MSDS (one line, engine).

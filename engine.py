@@ -203,6 +203,43 @@ def _collect_general(rules: Dict[str, Any], b: Building) -> List[Requirement]:
     return out
 
 
+# Table 9.27 Groups A-J (multi-tenant A-E / single-tenant F-J). Not commodity L-O
+# and not specialty K / P-V. Owner ruling 28.10.2026 item 10 (R-G for Groups T / U).
+_AJ_STORAGE_RULES = ("storage_industrial_tier", "storage_industrial_eh", "storage_single_tenant_")
+_RG_TU_AJ_NOTE = (
+    "Applies to any enclosed building on the site (warehouse, pump house, office). "
+    "Table 9.27 Groups A-J are building rows; Group T / U is the occupancy "
+    "(owner ruling 28.10.2026, R-G for Groups T / U, as R-B)."
+)
+
+
+def _is_group_t_or_u(b: Building) -> bool:
+    return b.occupancy == "storage_industrial" and (
+        b.is_open_yard_storage or b.is_aboveground_tank_storage)
+
+
+def _rg_tu_aj_conditional(items: List[Requirement], b: Building) -> List[Requirement]:
+    """Owner ruling 28.10.2026 item 10: for Group T (aboveground tanks) and Group U
+    (open yard), Table 9.27 Groups A-J apply only as conditional, the same R-B
+    reading as Ch 5-8 / 10 warehouse packages. Must run before `_merge_duties` so
+    a warehouse pump cannot outrank the Group T / U pump and drop it."""
+    if not _is_group_t_or_u(b):
+        return items
+    out = []
+    for it in items:
+        rid = it.source_rule or ""
+        if not rid.startswith(_AJ_STORAGE_RULES):
+            out.append(it)
+            continue
+        if it.status == "not_required" or "NOT EVALUATED" in (it.system or "").upper():
+            out.append(it)
+            continue
+        status = "conditional" if it.status == "required" else it.status
+        detail = f"{_RG_TU_AJ_NOTE} {it.detail}" if it.detail else _RG_TU_AJ_NOTE
+        out.append(it.model_copy(update={"status": status, "detail": detail}))
+    return out
+
+
 def _collect_branch(branches: List[Dict[str, Any]], b: Building):
     matched = _select_branches(branches, b)
     out, tags = [], []
@@ -216,6 +253,8 @@ def _collect_branch(branches: List[Dict[str, Any]], b: Building):
             out.append(_as_req(e, branch=br, b=b))
             tags.append((e.get("merge_system"), br.get("merge_family"))
                         if e.get("merge_system") and br.get("merge_family") else None)
+    # Groups T / U: demote A-J before ranking pumps / tanks (owner ruling item 10).
+    out = _rg_tu_aj_conditional(out, b)
     return _merge_duties(_merge_tables(out, tags)), selected_id, selected_section, matched
 
 
@@ -887,21 +926,29 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
         branch_items = _merge_duties(list(branch_items) + [hc_pump])
     if b.occupancy == "storage_industrial":
         # Owner ruling R-G (28.10.2026): specialty and hazard / commodity rows both apply.
-        if b.storage_has_specialty and any(
-                (br.get("id") or "").startswith(_BASE_STORAGE_RULES) for br in _matched):
+        # Groups T / U are the item-10 carve-out: A-J stay conditional, so the R-G
+        # "most onerous governs" note is not attached (the Group T / U pump governs).
+        if (b.storage_has_specialty and not _is_group_t_or_u(b) and any(
+                (br.get("id") or "").startswith(_BASE_STORAGE_RULES) for br in _matched)):
             branch_items = [it.model_copy(update={"detail": (it.detail or "") + _RG_NOTE})
                             if it.duty in ("pump", "tank") and it.status == "required" else it
                             for it in branch_items]
         # The ticked specialty group names the selected row (the hazard / commodity row and
-        # a blank-tenancy line are printed beside it, ruling R-G).
+        # a blank-tenancy line are printed beside it, ruling R-G). Groups T / U name the
+        # specialty row and that A-J is conditional (owner ruling item 10).
         spec_br = next((br for br in _matched if b.storage_has_specialty
                         and (br.get("id") or "").startswith("storage_")
                         and not (br.get("id") or "").startswith(_BASE_STORAGE_RULES)
                         and br.get("id") != "storage_tenancy_not_evaluated"), None)
         if spec_br and spec_br.get("id") != sel_id:
             sel_id = spec_br["id"]
-            sel_section = (f"{spec_br.get('section')} (with the Table 9.27 hazard-class / "
-                           f"commodity row, owner ruling R-G, 28.10.2026)")
+            if _is_group_t_or_u(b):
+                sel_section = (f"{spec_br.get('section')} (Table 9.27 Groups A-J apply as "
+                               f"conditional for enclosed buildings on the site, owner ruling "
+                               f"28.10.2026, R-G for Groups T / U)")
+            else:
+                sel_section = (f"{spec_br.get('section')} (with the Table 9.27 hazard-class / "
+                               f"commodity row, owner ruling R-G, 28.10.2026)")
         # Audit CH9B2-10: one #4.11.1 MSDS line for every storage group.
         if not any((it.system or "").startswith("MSDS Review") for it in branch_items):
             branch_items = list(branch_items) + [_MSDS_LINE]

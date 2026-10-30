@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
+import engine  # noqa: E402
 from flsc_schema import Building  # noqa: E402
 from test_phase1_findings import items, lines, pump, report, tank  # noqa: E402
 
@@ -339,13 +340,47 @@ def test_CH9B2_02_table_9_29_A_pump_enters_the_merge():
 
 # ------------------------------------------------------------ CH9B2-04 / ruling R-G
 def test_RG_specialty_and_hazard_rows_both_evaluated():
-    r = store(hazard_class="OH2", ground_floor_bua_m2=2000, sum_gf_bua_m2=2000,
-              is_aboveground_tank_storage=True, ast_storage_area_m2=100, ast_tank_capacity_m3=50)
+    """A roofed specialty (Group P cold store) still unions Groups A-J; most onerous
+    governs (owner ruling R-G). Groups T / U are the item-10 carve-out, next test."""
+    r = store(hazard_class="OH2", ground_floor_bua_m2=2000, gross_floor_area_m2=2000,
+              sum_gf_bua_m2=2000, is_cold_storage=True)
     br = branches(r)
-    assert "storage_industrial_tier3_oh2" in br and "storage_aboveground_tanks_r1" in br
+    assert "storage_industrial_tier3_oh2" in br and "storage_cold_storage_r3" in br
     assert named(r, "Automatic Sprinkler System", "required")
-    p = pump(r)
-    assert p.spec.startswith("350 gpm") and "R-G" in p.detail
+    assert named(r, "Automatic Dry Type Sprinkler System", "required")
+    pumps = named(r, "Fire Pump", "required")
+    assert pumps and any("R-G" in (it.detail or "") for it in pumps)
+
+
+def test_RG_groups_T_U_hazard_rows_A_J_conditional_only():
+    """Owner ruling 28.10.2026 item 10: Table 9.27 Groups A-J are building rows.
+    With tenancy chosen (the app requires it, Q-4) they still match, but they must
+    not govern an open yard (U) or tank farm (T) — they print as conditional for
+    enclosed buildings on the site, as R-B. Concrete trigger: a 2000 m2 OH2 tank
+    farm used to require the Group C 350 gpm warehouse sprinkler pump over Group T
+    row 1's 100 gpm hose-reel package."""
+    t = store(hazard_class="OH2", ground_floor_bua_m2=2000, sum_gf_bua_m2=2000,
+              is_aboveground_tank_storage=True, ast_storage_area_m2=100, ast_tank_capacity_m3=50)
+    br = branches(t)
+    assert "storage_industrial_tier3_oh2" in br and "storage_aboveground_tanks_r1" in br
+    spr = named(t, "Automatic Sprinkler System")
+    assert spr and all(it.status == "conditional" for it in spr)
+    assert all("enclosed building" in (it.detail or "") for it in spr)
+    assert not named(t, "Automatic Sprinkler System", "required")
+    assert pump(t).spec.startswith("100 gpm @ 4.5 bar")
+    assert "R-G" not in (pump(t).detail or "")
+    assert "Groups A-J apply as conditional" in (t.chapter("FP").selected_branch_section or "")
+    # Downstream: Ch 3 S/NS columns, Table 9.29 / 9.30, parking FA all read this.
+    assert not engine.building_sprinklered(t.building)
+
+    u = store(hazard_class="OH2", ground_floor_bua_m2=5000, sum_gf_bua_m2=5000,
+              is_open_yard_storage=True)
+    assert "storage_open_yard_r4" in branches(u)
+    spr_u = named(u, "Automatic Sprinkler System")
+    assert spr_u and all(it.status == "conditional" for it in spr_u)
+    assert not named(u, "Automatic Sprinkler System", "required")
+    assert pump(u).spec.startswith("500 gpm @ 6.9 bar")
+    assert named(u, "Hose Reel System", "not_required")
 
 
 # ------------------------------------------------------------ CH9B2-05 + sweep
