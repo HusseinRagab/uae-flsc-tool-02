@@ -293,6 +293,20 @@ def test_CH10_24_area_of_refuge_conditional_per_ch3_3_8_1():
     assert "#3.5" not in ref.code_ref and "occupants of 3 floors" in ref.detail
 
 
+def test_standalone_parking_requires_accessible_parking():
+    """Ch 15 Table 15.2 applies to a parking building. has_parking_area is the
+    attached-parking flag on a host; standalone parking occupancies never set it."""
+    for occ in ("parking_enclosed", "parking_open"):
+        park = get(report(occupancy=occ, height_m=12, **BASE), "ACC", "Accessible parking")
+        assert park.status == "required", occ
+    office = get(report(occupancy="business", height_m=12, **BASE), "ACC", "Accessible parking")
+    assert office.status == "conditional"
+    host = get(report(occupancy="business", height_m=12, has_parking_area=True,
+                      parking_area_m2=500, parking_height_m=0, parking_basement_levels=0,
+                      **BASE), "ACC", "Accessible parking")
+    assert host.status == "required"
+
+
 def test_CH10_33_ch15_citations_and_stair_content():
     r = report(occupancy="business", height_m=12, **BASE)
     pages = {it.source_rule: it.page_ref for it in items(r, "ACC")}
