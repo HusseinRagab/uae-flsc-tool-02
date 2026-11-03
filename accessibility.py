@@ -60,7 +60,12 @@ def evaluate_accessibility(b: Building) -> ChapterReport:
             ),
             Requirement(
                 system="Accessible parking",
-                status="required" if b.has_parking_area else "conditional",
+                # has_parking_area is attached parking on a host; standalone
+                # parking occupancies are the parking facility (Table 1.1 row 15).
+                status="required" if (
+                    b.has_parking_area
+                    or b.occupancy in ("parking_enclosed", "parking_open")
+                ) else "conditional",
                 spec="Car spaces at least 2440 mm wide, van spaces 3350 mm (or 2440 mm beside a 2440 mm aisle); access aisles at least 1525 mm, adjoining an accessible route, full length of the spaces (Table 15.2)",
                 detail="Spaces closest to the destination; 2490 mm vertical clearance for van spaces, their aisles and vehicular routes; Arabic and English signs at least 1525 mm above the floor of the space, measured to the bottom of the sign.",
                 code_ref="Ch 15, #3.2 / Table 15.2",
