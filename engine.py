@@ -380,11 +380,27 @@ def _pick_band(h: float) -> Optional[str]:
     return None
 
 
+def _is_required_sprinkler(it: Requirement) -> bool:
+    """True when this required Ch 9 line is an automatic sprinkler system
+    (#4.1.5 / #4.13.1 'fully protected' test). Names vary: Automatic Sprinkler
+    System, Automatic Dry Type Sprinkler System, Foam-Water Sprinkler System,
+    Sprinkler OR Foam-Water Sprinkler System, Standard Sprinklers, Pre-action,
+    ESFR."""
+    return it.status == "required" and "sprinkler" in (it.system or "").lower()
+
+
 def _sprinkler_required(items: List[Requirement]) -> bool:
     """True when the building's Ch 9 general rules or table row require an
     automatic sprinkler system (the #4.1.5 / #4.13.1 'fully protected' test)."""
-    return any("sprinkler" in (it.system or "").lower() and it.status == "required"
-               for it in items)
+    return any(_is_required_sprinkler(it) for it in items)
+
+
+def _ch9_sprinkler_scope(b: Building, fp_rules: Dict[str, Any]) -> List[Requirement]:
+    """General + occupancy-table + kiosk lines that `building_sprinklered` reads."""
+    gen = _collect_general(fp_rules, b)
+    branch_items = _collect_branch(fp_rules.get("branches", []), b)[0]
+    kiosk = _collect_flag(fp_rules.get("kiosk_item_48", []), b)   # Table 1.9 item 48 iii
+    return list(gen) + list(branch_items) + list(kiosk)
 
 
 def building_sprinklered(b: Building, fp_rules: Optional[Dict[str, Any]] = None) -> bool:
@@ -393,10 +409,7 @@ def building_sprinklered(b: Building, fp_rules: Optional[Dict[str, Any]] = None)
     rules = fp_rules if fp_rules is not None else load_rules("ch9_fire_protection.yaml")
     if not rules:
         return False
-    gen = _collect_general(rules, b)
-    branch_items = _collect_branch(rules.get("branches", []), b)[0]
-    kiosk = _collect_flag(rules.get("kiosk_item_48", []), b)   # Table 1.9 item 48 iii
-    return _sprinkler_required(list(gen) + list(branch_items) + list(kiosk))
+    return _sprinkler_required(_ch9_sprinkler_scope(b, rules))
 
 
 def _fa_row_automatic_detection(b: Building, fa_rules: Dict[str, Any]) -> bool:
@@ -1870,10 +1883,11 @@ def _park_probe_heights(depth: float) -> List[float]:
 
 def _host_sprinkler_line(b: Building, fp_rules: Dict[str, Any]) -> Optional[Requirement]:
     """The host building's required automatic sprinkler line, if any (P3 App Q2: the
-    attached parking takes the host table's sprinklers)."""
-    items = list(_collect_general(fp_rules, b)) + list(_collect_branch(fp_rules.get("branches", []), b)[0])
-    return next((it for it in items if it.status == "required"
-                 and (it.system or "").startswith("Automatic Sprinkler System")), None)
+    attached parking takes the host table's sprinklers). Same name test as
+    `building_sprinklered`: Table 9.27 dry-type / foam-water / ESFR lines are
+    sprinkler systems even though they do not start with 'Automatic Sprinkler System'."""
+    return next((it for it in _ch9_sprinkler_scope(b, fp_rules)
+                 if _is_required_sprinkler(it)), None)
 
 
 def _with_host_sprinklers(ch: ChapterReport, host: Requirement) -> ChapterReport:
@@ -1881,7 +1895,7 @@ def _with_host_sprinklers(ch: ChapterReport, host: Requirement) -> ChapterReport
     follow the host table (e.g. Table 9.19 'throughout the building including basements'):
     one sprinkler line citing the host table replaces the parking rows' own lines."""
     own = [it for blk in ch.blocks for it in blk.items
-           if blk.title.startswith("FP - Branch") and (it.system or "").startswith("Automatic Sprinkler System")]
+           if blk.title.startswith("FP - Branch") and _is_required_sprinkler(it)]
     said = "; ".join(f"{it.system} ({it.code_ref}): {it.status.replace('_', ' ')}" for it in own)
     line = Requirement(
         system="Automatic Sprinkler System (as the host building)",
@@ -1994,7 +2008,7 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
     if fp_rules:
         # P3 App Q2: Ch 9 sprinklers still follow the host building's table.
         host_line = _host_sprinkler_line(b, fp_rules) if host_spr else None
-        fp = evaluate_fp(synth, fp_rules, host_sprinklered=bool(host_line))
+        fp = evaluate_fp(synth, fp_rules, host_sprinklered=host_spr)
         chapters.append(_with_host_sprinklers(fp, host_line) if host_line else fp)
     if sc_rules:  chapters.append(evaluate_sc(synth, sc_rules))
     return chapters
