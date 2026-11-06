@@ -255,6 +255,39 @@ def test_P3_APP_Q2_attached_parking_uses_its_own_height_and_levels():
     assert not at.error
 
 
+def test_P3_APP_Q2_specialty_sprinkler_names_still_cover_attached_parking():
+    """P3 App Q2 copies the host sprinkler line onto attached parking. Table 9.27
+    Group P (dry type) and Group S (foam-water process) are required sprinkler
+    systems whose names do not start with 'Automatic Sprinkler System'. A
+    single-tenant OH2 row below 900 m2 is hose-reels only, so the specialty
+    line is the only sprinkler on the host. Open parking Table 9.24.C.1 also
+    has no sprinklers of its own: without the host line the parking chapter
+    would print Table 9.29 as not required."""
+    base = dict(
+        occupancy="storage_industrial", height_m=8, floors_above_grade=1,
+        ground_floor_bua_m2=500, gross_floor_area_m2=500, plot_area_m2=4000,
+        sum_gf_bua_m2=500, hazard_class="OH2", storage_tenancy="single",
+        has_parking_area=True, attached_parking_kind="open",
+        parking_area_m2=1000, parking_height_m=4, parking_basement_levels=0,
+    )
+    cases = (
+        ("Automatic Dry Type Sprinkler System", dict(is_cold_storage=True)),
+        ("Foam-Water Sprinkler System (Process)",
+         dict(is_flammable_liquid_industrial=True)),
+    )
+    for host_name, extra in cases:
+        r = engine.evaluate(Building(**base, **extra))
+        assert engine.building_sprinklered(r.building)
+        host_fp = [it for b in r.chapter("FP").blocks for it in b.items]
+        assert any(it.system == host_name and it.status == "required" for it in host_fp)
+        park = _all(r.attached_parking_chapters, "FP")
+        host_line = [it for it in park if it.system == "Automatic Sprinkler System (as the host building)"]
+        assert len(host_line) == 1 and host_line[0].status == "required"
+        assert host_name in host_line[0].detail and "P3 App Q2" in host_line[0].detail
+        stair = [it for it in park if it.system.startswith("Stair Shaft Sprinklers")]
+        assert stair and stair[0].status == "required"
+
+
 # ------------------------------------------------------------------ App Q6
 def test_P3_APP_Q6_parking_above_23_m_one_line_per_system_citing_both_tables():
     """Owner ruling 12.10.2026, P3 App Q6, merged as ruling R6. #4.3.1 (p.698) Table 9.19
