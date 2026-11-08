@@ -211,3 +211,37 @@ def test_R13_most_restrictive_mixed_keeps_most_onerous_line_per_system():
     unset = report(occupancy="business", secondary_occupancies=["hotel_a"], **kw)
     assert names(unset, "EVC", "required") == names(alone, "EVC", "required")
     assert "not evaluated" in unset.mixed_occupancy_note
+
+
+def test_R13_attached_parking_follows_secondary_host_sprinklers():
+    """P3 App Q2 / F8 + R13: attached parking takes the merged host Ch 9 sprinkler
+    result. Trigger: lowrise business (Table 9.21.b.1, hose-reels only) with listed
+    assembly (Table 9.21.a.2, sprinklers throughout including basements) and an
+    enclosed parking ≤900 m² / ≤15 m (Table 9.24.A.1, no sprinklers of its own).
+    The parking must copy the assembly host line and open Table 9.29; keeping the
+    primary occupancy's parking eval leaves it unsprinklered."""
+    kw = dict(height_m=10, floors_above_grade=2, floors_below_grade=1,
+              depth_below_grade_m=4, ground_floor_bua_m2=1000, plot_area_m2=5000,
+              gross_floor_area_m2=2000, has_parking_area=True,
+              attached_parking_kind="enclosed", parking_area_m2=500,
+              parking_height_m=8, parking_basement_levels=1)
+    mixed = report(occupancy="business", business_group="B",
+                   secondary_occupancies=["assembly_a"],
+                   mixed_occupancy_mode="most_restrictive", **kw)
+    host_spr = [it for it in items(mixed, "FP")
+                if it.system.startswith("Automatic Sprinkler System") and it.status == "required"]
+    assert host_spr and "Table 9.21.a.2" in host_spr[0].code_ref
+    park_fp = [it for c in mixed.attached_parking_chapters if c.chapter_code == "FP"
+               for blk in c.blocks for it in blk.items]
+    park_spr = [it for it in park_fp if it.system.startswith("Automatic Sprinkler System")]
+    assert park_spr and park_spr[0].status == "required"
+    assert park_spr[0].system == "Automatic Sprinkler System (as the host building)"
+    assert "Table 9.21.a.2" in park_spr[0].code_ref
+    stair = [it for it in park_fp if it.system.startswith("Stair Shaft Sprinklers")]
+    assert stair and stair[0].status == "required"
+    # Same business building without the assembly occupancy: parking stays unsprinklered.
+    alone = report(occupancy="business", business_group="B", **kw)
+    alone_spr = [it for c in alone.attached_parking_chapters if c.chapter_code == "FP"
+                 for blk in c.blocks for it in blk.items
+                 if it.system.startswith("Automatic Sprinkler System")]
+    assert alone_spr and all(it.status == "not_required" for it in alone_spr)

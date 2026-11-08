@@ -1876,6 +1876,36 @@ def _host_sprinkler_line(b: Building, fp_rules: Dict[str, Any]) -> Optional[Requ
                  and (it.system or "").startswith("Automatic Sprinkler System")), None)
 
 
+def _parking_host_sprinklered(b: Building) -> bool:
+    """P3 follow-up F8: attached parking shares the host's sprinkler system. Under
+    ruling R13 most restrictive, the host is sprinklered if any listed occupancy's
+    Ch 9 table requires sprinklers (the merged result)."""
+    if building_sprinklered(b):
+        return True
+    src = _R13_SOURCE.get()
+    if src is None or src.mixed_occupancy_mode != "most_restrictive" or not src.secondary_occupancies:
+        return False
+    occs, base = _r13_base(src)
+    return any(building_sprinklered(_r13_single(base, o)) for o in occs)
+
+
+def _parking_host_sprinkler_line(b: Building, fp_rules: Dict[str, Any]) -> Optional[Requirement]:
+    """P3 App Q2 host sprinkler line: this occupancy's table, else the first listed
+    occupancy under R13 whose table requires an Automatic Sprinkler System."""
+    line = _host_sprinkler_line(b, fp_rules)
+    if line is not None:
+        return line
+    src = _R13_SOURCE.get()
+    if src is None or src.mixed_occupancy_mode != "most_restrictive" or not src.secondary_occupancies:
+        return None
+    occs, base = _r13_base(src)
+    for o in occs:
+        line = _host_sprinkler_line(_r13_single(base, o), fp_rules)
+        if line is not None:
+            return line
+    return None
+
+
 def _with_host_sprinklers(ch: ChapterReport, host: Requirement) -> ChapterReport:
     """P3 App Q2: in a sprinklered host building the attached parking's Ch 9 sprinklers
     follow the host table (e.g. Table 9.19 'throughout the building including basements'):
@@ -1985,7 +2015,9 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
     sc_rules  = load_rules("ch10_smoke_control.yaml")
     # Attached parking takes the S / NS column from the parent building's Ch 9 result
     # (owner ruling 12.10.2026, follow-up F8): it shares the parent's sprinkler system.
-    host_spr = building_sprinklered(b)
+    # Under R13, the parent is the merged most-restrictive result, not this occupancy
+    # alone: a secondary table that sprinklers the building sprinklers the parking.
+    host_spr = _parking_host_sprinklered(b)
     if moe_rules: chapters.append(evaluate_moe(synth, moe_rules, sprinklered=host_spr))
     if fe_rules:  chapters.append(evaluate_fe(synth, fe_rules))
     if es_rules:  chapters.append(evaluate_es(synth, es_rules))
@@ -1993,7 +2025,7 @@ def _attached_parking_run(b: Building, height: float, levels: int) -> List[Chapt
     if fa_rules:  chapters.append(evaluate_fa(synth, fa_rules, sprinklered=host_spr))   # CH8-18
     if fp_rules:
         # P3 App Q2: Ch 9 sprinklers still follow the host building's table.
-        host_line = _host_sprinkler_line(b, fp_rules) if host_spr else None
+        host_line = _parking_host_sprinkler_line(b, fp_rules) if host_spr else None
         fp = evaluate_fp(synth, fp_rules, host_sprinklered=bool(host_line))
         chapters.append(_with_host_sprinklers(fp, host_line) if host_line else fp)
     if sc_rules:  chapters.append(evaluate_sc(synth, sc_rules))
