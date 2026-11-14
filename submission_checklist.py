@@ -16,7 +16,10 @@ _STORAGE_INDUSTRIAL = ("storage_industrial",)
 
 def build_submission_checklist(r: ComplianceReport) -> List[ChecklistItem]:
     required_codes = set()
-    for ch in r.chapters:
+    # Attached parking is a sub-evaluation of the same building (P3 App Q2). A villa
+    # host can have no EL/ES of its own while the parking chapter still requires them;
+    # those lines must mark File d) (and the other discipline files) as required.
+    for ch in list(r.chapters) + list(r.attached_parking_chapters or []):
         for blk in ch.blocks:
             for it in blk.items:
                 if it.status == "required":

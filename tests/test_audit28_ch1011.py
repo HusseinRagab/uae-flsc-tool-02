@@ -558,3 +558,24 @@ def test_A2_01_file_names_do_not_submit_and_discipline_rejections():
 def test_A2_02_no_unprinted_consultant_declaration_item():
     cl = _cl(report(occupancy="residential", height_m=40, **BASE))
     assert not [k for k in cl if "Consultant declaration" in k or "HoE" in k]
+
+
+def test_A2_attached_parking_el_es_makes_file_d_required():
+    """A private villa is exempt from Ch 5 / Ch 6, so host EL/ES are not required.
+    Attached enclosed parking still requires both. File d) must be required; without
+    scanning attached_parking_chapters the CD checklist left it optional."""
+    r = report(occupancy="villa_private", height_m=8, floors_above_grade=2,
+               ground_floor_bua_m2=300, plot_area_m2=500,
+               has_parking_area=True, attached_parking_kind="enclosed",
+               parking_area_m2=2000, parking_height_m=0, parking_basement_levels=0)
+    park_el = [it for c in r.attached_parking_chapters if c.chapter_code == "EL"
+               for blk in c.blocks for it in blk.items if it.status == "required"]
+    park_es = [it for c in r.attached_parking_chapters if c.chapter_code == "ES"
+               for blk in c.blocks for it in blk.items if it.status == "required"]
+    assert park_el and park_es
+    assert not [it for it in items(r, "EL") if it.status == "required"]
+    assert not [it for it in items(r, "ES") if it.status == "required"]
+    assert _cl(r)["File d) Emergency Lighting and Signage systems"][1] is True
+    bare = report(occupancy="villa_private", height_m=8, floors_above_grade=2,
+                  ground_floor_bua_m2=300, plot_area_m2=500)
+    assert _cl(bare)["File d) Emergency Lighting and Signage systems"][1] is False
