@@ -928,11 +928,14 @@ def evaluate_fp(b: Building, rules: Dict[str, Any],
     # Verifier 28.10.2026 (blank-input residual): when the table row itself is NOT
     # EVALUATED (a missing input) and no sprinkler line was found, the sprinkler-gated
     # Table 9.29 / 9.30 lines are NOT EVALUATED too, never "not required".
-    # Any missing input in the Ch 9 branch can decide the sprinkler system (outlet area,
-    # tenancy, plot, row F size ...): with no sprinkler line required, the gated lines are
-    # NOT EVALUATED, never a pass (verifier re-check 28.10.2026).
+    # Any missing input that can decide the sprinkler system (outlet area, tenancy,
+    # plot, row F size, kiosk location / Table 1.9 item 48 iii): with no sprinkler
+    # line required, the gated lines are NOT EVALUATED, never a pass.
+    # Item 48 iii lives in kiosk_items, not the occupancy table row; a blank location
+    # with a resolved Table 9.21.b row must still gate 9.29 / 9.30.
     row_unknown = (not sprinkler_required
-                   and any("NOT EVALUATED" in (it.system or "") for it in branch_items))
+                   and any("NOT EVALUATED" in (it.system or "")
+                           for it in list(branch_items) + list(kiosk_items)))
 
     def _gated(it, why, ref):
         if row_unknown:

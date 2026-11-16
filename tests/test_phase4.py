@@ -227,6 +227,26 @@ def test_P4_Q5_kiosk_item_48_iii_three_states():
     assert not engine.building_sprinklered(blank.building)   # blank never counts as protected
 
 
+def test_P4_Q5_kiosk_item_48_iii_blank_gates_table_9_29_and_9_30():
+    """Item 48 iii can require sprinklers. With plot entered the Table 9.21.b row is
+    resolved (hose reel / pump only), so a blank kiosk location must still mark the
+    gated Table 9.29 / 9.30 lines NOT EVALUATED, never a #4.13.1 / #4.1.5 pass.
+    (The three-states test above leaves plot blank, which already gates via the plot
+    NE line and hides this hole.)"""
+    def gated(r):
+        return [it for it in items(r, "FP")
+                if "Table 9.29" in (it.code_ref or "") or "Table 9.30" in (it.code_ref or "")]
+
+    blank = report(height_m=4, plot_area_m2=500, **KIOSK)
+    g = gated(blank)
+    assert g and all(it.status == "not_evaluated" for it in g), [
+        (it.system, it.status) for it in g]
+    yes = report(height_m=4, plot_area_m2=500, kiosk_in_sprinklered_area_or_mall=True, **KIOSK)
+    assert any(it.status == "required" for it in gated(yes))
+    no = report(height_m=4, plot_area_m2=500, kiosk_in_sprinklered_area_or_mall=False, **KIOSK)
+    assert gated(no) and all(it.status == "not_required" for it in gated(no))
+
+
 def test_P4_Q5_mercantile_c_is_its_own_building():
     with pytest.raises(ValueError, match="cannot be a listed other occupancy"):
         Building(occupancy="residential", secondary_occupancies=["mercantile_c"],
