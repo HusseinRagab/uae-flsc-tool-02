@@ -26,6 +26,20 @@ def _rank(extent: str) -> int:
     return next((i for i, k in enumerate(_ORDER) if k in extent), -1)
 
 
+def extent_rank(extent: Optional[str]) -> int:
+    """Rank a Ch 2 access-extent spec. Perimeter fractions outrank 'access road
+    within N m' (no accessway). Higher is more onerous."""
+    return _rank(extent or "")
+
+
+def governing_fire_access(summaries: List[FireAccessSummary]) -> Optional[FireAccessSummary]:
+    """The most onerous FireAccessSummary in `summaries` (Ch 1 #2.4.4 / R13)."""
+    live = [s for s in summaries if s is not None]
+    if not live:
+        return None
+    return max(live, key=lambda s: extent_rank(s.extent))
+
+
 def _footprint_m2(b: Building) -> Tuple[float, str]:
     """Gross floor area of the building footprint projected onto ground level
     (#2.8.5.a / #2.8.6.a, p.213)."""

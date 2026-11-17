@@ -29,7 +29,9 @@ from flsc_schema import (
     MERCANTILE_C_TYPES,
 )
 from occupant_load import compute_occupant_load
-from fire_access import evaluate_fire_access, compute_fire_access
+from fire_access import (
+    evaluate_fire_access, compute_fire_access, extent_rank, governing_fire_access,
+)
 from accessibility import evaluate_accessibility
 from eap import evaluate_eap
 
@@ -2466,6 +2468,24 @@ def _merge_most_restrictive(runs: List[tuple]) -> List[ChapterReport]:
                 specs = {}
                 for o, it in g:
                     specs.setdefault(it.spec, (it, []))[1].append(o)
+                # Ch 2 access extent is ranked (1/6 < 1/4 < 1/2 < 3/4 < whole).
+                # Keep only the most onerous spec so a lowrise host's "road within
+                # 45 m" (no accessway) cannot sit beside a storage Table 2.6/2.7
+                # perimeter row, and so the headline summary can match the chapter.
+                if (ch.chapter_code == "FSA"
+                        and n.startswith("Extent of fire vehicle access")
+                        and len(specs) > 1):
+                    best = max(specs, key=lambda spec: extent_rank(spec))
+                    dropped = [spec for spec in specs if spec != best]
+                    it0, occs0 = specs[best]
+                    note = (
+                        f"Mixed occupancy, most restrictive (ruling R13): fire-vehicle "
+                        f"access extent takes the most onerous listed occupancy "
+                        f"({', '.join(occs0)}: {best}). Not applied: "
+                        f"{'; '.join(s or '(blank)' for s in dropped)}."
+                    )
+                    specs = {best: (it0.model_copy(update={
+                        "detail": (it0.detail + " " if it0.detail else "") + note}), occs0)}
                 for it, occs in specs.values():
                     if primary_occ not in occs or len(specs) > 1:
                         it = it.model_copy(update={"detail": (it.detail + " " if it.detail else "") + (
@@ -2546,11 +2566,13 @@ def _evaluate_core(b: Building) -> ComplianceReport:
                 f"({ANIMAL_HOUSING_GROUPS[g][1]}, {ANIMAL_HOUSING_GROUPS[g][2]}; owner ruling "
                 f"12.10.2026, P3 Storey Q4).")
         r0 = reps[0]
+        fa = governing_fire_access([r.fire_access for r in reps])
         return r0.model_copy(update={
             "building": base,
             "chapters": _merge_most_restrictive([(o, r.chapters) for o, r in zip(occs, reps)]),
             "requires_wet_riser": any(r.requires_wet_riser for r in reps),
             "mixed_occupancy_note": note,
+            "fire_access": fa or r0.fire_access,
         })
     r = _evaluate_single(b)
     if b.occupancy == "mixed_multiple":

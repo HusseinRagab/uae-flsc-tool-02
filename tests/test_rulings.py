@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 import engine  # noqa: E402
+import export  # noqa: E402
 from flsc_schema import Building  # noqa: E402
 from test_phase1_findings import report, items, lines, pump, tank  # noqa: E402
 
@@ -211,3 +212,33 @@ def test_R13_most_restrictive_mixed_keeps_most_onerous_line_per_system():
     unset = report(occupancy="business", secondary_occupancies=["hotel_a"], **kw)
     assert names(unset, "EVC", "required") == names(alone, "EVC", "required")
     assert "not evaluated" in unset.mixed_occupancy_note
+
+
+def test_R13_fire_access_extent_takes_most_onerous_listed_occupancy():
+    """R13 + Ch 1 #2.4.4: mixed most-restrictive fire-vehicle access extent is the
+    most onerous listed occupancy, not the primary occupancy's headline.
+
+    Trigger: lowrise business (Ch 2 #2.8.4.a, accessway not required, 6 m road
+    within 45 m) with listed storage at 95,000 m3 (Table 2.7, 1/2 perimeter).
+    Copying reps[0].fire_access left the UI chip, executive/compact governing
+    line and Excel profile at 45 m while the FSA chapter already required 1/2.
+    """
+    kw = dict(height_m=10, floors_above_grade=2, ground_floor_bua_m2=2000,
+              plot_area_m2=5000, gross_floor_area_m2=4000, building_volume_m3=95000,
+              business_group="B", storage_tenancy="multi", secondary_storage_hazard="OH2")
+    mixed = report(occupancy="business", secondary_occupancies=["storage_industrial"],
+                   mixed_occupancy_mode="most_restrictive", **kw)
+    assert mixed.fire_access.extent == "1/2 perimeter"
+    assert "Table 2.7" in mixed.fire_access.extent_ref
+    extents = [it for it in items(mixed, "FSA")
+               if it.system.startswith("Extent of fire vehicle access")
+               and it.status == "required"]
+    assert len(extents) == 1 and extents[0].spec == "1/2 perimeter"
+    assert "storage_industrial" in (extents[0].detail or "")
+    fsa_row = next(row for row in export.governing_rows(mixed) if row[0] == "FSA")
+    assert fsa_row[2] == "1/2 perimeter"
+    # Same mixed building without the storage occupancy keeps the lowrise road.
+    alone = report(occupancy="business", business_group="B", height_m=10,
+                   floors_above_grade=2, ground_floor_bua_m2=2000, plot_area_m2=5000,
+                   gross_floor_area_m2=4000, building_volume_m3=95000)
+    assert alone.fire_access.extent.startswith("Access road within 45 m")
