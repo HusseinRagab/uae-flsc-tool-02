@@ -485,6 +485,38 @@ def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeili
     )
 
 
+def governing_high_ceiling(
+        runs: List[Tuple[str, Optional[HighCeilingSpec]]]) -> Optional[HighCeilingSpec]:
+    """The most onerous Table 9.29.A spec among occupancy runs (R13). A required
+    design outranks an R8 'not required' result (that occupancy's table row gives
+    no automatic sprinkler system)."""
+    live = [(o, s) for o, s in runs if s is not None and s.applies]
+    if not live:
+        return None
+    required = [(o, s) for o, s in live if not s.not_required]
+    pool = required or live
+    occ, spec = max(pool, key=lambda os: (
+        os[1].pump_with_hydrant_gpm or 0,
+        os[1].pump_without_hydrant_gpm or 0,
+        os[1].min_sprinklers or 0,
+    ))
+    primary = runs[0][0] if runs else None
+    primary_spec = runs[0][1] if runs else None
+    if occ != primary and not spec.not_required:
+        extra = (
+            f"Mixed occupancy, most restrictive (ruling R13): Table 9.29.A high-ceiling "
+            f"design takes {occ} (its Ch 9 table requires sprinklers)."
+        )
+        if primary_spec is not None and primary_spec.not_required:
+            extra += (
+                " Not applied: the primary occupancy's R8 'not required' result "
+                "(no automatic sprinkler system on that occupancy's table row)."
+            )
+        spec = spec.model_copy(update={
+            "note": (spec.note + " " if spec.note else "") + extra})
+    return spec
+
+
 # ---------------------------- Owner rulings 12.10.2026, Ch 9 Q1 / Q7 / Q9 ----
 
 _PARKING_OCCS = ("parking_enclosed", "parking_open")
@@ -2546,11 +2578,13 @@ def _evaluate_core(b: Building) -> ComplianceReport:
                 f"({ANIMAL_HOUSING_GROUPS[g][1]}, {ANIMAL_HOUSING_GROUPS[g][2]}; owner ruling "
                 f"12.10.2026, P3 Storey Q4).")
         r0 = reps[0]
+        hc = governing_high_ceiling([(o, r.high_ceiling) for o, r in zip(occs, reps)])
         return r0.model_copy(update={
             "building": base,
             "chapters": _merge_most_restrictive([(o, r.chapters) for o, r in zip(occs, reps)]),
             "requires_wet_riser": any(r.requires_wet_riser for r in reps),
             "mixed_occupancy_note": note,
+            "high_ceiling": hc if hc is not None else r0.high_ceiling,
         })
     r = _evaluate_single(b)
     if b.occupancy == "mixed_multiple":
