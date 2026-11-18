@@ -211,3 +211,35 @@ def test_R13_most_restrictive_mixed_keeps_most_onerous_line_per_system():
     unset = report(occupancy="business", secondary_occupancies=["hotel_a"], **kw)
     assert names(unset, "EVC", "required") == names(alone, "EVC", "required")
     assert "not evaluated" in unset.mixed_occupancy_note
+
+
+def test_R13_high_ceiling_takes_sprinklered_listed_occupancy():
+    """R13 + R8: mixed most-restrictive Table 9.29.A is the design of a listed
+    occupancy whose Ch 9 table requires sprinklers, not the primary occupancy's
+    R8 'not required' headline.
+
+    Trigger: lowrise business (Table 9.21.b.1, hose reel only) with listed
+    assembly_a (Table 9.21.a.2, sprinklers throughout), ceiling 12 m. Copying
+    reps[0].high_ceiling left the UI / executive / markdown Table 9.29.A block
+    at 'not required' while the FP chapter already required the 750 gpm
+    high-ceiling pump and Automatic Sprinkler System from assembly_a.
+    """
+    kw = dict(height_m=10, floors_above_grade=2, ground_floor_bua_m2=2000,
+              plot_area_m2=5000, gross_floor_area_m2=4000, has_high_ceiling=True,
+              ceiling_height_m=12, business_group="B")
+    mixed = report(occupancy="business", secondary_occupancies=["assembly_a"],
+                   mixed_occupancy_mode="most_restrictive", **kw)
+    assert mixed.high_ceiling.applies and not mixed.high_ceiling.not_required
+    assert mixed.high_ceiling.height_range == "10 m to 13.5 m"
+    assert mixed.high_ceiling.k_factor == "K11.2 (K160)"
+    assert mixed.high_ceiling.min_sprinklers == 6
+    assert "assembly_a" in (mixed.high_ceiling.note or "")
+    hc_pump = [it for it in items(mixed, "FP")
+               if it.system.startswith("Fire Pump (Table 9.29.A high ceiling)")
+               and it.status == "required"]
+    assert hc_pump and "750 gpm" in (hc_pump[0].spec or "")
+    spr = [it for it in items(mixed, "FP")
+           if it.system.startswith("Automatic Sprinkler System") and it.status == "required"]
+    assert spr
+    alone = report(occupancy="business", **kw)
+    assert alone.high_ceiling.not_required and alone.high_ceiling.k_factor is None
