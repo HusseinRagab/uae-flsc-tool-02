@@ -227,6 +227,38 @@ def test_P4_Q5_kiosk_item_48_iii_three_states():
     assert not engine.building_sprinklered(blank.building)   # blank never counts as protected
 
 
+def test_P4_Q5_kiosk_item_48_iii_high_ceiling_takes_table_9_29_A():
+    """Item 48 iii sprinklers are the #4.13.1 / R8 test for Table 9.29.A. A mall kiosk
+    on Table 9.21.b (hose reel / 50 gpm) with a 12 m ceiling must get the high-ceiling
+    design and pump, never R8 'not required' from the occupancy row alone.
+
+    Trigger: permanent kiosk, plot entered so the lowrise Table 9.21.b row resolves,
+    kiosk_in_sprinklered_area_or_mall=True, has_high_ceiling, ceiling 12 m.
+    `_eval_high_ceiling` used to collect only general + occupancy-table lines, so the
+    UI / executive Table 9.29.A block printed not required and the governing pump
+    stayed 50 gpm while Stair Shaft Sprinklers (Table 9.29) were already required.
+    """
+    kw = dict(height_m=4, plot_area_m2=500, kiosk_in_sprinklered_area_or_mall=True,
+              has_high_ceiling=True, ceiling_height_m=12, **KIOSK)
+    yes = report(**kw)
+    assert engine.building_sprinklered(yes.building)
+    assert yes.high_ceiling.applies and not yes.high_ceiling.not_required
+    assert yes.high_ceiling.height_range == "10 m to 13.5 m"
+    assert yes.high_ceiling.k_factor == "K11.2 (K160)"
+    assert yes.high_ceiling.min_sprinklers == 6
+    assert yes.high_ceiling.pump_without_hydrant_gpm == 750
+    spr = named(yes, "FP", "Automatic Sprinkler System (Kiosk, Table 1.9 item 48 iii)")
+    assert spr and spr[0].status == "required"
+    hc_pump = named(yes, "FP", "Fire Pump (Table 9.29.A high ceiling)")
+    assert hc_pump and hc_pump[0].status == "required" and "750 gpm" in (hc_pump[0].spec or "")
+    gov = [it for it in named(yes, "FP", "Fire Pump") if it.status == "required"]
+    assert gov and "750 gpm" in (gov[0].spec or "")
+    no = report(height_m=4, plot_area_m2=500, kiosk_in_sprinklered_area_or_mall=False,
+                has_high_ceiling=True, ceiling_height_m=12, **KIOSK)
+    assert no.high_ceiling.not_required and no.high_ceiling.k_factor is None
+    assert named(no, "FP", "Fire Pump")[0].spec.startswith("50 gpm")
+
+
 def test_P4_Q5_mercantile_c_is_its_own_building():
     with pytest.raises(ValueError, match="cannot be a listed other occupancy"):
         Building(occupancy="residential", secondary_occupancies=["mercantile_c"],
