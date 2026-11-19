@@ -448,15 +448,16 @@ def _eval_high_ceiling(rules: Dict[str, Any], b: Building) -> Optional[HighCeili
                   f"exceeds 10 m; this ceiling is {b.ceiling_height_m:g} m."),
             code_ref="Ch 9, #4.13.1 / Table 9.29 row M", page_ref="p.750",
         )
-    gen = _collect_general(rules, b)
-    branch_items = _collect_branch(rules.get("branches", []), b)[0]
-    if not _sprinkler_required(list(gen) + list(branch_items)):
+    # Same #4.13.1 / R8 test as `building_sprinklered` / evaluate_fp: occupancy table,
+    # general rules, AND kiosk Table 1.9 item 48 iii. Item 48 iii lives in kiosk_item_48,
+    # not the table row; a mall kiosk on a hose-reel Table 9.21.b row is still sprinklered.
+    if not building_sprinklered(b, rules):
         # Table 9.29.M is a Table 9.29 row: ruling R8 (12.10.2026).
         return HighCeilingSpec(
             applies=True, not_required=True, ceiling_height_m=b.ceiling_height_m,
             hazard_class=b.hazard_class,
             note=("Not required: Table 9.29.M / Table 9.29.A high-ceiling sprinklers extend the "
-                  "building sprinkler system (#4.13.1), and this building's table row gives no "
+                  "building sprinkler system (#4.13.1), and this building's Ch 9 result gives no "
                   "automatic sprinkler system (ruling R8, 12.10.2026)."),
             code_ref="Ch 9, #4.13.1 / Table 9.29.M", page_ref="p.749-750",
         )
