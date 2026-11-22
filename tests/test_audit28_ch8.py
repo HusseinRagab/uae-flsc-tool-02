@@ -152,6 +152,27 @@ def test_CH8_07_permanent_tent_keeps_the_building_system():
     assert not named(r, "Battery Operated Smoke Detectors (Temporary Tent)")
 
 
+def test_CH8_07_leftover_tent_kind_does_not_suppress_table_8_13_above_15m():
+    """#4.5.6 sits under 4.5 Lowrise (p.712). The Tent / marquee / site office
+    selectbox is only shown at height <= 15 m, but session_state keeps
+    tent_marquee_kind when height is later raised (or a saved file is loaded).
+    A 16 m+ building must still take its Table 8.13 occupancy/height row and
+    Table 8.1 addressable FACP, not battery-only Table 8.14 item 32/33."""
+    high = report(occupancy="residential", height_m=30, floors_above_grade=8,
+                  ground_floor_bua_m2=2000, plot_area_m2=5000,
+                  tent_marquee_kind="temporary")
+    assert one(high, "Smoke Detection and Alarm System (entire building)").status == "required"
+    assert named(high, "Addressable Fire Detection & Alarm Control Panel (FACP)")
+    assert not named(high, "Table 8.13 Building Fire Detection and Alarm System - not applied")
+    assert not named(high, "Battery Operated Smoke Detectors (Temporary Tent)")
+    mid = report(occupancy="assembly_a", height_m=18, floors_above_grade=5,
+                 ground_floor_bua_m2=2000, plot_area_m2=5000,
+                 tent_marquee_kind="site_office_short")
+    assert one(mid, "Smoke Detection and Alarm System (entire building)").status == "required"
+    assert named(mid, "Addressable Fire Detection & Alarm Control Panel (FACP)")
+    assert not named(mid, "Smoke Detector (Temporary Modular House / Office)")
+
+
 # ------------------------------------------------------------------ CH8-08
 def test_CH8_08_highrise_warehouse_and_parking_get_the_R7_note():
     w = warehouse(height_m=30, floors_above_grade=6)

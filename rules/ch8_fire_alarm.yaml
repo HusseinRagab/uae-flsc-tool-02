@@ -383,7 +383,13 @@ branches:
     # office (rows D / E) those items govern and the Table 8.13 addressable building
     # system is not printed (the engine also skips the Table 8.1 lines). Permanent tents,
     # desert camps (rows B / C) and row F buildings keep their occupancy row.
+    # #4.5.6 sits under 4.5 Lowrise (p.712), same as Ch 9 `lowrise_tent_marquee_*`
+    # (`height_m_lte: 15`). The Tent / marquee / site office selectbox is hidden
+    # when height is later raised, but session_state keeps tent_marquee_kind; without
+    # this height gate a 16 m+ hotel / residential / assembly would keep suppressing
+    # Table 8.13 (and Table 8.1) and print only battery smoke detectors.
     match:
+      height_m_lte: 15
       tent_marquee_kind_in: [temporary, site_office_short, site_office_long]
     suppresses: [fa_super_highrise, fa_highrise, fa_midrise_lowrise, fa_midrise_lowrise_height_only,
                  fa_mall, fa_education, fa_healthcare, fa_detention, fa_hotel,
@@ -1190,7 +1196,7 @@ auxiliary_rooms:
   # p.712): Table 8.14 item 32 required.
   - id: fa_aux_temporary_tent
     always_on: true
-    when: {tent_marquee_kind_is: temporary}
+    when: {tent_marquee_kind_is: temporary, height_m_lte: 15}
     systems:
       - name: "Battery Operated Smoke Detectors (Temporary Tent)"
         code_ref: "Ch 8, #5.2 / Table 8.14 item 32"
@@ -1202,7 +1208,7 @@ auxiliary_rooms:
   # p.712), read as a temporary modular office: Table 8.14 item 33 required.
   - id: fa_aux_temporary_modular_office
     always_on: true
-    when: {tent_marquee_kind_in: [site_office_short, site_office_long]}
+    when: {tent_marquee_kind_in: [site_office_short, site_office_long], height_m_lte: 15}
     systems:
       - name: "Smoke Detector (Temporary Modular House / Office)"
         code_ref: "Ch 8, #5.2 / Table 8.14 item 33"

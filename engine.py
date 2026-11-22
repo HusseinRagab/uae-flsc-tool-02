@@ -1422,8 +1422,12 @@ def evaluate_fa(b: Building, rules: Dict[str, Any],
     # 8.15 lines. CH8-07: a temporary tent or a site office (Table 9.21.f rows A, D, E,
     # p.712) takes Table 8.14 items 32 / 33, not the addressable building system, so the
     # Table 8.1 system lines are not printed (its Table 8.14 / 8.15 lines stay).
+    # #4.5.6 is under 4.5 Lowrise: skip Table 8.1 only when height is 15 m or
+    # less, matching fa_temporary_tent_site_office (`height_m_lte: 15`). A leftover
+    # tent_marquee_kind after height is raised must not drop the addressable FACP
+    # on a 16 m+ building.
     infra = b.occupancy == "infrastructure"
-    temporary = b.tent_marquee_kind in _FA_TEMPORARY_KINDS
+    temporary = b.tent_marquee_kind in _FA_TEMPORARY_KINDS and b.height_m <= 15
     no_rooms = nursery or infra
     gen = [] if (no_rooms or temporary) else _dedupe(_collect_general(rules, b))
     if gen:
