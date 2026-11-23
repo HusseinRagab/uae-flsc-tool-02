@@ -211,3 +211,32 @@ def test_R13_most_restrictive_mixed_keeps_most_onerous_line_per_system():
     unset = report(occupancy="business", secondary_occupancies=["hotel_a"], **kw)
     assert names(unset, "EVC", "required") == names(alone, "EVC", "required")
     assert "not evaluated" in unset.mixed_occupancy_note
+
+
+def test_R13_moe_uses_building_wide_sprinkler_column():
+    """R8 + Ch3 Q8 / F7: mixed most-restrictive MOE prints only the sprinklered
+    column when any listed occupancy's Ch 9 table sprinklers the building.
+
+    Trigger: lowrise business (Table 9.21.b, hose reel only) with listed hotel_a
+    (sprinklers throughout). Per-occupancy sprinkler tests left Table 3.15.a
+    exit remoteness and Table 3.12 exit discharge required as BOTH Column NS
+    (business) and Column S (hotel) — contradictory 1/2 vs 1/3 diagonal and
+    100% vs 50% discharge. The building is sprinklered, so only Column S applies.
+    """
+    kw = dict(height_m=10, ground_floor_bua_m2=1000, plot_area_m2=3000)
+    mixed = report(occupancy="business", secondary_occupancies=["hotel_a"],
+                   mixed_occupancy_mode="most_restrictive", **kw)
+    remote = [it for it in items(mixed, "MOE")
+              if it.system.startswith("Exit Remoteness - Lowrise") and it.status == "required"]
+    assert len(remote) == 1, [(it.spec, it.status) for it in remote]
+    assert remote[0].spec.startswith("Column S (sprinklered)")
+    assert "1/3" in remote[0].spec and "1/2" not in remote[0].spec
+    discharge = [it for it in items(mixed, "MOE")
+                 if it.system.startswith("Exit Discharge") and it.status == "required"]
+    assert len(discharge) == 1, [(it.spec, it.status) for it in discharge]
+    assert discharge[0].spec.startswith("Column S (sprinklered)")
+    alone = report(occupancy="business", **kw)
+    remote_ns = [it for it in items(alone, "MOE")
+                 if it.system.startswith("Exit Remoteness - Lowrise") and it.status == "required"]
+    assert len(remote_ns) == 1
+    assert remote_ns[0].spec.startswith("Column NS (non-sprinklered)")
