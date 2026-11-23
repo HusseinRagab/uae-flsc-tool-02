@@ -1360,18 +1360,26 @@ def _business_group_not_evaluated_el() -> Requirement:
 _FA_TEMPORARY_KINDS = ("temporary", "site_office_short", "site_office_long")
 
 
-def _fa_sprinklered(b: Building, sprinklered: Optional[bool] = None) -> bool:
-    """Sprinkler status for Table 8.13 item 22 (i)-(iii) (audit 28.10.2026, CH8-18): true
-    when the caller says so (an attached parking in a sprinklered host building), when the
-    building's own Ch 9 rows require sprinklers, or, under ruling R13 most restrictive,
-    when any listed occupancy's Ch 9 rows require them."""
-    if sprinklered or building_sprinklered(b):
+def _r8_sprinklered(b: Building, sprinklered: Optional[bool] = None,
+                    fp_rules: Optional[Dict[str, Any]] = None) -> bool:
+    """Ruling R8 sprinkler test of this building: true when the caller already
+    knows it (an attached parking in a sprinklered host), when this occupancy's
+    Ch 9 rows require an automatic sprinkler system, or, under ruling R13 most
+    restrictive, when any listed occupancy's Ch 9 rows require them. Ch 2 fire
+    access, Ch 3 MOE S/NS columns (Ch3 Q8 / F7) and Ch 8 Table 8.13 item 22
+    all read this same test."""
+    if sprinklered or building_sprinklered(b, fp_rules):
         return True
     src = _R13_SOURCE.get()
     if src is not None and src.mixed_occupancy_mode == "most_restrictive" and src.secondary_occupancies:
         occs, base = _r13_base(src)
-        return any(building_sprinklered(_r13_single(base, o)) for o in occs)
+        return any(building_sprinklered(_r13_single(base, o), fp_rules) for o in occs)
     return False
+
+
+def _fa_sprinklered(b: Building, sprinklered: Optional[bool] = None) -> bool:
+    """Sprinkler status for Table 8.13 item 22 (i)-(iii) (audit 28.10.2026, CH8-18)."""
+    return _r8_sprinklered(b, sprinklered)
 
 
 def _fa_parking_detection(it: Requirement, spr: bool) -> Requirement:
@@ -2631,7 +2639,10 @@ def _evaluate_single(b: Building) -> ComplianceReport:
     lpg_rules = load_rules("ch11_lpg.yaml")
 
     wet = _branch_requires_wet_riser(fp_rules, b)
-    spr = building_sprinklered(b, fp_rules)
+    # Ruling R8 / Ch3 Q8 / F7: MOE columns and Ch 2 access follow this building's
+    # Ch 9 result. Under R13 that is the merged most-restrictive result (any listed
+    # occupancy that sprinklers the building), not this occupancy's table alone.
+    spr = _r8_sprinklered(b, fp_rules=fp_rules)
     chapters.append(evaluate_fire_access(b, requires_wet_riser=wet, sprinklered=spr))
 
     # MOE -> FE -> ES -> EL -> EVC -> FA -> FP -> SC -> LPG - chapter-number order.
